@@ -1,20 +1,81 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, ExternalLink, FileText, MessageCircle, ThumbsUp, Share2, Eye } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockIdeas, mockClients } from '../types';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { mockIdeas, mockClients, mockTemplates } from '../types';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string, ideaId: string }>();
-  const [activeTab, setActiveTab] = React.useState('overview');
+  const [activeTab, setActiveTab] = React.useState('generatedPost');
+  const [title, setTitle] = useState('');
+  const [initialIdea, setInitialIdea] = useState('');
+  const [objective, setObjective] = useState('');
+  const [template, setTemplate] = useState('');
+  const [generatedPost, setGeneratedPost] = useState('');
+  const [editingInstructions, setEditingInstructions] = useState('');
+  const [status, setStatus] = useState('Drafting');
+  const [useAsTrainingData, setUseAsTrainingData] = useState(false);
+  const [internalNotes, setInternalNotes] = useState('');
+  const [postDate, setPostDate] = useState('');
+  const [postTime, setPostTime] = useState('');
+  const [timezone, setTimezone] = useState('UTC-5');
   
   // Find the idea in our mock data
   const idea = mockIdeas.find(i => i.id === ideaId);
   const client = mockClients.find(c => c.id === clientId);
+  
+  React.useEffect(() => {
+    if (idea) {
+      setTitle(idea.title);
+      setInitialIdea(idea.initialIdeaPrompt);
+      setObjective(idea.objective);
+      setGeneratedPost(idea.currentDraftText);
+      setStatus(idea.status);
+      setInternalNotes(idea.internalNotes || '');
+      if (idea.templateUsedId) {
+        setTemplate(idea.templateUsedId);
+      }
+      if (idea.scheduledPostAt) {
+        const date = new Date(idea.scheduledPostAt.seconds * 1000);
+        setPostDate(date.toISOString().split('T')[0]);
+        setPostTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+      }
+    }
+  }, [idea]);
+
+  const form = useForm({
+    defaultValues: {
+      postingDate: ''
+    }
+  });
   
   if (!idea || !client) {
     return (
@@ -26,335 +87,332 @@ const IdeaDetails = () => {
       </div>
     );
   }
+
+  const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
+  const predefinedObjectives = ['Thought Leadership', 'Lead Generation', 'Brand Awareness', 'Engagement', 'Product Launch', 'Event Promotion'];
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Posted':
-        return 'bg-green-100 text-green-800';
-      case 'Scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'AwaitingReview':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'NeedsRevision':
-        return 'bg-red-100 text-red-800';
-      case 'Drafting':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const handleSendToAI = () => {
+    // Simulate AI generating content
+    setGeneratedPost("In today's rapidly evolving business landscape, staying ahead of industry trends is more critical than ever...");
+    // Navigate to the generated post tab
+    setActiveTab('generatedPost');
   };
-  
-  const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
-    return new Date(timestamp.seconds * 1000).toLocaleDateString();
+
+  const handleRegenerateWithInstructions = () => {
+    // Simulate AI regenerating content with instructions
+    setGeneratedPost("Based on your instructions, here's an updated version that focuses more on practical implementation of AI in manufacturing...");
+  };
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(generatedPost);
+    // Could add a toast notification here
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Link to={`/clients/${clientId}`}>
-          <Button variant="outline" size="icon" className="rounded-full">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">{idea.title}</h1>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span>{client.clientName}</span>
-            <span>•</span>
-            <span>Created {formatDate(idea.createdAt)}</span>
-          </div>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Link to={`/clients/${clientId}`}>
+            <Button variant="outline" size="icon" className="rounded-full">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Input 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+            className="text-2xl font-bold border-0 focus-visible:ring-0 px-0 max-w-md"
+            placeholder="Enter post title..."
+          />
         </div>
-        <Badge className={`ml-auto ${getStatusColor(idea.status)}`}>
-          {idea.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2">
+            <History className="h-4 w-4" />
+            Version History
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700">
+            Generate with AI
+          </Button>
+        </div>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="drafts">Drafts History</TabsTrigger>
-          <TabsTrigger value="visuals">Visuals</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Draft</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="whitespace-pre-wrap bg-slate-50 p-4 rounded-md">
-                {idea.currentDraftText}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left section - 2/3 width */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Idea</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="initialIdea" className="block text-sm font-medium mb-1">Initial Idea</label>
+                <Textarea 
+                  id="initialIdea" 
+                  value={initialIdea} 
+                  onChange={(e) => setInitialIdea(e.target.value)}
+                  placeholder="Write your initial idea here..."
+                  rows={4}
+                  className="w-full"
+                />
               </div>
               
-              {idea.finalApprovedText && (
-                <div className="mt-4">
-                  <div className="font-medium text-sm mb-2">Final Approved Text:</div>
-                  <div className="whitespace-pre-wrap bg-green-50 p-4 rounded-md">
-                    {idea.finalApprovedText}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
+                  <Select value={objective} onValueChange={setObjective}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select objective" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {predefinedObjectives.map(obj => (
+                          <SelectItem key={obj} value={obj}>{obj}</SelectItem>
+                        ))}
+                        <SelectItem value="custom">Add Custom...</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-              
-              <div className="mt-4 text-sm text-gray-500">
-                Last updated: {formatDate(idea.updatedAt)}
+                
+                <div>
+                  <label htmlFor="template" className="block text-sm font-medium mb-1">Template</label>
+                  <Select value={template} onValueChange={setTemplate}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Not Selected" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {mockTemplates.map(templ => (
+                          <SelectItem key={templ.id} value={templ.id}>{templ.templateName}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </CardContent>
+              
+              <Button 
+                onClick={handleSendToAI}
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+              >
+                Send to AI
+              </Button>
+            </div>
           </Card>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Initial Idea</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <div className="font-medium text-sm mb-1">Original Prompt:</div>
-                  <div className="text-gray-700">{idea.initialIdeaPrompt}</div>
+          <div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="bg-slate-100">
+                <TabsTrigger value="generatedPost">Generated Post</TabsTrigger>
+                <TabsTrigger value="hooks">Hooks</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="generatedPost" className="space-y-6 pt-4">
+                <div className="bg-white rounded-lg border">
+                  <div className="flex justify-between items-center p-4 border-b">
+                    <h3 className="text-xl font-semibold">Generated Post</h3>
+                    <Button variant="outline" size="sm" onClick={handleCopyText}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="p-4">
+                    <Textarea
+                      value={generatedPost}
+                      onChange={(e) => setGeneratedPost(e.target.value)}
+                      className="min-h-[200px] w-full"
+                      placeholder="AI generated content will appear here..."
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <div className="font-medium text-sm mb-1">Generated Hooks:</div>
-                  <div className="space-y-2">
-                    {idea.generatedHooks.map((hook, index) => (
+                <div className="bg-white rounded-lg border">
+                  <div className="p-4 border-b">
+                    <h3 className="text-xl font-semibold">Editing Instructions</h3>
+                  </div>
+                  <div className="p-4">
+                    <Textarea
+                      value={editingInstructions}
+                      onChange={(e) => setEditingInstructions(e.target.value)}
+                      className="min-h-[100px] w-full"
+                      placeholder="Provide feedback or instructions for the AI to improve the generated content..."
+                    />
+                  </div>
+                  <div className="p-4 pt-0">
+                    <Button 
+                      onClick={handleRegenerateWithInstructions}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Regenerate with Instructions
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="hooks" className="pt-4">
+                <div className="bg-white rounded-lg border p-4">
+                  <h3 className="text-lg font-semibold mb-4">Generated Hooks</h3>
+                  <div className="space-y-4">
+                    {idea.generatedHooks?.map((hook, index) => (
                       <div 
-                        key={index} 
-                        className={`p-2 rounded-md ${hook.selected ? 'bg-indigo-50 border border-indigo-200' : 'bg-slate-50'}`}
+                        key={index}
+                        className={`p-3 rounded-md border ${
+                          hook.selected ? 'border-indigo-500 bg-indigo-50' : ''
+                        }`}
                       >
                         <div className="flex justify-between">
-                          <div>{hook.text}</div>
-                          {hook.selected && <Badge className="bg-indigo-600">Selected</Badge>}
+                          <p>{hook.text}</p>
+                          {hook.selected ? (
+                            <Badge className="bg-indigo-600">Selected</Badge>
+                          ) : (
+                            <Button variant="outline" size="sm">
+                              Select
+                            </Button>
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">Angle: {hook.angle}</div>
+                        <p className="text-sm text-gray-500 mt-1">Angle: {hook.angle}</p>
                       </div>
                     ))}
+                    
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 w-full">
+                      Regenerate Hooks
+                    </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Publication Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="font-medium text-sm mb-1">Objective:</div>
-                  <Badge variant="outline">{idea.objective}</Badge>
-                </div>
-                
-                {idea.scheduledPostAt && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <div>Scheduled for {formatDate(idea.scheduledPostAt)}</div>
-                  </div>
-                )}
-                
-                {idea.actuallyPostedAt && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <div>Posted on {formatDate(idea.actuallyPostedAt)}</div>
-                  </div>
-                )}
-                
-                {idea.livePostUrl && (
-                  <a 
-                    href={idea.livePostUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-indigo-600 hover:underline"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    View on LinkedIn
-                  </a>
-                )}
-                
-                {idea.templateUsedId && (
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    <div>Template: {idea.templateUsedId}</div>
-                  </div>
-                )}
-                
-                {idea.internalNotes && (
-                  <div>
-                    <div className="font-medium text-sm mb-1">Internal Notes:</div>
-                    <div className="bg-slate-50 p-3 rounded-md text-gray-700">
-                      {idea.internalNotes}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </TabsContent>
+            </Tabs>
           </div>
-          
-          {idea.aiProcessingInfo && (
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="font-medium text-sm mb-1">Model Used:</div>
-                    <div className="text-gray-700">{idea.aiProcessingInfo.modelUsed}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium text-sm mb-1">Processing Log:</div>
-                    <div className="bg-slate-50 p-2 rounded-md text-xs text-gray-600 font-mono whitespace-pre-wrap">
-                      {idea.aiProcessingInfo.log}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+        </div>
         
-        <TabsContent value="drafts" className="space-y-4">
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Version History</h2>
-            
-            <div className="space-y-6">
-              {idea.drafts.map((draft, index) => (
-                <div key={index} className="border-b pb-4 last:border-0 last:pb-0">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">v{draft.version}</Badge>
-                      <span className="text-gray-500 text-sm">{formatDate(draft.createdAt)}</span>
-                    </div>
-                    <Badge className={draft.generatedByAI ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}>
-                      {draft.generatedByAI ? 'AI Generated' : 'Manual Edit'}
-                    </Badge>
-                  </div>
-                  
-                  {draft.notes && (
-                    <div className="bg-amber-50 p-2 rounded-md text-amber-800 text-sm mb-2">
-                      Note: {draft.notes}
-                    </div>
-                  )}
-                  
-                  <div className="bg-slate-50 p-3 rounded-md text-gray-700 whitespace-pre-wrap">
-                    {draft.text}
-                  </div>
-                </div>
-              ))}
+        {/* Right section - 1/3 width */}
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Status</h2>
+            <div className="flex items-center gap-2">
+              <Badge className={`${getStatusColor(status)}`}>
+                {status}
+              </Badge>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Change status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {predefinedStatuses.map(s => (
+                    <DropdownMenuItem key={s} onClick={() => setStatus(s)}>
+                      {s}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuItem onClick={() => {
+                    const custom = prompt("Enter custom status:");
+                    if (custom) setStatus(custom);
+                  }}>
+                    Add custom status...
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="visuals" className="space-y-4">
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Visual Assets</h2>
+          </Card>
+          
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Post Schedule</h2>
             
-            {idea.visuals ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="aspect-video bg-slate-100 rounded-md overflow-hidden relative">
-                    <img 
-                      src={idea.visuals.assetUrl} 
-                      alt="Post visual" 
-                      className="w-full h-full object-cover"
-                    />
-                    <Badge 
-                      className={`absolute top-2 right-2 ${
-                        idea.visuals.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                        idea.visuals.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {idea.visuals.status}
-                    </Badge>
-                  </div>
-                  
-                  {idea.visuals.notes && (
-                    <div className="mt-2 text-sm text-gray-700">
-                      <span className="font-medium">Notes:</span> {idea.visuals.notes}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No visuals attached to this post yet.</p>
-                <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700">
-                  Add Visual
-                </Button>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="performance" className="space-y-4">
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
-            
-            {idea.performance ? (
+            <div className="space-y-4">
               <div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <Card className="bg-slate-50">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-2">
-                        <ThumbsUp className="h-5 w-5 text-indigo-600" />
-                        <div>
-                          <div className="text-2xl font-bold">{idea.performance.likes}</div>
-                          <div className="text-sm text-gray-500">Likes</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-slate-50">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="h-5 w-5 text-indigo-600" />
-                        <div>
-                          <div className="text-2xl font-bold">{idea.performance.comments}</div>
-                          <div className="text-sm text-gray-500">Comments</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-slate-50">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-2">
-                        <Share2 className="h-5 w-5 text-indigo-600" />
-                        <div>
-                          <div className="text-2xl font-bold">{idea.performance.shares}</div>
-                          <div className="text-sm text-gray-500">Shares</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-slate-50">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-5 w-5 text-indigo-600" />
-                        <div>
-                          <div className="text-2xl font-bold">{idea.performance.views}</div>
-                          <div className="text-sm text-gray-500">Views</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="text-sm text-gray-500">
-                  Last fetched: {formatDate(idea.performance.lastFetched)}
+                <label className="block text-sm font-medium mb-1">Posting Date & Time</label>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <Input
+                    type="date"
+                    value={postDate}
+                    onChange={(e) => setPostDate(e.target.value)}
+                  />
+                  <Input
+                    type="time"
+                    value={postTime}
+                    onChange={(e) => setPostTime(e.target.value)}
+                  />
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No performance data available for this post.</p>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Timezone</label>
+                <Select value={timezone} onValueChange={setTimezone}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="UTC-8">UTC-8 (PST)</SelectItem>
+                      <SelectItem value="UTC-5">UTC-5 (EST)</SelectItem>
+                      <SelectItem value="UTC+0">UTC+0 (GMT)</SelectItem>
+                      <SelectItem value="UTC+1">UTC+1 (CET)</SelectItem>
+                      <SelectItem value="UTC+2">UTC+2 (EET)</SelectItem>
+                      <SelectItem value="UTC+8">UTC+8 (CST)</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </Card>
+          
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Assets</h2>
+            
+            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <Upload className="h-10 w-10 mx-auto text-gray-400 mb-2" />
+              <p className="mb-2">Drag and drop files here or click to upload</p>
+              <p className="text-sm text-gray-500 mb-4">Images, PDFs, and other documents</p>
+              <Button variant="outline" size="sm">
+                Select Files
+              </Button>
+            </div>
+          </Card>
+          
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Options</h2>
+            
+            <div className="flex items-center space-x-2 mb-4">
+              <input
+                type="checkbox"
+                id="training-data"
+                checked={useAsTrainingData}
+                onChange={(e) => setUseAsTrainingData(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="training-data">Use as training data</label>
+            </div>
+            
+            <div>
+              <label htmlFor="internalNotes" className="block text-sm font-medium mb-1">Internal Notes</label>
+              <Textarea
+                id="internalNotes"
+                value={internalNotes}
+                onChange={(e) => setInternalNotes(e.target.value)}
+                placeholder="Add internal notes here (not visible to clients)..."
+                rows={3}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Posted':
+      return 'bg-green-100 text-green-800';
+    case 'Scheduled':
+      return 'bg-blue-100 text-blue-800';
+    case 'AwaitingReview':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'NeedsRevision':
+      return 'bg-red-100 text-red-800';
+    case 'Drafting':
+      return 'bg-purple-100 text-purple-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 };
 
 export default IdeaDetails;
