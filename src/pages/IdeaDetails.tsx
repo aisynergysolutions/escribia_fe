@@ -31,6 +31,9 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { mockIdeas, mockClients, mockTemplates } from '../types';
+import VersionHistory from '../components/VersionHistory';
+import CustomInputModal from '../components/CustomInputModal';
+import EditableTitle from '../components/EditableTitle';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string, ideaId: string }>();
@@ -47,11 +50,40 @@ const IdeaDetails = () => {
   const [postDate, setPostDate] = useState('');
   const [postTime, setPostTime] = useState('');
   const [timezone, setTimezone] = useState('UTC-5');
+  const [selectedHookIndex, setSelectedHookIndex] = useState(0);
   
   // Find the idea in our mock data
   const idea = mockIdeas.find(i => i.id === ideaId);
   const client = mockClients.find(c => c.id === clientId);
   
+  // Mock version history data
+  const [versionHistory] = useState([
+    {
+      id: 'v1',
+      version: 1,
+      text: 'Initial AI-generated content about the future of AI in marketing.',
+      createdAt: new Date('2023-12-15T10:30:00'),
+      generatedByAI: true,
+      notes: 'First generation from initial prompt'
+    },
+    {
+      id: 'v2',
+      version: 2,
+      text: 'Revised content with more focus on practical applications and case studies.',
+      createdAt: new Date('2023-12-15T11:15:00'),
+      generatedByAI: true,
+      notes: 'Regenerated with editing instructions to add more examples'
+    },
+    {
+      id: 'v3',
+      version: 3,
+      text: generatedPost,
+      createdAt: new Date('2023-12-15T14:20:00'),
+      generatedByAI: true,
+      notes: 'Latest version with improved structure'
+    }
+  ]);
+
   React.useEffect(() => {
     if (idea) {
       setTitle(idea.title);
@@ -67,6 +99,11 @@ const IdeaDetails = () => {
         const date = new Date(idea.scheduledPostAt.seconds * 1000);
         setPostDate(date.toISOString().split('T')[0]);
         setPostTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+      }
+      // Set selected hook based on the idea data
+      const selectedHook = idea.generatedHooks?.findIndex(hook => hook.selected);
+      if (selectedHook !== -1) {
+        setSelectedHookIndex(selectedHook);
       }
     }
   }, [idea]);
@@ -108,6 +145,27 @@ const IdeaDetails = () => {
     // Could add a toast notification here
   };
 
+  const handleRestoreVersion = (text: string) => {
+    setGeneratedPost(text);
+  };
+
+  const handleAddCustomObjective = (customObjective: string) => {
+    setObjective(customObjective);
+  };
+
+  const handleAddCustomStatus = (customStatus: string) => {
+    setStatus(customStatus);
+  };
+
+  const handleHookSelect = (index: number) => {
+    setSelectedHookIndex(index);
+  };
+
+  const handleRegenerateHooks = () => {
+    // Simulate regenerating hooks
+    console.log('Regenerating hooks...');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -117,18 +175,13 @@ const IdeaDetails = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <Input 
-            value={title} 
-            onChange={(e) => setTitle(e.target.value)} 
-            className="text-2xl font-bold border-0 focus-visible:ring-0 px-0 max-w-md"
-            placeholder="Enter post title..."
+          <EditableTitle 
+            title={title}
+            onSave={setTitle}
+            className="text-2xl font-bold"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2">
-            <History className="h-4 w-4" />
-            Version History
-          </Button>
           <Button className="bg-indigo-600 hover:bg-indigo-700">
             Generate with AI
           </Button>
@@ -166,7 +219,13 @@ const IdeaDetails = () => {
                         {predefinedObjectives.map(obj => (
                           <SelectItem key={obj} value={obj}>{obj}</SelectItem>
                         ))}
-                        <SelectItem value="custom">Add Custom...</SelectItem>
+                        <CustomInputModal
+                          title="Add Custom Objective"
+                          placeholder="Enter custom objective..."
+                          onSave={handleAddCustomObjective}
+                        >
+                          <SelectItem value="custom">Add Custom...</SelectItem>
+                        </CustomInputModal>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -209,10 +268,16 @@ const IdeaDetails = () => {
                 <div className="bg-white rounded-lg border">
                   <div className="flex justify-between items-center p-4 border-b">
                     <h3 className="text-xl font-semibold">Generated Post</h3>
-                    <Button variant="outline" size="sm" onClick={handleCopyText}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </Button>
+                    <div className="flex gap-2">
+                      <VersionHistory 
+                        versions={versionHistory}
+                        onRestore={handleRestoreVersion}
+                      />
+                      <Button variant="outline" size="sm" onClick={handleCopyText}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
+                      </Button>
+                    </div>
                   </div>
                   <div className="p-4">
                     <Textarea
@@ -254,16 +319,20 @@ const IdeaDetails = () => {
                     {idea.generatedHooks?.map((hook, index) => (
                       <div 
                         key={index}
-                        className={`p-3 rounded-md border ${
-                          hook.selected ? 'border-indigo-500 bg-indigo-50' : ''
+                        className={`p-3 rounded-md border cursor-pointer ${
+                          selectedHookIndex === index ? 'border-indigo-500 bg-indigo-50' : 'hover:bg-gray-50'
                         }`}
+                        onClick={() => handleHookSelect(index)}
                       >
                         <div className="flex justify-between">
                           <p>{hook.text}</p>
-                          {hook.selected ? (
+                          {selectedHookIndex === index ? (
                             <Badge className="bg-indigo-600">Selected</Badge>
                           ) : (
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              handleHookSelect(index);
+                            }}>
                               Select
                             </Button>
                           )}
@@ -272,7 +341,10 @@ const IdeaDetails = () => {
                       </div>
                     ))}
                     
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 w-full">
+                    <Button 
+                      onClick={handleRegenerateHooks}
+                      className="bg-indigo-600 hover:bg-indigo-700 w-full"
+                    >
                       Regenerate Hooks
                     </Button>
                   </div>
@@ -302,12 +374,15 @@ const IdeaDetails = () => {
                       {s}
                     </DropdownMenuItem>
                   ))}
-                  <DropdownMenuItem onClick={() => {
-                    const custom = prompt("Enter custom status:");
-                    if (custom) setStatus(custom);
-                  }}>
-                    Add custom status...
-                  </DropdownMenuItem>
+                  <CustomInputModal
+                    title="Add Custom Status"
+                    placeholder="Enter custom status..."
+                    onSave={handleAddCustomStatus}
+                  >
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      Add custom status...
+                    </DropdownMenuItem>
+                  </CustomInputModal>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
