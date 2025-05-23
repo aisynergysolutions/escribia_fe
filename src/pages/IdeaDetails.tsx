@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -51,6 +51,7 @@ const IdeaDetails = () => {
   const [postTime, setPostTime] = useState('');
   const [timezone, setTimezone] = useState('UTC-5');
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   
   // Find the idea in our mock data
   const idea = mockIdeas.find(i => i.id === ideaId);
@@ -61,7 +62,7 @@ const IdeaDetails = () => {
     {
       id: 'v1',
       version: 1,
-      text: 'Initial AI-generated content about the future of AI in marketing.',
+      text: 'Initial AI-generated content about the future of AI in marketing. This content explores how artificial intelligence is transforming the marketing landscape and what businesses need to know.',
       createdAt: new Date('2023-12-15T10:30:00'),
       generatedByAI: true,
       notes: 'First generation from initial prompt'
@@ -69,7 +70,7 @@ const IdeaDetails = () => {
     {
       id: 'v2',
       version: 2,
-      text: 'Revised content with more focus on practical applications and case studies.',
+      text: 'Revised content with more focus on practical applications and case studies. This version includes real-world examples of companies successfully implementing AI in their marketing strategies.',
       createdAt: new Date('2023-12-15T11:15:00'),
       generatedByAI: true,
       notes: 'Regenerated with editing instructions to add more examples'
@@ -77,7 +78,7 @@ const IdeaDetails = () => {
     {
       id: 'v3',
       version: 3,
-      text: generatedPost,
+      text: 'Latest version with improved structure and actionable insights. This comprehensive guide provides step-by-step recommendations for businesses looking to leverage AI in their marketing efforts.',
       createdAt: new Date('2023-12-15T14:20:00'),
       generatedByAI: true,
       notes: 'Latest version with improved structure'
@@ -166,6 +167,29 @@ const IdeaDetails = () => {
     console.log('Regenerating hooks...');
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
+    }
+  };
+
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files) {
+      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -210,25 +234,29 @@ const IdeaDetails = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
-                  <Select value={objective} onValueChange={setObjective}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select objective" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {predefinedObjectives.map(obj => (
-                          <SelectItem key={obj} value={obj}>{obj}</SelectItem>
-                        ))}
-                        <CustomInputModal
-                          title="Add Custom Objective"
-                          placeholder="Enter custom objective..."
-                          onSave={handleAddCustomObjective}
-                        >
-                          <SelectItem value="custom">Add Custom...</SelectItem>
-                        </CustomInputModal>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select value={objective} onValueChange={setObjective}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select objective" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {predefinedObjectives.map(obj => (
+                            <SelectItem key={obj} value={obj}>{obj}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <CustomInputModal
+                      title="Add Custom Objective"
+                      placeholder="Enter custom objective..."
+                      onSave={handleAddCustomObjective}
+                    >
+                      <Button variant="outline" size="sm">
+                        Add Custom
+                      </Button>
+                    </CustomInputModal>
+                  </div>
                 </div>
                 
                 <div>
@@ -239,6 +267,7 @@ const IdeaDetails = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
+                        <SelectItem value="">None</SelectItem>
                         {mockTemplates.map(templ => (
                           <SelectItem key={templ.id} value={templ.id}>{templ.templateName}</SelectItem>
                         ))}
@@ -314,7 +343,15 @@ const IdeaDetails = () => {
               
               <TabsContent value="hooks" className="pt-4">
                 <div className="bg-white rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-4">Generated Hooks</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Generated Hooks</h3>
+                    <Button 
+                      onClick={handleRegenerateHooks}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Regenerate Hooks
+                    </Button>
+                  </div>
                   <div className="space-y-4">
                     {idea.generatedHooks?.map((hook, index) => (
                       <div 
@@ -340,13 +377,6 @@ const IdeaDetails = () => {
                         <p className="text-sm text-gray-500 mt-1">Angle: {hook.angle}</p>
                       </div>
                     ))}
-                    
-                    <Button 
-                      onClick={handleRegenerateHooks}
-                      className="bg-indigo-600 hover:bg-indigo-700 w-full"
-                    >
-                      Regenerate Hooks
-                    </Button>
                   </div>
                 </div>
               </TabsContent>
@@ -432,14 +462,43 @@ const IdeaDetails = () => {
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Assets</h2>
             
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+            <div 
+              className="border-2 border-dashed rounded-lg p-6 text-center"
+              onDrop={handleFileDrop}
+              onDragOver={handleDragOver}
+            >
               <Upload className="h-10 w-10 mx-auto text-gray-400 mb-2" />
               <p className="mb-2">Drag and drop files here or click to upload</p>
               <p className="text-sm text-gray-500 mb-4">Images, PDFs, and other documents</p>
-              <Button variant="outline" size="sm">
+              <input
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+              />
+              <Button variant="outline" size="sm" onClick={() => document.getElementById('file-upload')?.click()}>
                 Select Files
               </Button>
             </div>
+            
+            {uploadedFiles.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <h4 className="font-medium">Uploaded Files:</h4>
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-sm truncate">{file.name}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
           
           <Card className="p-6">
