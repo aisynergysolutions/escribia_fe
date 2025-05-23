@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -41,7 +41,7 @@ const IdeaDetails = () => {
   const [title, setTitle] = useState('');
   const [initialIdea, setInitialIdea] = useState('');
   const [objective, setObjective] = useState('');
-  const [template, setTemplate] = useState('');
+  const [template, setTemplate] = useState('none');
   const [generatedPost, setGeneratedPost] = useState('');
   const [editingInstructions, setEditingInstructions] = useState('');
   const [status, setStatus] = useState('Drafting');
@@ -95,6 +95,8 @@ const IdeaDetails = () => {
       setInternalNotes(idea.internalNotes || '');
       if (idea.templateUsedId) {
         setTemplate(idea.templateUsedId);
+      } else {
+        setTemplate('none');
       }
       if (idea.scheduledPostAt) {
         const date = new Date(idea.scheduledPostAt.seconds * 1000);
@@ -190,6 +192,10 @@ const IdeaDetails = () => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleTemplateChange = (value: string) => {
+    setTemplate(value);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -247,27 +253,36 @@ const IdeaDetails = () => {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <CustomInputModal
-                      title="Add Custom Objective"
-                      placeholder="Enter custom objective..."
-                      onSave={handleAddCustomObjective}
-                    >
-                      <Button variant="outline" size="sm">
-                        Add Custom
-                      </Button>
-                    </CustomInputModal>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          Add Custom
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <CustomInputModal
+                          title="Add Custom Objective"
+                          placeholder="Enter custom objective..."
+                          onSave={handleAddCustomObjective}
+                        >
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            Add custom objective...
+                          </DropdownMenuItem>
+                        </CustomInputModal>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
                 
                 <div>
                   <label htmlFor="template" className="block text-sm font-medium mb-1">Template</label>
-                  <Select value={template} onValueChange={setTemplate}>
+                  <Select value={template} onValueChange={handleTemplateChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Not Selected" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {mockTemplates.map(templ => (
                           <SelectItem key={templ.id} value={templ.id}>{templ.templateName}</SelectItem>
                         ))}
@@ -544,6 +559,8 @@ const getStatusColor = (status: string) => {
       return 'bg-red-100 text-red-800';
     case 'Drafting':
       return 'bg-purple-100 text-purple-800';
+    case 'NeedsVisual':
+      return 'bg-orange-100 text-orange-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
