@@ -4,6 +4,7 @@ import { Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Idea } from '../../types';
+import { useNavigate } from 'react-router-dom';
 
 interface IdeaCardProps {
   idea: Idea;
@@ -33,10 +34,20 @@ const getStatusColor = (status: string) => {
 };
 
 const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/clients/${idea.clientId}/ideas/${idea.id}`);
+    }
+  };
+
   return (
     <Card 
       className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
