@@ -1,3 +1,4 @@
+
 export interface Idea {
   id: string;
   clientId: string;
@@ -46,7 +47,89 @@ export interface Client {
   industry: string;
   contactName: string;
   contactEmail: string;
+  status: 'active' | 'onboarding' | 'paused' | 'archived';
+  brandBriefSummary?: string;
+  writingStyle?: string;
   createdAt: { seconds: number; nanoseconds: number };
+  updatedAt: { seconds: number; nanoseconds: number };
+  brandProfile: {
+    language: string;
+    locationFocus: string;
+    businessSize: string;
+    sellsWhat: string;
+    sellsToWhom: string;
+    brandPersonality: string[];
+    brandTone: string;
+    emotionsToEvoke: string[];
+    emojiUsage: string;
+    desiredPostLength: string;
+    coreValues: string;
+    brandStory: string;
+    uniqueSellingProposition: string;
+    hotTakesOrOpinions: string;
+    missionStatement: string;
+    inspirationSources: string;
+    recentCompanyEvents: string;
+    linkedinProfileUrl: string;
+    trainingDataUrls: string[];
+    customInstructionsAI: string;
+  };
+  aiTraining: {
+    status: 'pending_data' | 'training_queued' | 'completed' | 'failed';
+    lastTrainedAt: { seconds: number; nanoseconds: number };
+    modelVersion?: string;
+  };
+}
+
+export interface Template {
+  id: string;
+  templateName: string;
+  templateContent: string;
+  objective: string;
+  funnelStage: 'TOFU' | 'MOFU' | 'BOFU';
+  contentType: string;
+  scope: string;
+  agencyId: string;
+  createdAt: { seconds: number; nanoseconds: number };
+  usageCount: number;
+  examplePlaceholders: Record<string, string>;
+  tags: string[];
+}
+
+export interface Agency {
+  id: string;
+  agencyName: string;
+  primaryContactEmail: string;
+  subscription: {
+    status: string;
+    planId: string;
+    stripeCustomerId: string;
+    currentPeriodEnd: { seconds: number; nanoseconds: number };
+    createdAtSubscription: { seconds: number; nanoseconds: number };
+    paymentHistory: {
+      paymentDate: { seconds: number; nanoseconds: number };
+      amount: number;
+      transactionId: string;
+    }[];
+  };
+  createdAtAgency: { seconds: number; nanoseconds: number };
+  updatedAt: { seconds: number; nanoseconds: number };
+  settings: {
+    defaultLanguage: string;
+    timezone: string;
+  };
+  apiUsage: {
+    postsGeneratedThisMonth: number;
+    clientsManagedCount: number;
+    lastCalculationDate: { seconds: number; nanoseconds: number };
+  };
+  referral: {
+    code: string;
+    balance: number;
+    source: string;
+  };
+  successfulExecutions: number;
+  adminNotes?: string;
 }
 
 export const mockIdeas: Idea[] = [
@@ -143,7 +226,38 @@ export const mockClients: Client[] = [
     industry: 'Technology',
     contactName: 'John Doe',
     contactEmail: 'john.doe@techsolutions.com',
-    createdAt: { seconds: 1669852800, nanoseconds: 0 }
+    status: 'active',
+    brandBriefSummary: 'Leading technology solutions provider specializing in enterprise software.',
+    writingStyle: 'Professional and informative',
+    createdAt: { seconds: 1669852800, nanoseconds: 0 },
+    updatedAt: { seconds: 1672531200, nanoseconds: 0 },
+    brandProfile: {
+      language: 'English',
+      locationFocus: 'Global',
+      businessSize: 'Enterprise',
+      sellsWhat: 'Enterprise software solutions',
+      sellsToWhom: 'Large businesses and corporations',
+      brandPersonality: ['Professional', 'Innovative', 'Reliable'],
+      brandTone: 'Authoritative yet approachable',
+      emotionsToEvoke: ['Trust', 'Confidence', 'Innovation'],
+      emojiUsage: 'Minimal',
+      desiredPostLength: 'Medium (150-300 words)',
+      coreValues: 'Innovation, reliability, customer success',
+      brandStory: 'Founded in 2010, Tech Solutions Inc. has been at the forefront of enterprise technology.',
+      uniqueSellingProposition: 'The only platform that combines AI with traditional enterprise tools',
+      hotTakesOrOpinions: 'AI will replace 80% of current software interfaces within 5 years',
+      missionStatement: 'To democratize enterprise technology for businesses of all sizes',
+      inspirationSources: 'Industry leaders, customer feedback, emerging technologies',
+      recentCompanyEvents: 'Recently launched AI-powered analytics platform',
+      linkedinProfileUrl: 'https://linkedin.com/company/tech-solutions-inc',
+      trainingDataUrls: ['https://example.com/blog1', 'https://example.com/blog2'],
+      customInstructionsAI: 'Always mention ROI and business impact'
+    },
+    aiTraining: {
+      status: 'completed',
+      lastTrainedAt: { seconds: 1672444800, nanoseconds: 0 },
+      modelVersion: 'v2.1'
+    }
   },
   {
     id: 'client2',
@@ -151,11 +265,41 @@ export const mockClients: Client[] = [
     industry: 'Marketing',
     contactName: 'Jane Smith',
     contactEmail: 'jane.smith@globalmarketing.com',
-    createdAt: { seconds: 1669939200, nanoseconds: 0 }
+    status: 'onboarding',
+    brandBriefSummary: 'Full-service marketing agency helping brands grow their digital presence.',
+    writingStyle: 'Creative and engaging',
+    createdAt: { seconds: 1669939200, nanoseconds: 0 },
+    updatedAt: { seconds: 1672444800, nanoseconds: 0 },
+    brandProfile: {
+      language: 'English',
+      locationFocus: 'North America',
+      businessSize: 'Mid-market',
+      sellsWhat: 'Marketing services and consulting',
+      sellsToWhom: 'SMBs and mid-market companies',
+      brandPersonality: ['Creative', 'Bold', 'Results-driven'],
+      brandTone: 'Friendly and energetic',
+      emotionsToEvoke: ['Excitement', 'Inspiration', 'Confidence'],
+      emojiUsage: 'Strategic',
+      desiredPostLength: 'Short to medium (100-250 words)',
+      coreValues: 'Creativity, results, client partnership',
+      brandStory: 'Started as a boutique agency, now serving hundreds of clients worldwide.',
+      uniqueSellingProposition: 'Data-driven creativity that delivers measurable results',
+      hotTakesOrOpinions: 'Traditional advertising is dead, long live content marketing',
+      missionStatement: 'To help every business tell their story in a way that resonates',
+      inspirationSources: 'Pop culture, social trends, client successes',
+      recentCompanyEvents: 'Won Agency of the Year award 2023',
+      linkedinProfileUrl: 'https://linkedin.com/company/global-marketing-corp',
+      trainingDataUrls: ['https://example.com/case-studies'],
+      customInstructionsAI: 'Include relevant hashtags and call-to-actions'
+    },
+    aiTraining: {
+      status: 'training_queued',
+      lastTrainedAt: { seconds: 0, nanoseconds: 0 }
+    }
   },
 ];
 
-export const mockTemplates = [
+export const mockTemplates: Template[] = [
   {
     id: 'template1',
     templateName: 'Thought Leadership Post',
@@ -215,3 +359,46 @@ export const mockTemplates = [
     tags: ['event', 'webinar', 'networking']
   }
 ];
+
+export const mockAgency: Agency = {
+  id: 'agency_1',
+  agencyName: 'Acme Media Agency',
+  primaryContactEmail: 'hello@acme.com',
+  subscription: {
+    status: 'active',
+    planId: 'pro_plan',
+    stripeCustomerId: 'cus_example123',
+    currentPeriodEnd: { seconds: 1703980800, nanoseconds: 0 }, // Dec 31, 2023
+    createdAtSubscription: { seconds: 1672531200, nanoseconds: 0 }, // Jan 1, 2023
+    paymentHistory: [
+      {
+        paymentDate: { seconds: 1672531200, nanoseconds: 0 },
+        amount: 99.00,
+        transactionId: 'txn_123456789'
+      },
+      {
+        paymentDate: { seconds: 1675209600, nanoseconds: 0 },
+        amount: 99.00,
+        transactionId: 'txn_987654321'
+      }
+    ]
+  },
+  createdAtAgency: { seconds: 1672531200, nanoseconds: 0 },
+  updatedAt: { seconds: 1672617600, nanoseconds: 0 },
+  settings: {
+    defaultLanguage: 'en',
+    timezone: 'Europe/Madrid'
+  },
+  apiUsage: {
+    postsGeneratedThisMonth: 42,
+    clientsManagedCount: 8,
+    lastCalculationDate: { seconds: 1672531200, nanoseconds: 0 }
+  },
+  referral: {
+    code: 'REF-ACME42',
+    balance: 125,
+    source: 'partner'
+  },
+  successfulExecutions: 487,
+  adminNotes: 'Premium customer, excellent feedback'
+};
