@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -26,19 +25,8 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: '#2570EB',
-					50: '#EDF4FF',
-					100: '#DBE9FF',
-					200: '#BDD6FF',
-					300: '#9FC3FF',
-					400: '#5B99FF',
-					500: '#3B86FF',
-					600: '#2570EB',
-					700: '#1B5BCF',
-					800: '#1A4BA6',
-					900: '#1A3F7A',
-					950: '#0C1116',
-					foreground: '#FFFFFF'
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -64,55 +52,6 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// Design system colors
-				neutral: {
-					50: '#F8FAFB',
-					100: '#F3F5F7',
-					200: '#E8EBED',
-					300: '#D1D6DB',
-					400: '#9CA3AF',
-					500: '#6B7280',
-					600: '#4B5563',
-					700: '#3F4B57',
-					800: '#374151',
-					900: '#0C1116'
-				},
-				mint: {
-					50: '#F0FDFA',
-					100: '#CCFBF1',
-					200: '#99F6E4',
-					300: '#5EEAD4',
-					400: '#2DD4BF',
-					500: '#14B8A6',
-					600: '#20D8AC',
-					700: '#0F766E',
-					800: '#115E59',
-					900: '#134E4A'
-				},
-				orange: {
-					50: '#FFF7ED',
-					100: '#FFEDD5',
-					200: '#FED7AA',
-					300: '#FDBA74',
-					400: '#FB923C',
-					500: '#F5B95E',
-					600: '#EA580C',
-					700: '#C2410C',
-					800: '#9A3412',
-					900: '#7C2D12'
-				},
-				red: {
-					50: '#FEF2F2',
-					100: '#FEE2E2',
-					200: '#FECACA',
-					300: '#FCA5A5',
-					400: '#F87171',
-					500: '#F45B55',
-					600: '#DC2626',
-					700: '#B91C1C',
-					800: '#991B1B',
-					900: '#7F1D1D'
-				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -128,19 +67,6 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
-			},
-			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
-			},
-			fontSize: {
-				'xs': ['12px', '16px'],
-				'sm': ['14px', '20px'],
-				'base': ['16px', '24px'],
-				'lg': ['18px', '28px'],
-				'xl': ['20px', '28px'],
-				'2xl': ['24px', '32px'],
-				'3xl': ['30px', '36px'],
-				'4xl': ['36px', '40px'],
 			},
 			keyframes: {
 				'accordion-down': {
