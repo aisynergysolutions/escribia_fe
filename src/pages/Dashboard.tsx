@@ -1,53 +1,64 @@
 
 import React from 'react';
-import { LineChart, TrendingUp, Users } from 'lucide-react';
+import { Plus, TrendingUp, Users, BarChart3, Calendar as CalendarIcon } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
-import IdeaCard from '../components/ui/IdeaCard';
 import PostCalendar from '../components/ui/PostCalendar';
-import { mockAgency, mockIdeas } from '../types';
+import RecentActivity from '../components/ui/RecentActivity';
+import { mockAgency, mockIdeas, mockClients } from '../types';
 
 const Dashboard = () => {
-  // Get recent ideas
-  const recentIdeas = [...mockIdeas].sort((a, b) => 
-    b.updatedAt.seconds - a.updatedAt.seconds
-  ).slice(0, 5);
+  // Calculate KPI data
+  const totalPosts = mockIdeas.length;
+  const activeClients = mockClients.filter(client => client.status === 'Active').length;
+  const scheduledPosts = mockIdeas.filter(idea => idea.status === 'Scheduled').length;
+  const engagementRate = 85.3; // Mock data
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Posts Generated This Month" 
-          value={mockAgency.apiUsage.postsGeneratedThisMonth}
-          icon={<LineChart className="h-5 w-5" />}
-        />
-        <StatCard 
-          title="Clients Managed" 
-          value={mockAgency.apiUsage.clientsManagedCount}
-          icon={<Users className="h-5 w-5" />}
-        />
-        <StatCard 
-          title="Successful Executions" 
-          value={mockAgency.successfulExecutions}
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
-        <StatCard 
-          title="Current Plan" 
-          value={mockAgency.subscription.planId}
-          description={`Expires: ${new Date(mockAgency.subscription.currentPeriodEnd.seconds * 1000).toLocaleDateString()}`}
-        />
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        {/* KPI Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard 
+            title="Total Posts" 
+            value={totalPosts}
+            change="+12%"
+            trend="up"
+            icon={<BarChart3 className="h-5 w-5" />}
+          />
+          <StatCard 
+            title="Active Clients" 
+            value={activeClients}
+            change="+3"
+            trend="up"
+            icon={<Users className="h-5 w-5" />}
+          />
+          <StatCard 
+            title="Engagement Rate" 
+            value={`${engagementRate}%`}
+            change="+5.2%"
+            trend="up"
+            icon={<TrendingUp className="h-5 w-5" />}
+          />
+          <StatCard 
+            title="Scheduled Posts" 
+            value={scheduledPosts}
+            change="+8"
+            trend="up"
+            icon={<CalendarIcon className="h-5 w-5" />}
+          />
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PostCalendar />
-        
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">Recent Activity</h2>
-          <div className="space-y-4">
-            {recentIdeas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
-            ))}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Content Calendar - 8 columns */}
+          <div className="lg:col-span-8">
+            <PostCalendar />
+          </div>
+          
+          {/* Recent Activity Sidebar - 4 columns */}
+          <div className="lg:col-span-4">
+            <RecentActivity />
           </div>
         </div>
       </div>
