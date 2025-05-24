@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from './button';
-import { Card } from './card';
 import { mockIdeas } from '../../types';
 
 const PostCalendar = () => {
@@ -35,31 +34,40 @@ const PostCalendar = () => {
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Content Calendar</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold text-slate-900">
+          {format(currentMonth, 'MMMM yyyy')}
+        </h3>
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToPreviousMonth}
+            className="h-8 w-8 p-0"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="font-medium min-w-[120px] text-center">
-            {format(currentMonth, 'MMMM yyyy')}
-          </span>
-          <Button variant="outline" size="sm" onClick={goToNextMonth}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToNextMonth}
+            className="h-8 w-8 p-0"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
-            {day}
+      <div className="grid grid-cols-7 gap-px bg-slate-200 rounded-lg overflow-hidden">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+          <div key={day} className="bg-slate-50 p-3 text-center">
+            <span className="text-xs font-medium text-slate-600">{day}</span>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-px bg-slate-200 mt-px">
         {monthDays.map(day => {
           const postsForDay = getPostsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentMonth);
@@ -68,13 +76,13 @@ const PostCalendar = () => {
           return (
             <div
               key={day.toISOString()}
-              className={`min-h-[80px] p-1 border rounded-sm ${
-                isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-              } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+              className={`min-h-[100px] p-2 bg-white ${
+                !isCurrentMonth ? 'bg-slate-50' : ''
+              } ${isToday ? 'bg-blue-50' : ''}`}
             >
-              <div className={`text-sm mb-1 ${
-                isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-              } ${isToday ? 'font-bold' : ''}`}>
+              <div className={`text-sm mb-2 ${
+                isCurrentMonth ? 'text-slate-900' : 'text-slate-400'
+              } ${isToday ? 'font-bold text-blue-600' : ''}`}>
                 {format(day, 'd')}
               </div>
               
@@ -82,16 +90,16 @@ const PostCalendar = () => {
                 {postsForDay.map(post => (
                   <div
                     key={post.id}
-                    className="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate cursor-pointer hover:bg-blue-200"
+                    className="bg-blue-100 text-blue-800 text-xs p-2 rounded-md cursor-pointer hover:bg-blue-200 transition-colors"
                     title={`${post.title} - ${format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}`}
                   >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 mb-1">
                       <Clock className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">
+                      <span className="font-medium">
                         {format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}
                       </span>
                     </div>
-                    <div className="truncate text-xs mt-0.5">
+                    <div className="truncate text-xs font-medium">
                       {post.title}
                     </div>
                   </div>
@@ -103,11 +111,11 @@ const PostCalendar = () => {
       </div>
 
       {scheduledPosts.length === 0 && (
-        <div className="text-center text-gray-500 mt-4 py-8">
+        <div className="text-center text-slate-500 mt-8 py-8">
           No scheduled posts found
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 
