@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +36,10 @@ import EditableTitle from '../components/EditableTitle';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string, ideaId: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isNewIdea = searchParams.get('new') === 'true';
+  
   const [activeTab, setActiveTab] = React.useState('generatedPost');
   const [title, setTitle] = useState('');
   const [initialIdea, setInitialIdea] = useState('');
@@ -53,8 +56,11 @@ const IdeaDetails = () => {
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   
-  // Find the idea in our mock data
-  const idea = mockIdeas.find(i => i.id === ideaId);
+  const [isEditingTitle, setIsEditingTitle] = useState(isNewIdea);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Find the idea in our mock data (only if not creating new)
+  const idea = !isNewIdea ? mockIdeas.find(i => i.id === ideaId) : null;
   const client = mockClients.find(c => c.id === clientId);
   
   // Mock version history data
@@ -85,8 +91,8 @@ const IdeaDetails = () => {
     }
   ]);
 
-  React.useEffect(() => {
-    if (idea) {
+  useEffect(() => {
+    if (idea && !isNewIdea) {
       setTitle(idea.title);
       setInitialIdea(idea.initialIdeaPrompt);
       setObjective(idea.objective);
@@ -108,8 +114,17 @@ const IdeaDetails = () => {
       if (selectedHook !== -1) {
         setSelectedHookIndex(selectedHook);
       }
+    } else if (isNewIdea) {
+      // Set defaults for new idea
+      setTitle('');
+      setInitialIdea('');
+      setObjective('');
+      setGeneratedPost('');
+      setStatus('Idea');
+      setInternalNotes('');
+      setTemplate('none');
     }
-  }, [idea]);
+  }, [idea, isNewIdea]);
 
   const form = useForm({
     defaultValues: {
@@ -117,12 +132,40 @@ const IdeaDetails = () => {
     }
   });
   
-  if (!idea || !client) {
+  const handleSaveNewIdea = () => {
+    if (!title.trim()) {
+      alert('Please enter a title for the idea');
+      return;
+    }
+    
+    // Here you would typically save to your backend
+    console.log('Saving new idea:', {
+      title,
+      clientId,
+      initialIdea,
+      objective,
+      status
+    });
+    
+    // Navigate to the actual idea page (remove the new flag)
+    navigate(`/clients/${clientId}/ideas/${ideaId}`, { replace: true });
+    setIsEditingTitle(false);
+    setHasUnsavedChanges(false);
+  };
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    if (isNewIdea) {
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  if (!client) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold">Idea not found</h2>
-        <Link to={`/clients/${clientId}`} className="text-indigo-600 hover:underline mt-4 inline-block">
-          Return to client page
+        <h2 className="text-2xl font-semibold">Client not found</h2>
+        <Link to="/clients" className="text-indigo-600 hover:underline mt-4 inline-block">
+          Return to clients list
         </Link>
       </div>
     );
@@ -205,11 +248,33 @@ const IdeaDetails = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <EditableTitle 
-            title={title}
-            onSave={setTitle}
-            className="text-2xl font-bold"
-          />
+          {isNewIdea ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="Enter idea title..."
+                className="text-2xl font-bold bg-transparent border-b-2 border-gray-300 focus:border-indigo-500 outline-none"
+                autoFocus
+              />
+              {hasUnsavedChanges && (
+                <Button 
+                  onClick={handleSaveNewIdea}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                  size="sm"
+                >
+                  Save
+                </Button>
+              )}
+            </div>
+          ) : (
+            <EditableTitle 
+              title={title}
+              onSave={setTitle}
+              className="text-2xl font-bold"
+            />
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button className="bg-indigo-600 hover:bg-indigo-700">
@@ -217,6 +282,15 @@ const IdeaDetails = () => {
           </Button>
         </div>
       </div>
+      
+      {/* Show a notice for new ideas */}
+      {isNewIdea && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-blue-800">
+            <strong>New Idea:</strong> Enter a title above and start building your idea. Don't forget to save!
+          </p>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left section - 2/3 width */}
@@ -368,7 +442,7 @@ const IdeaDetails = () => {
                     </Button>
                   </div>
                   <div className="space-y-4">
-                    {idea.generatedHooks?.map((hook, index) => (
+                    {idea?.generatedHooks?.map((hook, index) => (
                       <div 
                         key={index}
                         className={`p-3 rounded-md border cursor-pointer ${

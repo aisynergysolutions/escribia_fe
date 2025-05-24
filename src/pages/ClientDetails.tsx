@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { mockClients, mockIdeas } from '../types';
 
 const ClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   
   // Find client data
@@ -50,6 +50,12 @@ const ClientDetails = () => {
   const formatDate = (seconds: number) => {
     if (!seconds) return 'N/A';
     return new Date(seconds * 1000).toLocaleDateString();
+  };
+
+  const handleNewIdea = () => {
+    // Generate a temporary ID for the new idea
+    const tempIdeaId = `temp-${Date.now()}`;
+    navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true`);
   };
 
   return (
@@ -134,7 +140,10 @@ const ClientDetails = () => {
         <TabsContent value="ideas" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">All Ideas</h2>
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-700"
+              onClick={handleNewIdea}
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               New Idea
             </Button>
