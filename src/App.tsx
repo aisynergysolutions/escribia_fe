@@ -10,6 +10,7 @@ import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
 import IdeaDetails from "./pages/IdeaDetails";
 import Templates from "./pages/Templates";
+import TemplateDetails from "./pages/TemplateDetails";
 import Analytics from "./pages/Analytics";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="clients/:clientId" element={<ClientDetails />} />
             <Route path="clients/:clientId/ideas/:ideaId" element={<IdeaDetails />} />
             <Route path="templates" element={<Templates />} />
+            <Route path="templates/:templateId" element={<TemplateDetails />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="profile" element={<Profile />} />
           </Route>

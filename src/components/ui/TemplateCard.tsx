@@ -1,12 +1,12 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Template } from '../../types';
 
 interface TemplateCardProps {
   template: Template;
-  onClick?: () => void;
 }
 
 const getFunnelStageColor = (stage: string) => {
@@ -22,11 +22,17 @@ const getFunnelStageColor = (stage: string) => {
   }
 };
 
-const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick }) => {
+const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/templates/${template.id}`);
+  };
+
   return (
     <Card 
       className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
