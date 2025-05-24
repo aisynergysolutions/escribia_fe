@@ -120,7 +120,7 @@ const Dashboard = () => {
             <div className="space-y-4">
               {recentClients.map((client, index) => {
                 const colors = ['bg-blue-500', 'bg-cyan-500', 'bg-blue-600'];
-                const initials = client.companyName.split(' ').map(word => word[0]).join('').slice(0, 2);
+                const initials = client.clientName.split(' ').map(word => word[0]).join('').slice(0, 2);
                 
                 return (
                   <div key={client.id} className="flex items-center justify-between">
@@ -129,7 +129,7 @@ const Dashboard = () => {
                         {initials}
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">{client.companyName}</div>
+                        <div className="font-medium text-gray-900">{client.clientName}</div>
                         <div className="text-sm text-gray-500">{client.status}</div>
                       </div>
                     </div>
