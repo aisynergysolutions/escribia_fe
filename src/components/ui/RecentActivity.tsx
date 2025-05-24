@@ -57,7 +57,6 @@ const RecentActivity = () => {
           return (
             <div key={idea.id} className="flex items-start gap-3 p-3 hover:bg-neutral-50 rounded-lg transition-colors">
               <Avatar className="h-8 w-8 flex-shrink-0">
-                <AvatarImage src={client?.avatar} />
                 <AvatarFallback className="text-xs bg-primary-100 text-primary-700">
                   {client?.clientName.charAt(0)}
                 </AvatarFallback>
