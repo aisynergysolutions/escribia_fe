@@ -3,12 +3,28 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LogOut } from 'lucide-react';
 import { mockAgency } from '../types';
 
 const Profile = () => {
+  const handleLogout = () => {
+    console.log('Logging out...');
+    // Add logout functionality here
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Agency Profile</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Account Settings</h1>
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="text-red-600 border-red-200 hover:bg-red-50"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </div>
       
       <Tabs defaultValue="agency" className="space-y-4">
         <TabsList>
