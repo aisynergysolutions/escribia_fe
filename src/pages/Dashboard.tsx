@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { LineChart, TrendingUp } from 'lucide-react';
+import { LineChart, TrendingUp, Users } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
 import IdeaCard from '../components/ui/IdeaCard';
+import PostCalendar from '../components/ui/PostCalendar';
 import { mockAgency, mockIdeas } from '../types';
 
 const Dashboard = () => {
@@ -37,13 +38,17 @@ const Dashboard = () => {
           description={`Expires: ${new Date(mockAgency.subscription.currentPeriodEnd.seconds * 1000).toLocaleDateString()}`}
         />
       </div>
-      
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Recent Activity</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recentIdeas.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} />
-          ))}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PostCalendar />
+        
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Recent Activity</h2>
+          <div className="space-y-4">
+            {recentIdeas.map((idea) => (
+              <IdeaCard key={idea.id} idea={idea} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -51,6 +56,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-// Fix missing import
-import { Users } from 'lucide-react';
