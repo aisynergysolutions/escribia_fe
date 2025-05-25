@@ -8,9 +8,10 @@ const MainLayout = () => {
   const location = useLocation();
   
   // Check if we're on a client-specific page
+  // This includes: /clients/[clientId], /clients/[clientId]/*, and /clients/[clientId]/ideas/[ideaId]
   const isClientPage = location.pathname.startsWith('/clients/') && 
                        location.pathname !== '/clients' &&
-                       !location.pathname.match(/^\/clients\/[^\/]+\/ideas\/[^\/]+$/); // Exclude idea details pages
+                       location.pathname.match(/^\/clients\/[^\/]+/); // Any path that starts with /clients/[clientId]
 
   return (
     <div className="flex h-screen">
