@@ -29,6 +29,11 @@ const App: React.FC = () => (
             <Route index element={<Dashboard />} />
             <Route path="clients" element={<Clients />} />
             <Route path="clients/:clientId" element={<ClientDetails />} />
+            <Route path="clients/:clientId/posts" element={<ClientDetails />} />
+            <Route path="clients/:clientId/calendar" element={<ClientDetails />} />
+            <Route path="clients/:clientId/resources" element={<ClientDetails />} />
+            <Route path="clients/:clientId/analytics" element={<ClientDetails />} />
+            <Route path="clients/:clientId/settings" element={<ClientDetails />} />
             <Route path="clients/:clientId/ideas/:ideaId" element={<IdeaDetails />} />
             <Route path="templates" element={<Templates />} />
             <Route path="templates/:templateId" element={<TemplateDetails />} />
