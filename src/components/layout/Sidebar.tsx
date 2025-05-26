@@ -5,6 +5,7 @@ import {
   LayoutDashboard, 
   Users, 
   FileText, 
+  Calendar,
   BarChart3, 
   LogOut
 } from 'lucide-react';
@@ -13,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 const navItems = [
   { title: 'Dashboard', path: '/', icon: LayoutDashboard },
   { title: 'Clients', path: '/clients', icon: Users },
+  { title: 'Calendar', path: '/calendar', icon: Calendar },
   { title: 'Templates', path: '/templates', icon: FileText },
   { title: 'Analytics', path: '/analytics', icon: BarChart3 }
 ];

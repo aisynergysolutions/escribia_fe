@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import IdeaCard from '../components/ui/IdeaCard';
+import PostCalendar from '../components/ui/PostCalendar';
 import { mockClients, mockIdeas } from '../types';
 
 const ClientDetails = () => {
@@ -153,12 +154,12 @@ const ClientDetails = () => {
   );
 
   const renderCalendar = () => (
-    <div className="bg-white p-6 rounded-2xl shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Content Calendar</h2>
-      <div className="text-center text-gray-500 py-12">
-        <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-        <p>Calendar view for {client.clientName} will be implemented here.</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Content Calendar</h2>
+        <p className="text-gray-600">View scheduled posts for {client.clientName}</p>
       </div>
+      <PostCalendar />
     </div>
   );
 

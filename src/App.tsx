@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
 import IdeaDetails from "./pages/IdeaDetails";
+import Calendar from "./pages/Calendar";
 import Templates from "./pages/Templates";
 import TemplateDetails from "./pages/TemplateDetails";
 import Analytics from "./pages/Analytics";
@@ -35,6 +36,7 @@ const App: React.FC = () => (
             <Route path="clients/:clientId/analytics" element={<ClientDetails />} />
             <Route path="clients/:clientId/settings" element={<ClientDetails />} />
             <Route path="clients/:clientId/ideas/:ideaId" element={<IdeaDetails />} />
+            <Route path="calendar" element={<Calendar />} />
             <Route path="templates" element={<Templates />} />
             <Route path="templates/:templateId" element={<TemplateDetails />} />
             <Route path="analytics" element={<Analytics />} />
