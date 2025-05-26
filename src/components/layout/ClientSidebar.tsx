@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { mockClients } from '../../types';
 
 const clientNavItems = [
@@ -47,8 +48,18 @@ const ClientSidebar = () => {
           <ArrowLeft className="h-4 w-4" />
           <span className="text-sm">Back to Clients</span>
         </button>
-        <h1 className="text-lg font-semibold text-slate-900 truncate">{client.clientName}</h1>
-        <p className="text-xs text-slate-500 mt-1">{client.industry}</p>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-lg font-semibold text-slate-900 truncate">{client.clientName}</h1>
+          <Badge className={`${
+            client.status === 'active' ? 'bg-green-100 text-green-800' :
+            client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' :
+            client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {client.status}
+          </Badge>
+        </div>
+        <p className="text-xs text-slate-500">{client.industry}</p>
       </div>
 
       {/* Navigation */}
@@ -65,7 +76,7 @@ const ClientSidebar = () => {
                   to={fullPath}
                   className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive 
-                      ? 'bg-slate-200 text-slate-800 border border-slate-300 shadow-sm' 
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                   }`}
                 >

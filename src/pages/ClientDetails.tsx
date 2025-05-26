@@ -453,14 +453,6 @@ const ClientDetails = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
         <h1 className="text-3xl font-bold capitalize">{currentSection}</h1>
-        <Badge className={`ml-2 ${
-          client.status === 'active' ? 'bg-green-100 text-green-800' :
-          client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' :
-          client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {client.status}
-        </Badge>
       </div>
       
       {renderContent()}
