@@ -8,18 +8,56 @@ import {
   Calendar,
   FolderOpen,
   BarChart3,
-  Settings
+  Settings,
+  MessageCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { mockClients } from '../../types';
 
 const clientNavItems = [
-  { title: 'Overview', path: '', icon: LayoutDashboard },
-  { title: 'Posts', path: '/posts', icon: FileText },
-  { title: 'Calendar', path: '/calendar', icon: Calendar },
-  { title: 'Resources', path: '/resources', icon: FolderOpen },
-  { title: 'Analytics', path: '/analytics', icon: BarChart3 },
-  { title: 'Settings', path: '/settings', icon: Settings }
+  { 
+    title: 'Overview', 
+    path: '', 
+    icon: LayoutDashboard,
+    group: 'main'
+  },
+  { 
+    title: 'Posts', 
+    path: '/posts', 
+    icon: FileText,
+    group: 'content'
+  },
+  { 
+    title: 'Comments', 
+    path: '/comments', 
+    icon: MessageCircle,
+    group: 'content'
+  },
+  { 
+    title: 'Calendar', 
+    path: '/calendar', 
+    icon: Calendar,
+    group: 'content'
+  },
+  { 
+    title: 'Resources', 
+    path: '/resources', 
+    icon: FolderOpen,
+    group: 'management'
+  },
+  { 
+    title: 'Analytics', 
+    path: '/analytics', 
+    icon: BarChart3,
+    group: 'management'
+  },
+  { 
+    title: 'Settings', 
+    path: '/settings', 
+    icon: Settings,
+    group: 'management'
+  }
 ];
 
 const ClientSidebar = () => {
@@ -33,9 +71,41 @@ const ClientSidebar = () => {
     navigate('/clients');
   };
 
+  const handleOverviewClick = () => {
+    navigate(`/clients/${clientId}`);
+  };
+
   if (!client) {
     return null;
   }
+
+  const mainItems = clientNavItems.filter(item => item.group === 'main');
+  const contentItems = clientNavItems.filter(item => item.group === 'content');
+  const managementItems = clientNavItems.filter(item => item.group === 'management');
+
+  const renderNavItems = (items: typeof clientNavItems) => {
+    return items.map((item) => {
+      const fullPath = `/clients/${clientId}${item.path}`;
+      const isActive = location.pathname === fullPath || 
+        (item.path === '' && location.pathname === `/clients/${clientId}`);
+      
+      return (
+        <li key={item.path}>
+          <Link
+            to={fullPath}
+            className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              isActive 
+                ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+            }`}
+          >
+            <item.icon className="mr-3 h-5 w-5" strokeWidth={1.5} />
+            <span>{item.title}</span>
+          </Link>
+        </li>
+      );
+    });
+  };
 
   return (
     <div className="w-56 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col">
@@ -48,44 +118,48 @@ const ClientSidebar = () => {
           <ArrowLeft className="h-4 w-4" />
           <span className="text-sm">Back to Clients</span>
         </button>
-        <div className="flex items-center gap-2 mb-1">
+        <button
+          onClick={handleOverviewClick}
+          className="text-left w-full hover:opacity-75 transition-opacity"
+        >
           <h1 className="text-lg font-semibold text-slate-900 truncate">{client.clientName}</h1>
-          <Badge className={`${
-            client.status === 'active' ? 'bg-green-100 text-green-800' :
-            client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' :
-            client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-gray-100 text-gray-800'
-          }`}>
-            {client.status}
-          </Badge>
-        </div>
-        <p className="text-xs text-slate-500">{client.industry}</p>
+        </button>
+        <p className="text-xs text-slate-500 mt-1">{client.industry}</p>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {clientNavItems.map((item) => {
-            const fullPath = `/clients/${clientId}${item.path}`;
-            const isActive = location.pathname === fullPath || 
-              (item.path === '' && location.pathname === `/clients/${clientId}`);
-            
-            return (
-              <li key={item.path}>
-                <Link
-                  to={fullPath}
-                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                  }`}
-                >
-                  <item.icon className="mr-3 h-5 w-5" strokeWidth={1.5} />
-                  <span>{item.title}</span>
-                </Link>
-              </li>
-            );
-          })}
+        <ul className="space-y-6">
+          {/* Main Navigation */}
+          <li>
+            <ul className="space-y-2">
+              {renderNavItems(mainItems)}
+            </ul>
+          </li>
+
+          <Separator className="mx-2" />
+
+          {/* Content Management */}
+          <li>
+            <div className="px-4 mb-2">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Content</h3>
+            </div>
+            <ul className="space-y-2">
+              {renderNavItems(contentItems)}
+            </ul>
+          </li>
+
+          <Separator className="mx-2" />
+
+          {/* Management */}
+          <li>
+            <div className="px-4 mb-2">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Management</h3>
+            </div>
+            <ul className="space-y-2">
+              {renderNavItems(managementItems)}
+            </ul>
+          </li>
         </ul>
       </nav>
 
