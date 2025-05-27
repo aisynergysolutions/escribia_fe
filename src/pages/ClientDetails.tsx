@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin, RefreshCw, Search, ArrowUpDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import IdeaCard from '../components/ui/IdeaCard';
 import PostCalendar from '../components/ui/PostCalendar';
 import CommentCard from '../components/ui/CommentCard';
-import { mockClients, mockIdeas } from '../types';
+import { mockClients, mockIdeas, Idea } from '../types';
 
 // Mock LinkedIn posts data
 const mockLinkedInPosts = [
@@ -47,6 +49,11 @@ const ClientDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // Posts filtering and sorting state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'status'>('updated');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
   // Find client data
   const client = mockClients.find(c => c.id === clientId);
   
@@ -78,6 +85,48 @@ const ClientDetails = () => {
     );
   }
   
+  // Filter and sort posts
+  const getFilteredAndSortedPosts = (): Idea[] => {
+    let filtered = clientIdeas;
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(idea => 
+        idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        idea.currentDraftText.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(idea => idea.status === statusFilter);
+    }
+    
+    // Sort posts
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'updated':
+          return b.updatedAt.seconds - a.updatedAt.seconds;
+        case 'created':
+          return b.createdAt.seconds - a.createdAt.seconds;
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
+    
+    return filtered;
+  };
+
+  // Get unique statuses for filter tabs
+  const getUniqueStatuses = () => {
+    const statuses = [...new Set(clientIdeas.map(idea => idea.status))];
+    return statuses;
+  };
+
   const getAIStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -158,32 +207,107 @@ const ClientDetails = () => {
     </div>
   );
 
-  const renderPosts = () => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">All Posts</h2>
-        <Button 
-          className="bg-indigo-600 hover:bg-indigo-700"
-          onClick={handleNewIdea}
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          New Post
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {clientIdeas.map((idea) => (
-          <IdeaCard key={idea.id} idea={idea} />
-        ))}
+  const renderPosts = () => {
+    const filteredPosts = getFilteredAndSortedPosts();
+    const uniqueStatuses = getUniqueStatuses();
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">All Posts</h2>
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={handleNewIdea}
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Post
+          </Button>
+        </div>
+
+        {/* Search and Sort Controls */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search posts..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated">Last Updated</SelectItem>
+                  <SelectItem value="created">Date Created</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Filter Tabs */}
+        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+          <TabsList className="grid w-full grid-cols-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
+              All ({clientIdeas.length})
+            </TabsTrigger>
+            {uniqueStatuses.map((status) => {
+              const count = clientIdeas.filter(idea => idea.status === status).length;
+              return (
+                <TabsTrigger 
+                  key={status} 
+                  value={status}
+                  className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+                >
+                  {status} ({count})
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
         
-        {clientIdeas.length === 0 && (
-          <p className="text-gray-500 col-span-3 text-center py-12">
-            No posts found for this client yet.
-          </p>
-        )}
+        {/* Posts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPosts.map((idea) => (
+            <IdeaCard key={idea.id} idea={idea} />
+          ))}
+          
+          {filteredPosts.length === 0 && (
+            <div className="col-span-3 text-center py-12">
+              <p className="text-gray-500">
+                {searchTerm || statusFilter !== 'all' 
+                  ? "No posts match your filters." 
+                  : "No posts found for this client yet."
+                }
+              </p>
+              {(searchTerm || statusFilter !== 'all') && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('all');
+                  }}
+                  className="mt-2"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderCalendar = () => (
     <div className="space-y-6">
