@@ -13,7 +13,7 @@ export const mockIdeas: Idea[] = [
     status: 'Scheduled',
     objective: 'Thought Leadership',
     templateUsedId: 'template123',
-    scheduledPostAt: { seconds: 1672531200, nanoseconds: 0 },
+    scheduledPostAt: { seconds: 1735732800, nanoseconds: 0 }, // January 1, 2025
     actuallyPostedAt: { seconds: 1672531200, nanoseconds: 0 },
     livePostUrl: 'https://example.com/ai-marketing',
     internalNotes: 'Focus on actionable insights for marketers.',
@@ -51,8 +51,9 @@ export const mockIdeas: Idea[] = [
     title: 'Enterprise Software ROI Metrics',
     initialIdeaPrompt: 'Discuss how to measure ROI on enterprise software investments.',
     currentDraftText: "Measuring ROI on enterprise software isn't just about cost savings. It's about transformation, efficiency, and competitive advantage. Here's how leading companies track real value from their tech investments.",
-    status: 'Drafting',
+    status: 'Scheduled',
     objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1735905600, nanoseconds: 0 }, // January 3, 2025
     createdAt: { seconds: 1670112000, nanoseconds: 0 },
     updatedAt: { seconds: 1670716800, nanoseconds: 0 },
     generatedHooks: [
@@ -114,10 +115,10 @@ export const mockIdeas: Idea[] = [
     initialIdeaPrompt: 'Discuss the challenges and opportunities of maintaining company culture in a remote work environment.',
     currentDraftText: "Remote work has transformed the modern workplace, presenting both challenges and opportunities for maintaining a strong company culture. Discover strategies to foster connection, collaboration, and engagement among remote teams.",
     finalApprovedText: "Approved: Remote work's impact on culture. Strategies for connection and engagement.",
-    status: 'Drafting',
+    status: 'Scheduled',
     objective: 'Brand Awareness',
     templateUsedId: 'template456',
-    scheduledPostAt: { seconds: 1672617600, nanoseconds: 0 },
+    scheduledPostAt: { seconds: 1735819200, nanoseconds: 0 }, // January 2, 2025
     actuallyPostedAt: { seconds: 1672617600, nanoseconds: 0 },
     livePostUrl: 'https://example.com/remote-work-culture',
     internalNotes: 'Highlight the importance of virtual team-building activities.',
@@ -182,7 +183,7 @@ export const mockIdeas: Idea[] = [
     currentDraftText: "Algorithm changes got you down? Here's how smart brands are adapting their social media strategy to thrive, not just survive, in the new landscape.",
     status: 'Scheduled',
     objective: 'Lead Generation',
-    scheduledPostAt: { seconds: 1672790400, nanoseconds: 0 },
+    scheduledPostAt: { seconds: 1736078400, nanoseconds: 0 }, // January 5, 2025
     createdAt: { seconds: 1670371200, nanoseconds: 0 },
     updatedAt: { seconds: 1670976000, nanoseconds: 0 },
     generatedHooks: [
@@ -242,8 +243,9 @@ export const mockIdeas: Idea[] = [
     title: 'Patient Data Security in Digital Health',
     initialIdeaPrompt: 'Protecting patient privacy in the digital age.',
     currentDraftText: "Patient trust begins with data security. As healthcare goes digital, here's how medical organizations are building fortress-level protection around patient information.",
-    status: 'Drafting',
+    status: 'Scheduled',
     objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1735992000, nanoseconds: 0 }, // January 4, 2025
     createdAt: { seconds: 1670630400, nanoseconds: 0 },
     updatedAt: { seconds: 1671235200, nanoseconds: 0 },
     generatedHooks: [
@@ -278,7 +280,7 @@ export const mockIdeas: Idea[] = [
     currentDraftText: "Prevention is better than cure, and technology is making it easier than ever. Here's how digital health tools are helping people stay healthy before they get sick.",
     status: 'Scheduled',
     objective: 'Brand Awareness',
-    scheduledPostAt: { seconds: 1672876800, nanoseconds: 0 },
+    scheduledPostAt: { seconds: 1736164800, nanoseconds: 0 }, // January 6, 2025
     createdAt: { seconds: 1670803200, nanoseconds: 0 },
     updatedAt: { seconds: 1671408000, nanoseconds: 0 },
     generatedHooks: [
@@ -321,8 +323,9 @@ export const mockIdeas: Idea[] = [
     title: 'Sustainable Supply Chain Management',
     initialIdeaPrompt: 'How companies can make their supply chains more environmentally friendly.',
     currentDraftText: "Your supply chain is your sustainability weak link. Here's how leading companies are transforming their entire value chain to reduce environmental impact.",
-    status: 'Drafting',
+    status: 'Scheduled',
     objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736251200, nanoseconds: 0 }, // January 7, 2025
     createdAt: { seconds: 1670976000, nanoseconds: 0 },
     updatedAt: { seconds: 1671580800, nanoseconds: 0 },
     generatedHooks: [
@@ -382,8 +385,9 @@ export const mockIdeas: Idea[] = [
     title: 'Financial Planning for Entrepreneurs',
     initialIdeaPrompt: 'Essential financial planning strategies for business owners.',
     currentDraftText: "Entrepreneurs are terrible at personal finance (I should know, I was one). Here's the financial planning framework that actually works for business owners.",
-    status: 'Drafting',
+    status: 'Scheduled',
     objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1736337600, nanoseconds: 0 }, // January 8, 2025
     createdAt: { seconds: 1671235200, nanoseconds: 0 },
     updatedAt: { seconds: 1671840000, nanoseconds: 0 },
     generatedHooks: [
@@ -435,8 +439,9 @@ export const mockIdeas: Idea[] = [
     title: 'Home Renovation Cost Planning',
     initialIdeaPrompt: 'How to budget effectively for home renovation projects.',
     currentDraftText: "Renovation budgets always go over. Here's how we help homeowners plan realistic budgets and avoid costly surprises during construction.",
-    status: 'Approved',
+    status: 'Scheduled',
     objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736424000, nanoseconds: 0 }, // January 9, 2025
     createdAt: { seconds: 1671494400, nanoseconds: 0 },
     updatedAt: { seconds: 1672099200, nanoseconds: 0 },
     generatedHooks: [

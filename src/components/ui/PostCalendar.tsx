@@ -4,16 +4,33 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from './button';
 import { Card } from './card';
-import { mockIdeas } from '../../types';
+import { mockIdeas, mockClients } from '../../types';
+import { useParams } from 'react-router-dom';
 
-const PostCalendar = () => {
+interface PostCalendarProps {
+  showAllClients?: boolean;
+}
+
+const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { clientId } = useParams<{ clientId: string }>();
 
   // Get scheduled posts for the current month
-  const scheduledPosts = mockIdeas.filter(idea => 
-    idea.scheduledPostAt && 
-    idea.status === 'Scheduled'
-  );
+  const getScheduledPosts = () => {
+    let filteredIdeas = mockIdeas.filter(idea => 
+      idea.scheduledPostAt && 
+      idea.status === 'Scheduled'
+    );
+
+    // If not showing all clients, filter by current client
+    if (!showAllClients && clientId) {
+      filteredIdeas = filteredIdeas.filter(idea => idea.clientId === clientId);
+    }
+
+    return filteredIdeas;
+  };
+
+  const scheduledPosts = getScheduledPosts();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -24,6 +41,11 @@ const PostCalendar = () => {
       post.scheduledPostAt && 
       isSameDay(new Date(post.scheduledPostAt.seconds * 1000), day)
     );
+  };
+
+  const getClientName = (clientId: string) => {
+    const client = mockClients.find(c => c.id === clientId);
+    return client?.clientName || 'Unknown Client';
   };
 
   const goToPreviousMonth = () => {
@@ -37,7 +59,9 @@ const PostCalendar = () => {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Content Calendar</h3>
+        <h3 className="text-lg font-semibold">
+          {showAllClients ? 'All Clients Calendar' : 'Content Calendar'}
+        </h3>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
@@ -83,7 +107,7 @@ const PostCalendar = () => {
                   <div
                     key={post.id}
                     className="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate cursor-pointer hover:bg-blue-200"
-                    title={`${post.title} - ${format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}`}
+                    title={`${post.title} - ${format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}${showAllClients ? ` (${getClientName(post.clientId)})` : ''}`}
                   >
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3 flex-shrink-0" />
@@ -94,6 +118,11 @@ const PostCalendar = () => {
                     <div className="truncate text-xs mt-0.5">
                       {post.title}
                     </div>
+                    {showAllClients && (
+                      <div className="truncate text-xs mt-0.5 text-blue-600 font-medium">
+                        {getClientName(post.clientId)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

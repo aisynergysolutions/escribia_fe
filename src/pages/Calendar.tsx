@@ -10,7 +10,7 @@ const Calendar = () => {
         <p className="text-gray-600">View all scheduled posts across all clients</p>
       </div>
       
-      <PostCalendar />
+      <PostCalendar showAllClients={true} />
     </div>
   );
 };
