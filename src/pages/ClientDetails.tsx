@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin, RefreshCw, Search, ArrowUpDown } from 'lucide-react';
@@ -122,10 +121,12 @@ const ClientDetails = () => {
     return filtered;
   };
 
-  // Get unique statuses for filter tabs
-  const getUniqueStatuses = () => {
-    const statuses = [...new Set(clientIdeas.map(idea => idea.status))];
-    return statuses;
+  // Get allowed statuses for filter tabs
+  const getAllowedStatuses = () => {
+    const allowedStatuses = ['Drafting', 'Reviewed', 'Scheduled', 'Published'];
+    return allowedStatuses.filter(status => 
+      clientIdeas.some(idea => idea.status === status)
+    );
   };
 
   const getAIStatusColor = (status: string) => {
@@ -210,7 +211,7 @@ const ClientDetails = () => {
 
   const renderPosts = () => {
     const filteredPosts = getFilteredAndSortedPosts();
-    const uniqueStatuses = getUniqueStatuses();
+    const allowedStatuses = getAllowedStatuses();
     
     return (
       <div className="space-y-6">
@@ -262,7 +263,7 @@ const ClientDetails = () => {
             <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
               All ({clientIdeas.length})
             </TabsTrigger>
-            {uniqueStatuses.map((status) => {
+            {allowedStatuses.map((status) => {
               const count = clientIdeas.filter(idea => idea.status === status).length;
               return (
                 <TabsTrigger 
