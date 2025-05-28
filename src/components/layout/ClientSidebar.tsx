@@ -9,9 +9,11 @@ import {
   FolderOpen,
   BarChart3,
   Settings,
-  MessageCircle
+  MessageCircle,
+  PlusCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { mockClients } from '../../types';
 
@@ -75,6 +77,11 @@ const ClientSidebar = () => {
     navigate(`/clients/${clientId}`);
   };
 
+  const handleCreatePost = () => {
+    const tempIdeaId = `temp-${Date.now()}`;
+    navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true`);
+  };
+
   if (!client) {
     return null;
   }
@@ -120,11 +127,21 @@ const ClientSidebar = () => {
         </button>
         <button
           onClick={handleOverviewClick}
-          className="text-left w-full hover:opacity-75 transition-opacity"
+          className="text-left w-full hover:opacity-75 transition-opacity mb-3"
         >
           <h1 className="text-lg font-semibold text-slate-900 truncate">{client.clientName}</h1>
         </button>
-        <p className="text-xs text-slate-500 mt-1">{client.industry}</p>
+        <p className="text-xs text-slate-500 mb-3">{client.industry}</p>
+        
+        {/* Create Post Button */}
+        <Button
+          onClick={handleCreatePost}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+          size="sm"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Create Post
+        </Button>
       </div>
 
       {/* Navigation */}
