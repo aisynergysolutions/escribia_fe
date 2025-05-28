@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin, RefreshCw, Search, ArrowUpDown } from 'lucide-react';
@@ -257,7 +258,7 @@ const ClientDetails = () => {
 
         {/* Status Filter Tabs */}
         <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-          <TabsList className="grid w-full grid-cols-auto">
+          <TabsList className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] w-full">
             <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
               All ({clientIdeas.length})
             </TabsTrigger>
