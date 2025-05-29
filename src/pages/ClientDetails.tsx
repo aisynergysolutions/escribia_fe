@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin, RefreshCw, Search, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Edit3, BarChart, Settings as SettingsIcon, PlusCircle, Calendar, Clock, Linkedin, RefreshCw, Search, ArrowUpDown, FileText, MessageCircle, TrendingUp, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import IdeaCard from '../components/ui/IdeaCard';
 import PostCalendar from '../components/ui/PostCalendar';
 import CommentCard from '../components/ui/CommentCard';
+import StatCard from '../components/ui/StatCard';
 import { mockClients, mockIdeas, Idea } from '../types';
 
 // Mock LinkedIn posts data
@@ -154,60 +155,113 @@ const ClientDetails = () => {
     navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true`);
   };
 
-  const renderOverview = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl shadow-md">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Brand Summary</h2>
-          <p className="text-gray-700">
-            {client.brandBriefSummary || "No brand summary available."}
-          </p>
+  const renderOverview = () => {
+    // Calculate statistics
+    const totalPosts = clientIdeas.length;
+    const publishedPosts = clientIdeas.filter(idea => idea.status === 'Published').length;
+    const scheduledPosts = clientIdeas.filter(idea => idea.status === 'Scheduled').length;
+    const draftPosts = clientIdeas.filter(idea => idea.status === 'Drafting').length;
+    
+    // Calculate total engagement from published posts
+    const totalEngagement = clientIdeas
+      .filter(idea => idea.performance)
+      .reduce((sum, idea) => {
+        const perf = idea.performance!;
+        return sum + perf.likes + perf.comments + perf.shares;
+      }, 0);
+
+    // Calculate average engagement per post
+    const publishedWithPerformance = clientIdeas.filter(idea => idea.performance);
+    const avgEngagement = publishedWithPerformance.length > 0 
+      ? Math.round(totalEngagement / publishedWithPerformance.length) 
+      : 0;
+
+    return (
+      <div className="space-y-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Posts"
+            value={totalPosts}
+            icon={<FileText className="h-4 w-4" />}
+            description="All time posts"
+          />
+          <StatCard
+            title="Published"
+            value={publishedPosts}
+            icon={<TrendingUp className="h-4 w-4" />}
+            description="Live posts"
+            className="border-green-200 bg-green-50"
+          />
+          <StatCard
+            title="Scheduled"
+            value={scheduledPosts}
+            icon={<Calendar className="h-4 w-4" />}
+            description="Ready to go"
+            className="border-blue-200 bg-blue-50"
+          />
+          <StatCard
+            title="Avg. Engagement"
+            value={avgEngagement}
+            icon={<Users className="h-4 w-4" />}
+            description="Per published post"
+            className="border-purple-200 bg-purple-50"
+          />
         </div>
-        
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-medium mb-2">AI Training Status</h3>
-          <div className="flex items-center">
-            <Badge className={getAIStatusColor(client.aiTraining.status)}>
-              {client.aiTraining.status}
-            </Badge>
-            {client.aiTraining.lastTrainedAt.seconds > 0 && (
-              <span className="text-sm text-gray-500 ml-3">
-                Last trained: {new Date(client.aiTraining.lastTrainedAt.seconds * 1000).toLocaleDateString()}
-              </span>
+
+        <div className="bg-white p-6 rounded-2xl shadow-md">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold mb-2">Brand Summary</h2>
+            <p className="text-gray-700">
+              {client.brandBriefSummary || "No brand summary available."}
+            </p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-medium mb-2">AI Training Status</h3>
+            <div className="flex items-center">
+              <Badge className={getAIStatusColor(client.aiTraining.status)}>
+                {client.aiTraining.status}
+              </Badge>
+              {client.aiTraining.lastTrainedAt.seconds > 0 && (
+                <span className="text-sm text-gray-500 ml-3">
+                  Last trained: {new Date(client.aiTraining.lastTrainedAt.seconds * 1000).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            {client.aiTraining.modelVersion && (
+              <div className="text-sm text-gray-500 mt-1">
+                Model version: {client.aiTraining.modelVersion}
+              </div>
             )}
           </div>
-          {client.aiTraining.modelVersion && (
-            <div className="text-sm text-gray-500 mt-1">
-              Model version: {client.aiTraining.modelVersion}
-            </div>
-          )}
-        </div>
-      </div>
-      
-      <div className="bg-white p-6 rounded-2xl shadow-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Recent Posts</h2>
-          <Link to={`/clients/${clientId}/posts`}>
-            <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700">
-              View All
-            </Button>
-          </Link>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {clientIdeas.slice(0, 3).map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} />
-          ))}
+        <div className="bg-white p-6 rounded-2xl shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Recent Posts</h2>
+            <Link to={`/clients/${clientId}/posts`}>
+              <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700">
+                View All
+              </Button>
+            </Link>
+          </div>
           
-          {clientIdeas.length === 0 && (
-            <p className="text-gray-500 col-span-3 text-center py-6">
-              No posts found for this client yet.
-            </p>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clientIdeas.slice(0, 3).map((idea) => (
+              <IdeaCard key={idea.id} idea={idea} />
+            ))}
+            
+            {clientIdeas.length === 0 && (
+              <p className="text-gray-500 col-span-3 text-center py-6">
+                No posts found for this client yet.
+              </p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPosts = () => {
     const filteredPosts = getFilteredAndSortedPosts();
