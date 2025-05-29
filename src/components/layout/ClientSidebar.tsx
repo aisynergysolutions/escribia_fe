@@ -100,13 +100,13 @@ const ClientSidebar = () => {
         <li key={item.path}>
           <Link
             to={fullPath}
-            className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
               isActive 
                 ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
             }`}
           >
-            <item.icon className="mr-3 h-5 w-5" strokeWidth={1.5} />
+            <item.icon className="mr-2 h-4 w-4" strokeWidth={1.5} />
             <span>{item.title}</span>
           </Link>
         </li>
@@ -117,21 +117,21 @@ const ClientSidebar = () => {
   return (
     <div className="w-56 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col">
       {/* Header with client name and back button */}
-      <div className="p-6 border-b border-slate-200">
+      <div className="p-4 border-b border-slate-200">
         <button
           onClick={handleBackToClients}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-3"
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-2"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm">Back to Clients</span>
+          <ArrowLeft className="h-3 w-3" />
+          <span className="text-xs">Back to Clients</span>
         </button>
         <button
           onClick={handleOverviewClick}
-          className="text-left w-full hover:opacity-75 transition-opacity mb-3"
+          className="text-left w-full hover:opacity-75 transition-opacity mb-2"
         >
-          <h1 className="text-lg font-semibold text-slate-900 truncate">{client.clientName}</h1>
+          <h1 className="text-base font-semibold text-slate-900 truncate">{client.clientName}</h1>
         </button>
-        <p className="text-xs text-slate-500 mb-3">{client.industry}</p>
+        <p className="text-xs text-slate-500 mb-2">{client.industry}</p>
         
         {/* Create Post Button */}
         <Button
@@ -139,41 +139,41 @@ const ClientSidebar = () => {
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
           size="sm"
         >
-          <PlusCircle className="h-4 w-4 mr-2" />
+          <PlusCircle className="h-3 w-3 mr-1" />
           Create Post
         </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-6">
+      <nav className="flex-1 p-3">
+        <ul className="space-y-4">
           {/* Main Navigation */}
           <li>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {renderNavItems(mainItems)}
             </ul>
           </li>
 
-          <Separator className="mx-2" />
+          <Separator className="mx-1" />
 
           {/* Content Management */}
           <li>
-            <div className="px-4 mb-2">
+            <div className="px-3 mb-1">
               <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Content</h3>
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {renderNavItems(contentItems)}
             </ul>
           </li>
 
-          <Separator className="mx-2" />
+          <Separator className="mx-1" />
 
           {/* Management */}
           <li>
-            <div className="px-4 mb-2">
+            <div className="px-3 mb-1">
               <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Management</h3>
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {renderNavItems(managementItems)}
             </ul>
           </li>
@@ -181,8 +181,8 @@ const ClientSidebar = () => {
       </nav>
 
       {/* Client status at bottom */}
-      <div className="p-4 border-t border-slate-200">
-        <div className="bg-white rounded-lg p-3 border border-slate-200">
+      <div className="p-3 border-t border-slate-200">
+        <div className="bg-white rounded-lg p-2 border border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Status</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
