@@ -632,5 +632,3 @@ What you want to convey to your audience?"
 };
 
 export default CreatePostModal;
-
-}
