@@ -37,11 +37,12 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ onFormat, onComment }
 
   return (
     <div 
-      className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-lg p-2 flex items-center gap-1"
+      className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-lg p-2 flex items-center gap-1 pointer-events-auto"
       style={{ 
         left: position.x - 100, 
         top: position.y,
-        transform: 'translateX(-50%)'
+        transform: 'translateX(-50%)',
+        position: 'fixed'
       }}
     >
       <Button
