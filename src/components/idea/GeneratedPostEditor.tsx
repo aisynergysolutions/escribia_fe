@@ -65,6 +65,32 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     }
   };
 
+  const handleCopyWithFormatting = async () => {
+    if (editorRef.current) {
+      try {
+        // Create a ClipboardItem with both HTML and plain text
+        const htmlContent = editorRef.current.innerHTML;
+        const textContent = editorRef.current.innerText || editorRef.current.textContent || '';
+        
+        if (navigator.clipboard && window.ClipboardItem) {
+          const clipboardItem = new ClipboardItem({
+            'text/html': new Blob([htmlContent], { type: 'text/html' }),
+            'text/plain': new Blob([textContent], { type: 'text/plain' })
+          });
+          await navigator.clipboard.write([clipboardItem]);
+        } else {
+          // Fallback for browsers that don't support ClipboardItem
+          await navigator.clipboard.writeText(textContent);
+        }
+      } catch (err) {
+        console.error('Failed to copy with formatting, falling back to plain text:', err);
+        // Fallback to plain text
+        const textContent = editorRef.current.innerText || editorRef.current.textContent || '';
+        await navigator.clipboard.writeText(textContent);
+      }
+    }
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -85,7 +111,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* FloatingToolbar is now rendered via portal */}
       <FloatingToolbar
         position={toolbarPosition}
         onFormat={handleFormat}
@@ -97,7 +122,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <h3 className="text-xl font-semibold">Generated Post</h3>
           <div className="flex gap-2">
             <VersionHistory versions={versionHistory} onRestore={onRestoreVersion} />
-            <Button variant="outline" size="sm" onClick={onCopyText}>
+            <Button variant="outline" size="sm" onClick={handleCopyWithFormatting}>
               <Copy className="h-4 w-4 mr-2" />
               Copy
             </Button>
