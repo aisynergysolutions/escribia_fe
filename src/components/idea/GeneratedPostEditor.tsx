@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
+import AIEditToolbar from './AIEditToolbar';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -42,6 +43,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 }) => {
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const [toolbarVisible, setToolbarVisible] = useState(false);
+  const [aiEditToolbarVisible, setAiEditToolbarVisible] = useState(false);
   const [originalPost, setOriginalPost] = useState(generatedPost);
   const [selectedText, setSelectedText] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
@@ -63,23 +65,36 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         left: rect.left + (rect.width / 2)
       });
       setToolbarVisible(true);
+      setAiEditToolbarVisible(false);
     } else {
       setToolbarVisible(false);
+      setAiEditToolbarVisible(false);
       setSelectedText('');
     }
   };
 
   const handleAIEdit = () => {
     if (selectedText) {
-      // For now, we'll show a toast. In a real implementation, this would trigger an AI edit request
+      setToolbarVisible(false);
+      setAiEditToolbarVisible(true);
+    }
+  };
+
+  const handleAIEditApply = (instruction: string) => {
+    if (selectedText) {
       toast({
-        title: "AI Edit Requested",
-        description: `AI will edit: "${selectedText.substring(0, 50)}${selectedText.length > 50 ? '...' : ''}"`,
+        title: "AI Edit Applied",
+        description: `Instruction: "${instruction}" applied to selected text.`,
       });
       
-      // Hide the toolbar after the action
-      setToolbarVisible(false);
+      // In a real implementation, this would call an AI API to edit the selected text
+      // For now, we'll just show the toast and close the toolbar
+      setAiEditToolbarVisible(false);
     }
+  };
+
+  const handleAIEditClose = () => {
+    setAiEditToolbarVisible(false);
   };
 
   const handleFormat = (format: string) => {
@@ -237,6 +252,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       const selection = window.getSelection();
       if (!selection || selection.toString().length === 0) {
         setToolbarVisible(false);
+        setAiEditToolbarVisible(false);
       }
     };
 
@@ -251,6 +267,14 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         onFormat={handleFormat}
         onAIEdit={handleAIEdit}
         visible={toolbarVisible}
+      />
+      
+      <AIEditToolbar
+        position={toolbarPosition}
+        visible={aiEditToolbarVisible}
+        selectedText={selectedText}
+        onClose={handleAIEditClose}
+        onApplyEdit={handleAIEditApply}
       />
       
       <div className="bg-white rounded-lg border">
