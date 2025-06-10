@@ -145,11 +145,7 @@ const IdeaDetails = () => {
     setGeneratedPost("Based on your instructions, here's an updated version that focuses more on practical implementation of AI in manufacturing...");
   };
   const handleCopyText = () => {
-    // Create a temporary div to extract plain text from HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = generatedPost;
-    const plainText = tempDiv.textContent || tempDiv.innerText || '';
-    navigator.clipboard.writeText(plainText);
+    navigator.clipboard.writeText(generatedPost);
     // Could add a toast notification here
   };
   const handleRestoreVersion = (text: string) => {
@@ -191,9 +187,31 @@ const IdeaDetails = () => {
     setTemplate(value);
   };
   const handleFormatText = (format: string) => {
-    // This function is now handled by the contentEditable div in GeneratedPostEditor
-    // We keep it for compatibility but it's not used
-    console.log('Format text:', format);
+    // Basic text formatting - in a real implementation, you'd use a proper rich text editor
+    const textarea = document.querySelector('textarea[data-generated-post]') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = generatedPost.substring(start, end);
+    
+    let formattedText = '';
+    switch (format) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        break;
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        break;
+      case 'underline':
+        formattedText = `__${selectedText}__`;
+        break;
+      default:
+        formattedText = selectedText;
+    }
+
+    const newText = generatedPost.substring(0, start) + formattedText + generatedPost.substring(end);
+    setGeneratedPost(newText);
   };
   return <div className="space-y-6">
       <IdeaHeader
