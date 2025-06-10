@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
 import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 
@@ -12,6 +13,9 @@ interface GeneratedPostEditorProps {
   onEditingInstructionsChange: (value: string) => void;
   onCopyText: () => void;
   onRegenerateWithInstructions: () => void;
+  onSave: () => void;
+  hasUnsavedChanges: boolean;
+  onUnsavedChangesChange: (hasChanges: boolean) => void;
   versionHistory: Array<{
     id: string;
     version: number;
@@ -30,12 +34,17 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   onEditingInstructionsChange,
   onCopyText,
   onRegenerateWithInstructions,
+  onSave,
+  hasUnsavedChanges,
+  onUnsavedChangesChange,
   versionHistory,
   onRestoreVersion
 }) => {
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const [toolbarVisible, setToolbarVisible] = useState(false);
+  const [originalPost, setOriginalPost] = useState(generatedPost);
   const editorRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
 
@@ -88,13 +97,17 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     }
     
     if (editorRef.current) {
-      onGeneratedPostChange(editorRef.current.innerHTML);
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
     }
   };
 
   const handleInput = () => {
     if (editorRef.current) {
-      onGeneratedPostChange(editorRef.current.innerHTML);
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
     }
   };
 
@@ -103,6 +116,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     if (event.ctrlKey && event.key === 'c') {
       event.preventDefault();
       handleCopyWithFormatting();
+    }
+    // Handle Ctrl+S to save
+    if (event.ctrlKey && event.key === 's') {
+      event.preventDefault();
+      handleSave();
     }
   };
 
@@ -165,8 +183,25 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         // If no selection, append at the end
         editorRef.current.appendChild(document.createTextNode(emoji));
       }
-      onGeneratedPostChange(editorRef.current.innerHTML);
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
     }
+  };
+
+  const checkForChanges = (currentContent: string) => {
+    const hasChanges = currentContent !== originalPost;
+    onUnsavedChangesChange(hasChanges);
+  };
+
+  const handleSave = () => {
+    onSave();
+    setOriginalPost(generatedPost);
+    onUnsavedChangesChange(false);
+    toast({
+      title: "Saved",
+      description: "Your changes have been saved successfully.",
+    });
   };
 
   useEffect(() => {
@@ -174,6 +209,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       editorRef.current.innerHTML = generatedPost;
     }
   }, [generatedPost]);
+
+  useEffect(() => {
+    setOriginalPost(generatedPost);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -200,6 +239,16 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <h3 className="text-xl font-semibold">Generated Post</h3>
           <div className="flex gap-2">
             <VersionHistory versions={versionHistory} onRestore={onRestoreVersion} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+              className={hasUnsavedChanges ? 'bg-blue-50 border-blue-300' : ''}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
             <Button variant="outline" size="sm" onClick={handleCopyWithFormatting}>
               <Copy className="h-4 w-4 mr-2" />
               Copy

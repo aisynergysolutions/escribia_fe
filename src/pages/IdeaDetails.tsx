@@ -10,6 +10,7 @@ import StatusCard from '../components/idea/StatusCard';
 import ScheduleCard from '../components/idea/ScheduleCard';
 import AssetsCard from '../components/idea/AssetsCard';
 import OptionsCard from '../components/idea/OptionsCard';
+import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
@@ -34,7 +35,10 @@ const IdeaDetails = () => {
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [hasUnsavedPostChanges, setHasUnsavedPostChanges] = useState(false);
   const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
   // Find the idea in our mock data (only if not creating new)
   const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
@@ -124,6 +128,63 @@ const IdeaDetails = () => {
       setHasUnsavedChanges(true);
     }
   };
+  const handleSavePost = () => {
+    // Here you would typically save to your backend
+    console.log('Saving post:', {
+      generatedPost,
+      title,
+      clientId,
+      ideaId
+    });
+    
+    setHasUnsavedPostChanges(false);
+  };
+
+  // Handle browser navigation/close
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (hasUnsavedPostChanges) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedPostChanges]);
+
+  // Handle React Router navigation
+  useEffect(() => {
+    const handleNavigation = (event: PopStateEvent) => {
+      if (hasUnsavedPostChanges) {
+        event.preventDefault();
+        setShowUnsavedDialog(true);
+        setPendingNavigation(window.location.pathname);
+      }
+    };
+
+    window.addEventListener('popstate', handleNavigation);
+    return () => window.removeEventListener('popstate', handleNavigation);
+  }, [hasUnsavedPostChanges]);
+
+  const handleUnsavedDialogSave = () => {
+    handleSavePost();
+    setShowUnsavedDialog(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
+
+  const handleUnsavedDialogDiscard = () => {
+    setHasUnsavedPostChanges(false);
+    setShowUnsavedDialog(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
+
   if (!client) {
     return <div className="text-center py-12">
         <h2 className="text-2xl font-semibold">Client not found</h2>
@@ -216,7 +277,15 @@ const IdeaDetails = () => {
     const newText = generatedPost.substring(0, start) + formattedText + generatedPost.substring(end);
     setGeneratedPost(newText);
   };
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onOpenChange={setShowUnsavedDialog}
+        onSave={handleUnsavedDialogSave}
+        onDiscard={handleUnsavedDialogDiscard}
+      />
+
       <IdeaHeader
         clientId={clientId!}
         title={title}
@@ -268,6 +337,9 @@ const IdeaDetails = () => {
                   onEditingInstructionsChange={setEditingInstructions}
                   onCopyText={handleCopyText}
                   onRegenerateWithInstructions={handleRegenerateWithInstructions}
+                  onSave={handleSavePost}
+                  hasUnsavedChanges={hasUnsavedPostChanges}
+                  onUnsavedChangesChange={setHasUnsavedPostChanges}
                   versionHistory={versionHistory}
                   onRestoreVersion={handleRestoreVersion}
                 />
@@ -318,8 +390,10 @@ const IdeaDetails = () => {
           />
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Posted':
@@ -338,4 +412,5 @@ const getStatusColor = (status: string) => {
       return 'bg-gray-100 text-gray-800';
   }
 };
+
 export default IdeaDetails;
