@@ -219,40 +219,42 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Objective (optional)
-              </label>
-              <Select value={selectedObjective} onValueChange={setSelectedObjective}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an objective" />
-                </SelectTrigger>
-                <SelectContent>
-                  {objectives.map((objective) => (
-                    <SelectItem key={objective} value={objective}>
-                      {objective}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Objective (optional)
+                </label>
+                <Select value={selectedObjective} onValueChange={setSelectedObjective}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an objective" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {objectives.map((objective) => (
+                      <SelectItem key={objective} value={objective}>
+                        {objective}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Template (optional)
-              </label>
-              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockTemplates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.templateName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Template (optional)
+                </label>
+                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.templateName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
@@ -554,7 +556,7 @@ What you want to convey to your audience?"
         {children}
       </DialogTrigger>
       <DialogContent 
-        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        className="max-w-6xl max-h-[90vh] overflow-y-auto"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
@@ -563,8 +565,8 @@ What you want to convey to your audience?"
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {/* Left side - Creation methods */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          {/* Left side - Creation methods (1/3) */}
           <div className="space-y-6">
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-3">Create one post</h3>
@@ -621,8 +623,8 @@ What you want to convey to your audience?"
             </div>
           </div>
 
-          {/* Right side - Dynamic content based on selected method */}
-          <div className="space-y-4">
+          {/* Right side - Dynamic content based on selected method (2/3) */}
+          <div className="lg:col-span-2 space-y-4">
             {renderRightPanel()}
           </div>
         </div>
@@ -632,3 +634,5 @@ What you want to convey to your audience?"
 };
 
 export default CreatePostModal;
+
+}
