@@ -116,7 +116,6 @@ const IdeaDetails = () => {
     navigate(`/clients/${clientId}/ideas/${ideaId}`, {
       replace: true
     });
-    setIsEditingTitle(false);
     setHasUnsavedChanges(false);
   };
   const handleTitleChange = (newTitle: string) => {
