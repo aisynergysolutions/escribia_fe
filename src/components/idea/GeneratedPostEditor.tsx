@@ -75,8 +75,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleAIEdit = () => {
     if (selectedText) {
+      // Keep the same position but switch toolbars
       setToolbarVisible(false);
-      setAiEditToolbarVisible(true);
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        setAiEditToolbarVisible(true);
+      }, 50);
     }
   };
 
@@ -95,6 +99,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleAIEditClose = () => {
     setAiEditToolbarVisible(false);
+    // Optionally show the main toolbar again if text is still selected
+    if (selectedText) {
+      setToolbarVisible(true);
+    }
   };
 
   const handleFormat = (format: string) => {
@@ -411,3 +419,5 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 };
 
 export default GeneratedPostEditor;
+
+}
