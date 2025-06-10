@@ -123,12 +123,9 @@ const ClientDetails = () => {
     return filtered;
   };
 
-  // Get allowed statuses for filter tabs
+  // Get allowed statuses for filter tabs - show all four main statuses
   const getAllowedStatuses = () => {
-    const allowedStatuses = ['Drafting', 'Reviewed', 'Scheduled', 'Published'];
-    return allowedStatuses.filter(status => 
-      clientIdeas.some(idea => idea.status === status)
-    );
+    return ['Drafting', 'Reviewed', 'Scheduled', 'Published'];
   };
 
   const getAIStatusColor = (status: string) => {
@@ -313,7 +310,7 @@ const ClientDetails = () => {
 
         {/* Status Filter Tabs */}
         <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-          <TabsList className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] w-full">
+          <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
               All ({clientIdeas.length})
             </TabsTrigger>

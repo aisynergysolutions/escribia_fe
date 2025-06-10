@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Edit3, Mic, Plus, Upload, Youtube, Users, X } from 'lucide-react';
@@ -192,27 +191,27 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Edit3 className="h-5 w-5 text-indigo-400" />
-                <h3 className="text-lg font-medium text-white">Generate from text</h3>
+                <Edit3 className="h-5 w-5 text-indigo-500" />
+                <h3 className="text-lg font-medium text-foreground">Generate from text</h3>
               </div>
-              <p className="text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Write down your unstructured thoughts and Scripe will turn them into a post.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Insert any text to turn into a post <span className="text-red-400">*</span>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Insert any text to turn into a post <span className="text-destructive">*</span>
               </label>
               <Textarea
                 value={ideaText}
                 onChange={(e) => setIdeaText(e.target.value)}
                 placeholder="Enter your idea here..."
-                className="min-h-[200px] bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 resize-none"
+                className="min-h-[200px] resize-none"
               />
             </div>
 
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               <p>No need to prompt, turn content into posts.</p>
               <p>Recommended min length is 100 characters.</p>
             </div>
@@ -220,13 +219,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
             <Button
               onClick={handleCreateFromText}
               disabled={!ideaText.trim()}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3"
+              className="w-full py-3"
             >
               Generate post from text
             </Button>
 
-            <div className="text-center text-sm text-slate-400">
-              Using Standard AI model. <span className="text-indigo-400 cursor-pointer">Upgrade now</span> for higher quality posts.
+            <div className="text-center text-sm text-muted-foreground">
+              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -236,23 +235,23 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Mic className="h-5 w-5 text-purple-400" />
-                <h3 className="text-lg font-medium text-white">Generate from voice</h3>
+                <Mic className="h-5 w-5 text-purple-500" />
+                <h3 className="text-lg font-medium text-foreground">Generate from voice</h3>
               </div>
-              <p className="text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Record your thoughts about any topic and Scripe will turn them into a post.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Recording Language
               </label>
               <Select value={recordingLanguage} onValueChange={setRecordingLanguage}>
-                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectContent>
                   <SelectItem value="English">English</SelectItem>
                   <SelectItem value="Spanish">Spanish</SelectItem>
                   <SelectItem value="French">French</SelectItem>
@@ -263,7 +262,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Take notes before recording (optional)
               </label>
               <Textarea
@@ -271,13 +270,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
                 onChange={(e) => setVoiceNotes(e.target.value)}
                 placeholder="Why you want to speak on this topic?
 What you want to convey to your audience?"
-                className="min-h-[120px] bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 resize-none"
+                className="min-h-[120px] resize-none"
               />
             </div>
 
             <Button
               onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-              className={`w-full py-3 ${isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} text-white`}
+              className={`w-full py-3 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : 'bg-purple-600 hover:bg-purple-700'}`}
             >
               {isRecording ? (
                 <>
@@ -293,8 +292,8 @@ What you want to convey to your audience?"
             </Button>
 
             {!isRecording && (
-              <div className="text-center text-sm text-slate-400">
-                Using Standard AI model. <span className="text-indigo-400 cursor-pointer">Upgrade now</span> for higher quality posts.
+              <div className="text-center text-sm text-muted-foreground">
+                Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
               </div>
             )}
           </div>
@@ -305,17 +304,18 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Plus className="h-5 w-5 text-gray-400" />
-                <h3 className="text-lg font-medium text-white">Blank</h3>
+                <Plus className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-medium text-foreground">Blank</h3>
               </div>
-              <p className="text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Opens the editor without generating any content. Recommended if you already have a finished post draft that you want to finetune.
               </p>
             </div>
 
             <Button
               onClick={handleCreateBlank}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white py-3"
+              variant="secondary"
+              className="w-full py-3"
             >
               Create blank post
             </Button>
@@ -327,18 +327,18 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Upload className="h-5 w-5 text-orange-400" />
-                <h3 className="text-lg font-medium text-white">Upload file to content</h3>
+                <Upload className="h-5 w-5 text-orange-500" />
+                <h3 className="text-lg font-medium text-foreground">Upload file to content</h3>
               </div>
-              <p className="text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Upload audio, video, or text files and turn them into posts.
               </p>
             </div>
 
-            <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center">
-              <Upload className="h-10 w-10 mx-auto text-slate-400 mb-2" />
-              <p className="text-slate-300 mb-2">Drag and drop files here or click to upload</p>
-              <p className="text-sm text-slate-500 mb-4">Audio, video, PDF, or text files</p>
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/20">
+              <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-foreground mb-2">Drag and drop files here or click to upload</p>
+              <p className="text-sm text-muted-foreground mb-4">Audio, video, PDF, or text files</p>
               <input
                 type="file"
                 multiple
@@ -350,7 +350,6 @@ What you want to convey to your audience?"
               <Button
                 variant="outline"
                 onClick={() => document.getElementById('file-upload')?.click()}
-                className="border-slate-600 text-slate-300 hover:bg-slate-700"
               >
                 Select Files
               </Button>
@@ -358,15 +357,14 @@ What you want to convey to your audience?"
 
             {uploadedFiles.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-slate-300">Uploaded Files:</h4>
+                <h4 className="text-sm font-medium text-foreground">Uploaded Files:</h4>
                 {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-slate-700 rounded">
-                    <span className="text-sm text-slate-300 truncate">{file.name}</span>
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                    <span className="text-sm text-foreground truncate">{file.name}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => removeFile(index)}
-                      className="border-slate-600 text-slate-400 hover:bg-slate-600"
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -376,27 +374,27 @@ What you want to convey to your audience?"
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Additional remarks (optional)
               </label>
               <Textarea
                 value={uploadRemarks}
                 onChange={(e) => setUploadRemarks(e.target.value)}
                 placeholder="Any additional context or instructions..."
-                className="min-h-[100px] bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 resize-none"
+                className="min-h-[100px] resize-none"
               />
             </div>
 
             <Button
               onClick={handleUploadFile}
               disabled={uploadedFiles.length === 0}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
+              className="w-full bg-orange-600 hover:bg-orange-700 py-3"
             >
               Generate posts from files
             </Button>
 
-            <div className="text-center text-sm text-slate-400">
-              Using Standard AI model. <span className="text-indigo-400 cursor-pointer">Upgrade now</span> for higher quality posts.
+            <div className="text-center text-sm text-muted-foreground">
+              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -406,48 +404,47 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Youtube className="h-5 w-5 text-red-400" />
-                <h3 className="text-lg font-medium text-white">YouTube to content</h3>
+                <Youtube className="h-5 w-5 text-red-500" />
+                <h3 className="text-lg font-medium text-foreground">YouTube to content</h3>
               </div>
-              <p className="text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Turn YouTube videos into engaging posts by providing the video URL.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                YouTube URL <span className="text-red-400">*</span>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                YouTube URL <span className="text-destructive">*</span>
               </label>
               <Input
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=..."
-                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Additional remarks (optional)
               </label>
               <Textarea
                 value={uploadRemarks}
                 onChange={(e) => setUploadRemarks(e.target.value)}
                 placeholder="Any specific aspects you want to focus on or additional context..."
-                className="min-h-[100px] bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 resize-none"
+                className="min-h-[100px] resize-none"
               />
             </div>
 
             <Button
               onClick={handleYoutubeSubmit}
               disabled={!youtubeUrl.trim()}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-3"
+              className="w-full bg-red-600 hover:bg-red-700 py-3"
             >
               Generate posts from YouTube
             </Button>
 
-            <div className="text-center text-sm text-slate-400">
-              Using Standard AI model. <span className="text-indigo-400 cursor-pointer">Upgrade now</span> for higher quality posts.
+            <div className="text-center text-sm text-muted-foreground">
+              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -457,35 +454,35 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Users className="h-5 w-5 text-green-400" />
-                <h3 className="text-lg font-medium text-white">Content interview</h3>
+                <Users className="h-5 w-5 text-green-500" />
+                <h3 className="text-lg font-medium text-foreground">Content interview</h3>
               </div>
-              <p className="text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Turn conversations and interviews into engaging content posts.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Interview context and remarks (optional)
               </label>
               <Textarea
                 value={interviewRemarks}
                 onChange={(e) => setInterviewRemarks(e.target.value)}
                 placeholder="Describe the interview topic, key participants, or any specific angles you want to focus on..."
-                className="min-h-[150px] bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 resize-none"
+                className="min-h-[150px] resize-none"
               />
             </div>
 
             <Button
               onClick={handleContentInterview}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+              className="w-full bg-green-600 hover:bg-green-700 py-3"
             >
               Start content interview
             </Button>
 
-            <div className="text-center text-sm text-slate-400">
-              Using Standard AI model. <span className="text-indigo-400 cursor-pointer">Upgrade now</span> for higher quality posts.
+            <div className="text-center text-sm text-muted-foreground">
+              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -500,9 +497,9 @@ What you want to convey to your audience?"
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 text-white border-slate-700">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-white">
+          <DialogTitle className="text-xl font-semibold">
             Choose how you want to create posts
           </DialogTitle>
         </DialogHeader>
@@ -511,16 +508,16 @@ What you want to convey to your audience?"
           {/* Left side - Creation methods */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-medium text-slate-300 mb-3">Create one post</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Create one post</h3>
               <div className="space-y-2">
                 {createMethods.slice(0, 3).map((method) => (
                   <button
                     key={method.id}
                     onClick={() => handleMethodSelect(method.id)}
-                    className={`w-full p-3 rounded-lg text-left transition-all hover:bg-slate-800 border ${
+                    className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
                       selectedMethod === method.id 
-                        ? 'border-indigo-500 bg-slate-800' 
-                        : 'border-slate-700 bg-slate-800/50'
+                        ? 'border-primary bg-accent' 
+                        : 'border-border bg-card'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -528,8 +525,8 @@ What you want to convey to your audience?"
                         <method.icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-medium text-white">{method.title}</div>
-                        <div className="text-sm text-slate-400">{method.description}</div>
+                        <div className="font-medium text-foreground">{method.title}</div>
+                        <div className="text-sm text-muted-foreground">{method.description}</div>
                       </div>
                     </div>
                   </button>
@@ -538,16 +535,16 @@ What you want to convey to your audience?"
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-slate-300 mb-3">Create many posts from input</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Create many posts from input</h3>
               <div className="space-y-2">
                 {createMethods.slice(3).map((method) => (
                   <button
                     key={method.id}
                     onClick={() => handleMethodSelect(method.id)}
-                    className={`w-full p-3 rounded-lg text-left transition-all hover:bg-slate-800 border ${
+                    className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
                       selectedMethod === method.id 
-                        ? 'border-indigo-500 bg-slate-800' 
-                        : 'border-slate-700 bg-slate-800/50'
+                        ? 'border-primary bg-accent' 
+                        : 'border-border bg-card'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -555,8 +552,8 @@ What you want to convey to your audience?"
                         <method.icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-medium text-white">{method.title}</div>
-                        <div className="text-sm text-slate-400">{method.description}</div>
+                        <div className="font-medium text-foreground">{method.title}</div>
+                        <div className="text-sm text-muted-foreground">{method.description}</div>
                       </div>
                     </div>
                   </button>
