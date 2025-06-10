@@ -145,7 +145,10 @@ const IdeaDetails = () => {
     setGeneratedPost("Based on your instructions, here's an updated version that focuses more on practical implementation of AI in manufacturing...");
   };
   const handleCopyText = () => {
-    navigator.clipboard.writeText(generatedPost);
+    // For contentEditable, we need to get the text content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = generatedPost;
+    navigator.clipboard.writeText(tempDiv.textContent || tempDiv.innerText || '');
     // Could add a toast notification here
   };
   const handleRestoreVersion = (text: string) => {
@@ -265,7 +268,6 @@ const IdeaDetails = () => {
                   onEditingInstructionsChange={setEditingInstructions}
                   onCopyText={handleCopyText}
                   onRegenerateWithInstructions={handleRegenerateWithInstructions}
-                  onFormatText={handleFormatText}
                   versionHistory={versionHistory}
                   onRestoreVersion={handleRestoreVersion}
                 />

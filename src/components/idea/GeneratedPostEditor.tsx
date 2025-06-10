@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Bold, Italic, Underline, List, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import VersionHistory from '../VersionHistory';
+import FloatingToolbar from './FloatingToolbar';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -12,7 +12,6 @@ interface GeneratedPostEditorProps {
   onEditingInstructionsChange: (value: string) => void;
   onCopyText: () => void;
   onRegenerateWithInstructions: () => void;
-  onFormatText: (format: string) => void;
   versionHistory: Array<{
     id: string;
     version: number;
@@ -31,12 +30,68 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   onEditingInstructionsChange,
   onCopyText,
   onRegenerateWithInstructions,
-  onFormatText,
   versionHistory,
   onRestoreVersion
 }) => {
+  const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
+  const [toolbarVisible, setToolbarVisible] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      setToolbarPosition({
+        top: rect.top + window.scrollY,
+        left: rect.left + (rect.width / 2) - 50
+      });
+      setToolbarVisible(true);
+    } else {
+      setToolbarVisible(false);
+    }
+  };
+
+  const handleFormat = (format: string) => {
+    document.execCommand(format, false);
+    if (editorRef.current) {
+      onGeneratedPostChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      onGeneratedPostChange(editorRef.current.innerHTML);
+    }
+  };
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
+      editorRef.current.innerHTML = generatedPost;
+    }
+  }, [generatedPost]);
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.toString().length === 0) {
+        setToolbarVisible(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
     <div className="space-y-6">
+      <FloatingToolbar
+        position={toolbarPosition}
+        onFormat={handleFormat}
+        visible={toolbarVisible}
+      />
+      
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-xl font-semibold">Generated Post</h3>
@@ -54,7 +109,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFormatText('bold')}
+            onClick={() => handleFormat('bold')}
             className="h-8 w-8 p-0"
           >
             <Bold className="h-4 w-4" />
@@ -62,7 +117,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFormatText('italic')}
+            onClick={() => handleFormat('italic')}
             className="h-8 w-8 p-0"
           >
             <Italic className="h-4 w-4" />
@@ -70,7 +125,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFormatText('underline')}
+            onClick={() => handleFormat('underline')}
             className="h-8 w-8 p-0"
           >
             <Underline className="h-4 w-4" />
@@ -93,13 +148,21 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         </div>
         
         <div className="p-4">
-          <Textarea 
-            data-generated-post
-            value={generatedPost} 
-            onChange={e => onGeneratedPostChange(e.target.value)} 
-            className="min-h-[300px] w-full border-0 focus:ring-0 resize-none text-base leading-relaxed" 
-            placeholder="AI generated content will appear here..." 
+          <div
+            ref={editorRef}
+            contentEditable
+            onInput={handleInput}
+            onMouseUp={handleTextSelection}
+            onKeyUp={handleTextSelection}
+            className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed"
+            style={{ whiteSpace: 'pre-wrap' }}
+            suppressContentEditableWarning={true}
           />
+          {!generatedPost && (
+            <div className="text-gray-400 pointer-events-none absolute">
+              AI generated content will appear here...
+            </div>
+          )}
         </div>
       </div>
       
@@ -108,10 +171,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <h3 className="text-xl font-semibold">Editing Instructions</h3>
         </div>
         <div className="p-4">
-          <Textarea 
+          <textarea 
             value={editingInstructions} 
             onChange={e => onEditingInstructionsChange(e.target.value)} 
-            className="min-h-[100px] w-full" 
+            className="min-h-[100px] w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
             placeholder="Provide feedback or instructions for the AI to improve the generated content..." 
           />
         </div>
