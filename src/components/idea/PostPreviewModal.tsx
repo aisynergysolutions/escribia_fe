@@ -19,14 +19,51 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
+  const [truncatedContent, setTruncatedContent] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (contentRef.current) {
-      const lineHeight = parseInt(window.getComputedStyle(contentRef.current).lineHeight);
+      // Strip HTML tags for text measurement
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = postContent;
+      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+      
+      // Create a temporary element to measure text
+      const measuringDiv = document.createElement('div');
+      measuringDiv.style.visibility = 'hidden';
+      measuringDiv.style.position = 'absolute';
+      measuringDiv.style.width = contentRef.current.offsetWidth + 'px';
+      measuringDiv.style.fontSize = '14px';
+      measuringDiv.style.lineHeight = '1.5';
+      measuringDiv.style.fontFamily = window.getComputedStyle(contentRef.current).fontFamily;
+      document.body.appendChild(measuringDiv);
+      
+      // Calculate how much text fits in 3 lines
+      const lineHeight = 21; // 14px * 1.5 line-height
       const maxHeight = lineHeight * 3;
-      const actualHeight = contentRef.current.scrollHeight;
-      setShouldShowMore(actualHeight > maxHeight);
+      
+      let truncateAt = plainText.length;
+      let testText = plainText;
+      
+      while (testText.length > 0) {
+        measuringDiv.textContent = testText + '...more';
+        if (measuringDiv.offsetHeight <= maxHeight) {
+          truncateAt = testText.length;
+          break;
+        }
+        testText = testText.substring(0, testText.length - 10);
+      }
+      
+      document.body.removeChild(measuringDiv);
+      
+      if (truncateAt < plainText.length) {
+        setShouldShowMore(true);
+        setTruncatedContent(plainText.substring(0, truncateAt));
+      } else {
+        setShouldShowMore(false);
+        setTruncatedContent(plainText);
+      }
     }
   }, [postContent, deviceType]);
 
@@ -123,44 +160,45 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               <div className="relative">
                 <div 
                   ref={contentRef}
-                  className={`
-                    text-sm leading-relaxed mb-4 
-                    ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}
-                    ${!isExpanded && shouldShowMore ? 'line-clamp-3 overflow-hidden' : ''}
-                  `}
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: !isExpanded && shouldShowMore ? 3 : 'unset',
-                    WebkitBoxOrient: 'vertical' as const,
-                    overflow: !isExpanded && shouldShowMore ? 'hidden' : 'visible'
-                  }}
-                  dangerouslySetInnerHTML={{ __html: postContent }}
-                />
-                
-                {/* See More/Less Button */}
-                {shouldShowMore && (
-                  <div className="mt-2">
-                    {!isExpanded ? (
-                      <button
-                        onClick={handleSeeMore}
-                        className={`text-sm font-medium ${
-                          theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                        }`}
-                      >
-                        ...more
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleSeeLess}
-                        className={`text-sm font-medium ${
-                          theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                        }`}
-                      >
-                        See less
-                      </button>
-                    )}
-                  </div>
-                )}
+                  className={`text-sm leading-relaxed mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
+                >
+                  {isExpanded ? (
+                    <div>
+                      <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                      {shouldShowMore && (
+                        <span>
+                          {' '}
+                          <button
+                            onClick={handleSeeLess}
+                            className={`font-medium ${
+                              theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                            }`}
+                          >
+                            See less
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {shouldShowMore ? (
+                        <span>
+                          {truncatedContent}
+                          <button
+                            onClick={handleSeeMore}
+                            className={`font-medium ${
+                              theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                            }`}
+                          >
+                            ...more
+                          </button>
+                        </span>
+                      ) : (
+                        <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* LinkedIn Engagement Bar */}
