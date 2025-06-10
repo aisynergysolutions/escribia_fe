@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Copy, Bold, Italic, Underline, List, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import VersionHistory from '../VersionHistory';
+import FloatingToolbar from './FloatingToolbar';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -35,8 +36,38 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   versionHistory,
   onRestoreVersion
 }) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
+      editorRef.current.innerHTML = generatedPost;
+    }
+  }, [generatedPost]);
+
+  const handleContentChange = () => {
+    if (editorRef.current) {
+      onGeneratedPostChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleFormat = (format: string) => {
+    document.execCommand(format, false, '');
+    handleContentChange();
+  };
+
+  const handleComment = () => {
+    // Placeholder for comment functionality
+    console.log('Add comment functionality here');
+  };
+
+  const handleToolbarFormat = (format: string) => {
+    handleFormat(format);
+  };
+
   return (
     <div className="space-y-6">
+      <FloatingToolbar onFormat={handleToolbarFormat} onComment={handleComment} />
+      
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-xl font-semibold">Generated Post</h3>
@@ -54,7 +85,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFormatText('bold')}
+            onClick={() => handleFormat('bold')}
             className="h-8 w-8 p-0"
           >
             <Bold className="h-4 w-4" />
@@ -62,7 +93,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFormatText('italic')}
+            onClick={() => handleFormat('italic')}
             className="h-8 w-8 p-0"
           >
             <Italic className="h-4 w-4" />
@@ -70,7 +101,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFormatText('underline')}
+            onClick={() => handleFormat('underline')}
             className="h-8 w-8 p-0"
           >
             <Underline className="h-4 w-4" />
@@ -79,6 +110,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => handleFormat('insertUnorderedList')}
             className="h-8 w-8 p-0"
           >
             <List className="h-4 w-4" />
@@ -86,6 +118,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => handleFormat('justifyLeft')}
             className="h-8 w-8 p-0"
           >
             <AlignLeft className="h-4 w-4" />
@@ -93,12 +126,17 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         </div>
         
         <div className="p-4">
-          <Textarea 
-            data-generated-post
-            value={generatedPost} 
-            onChange={e => onGeneratedPostChange(e.target.value)} 
-            className="min-h-[300px] w-full border-0 focus:ring-0 resize-none text-base leading-relaxed" 
-            placeholder="AI generated content will appear here..." 
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning={true}
+            onInput={handleContentChange}
+            className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed"
+            style={{ 
+              border: 'none',
+              outline: 'none'
+            }}
+            dangerouslySetInnerHTML={{ __html: generatedPost || 'AI generated content will appear here...' }}
           />
         </div>
       </div>
