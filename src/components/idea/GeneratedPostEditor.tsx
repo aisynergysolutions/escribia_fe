@@ -42,7 +42,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 }) => {
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const [toolbarVisible, setToolbarVisible] = useState(false);
-  const [selectedText, setSelectedText] = useState('');
   const [originalPost, setOriginalPost] = useState(generatedPost);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -59,32 +58,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         top: rect.top + window.scrollY,
         left: rect.left + (rect.width / 2)
       });
-      setSelectedText(selection.toString());
       setToolbarVisible(true);
     } else {
       setToolbarVisible(false);
-      setSelectedText('');
     }
-  };
-
-  const handleAIEdit = () => {
-    if (!selectedText.trim()) {
-      toast({
-        title: "No text selected",
-        description: "Please select some text to edit with AI.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // TODO: Implement AI editing functionality
-    // This would typically call an AI service to edit the selected text
-    toast({
-      title: "AI Edit",
-      description: "AI editing functionality will be implemented soon.",
-    });
-    
-    setToolbarVisible(false);
   };
 
   const handleFormat = (format: string) => {
@@ -254,7 +231,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       <FloatingToolbar
         position={toolbarPosition}
         onFormat={handleFormat}
-        onAIEdit={handleAIEdit}
         visible={toolbarVisible}
       />
       
