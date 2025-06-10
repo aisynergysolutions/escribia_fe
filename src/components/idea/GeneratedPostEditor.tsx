@@ -419,5 +419,3 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 };
 
 export default GeneratedPostEditor;
-
-}
