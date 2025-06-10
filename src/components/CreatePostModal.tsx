@@ -141,42 +141,42 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       title: 'Generate from text',
       description: 'Turn any text into a post',
       icon: Edit3,
-      color: 'bg-indigo-100 text-indigo-600'
+      color: 'bg-slate-100 text-slate-600'
     },
     {
       id: 'voice',
       title: 'Generate from voice',
       description: 'Record voice memo',
       icon: Mic,
-      color: 'bg-purple-100 text-purple-600'
+      color: 'bg-slate-100 text-slate-600'
     },
     {
       id: 'blank',
       title: 'Blank',
       description: 'Start a post from scratch',
       icon: Plus,
-      color: 'bg-gray-100 text-gray-600'
+      color: 'bg-slate-100 text-slate-600'
     },
     {
       id: 'upload',
       title: 'Upload file to content',
       description: 'Upload audio, video, or text',
       icon: Upload,
-      color: 'bg-orange-100 text-orange-600'
+      color: 'bg-slate-100 text-slate-600'
     },
     {
       id: 'youtube',
       title: 'YouTube to content',
       description: 'Turn YouTube videos into content',
       icon: Youtube,
-      color: 'bg-red-100 text-red-600'
+      color: 'bg-slate-100 text-slate-600'
     },
     {
       id: 'interview',
       title: 'Content interview',
       description: 'Turn conversations into content',
       icon: Users,
-      color: 'bg-green-100 text-green-600'
+      color: 'bg-slate-100 text-slate-600'
     }
   ];
 
@@ -191,7 +191,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Edit3 className="h-5 w-5 text-indigo-500" />
+                <Edit3 className="h-5 w-5 text-slate-600" />
                 <h3 className="text-lg font-medium text-foreground">Generate from text</h3>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -219,13 +219,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
             <Button
               onClick={handleCreateFromText}
               disabled={!ideaText.trim()}
-              className="w-full py-3"
+              className="w-full py-3 bg-slate-900 hover:bg-slate-800"
             >
               Generate post from text
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
+              Using Standard AI model. <span className="text-slate-600 cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -235,7 +235,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Mic className="h-5 w-5 text-purple-500" />
+                <Mic className="h-5 w-5 text-slate-600" />
                 <h3 className="text-lg font-medium text-foreground">Generate from voice</h3>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -276,7 +276,7 @@ What you want to convey to your audience?"
 
             <Button
               onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-              className={`w-full py-3 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : 'bg-purple-600 hover:bg-purple-700'}`}
+              className={`w-full py-3 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : 'bg-slate-900 hover:bg-slate-800'}`}
             >
               {isRecording ? (
                 <>
@@ -293,7 +293,7 @@ What you want to convey to your audience?"
 
             {!isRecording && (
               <div className="text-center text-sm text-muted-foreground">
-                Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
+                Using Standard AI model. <span className="text-slate-600 cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
               </div>
             )}
           </div>
@@ -304,7 +304,7 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Plus className="h-5 w-5 text-muted-foreground" />
+                <Plus className="h-5 w-5 text-slate-600" />
                 <h3 className="text-lg font-medium text-foreground">Blank</h3>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -327,7 +327,7 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Upload className="h-5 w-5 text-orange-500" />
+                <Upload className="h-5 w-5 text-slate-600" />
                 <h3 className="text-lg font-medium text-foreground">Upload file to content</h3>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -388,13 +388,13 @@ What you want to convey to your audience?"
             <Button
               onClick={handleUploadFile}
               disabled={uploadedFiles.length === 0}
-              className="w-full bg-orange-600 hover:bg-orange-700 py-3"
+              className="w-full bg-slate-900 hover:bg-slate-800 py-3"
             >
               Generate posts from files
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
+              Using Standard AI model. <span className="text-slate-600 cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -404,7 +404,7 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Youtube className="h-5 w-5 text-red-500" />
+                <Youtube className="h-5 w-5 text-slate-600" />
                 <h3 className="text-lg font-medium text-foreground">YouTube to content</h3>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -438,13 +438,13 @@ What you want to convey to your audience?"
             <Button
               onClick={handleYoutubeSubmit}
               disabled={!youtubeUrl.trim()}
-              className="w-full bg-red-600 hover:bg-red-700 py-3"
+              className="w-full bg-slate-900 hover:bg-slate-800 py-3"
             >
               Generate posts from YouTube
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
+              Using Standard AI model. <span className="text-slate-600 cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -454,7 +454,7 @@ What you want to convey to your audience?"
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Users className="h-5 w-5 text-green-500" />
+                <Users className="h-5 w-5 text-slate-600" />
                 <h3 className="text-lg font-medium text-foreground">Content interview</h3>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -476,13 +476,13 @@ What you want to convey to your audience?"
 
             <Button
               onClick={handleContentInterview}
-              className="w-full bg-green-600 hover:bg-green-700 py-3"
+              className="w-full bg-slate-900 hover:bg-slate-800 py-3"
             >
               Start content interview
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
+              Using Standard AI model. <span className="text-slate-600 cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
             </div>
           </div>
         );
@@ -497,7 +497,10 @@ What you want to convey to your audience?"
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Choose how you want to create posts
@@ -516,7 +519,7 @@ What you want to convey to your audience?"
                     onClick={() => handleMethodSelect(method.id)}
                     className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
                       selectedMethod === method.id 
-                        ? 'border-primary bg-accent' 
+                        ? 'border-slate-300 bg-slate-50' 
                         : 'border-border bg-card'
                     }`}
                   >
@@ -543,7 +546,7 @@ What you want to convey to your audience?"
                     onClick={() => handleMethodSelect(method.id)}
                     className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
                       selectedMethod === method.id 
-                        ? 'border-primary bg-accent' 
+                        ? 'border-slate-300 bg-slate-50' 
                         : 'border-border bg-card'
                     }`}
                   >
