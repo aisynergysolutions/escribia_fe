@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
@@ -291,40 +292,79 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-xl font-semibold">Generated Post</h3>
-          <div className="flex gap-2">
-            <VersionHistory versions={versionHistory} onRestore={onRestoreVersion} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreview}
-              className="gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSave}
-              disabled={!hasUnsavedChanges}
-              className={hasUnsavedChanges ? 'bg-blue-50 border-blue-300' : ''}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleCopyWithFormatting}>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
-            </Button>
-            <Button
-              size="sm"
-              onClick={handlePost}
-              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-            >
-              <Send className="h-4 w-4" />
-              Post
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <VersionHistory versions={versionHistory} onRestore={onRestoreVersion} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Version History</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreview}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Preview</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={!hasUnsavedChanges}
+                    className={`h-8 w-8 p-0 ${hasUnsavedChanges ? 'bg-blue-50 border-blue-300' : ''}`}
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Save</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={handleCopyWithFormatting} className="h-8 w-8 p-0">
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Copy</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={handlePost}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-8 w-8 p-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Post</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
         
         {/* Text Editor Toolbar */}
@@ -439,3 +479,5 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 };
 
 export default GeneratedPostEditor;
+
+}
