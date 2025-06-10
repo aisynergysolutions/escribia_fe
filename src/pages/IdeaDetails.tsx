@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X, Check } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X, Check, Bold, Italic, Underline, List, AlignLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { mockIdeas, mockClients, mockTemplates } from '../types';
@@ -41,6 +42,7 @@ const IdeaDetails = () => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(isNewPost);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
 
   // Find the idea in our mock data (only if not creating new)
   const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
@@ -198,6 +200,33 @@ const IdeaDetails = () => {
   const handleTemplateChange = (value: string) => {
     setTemplate(value);
   };
+  const handleFormatText = (format: string) => {
+    // Basic text formatting - in a real implementation, you'd use a proper rich text editor
+    const textarea = document.querySelector('textarea[data-generated-post]') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = generatedPost.substring(start, end);
+    
+    let formattedText = '';
+    switch (format) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        break;
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        break;
+      case 'underline':
+        formattedText = `__${selectedText}__`;
+        break;
+      default:
+        formattedText = selectedText;
+    }
+
+    const newText = generatedPost.substring(0, start) + formattedText + generatedPost.substring(end);
+    setGeneratedPost(newText);
+  };
   return <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -213,9 +242,6 @@ const IdeaDetails = () => {
                 </Button>}
             </div> : <EditableTitle title={title} onSave={setTitle} className="text-2xl font-bold" />}
         </div>
-        <div className="flex items-center gap-2">
-          
-        </div>
       </div>
       
       {/* Show a notice for new ideas */}
@@ -228,68 +254,91 @@ const IdeaDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left section - 2/3 width */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Idea</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="initialIdea" className="block text-sm font-medium mb-1">Initial Idea</label>
-                <Textarea id="initialIdea" value={initialIdea} onChange={e => setInitialIdea(e.target.value)} placeholder="Write your initial idea here..." rows={4} className="w-full" />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
+          {/* Collapsible Initial Idea Section */}
+          <Collapsible open={isIdeaExpanded} onOpenChange={setIsIdeaExpanded}>
+            <Card className="p-4">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <h2 className="text-lg font-medium text-gray-700">Initial Idea</h2>
                   <div className="flex items-center gap-2">
-                    <Select value={objective} onValueChange={setObjective}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select objective" />
+                    {!isIdeaExpanded && initialIdea && (
+                      <span className="text-sm text-gray-500 truncate max-w-md">
+                        {initialIdea.substring(0, 60)}...
+                      </span>
+                    )}
+                    {isIdeaExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent className="space-y-4 pt-4">
+                <div>
+                  <label htmlFor="initialIdea" className="block text-sm font-medium mb-1">Initial Idea</label>
+                  <Textarea 
+                    id="initialIdea" 
+                    value={initialIdea} 
+                    onChange={e => setInitialIdea(e.target.value)} 
+                    placeholder="Write your initial idea here..." 
+                    rows={4} 
+                    className="w-full" 
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
+                    <div className="flex items-center gap-2">
+                      <Select value={objective} onValueChange={setObjective}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select objective" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {predefinedObjectives.map(obj => <SelectItem key={obj} value={obj}>{obj}</SelectItem>)}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            Add Custom
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <CustomInputModal title="Add Custom Objective" placeholder="Enter custom objective..." onSave={handleAddCustomObjective}>
+                            <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                              Add custom objective...
+                            </DropdownMenuItem>
+                          </CustomInputModal>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="template" className="block text-sm font-medium mb-1">Template</label>
+                    <Select value={template} onValueChange={handleTemplateChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Not Selected" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {predefinedObjectives.map(obj => <SelectItem key={obj} value={obj}>{obj}</SelectItem>)}
+                          <SelectItem value="none">None</SelectItem>
+                          {mockTemplates.map(templ => <SelectItem key={templ.id} value={templ.id}>{templ.templateName}</SelectItem>)}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          Add Custom
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <CustomInputModal title="Add Custom Objective" placeholder="Enter custom objective..." onSave={handleAddCustomObjective}>
-                          <DropdownMenuItem onSelect={e => e.preventDefault()}>
-                            Add custom objective...
-                          </DropdownMenuItem>
-                        </CustomInputModal>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                 </div>
                 
-                <div>
-                  <label htmlFor="template" className="block text-sm font-medium mb-1">Template</label>
-                  <Select value={template} onValueChange={handleTemplateChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Not Selected" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="none">None</SelectItem>
-                        {mockTemplates.map(templ => <SelectItem key={templ.id} value={templ.id}>{templ.templateName}</SelectItem>)}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <Button onClick={handleSendToAI} className="w-full bg-indigo-600 hover:bg-indigo-700">
-                Send to AI
-              </Button>
-            </div>
-          </Card>
+                <Button onClick={handleSendToAI} className="w-full bg-indigo-600 hover:bg-indigo-700">
+                  Send to AI
+                </Button>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
           
+          {/* Enhanced Generated Post Editor */}
           <div>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="bg-slate-100">
@@ -309,8 +358,58 @@ const IdeaDetails = () => {
                       </Button>
                     </div>
                   </div>
+                  
+                  {/* Text Editor Toolbar */}
+                  <div className="border-b p-2 flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFormatText('bold')}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFormatText('italic')}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFormatText('underline')}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Underline className="h-4 w-4" />
+                    </Button>
+                    <div className="w-px h-6 bg-gray-300 mx-1" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <AlignLeft className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
                   <div className="p-4">
-                    <Textarea value={generatedPost} onChange={e => setGeneratedPost(e.target.value)} className="min-h-[200px] w-full" placeholder="AI generated content will appear here..." />
+                    <Textarea 
+                      data-generated-post
+                      value={generatedPost} 
+                      onChange={e => setGeneratedPost(e.target.value)} 
+                      className="min-h-[300px] w-full border-0 focus:ring-0 resize-none text-base leading-relaxed" 
+                      placeholder="AI generated content will appear here..." 
+                    />
                   </div>
                 </div>
                 
@@ -319,7 +418,12 @@ const IdeaDetails = () => {
                     <h3 className="text-xl font-semibold">Editing Instructions</h3>
                   </div>
                   <div className="p-4">
-                    <Textarea value={editingInstructions} onChange={e => setEditingInstructions(e.target.value)} className="min-h-[100px] w-full" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
+                    <Textarea 
+                      value={editingInstructions} 
+                      onChange={e => setEditingInstructions(e.target.value)} 
+                      className="min-h-[100px] w-full" 
+                      placeholder="Provide feedback or instructions for the AI to improve the generated content..." 
+                    />
                   </div>
                   <div className="p-4 pt-0">
                     <Button onClick={handleRegenerateWithInstructions} className="w-full bg-indigo-600 hover:bg-indigo-700">
