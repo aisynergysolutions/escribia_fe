@@ -14,6 +14,7 @@ import PostCalendar from '../components/ui/PostCalendar';
 import CommentCard from '../components/ui/CommentCard';
 import StatCard from '../components/ui/StatCard';
 import { mockClients, mockIdeas, Idea } from '../types';
+import CreatePostModal from '../components/CreatePostModal';
 
 // Mock LinkedIn posts data
 const mockLinkedInPosts = [
@@ -271,13 +272,12 @@ const ClientDetails = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">All Posts</h2>
-          <Button 
-            className="bg-indigo-600 hover:bg-indigo-700"
-            onClick={handleNewIdea}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Post
-          </Button>
+          <CreatePostModal>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Post
+            </Button>
+          </CreatePostModal>
         </div>
 
         {/* Search and Sort Controls */}

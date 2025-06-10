@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Copy, Upload, History, FileText, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,16 +16,14 @@ import VersionHistory from '../components/VersionHistory';
 import CustomInputModal from '../components/CustomInputModal';
 import EditableTitle from '../components/EditableTitle';
 const IdeaDetails = () => {
-  const {
-    clientId,
-    ideaId
-  } = useParams<{
-    clientId: string;
-    ideaId: string;
-  }>();
-  const navigate = useNavigate();
+  const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
   const [searchParams] = useSearchParams();
-  const isNewIdea = searchParams.get('new') === 'true';
+  const navigate = useNavigate();
+  
+  const isNewPost = searchParams.get('new') === 'true';
+  const creationMethod = searchParams.get('method');
+  const ideaFromUrl = searchParams.get('idea');
+  
   const [activeTab, setActiveTab] = React.useState('generatedPost');
   const [title, setTitle] = useState('');
   const [initialIdea, setInitialIdea] = useState('');
@@ -41,11 +39,11 @@ const IdeaDetails = () => {
   const [timezone, setTimezone] = useState('UTC-5');
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [isEditingTitle, setIsEditingTitle] = useState(isNewIdea);
+  const [isEditingTitle, setIsEditingTitle] = useState(isNewPost);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Find the idea in our mock data (only if not creating new)
-  const idea = !isNewIdea ? mockIdeas.find(i => i.id === ideaId) : null;
+  const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
   const client = mockClients.find(c => c.id === clientId);
 
   // Mock version history data
@@ -72,7 +70,7 @@ const IdeaDetails = () => {
     notes: 'Latest version with improved structure'
   }]);
   useEffect(() => {
-    if (idea && !isNewIdea) {
+    if (idea && !isNewPost) {
       setTitle(idea.title);
       setInitialIdea(idea.initialIdeaPrompt);
       setObjective(idea.objective);
@@ -94,7 +92,7 @@ const IdeaDetails = () => {
       if (selectedHook !== -1) {
         setSelectedHookIndex(selectedHook);
       }
-    } else if (isNewIdea) {
+    } else if (isNewPost) {
       // Set defaults for new idea
       setTitle('');
       setInitialIdea('');
@@ -104,7 +102,7 @@ const IdeaDetails = () => {
       setInternalNotes('');
       setTemplate('none');
     }
-  }, [idea, isNewIdea]);
+  }, [idea, isNewPost]);
   const form = useForm({
     defaultValues: {
       postingDate: ''
@@ -134,7 +132,7 @@ const IdeaDetails = () => {
   };
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
-    if (isNewIdea) {
+    if (isNewPost) {
       setHasUnsavedChanges(true);
     }
   };
@@ -208,7 +206,7 @@ const IdeaDetails = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          {isNewIdea ? <div className="flex items-center gap-2">
+          {isNewPost ? <div className="flex items-center gap-2">
               <input type="text" value={title} onChange={e => handleTitleChange(e.target.value)} placeholder="Enter idea title..." className="text-2xl font-bold bg-transparent border-b-2 border-gray-300 focus:border-indigo-500 outline-none" autoFocus />
               {hasUnsavedChanges && <Button onClick={handleSaveNewIdea} className="bg-indigo-600 hover:bg-indigo-700" size="sm">
                   Save
@@ -221,7 +219,7 @@ const IdeaDetails = () => {
       </div>
       
       {/* Show a notice for new ideas */}
-      {isNewIdea && <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      {isNewPost && <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-blue-800">
             <strong>New Idea:</strong> Enter a title above and start building your idea. Don't forget to save!
           </p>

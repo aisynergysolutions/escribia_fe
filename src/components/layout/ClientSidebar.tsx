@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { mockClients } from '../../types';
+import CreatePostModal from '../CreatePostModal';
 
 const clientNavItems = [
   { 
@@ -77,11 +78,6 @@ const ClientSidebar = () => {
     navigate(`/clients/${clientId}`);
   };
 
-  const handleCreatePost = () => {
-    const tempIdeaId = `temp-${Date.now()}`;
-    navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true`);
-  };
-
   if (!client) {
     return null;
   }
@@ -100,13 +96,13 @@ const ClientSidebar = () => {
         <li key={item.path}>
           <Link
             to={fullPath}
-            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               isActive 
                 ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
             }`}
           >
-            <item.icon className="mr-2 h-4 w-4" strokeWidth={1.5} />
+            <item.icon className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{item.title}</span>
           </Link>
         </li>
@@ -133,20 +129,18 @@ const ClientSidebar = () => {
         </button>
         <p className="text-xs text-slate-500 mb-2">{client.industry}</p>
         
-        {/* Create Post Button */}
-        <Button
-          onClick={handleCreatePost}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-          size="sm"
-        >
-          <PlusCircle className="h-3 w-3 mr-1" />
-          Create Post
-        </Button>
+        {/* Create Post Button with Modal */}
+        <CreatePostModal>
+          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
+            <PlusCircle className="h-3 w-3 mr-1" />
+            Create Post
+          </Button>
+        </CreatePostModal>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-3">
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {/* Main Navigation */}
           <li>
             <ul className="space-y-1">
