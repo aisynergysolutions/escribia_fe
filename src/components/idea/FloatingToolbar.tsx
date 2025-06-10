@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Bold, Italic, Underline } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -16,16 +17,14 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
 }) => {
   if (!visible) return null;
 
-  return (
+  const toolbar = (
     <div
-      className="fixed z-50 bg-white border rounded-lg shadow-lg flex items-center gap-1 p-1"
+      className="fixed z-[9999] bg-white border rounded-lg shadow-lg flex items-center gap-1 p-1"
       style={{
         top: position.top - 50,
-        left: position.left,
-        position: 'fixed',
-        pointerEvents: 'auto',
-        margin: 0,
-        padding: '4px'
+        left: position.left - 50,
+        transform: 'translateX(-50%)',
+        pointerEvents: 'auto'
       }}
     >
       <Button
@@ -54,6 +53,8 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       </Button>
     </div>
   );
+
+  return createPortal(toolbar, document.body);
 };
 
 export default FloatingToolbar;
