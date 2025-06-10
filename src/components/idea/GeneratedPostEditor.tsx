@@ -43,6 +43,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [originalPost, setOriginalPost] = useState(generatedPost);
+  const [selectedText, setSelectedText] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -51,6 +52,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) {
+      const selectedText = selection.toString();
+      setSelectedText(selectedText);
+      
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       
@@ -60,6 +64,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       });
       setToolbarVisible(true);
     } else {
+      setToolbarVisible(false);
+      setSelectedText('');
+    }
+  };
+
+  const handleAIEdit = () => {
+    if (selectedText) {
+      // For now, we'll show a toast. In a real implementation, this would trigger an AI edit request
+      toast({
+        title: "AI Edit Requested",
+        description: `AI will edit: "${selectedText.substring(0, 50)}${selectedText.length > 50 ? '...' : ''}"`,
+      });
+      
+      // Hide the toolbar after the action
       setToolbarVisible(false);
     }
   };
@@ -231,6 +249,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       <FloatingToolbar
         position={toolbarPosition}
         onFormat={handleFormat}
+        onAIEdit={handleAIEdit}
         visible={toolbarVisible}
       />
       
