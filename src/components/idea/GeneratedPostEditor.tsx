@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 
@@ -36,6 +37,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
+  const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) {
@@ -53,7 +56,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   };
 
   const handleFormat = (format: string) => {
-    document.execCommand(format, false);
+    if (format === 'insertUnorderedList') {
+      document.execCommand('insertUnorderedList', false);
+    } else {
+      document.execCommand(format, false);
+    }
     if (editorRef.current) {
       onGeneratedPostChange(editorRef.current.innerHTML);
     }
@@ -65,12 +72,34 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    // Handle Ctrl+C to copy with formatting
+    if (event.ctrlKey && event.key === 'c') {
+      event.preventDefault();
+      handleCopyWithFormatting();
+    }
+  };
+
   const handleCopyWithFormatting = async () => {
     if (editorRef.current) {
       try {
-        // Create a ClipboardItem with both HTML and plain text
-        const htmlContent = editorRef.current.innerHTML;
-        const textContent = editorRef.current.innerText || editorRef.current.textContent || '';
+        const selection = window.getSelection();
+        let htmlContent = '';
+        let textContent = '';
+        
+        if (selection && selection.toString().length > 0) {
+          // Copy selected content
+          const range = selection.getRangeAt(0);
+          const fragment = range.cloneContents();
+          const tempDiv = document.createElement('div');
+          tempDiv.appendChild(fragment);
+          htmlContent = tempDiv.innerHTML;
+          textContent = selection.toString();
+        } else {
+          // Copy all content
+          htmlContent = editorRef.current.innerHTML;
+          textContent = editorRef.current.innerText || editorRef.current.textContent || '';
+        }
         
         if (navigator.clipboard && window.ClipboardItem) {
           const clipboardItem = new ClipboardItem({
@@ -85,9 +114,32 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       } catch (err) {
         console.error('Failed to copy with formatting, falling back to plain text:', err);
         // Fallback to plain text
-        const textContent = editorRef.current.innerText || editorRef.current.textContent || '';
+        const selection = window.getSelection();
+        const textContent = selection && selection.toString().length > 0 
+          ? selection.toString() 
+          : editorRef.current.innerText || editorRef.current.textContent || '';
         await navigator.clipboard.writeText(textContent);
       }
+    }
+  };
+
+  const insertEmoji = (emoji: string) => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const textNode = document.createTextNode(emoji);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        // If no selection, append at the end
+        editorRef.current.appendChild(document.createTextNode(emoji));
+      }
+      onGeneratedPostChange(editorRef.current.innerHTML);
     }
   };
 
@@ -159,6 +211,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => handleFormat('insertUnorderedList')}
             className="h-8 w-8 p-0"
           >
             <List className="h-4 w-4" />
@@ -170,6 +223,31 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           >
             <AlignLeft className="h-4 w-4" />
           </Button>
+          <div className="w-px h-6 bg-gray-300 mx-1" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+              >
+                <Smile className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2">
+              <div className="grid grid-cols-5 gap-1">
+                {emojis.map((emoji, index) => (
+                  <button
+                    key={index}
+                    onClick={() => insertEmoji(emoji)}
+                    className="p-2 hover:bg-gray-100 rounded text-lg"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         
         <div className="p-4">
@@ -179,6 +257,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             onInput={handleInput}
             onMouseUp={handleTextSelection}
             onKeyUp={handleTextSelection}
+            onKeyDown={handleKeyDown}
             className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed"
             style={{ whiteSpace: 'pre-wrap' }}
             suppressContentEditableWarning={true}

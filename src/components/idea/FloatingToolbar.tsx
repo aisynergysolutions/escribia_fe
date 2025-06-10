@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Bold, Italic, Underline } from 'lucide-react';
+import { Bold, Italic, Underline, List, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface FloatingToolbarProps {
   position: { top: number; left: number };
@@ -15,6 +16,22 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   onFormat,
   visible
 }) => {
+  const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
+  const insertEmoji = (emoji: string) => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      const textNode = document.createTextNode(emoji);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
+
   if (!visible) return null;
 
   const toolbar = (
@@ -51,6 +68,39 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       >
         <Underline className="h-4 w-4" />
       </Button>
+      <div className="w-px h-6 bg-gray-300 mx-1" />
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onFormat('insertUnorderedList')}
+        className="h-8 w-8 p-0 hover:bg-gray-100"
+      >
+        <List className="h-4 w-4" />
+      </Button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-100"
+          >
+            <Smile className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-2">
+          <div className="grid grid-cols-5 gap-1">
+            {emojis.map((emoji, index) => (
+              <button
+                key={index}
+                onClick={() => insertEmoji(emoji)}
+                className="p-2 hover:bg-gray-100 rounded text-lg"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 
