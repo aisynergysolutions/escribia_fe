@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Eye, Smartphone, Monitor, Sun, Moon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,15 +17,26 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
 }) => {
   const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [shouldShowMore, setShouldShowMore] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  const stripHtmlTags = (html: string) => {
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-    return temp.textContent || temp.innerText || '';
+  useEffect(() => {
+    if (contentRef.current) {
+      const lineHeight = parseInt(window.getComputedStyle(contentRef.current).lineHeight);
+      const maxHeight = lineHeight * 3;
+      const actualHeight = contentRef.current.scrollHeight;
+      setShouldShowMore(actualHeight > maxHeight);
+    }
+  }, [postContent, deviceType]);
+
+  const handleSeeMore = () => {
+    setIsExpanded(true);
   };
 
-  const cleanContent = stripHtmlTags(postContent);
-  const truncatedContent = cleanContent.length > 200 ? cleanContent.substring(0, 200) + '...' : cleanContent;
+  const handleSeeLess = () => {
+    setIsExpanded(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,10 +120,48 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             
             {/* Post Content */}
             <div className="p-4">
-              <div 
-                className={`text-sm leading-relaxed mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
-                dangerouslySetInnerHTML={{ __html: postContent }}
-              />
+              <div className="relative">
+                <div 
+                  ref={contentRef}
+                  className={`
+                    text-sm leading-relaxed mb-4 
+                    ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}
+                    ${!isExpanded && shouldShowMore ? 'line-clamp-3 overflow-hidden' : ''}
+                  `}
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: !isExpanded && shouldShowMore ? 3 : 'unset',
+                    WebkitBoxOrient: 'vertical' as const,
+                    overflow: !isExpanded && shouldShowMore ? 'hidden' : 'visible'
+                  }}
+                  dangerouslySetInnerHTML={{ __html: postContent }}
+                />
+                
+                {/* See More/Less Button */}
+                {shouldShowMore && (
+                  <div className="mt-2">
+                    {!isExpanded ? (
+                      <button
+                        onClick={handleSeeMore}
+                        className={`text-sm font-medium ${
+                          theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                        }`}
+                      >
+                        ...more
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSeeLess}
+                        className={`text-sm font-medium ${
+                          theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                        }`}
+                      >
+                        See less
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               
               {/* LinkedIn Engagement Bar */}
               <div className={`pt-3 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
