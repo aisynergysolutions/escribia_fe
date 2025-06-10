@@ -1,0 +1,154 @@
+
+import React, { useState } from 'react';
+import { Eye, Smartphone, Monitor, Sun, Moon, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+interface PostPreviewModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  postContent: string;
+}
+
+const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
+  open,
+  onOpenChange,
+  postContent
+}) => {
+  const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const stripHtmlTags = (html: string) => {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    return temp.textContent || temp.innerText || '';
+  };
+
+  const cleanContent = stripHtmlTags(postContent);
+  const truncatedContent = cleanContent.length > 200 ? cleanContent.substring(0, 200) + '...' : cleanContent;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={`max-w-6xl h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            LinkedIn Post Preview
+          </DialogTitle>
+        </DialogHeader>
+        
+        {/* Controls */}
+        <div className="flex gap-4 items-center justify-center py-4 border-b flex-shrink-0">
+          {/* Device Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={deviceType === 'mobile' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setDeviceType('mobile')}
+              className="gap-2"
+            >
+              <Smartphone className="h-4 w-4" />
+              Mobile
+            </Button>
+            <Button
+              variant={deviceType === 'desktop' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setDeviceType('desktop')}
+              className="gap-2"
+            >
+              <Monitor className="h-4 w-4" />
+              Desktop
+            </Button>
+          </div>
+          
+          {/* Theme Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={theme === 'light' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTheme('light')}
+              className="gap-2"
+            >
+              <Sun className="h-4 w-4" />
+              Light
+            </Button>
+            <Button
+              variant={theme === 'dark' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTheme('dark')}
+              className="gap-2"
+            >
+              <Moon className="h-4 w-4" />
+              Dark
+            </Button>
+          </div>
+        </div>
+        
+        {/* Preview Area */}
+        <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
+          <div 
+            className={`
+              ${deviceType === 'mobile' ? 'w-[375px]' : 'w-full max-w-[600px]'} 
+              ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} 
+              rounded-lg shadow-lg border overflow-hidden
+            `}
+          >
+            {/* LinkedIn Header */}
+            <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
+                <div>
+                  <div className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                    Your Name
+                  </div>
+                  <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    13 days ago
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Post Content */}
+            <div className="p-4">
+              <div 
+                className={`text-sm leading-relaxed mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
+                dangerouslySetInnerHTML={{ __html: postContent }}
+              />
+              
+              {/* LinkedIn Engagement Bar */}
+              <div className={`pt-3 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="flex items-center justify-between text-sm">
+                  <div className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <div className="flex -space-x-1">
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-xs text-white">👍</div>
+                      <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">❤️</div>
+                    </div>
+                    <span>Max Müller and 251 other people</span>
+                  </div>
+                  <div className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    47 Comments
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-between pt-3 mt-3 border-t border-gray-200">
+                  {['Like', 'Comment', 'Share', 'Send'].map((action) => (
+                    <button
+                      key={action}
+                      className={`flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-100 ${
+                        theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="text-sm">{action}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default PostPreviewModal;

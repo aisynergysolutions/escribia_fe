@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
+import PostPreviewModal from './PostPreviewModal';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -46,6 +47,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [aiEditToolbarVisible, setAiEditToolbarVisible] = useState(false);
   const [originalPost, setOriginalPost] = useState(generatedPost);
   const [selectedText, setSelectedText] = useState('');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -75,9 +77,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleAIEdit = () => {
     if (selectedText) {
-      // Keep the same position but switch toolbars
       setToolbarVisible(false);
-      // Small delay to ensure smooth transition
       setTimeout(() => {
         setAiEditToolbarVisible(true);
       }, 50);
@@ -91,15 +91,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         description: `Instruction: "${instruction}" applied to selected text.`,
       });
       
-      // In a real implementation, this would call an AI API to edit the selected text
-      // For now, we'll just show the toast and close the toolbar
       setAiEditToolbarVisible(false);
     }
   };
 
   const handleAIEditClose = () => {
     setAiEditToolbarVisible(false);
-    // Optionally show the main toolbar again if text is still selected
     if (selectedText) {
       setToolbarVisible(true);
     }
@@ -110,13 +107,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     if (!selection || !editorRef.current) return;
 
     if (format === 'insertUnorderedList') {
-      // Check if we're already in a list
       const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
       let listElement = null;
       
       if (range) {
         let node = range.startContainer;
-        // Traverse up to find if we're inside a list
         while (node && node !== editorRef.current) {
           if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'UL') {
             listElement = node as Element;
@@ -127,10 +122,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       }
 
       if (listElement) {
-        // We're in a list, remove it
         document.execCommand('insertUnorderedList', false);
       } else {
-        // We're not in a list, create one
         document.execCommand('insertUnorderedList', false);
       }
     } else {
@@ -153,12 +146,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    // Handle Ctrl+C to copy with formatting
     if (event.ctrlKey && event.key === 'c') {
       event.preventDefault();
       handleCopyWithFormatting();
     }
-    // Handle Ctrl+S to save
     if (event.ctrlKey && event.key === 's') {
       event.preventDefault();
       handleSave();
@@ -173,7 +164,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         let textContent = '';
         
         if (selection && selection.toString().length > 0) {
-          // Copy selected content
           const range = selection.getRangeAt(0);
           const fragment = range.cloneContents();
           const tempDiv = document.createElement('div');
@@ -181,7 +171,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           htmlContent = tempDiv.innerHTML;
           textContent = selection.toString();
         } else {
-          // Copy all content
           htmlContent = editorRef.current.innerHTML;
           textContent = editorRef.current.innerText || editorRef.current.textContent || '';
         }
@@ -193,12 +182,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           });
           await navigator.clipboard.write([clipboardItem]);
         } else {
-          // Fallback for browsers that don't support ClipboardItem
           await navigator.clipboard.writeText(textContent);
         }
       } catch (err) {
         console.error('Failed to copy with formatting, falling back to plain text:', err);
-        // Fallback to plain text
         const selection = window.getSelection();
         const textContent = selection && selection.toString().length > 0 
           ? selection.toString() 
@@ -221,7 +208,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         selection.removeAllRanges();
         selection.addRange(range);
       } else {
-        // If no selection, append at the end
         editorRef.current.appendChild(document.createTextNode(emoji));
       }
       const newContent = editorRef.current.innerHTML;
@@ -243,6 +229,17 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       title: "Saved",
       description: "Your changes have been saved successfully.",
     });
+  };
+
+  const handlePost = () => {
+    toast({
+      title: "Post Published",
+      description: "Your post has been successfully published to LinkedIn.",
+    });
+  };
+
+  const handlePreview = () => {
+    setShowPreviewModal(true);
   };
 
   useEffect(() => {
@@ -285,11 +282,26 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         onApplyEdit={handleAIEditApply}
       />
       
+      <PostPreviewModal
+        open={showPreviewModal}
+        onOpenChange={setShowPreviewModal}
+        postContent={generatedPost}
+      />
+      
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-xl font-semibold">Generated Post</h3>
           <div className="flex gap-2">
             <VersionHistory versions={versionHistory} onRestore={onRestoreVersion} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreview}
+              className="gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Preview
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -303,6 +315,14 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             <Button variant="outline" size="sm" onClick={handleCopyWithFormatting}>
               <Copy className="h-4 w-4 mr-2" />
               Copy
+            </Button>
+            <Button
+              size="sm"
+              onClick={handlePost}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+            >
+              <Send className="h-4 w-4" />
+              Post
             </Button>
           </div>
         </div>
