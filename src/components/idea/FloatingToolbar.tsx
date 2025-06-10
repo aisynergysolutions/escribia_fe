@@ -22,7 +22,10 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       style={{
         top: position.top - 50,
         left: position.left,
-        pointerEvents: 'auto'
+        position: 'fixed',
+        pointerEvents: 'auto',
+        margin: 0,
+        padding: '4px'
       }}
     >
       <Button
