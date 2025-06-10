@@ -30,6 +30,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const [uploadRemarks, setUploadRemarks] = useState('');
   const [interviewRemarks, setInterviewRemarks] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [textUploadedFiles, setTextUploadedFiles] = useState<File[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   
   const navigate = useNavigate();
@@ -51,7 +52,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       const textData = {
         idea: ideaText.trim(),
         objective: selectedObjective,
-        template: selectedTemplate
+        template: selectedTemplate,
+        files: textUploadedFiles.map(file => ({ name: file.name, size: file.size, type: file.type }))
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=text&data=${encodeURIComponent(JSON.stringify(textData))}`);
       setIsOpen(false);
@@ -128,6 +130,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     setUploadRemarks('');
     setInterviewRemarks('');
     setUploadedFiles([]);
+    setTextUploadedFiles([]);
     setRecordingLanguage('English');
     setIsRecording(false);
   };
@@ -139,8 +142,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     }
   };
 
+  const handleTextFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      setTextUploadedFiles(prev => [...prev, ...Array.from(files)]);
+    }
+  };
+
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeTextFile = (index: number) => {
+    setTextUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const startVoiceRecording = () => {
@@ -267,6 +281,50 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
                 placeholder="Enter your idea here..."
                 className="min-h-[200px] resize-none"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Upload supporting files (optional)
+              </label>
+              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center bg-muted/20">
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-foreground mb-2">Add files to support your text</p>
+                <p className="text-xs text-muted-foreground mb-3">Audio, video, PDF, or text files</p>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleTextFileUpload}
+                  className="hidden"
+                  id="text-file-upload"
+                  accept="audio/*,video/*,.pdf,.txt,.doc,.docx"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('text-file-upload')?.click()}
+                >
+                  Select Files
+                </Button>
+              </div>
+
+              {textUploadedFiles.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  <h4 className="text-sm font-medium text-foreground">Uploaded Files:</h4>
+                  {textUploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                      <span className="text-sm text-foreground truncate">{file.name}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeTextFile(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="text-sm text-muted-foreground">
@@ -556,7 +614,7 @@ What you want to convey to your audience?"
         {children}
       </DialogTrigger>
       <DialogContent 
-        className="max-w-6xl max-h-[90vh] overflow-y-auto"
+        className="max-w-7xl max-h-[90vh] overflow-y-auto"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
@@ -634,3 +692,5 @@ What you want to convey to your audience?"
 };
 
 export default CreatePostModal;
+
+}
