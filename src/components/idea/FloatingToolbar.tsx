@@ -36,9 +36,9 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       while (editorElement && editorElement.nodeType !== Node.ELEMENT_NODE) {
         editorElement = editorElement.parentNode;
       }
-      if (editorElement && (editorElement as Element).contentEditable === 'true') {
+      if (editorElement && (editorElement as HTMLElement).contentEditable === 'true') {
         const inputEvent = new Event('input', { bubbles: true });
-        (editorElement as Element).dispatchEvent(inputEvent);
+        (editorElement as HTMLElement).dispatchEvent(inputEvent);
       }
     }
   };
