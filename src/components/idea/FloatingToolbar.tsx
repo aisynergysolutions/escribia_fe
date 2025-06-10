@@ -29,6 +29,17 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       range.setEndAfter(textNode);
       selection.removeAllRanges();
       selection.addRange(range);
+      
+      // Trigger input event to update parent component
+      const editableElement = range.commonAncestorContainer;
+      let editorElement = editableElement;
+      while (editorElement && editorElement.nodeType !== Node.ELEMENT_NODE) {
+        editorElement = editorElement.parentNode;
+      }
+      if (editorElement && (editorElement as Element).contentEditable === 'true') {
+        const inputEvent = new Event('input', { bubbles: true });
+        (editorElement as Element).dispatchEvent(inputEvent);
+      }
     }
   };
 

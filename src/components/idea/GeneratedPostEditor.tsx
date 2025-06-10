@@ -56,11 +56,37 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   };
 
   const handleFormat = (format: string) => {
+    const selection = window.getSelection();
+    if (!selection || !editorRef.current) return;
+
     if (format === 'insertUnorderedList') {
-      document.execCommand('insertUnorderedList', false);
+      // Check if we're already in a list
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      let listElement = null;
+      
+      if (range) {
+        let node = range.startContainer;
+        // Traverse up to find if we're inside a list
+        while (node && node !== editorRef.current) {
+          if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'UL') {
+            listElement = node as Element;
+            break;
+          }
+          node = node.parentNode;
+        }
+      }
+
+      if (listElement) {
+        // We're in a list, remove it
+        document.execCommand('insertUnorderedList', false);
+      } else {
+        // We're not in a list, create one
+        document.execCommand('insertUnorderedList', false);
+      }
     } else {
       document.execCommand(format, false);
     }
+    
     if (editorRef.current) {
       onGeneratedPostChange(editorRef.current.innerHTML);
     }
