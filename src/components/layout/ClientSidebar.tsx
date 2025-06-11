@@ -15,7 +15,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { mockClients } from '../../types';
 import CreatePostModal from '../CreatePostModal';
 
@@ -113,32 +112,22 @@ const ClientSidebar = () => {
 
   return (
     <div className="w-56 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col">
-      {/* Header with client name, avatar and back button */}
+      {/* Header with client name and back button */}
       <div className="p-4 border-b border-slate-200">
         <button
           onClick={handleBackToClients}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-3"
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-2"
         >
           <ArrowLeft className="h-3 w-3" />
           <span className="text-xs">Back to Clients</span>
         </button>
-        
         <button
           onClick={handleOverviewClick}
-          className="text-left w-full hover:opacity-75 transition-opacity mb-3"
+          className="text-left w-full hover:opacity-75 transition-opacity mb-2"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <h1 className="text-base font-semibold text-slate-900 truncate">{client.clientName}</h1>
-            </div>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.clientName}`} />
-              <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
-                {client.clientName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+          <h1 className="text-base font-semibold text-slate-900 truncate">{client.clientName}</h1>
         </button>
+        <p className="text-xs text-slate-500 mb-2">{client.industry}</p>
         
         {/* Create Post Button with Modal */}
         <CreatePostModal>
