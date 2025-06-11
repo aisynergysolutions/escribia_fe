@@ -48,6 +48,7 @@ export interface Client {
   contactName: string;
   contactEmail: string;
   status: 'active' | 'onboarding' | 'paused' | 'archived';
+  profileImage?: string;
   brandBriefSummary?: string;
   writingStyle?: string;
   createdAt: { seconds: number; nanoseconds: number };
