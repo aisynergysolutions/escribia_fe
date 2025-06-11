@@ -31,10 +31,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const [urlRemarks, setUrlRemarks] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState([
-    'How AI is transforming enterprise software development',
-    'The future of remote work in tech companies',
-    'Best practices for implementing DevOps in small teams',
-    'Why cybersecurity should be every developer\'s priority'
+    'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
+    'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.',
+    'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.',
+    'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).'
   ]);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   
@@ -111,14 +111,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
 
   const refreshSuggestions = () => {
     const allSuggestions = [
-      'How AI is transforming enterprise software development',
-      'The future of remote work in tech companies',
-      'Best practices for implementing DevOps in small teams',
-      'Why cybersecurity should be every developer\'s priority',
-      'Maximizing ROI with cloud infrastructure',
-      'The importance of user experience in enterprise apps',
-      'Scaling startup technology for enterprise clients',
-      'Digital transformation strategies that actually work'
+      'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
+      'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.',
+      'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.',
+      'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).',
+      'The Remote Work Revolution: 5 productivity tools that increased our team\'s output by 40% while reducing meeting time by half.',
+      'Cloud Migration Mistakes That Cost Companies Millions: What we learned from 100+ failed migrations and how to avoid them.',
+      'The Future of Cybersecurity: Why traditional firewalls are becoming obsolete and what\'s replacing them.',
+      'Building SaaS Products That Scale: Technical decisions we made at day 1 that saved us from rewriting everything at 1M users.'
     ];
     
     const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
@@ -226,16 +226,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       case 'text':
         return (
           <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Edit3 className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Generate from text</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Write down your unstructured thoughts and Scripe will turn them into a post.
-              </p>
-            </div>
-
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -268,16 +258,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       case 'voice':
         return (
           <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Mic className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Generate from voice</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Record your thoughts about any topic and Scripe will turn them into a post.
-              </p>
-            </div>
-
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -333,16 +313,6 @@ What you want to convey to your audience?"
       case 'url':
         return (
           <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Youtube className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Generate from URL</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Turn YouTube videos or articles into engaging posts by providing the URL.
-              </p>
-            </div>
-
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -382,19 +352,7 @@ What you want to convey to your audience?"
         return (
           <div className="space-y-4">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-medium text-foreground">Post Suggestions</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Choose from AI-generated post ideas tailored to your brand and industry.
-              </p>
-            </div>
-
-            {renderObjectiveAndTemplate()}
-
-            <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <label className="block text-sm font-medium text-foreground">
                   Select a post idea
                 </label>
@@ -409,18 +367,18 @@ What you want to convey to your audience?"
                 </Button>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {postSuggestions.map((suggestion, index) => (
                   <div
                     key={index}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${
+                    className={`p-4 rounded-lg border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${
                       hoveredSuggestion === suggestion ? 'border-primary bg-primary/5' : 'border-border'
                     }`}
                     onMouseEnter={() => setHoveredSuggestion(suggestion)}
                     onMouseLeave={() => setHoveredSuggestion(null)}
                     onClick={() => handleCreateFromSuggestion(suggestion)}
                   >
-                    <p className="text-sm text-foreground">{suggestion}</p>
+                    <p className="text-sm text-foreground leading-relaxed">{suggestion}</p>
                   </div>
                 ))}
               </div>
@@ -445,14 +403,7 @@ What you want to convey to your audience?"
       </DialogTrigger>
       <DialogContent 
         className="max-w-7xl max-h-[90vh] overflow-y-auto"
-        onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle className="text-xl font-normal">
-            Choose how you want to create posts
-          </DialogTitle>
-        </DialogHeader>
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Left side - Creation methods (1/3) */}
           <div className="space-y-2">
