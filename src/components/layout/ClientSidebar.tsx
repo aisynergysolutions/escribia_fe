@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockClients } from '../../types';
 import CreatePostModal from '../CreatePostModal';
 
@@ -116,18 +117,28 @@ const ClientSidebar = () => {
       <div className="p-4 border-b border-slate-200">
         <button
           onClick={handleBackToClients}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-2"
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-3"
         >
           <ArrowLeft className="h-3 w-3" />
           <span className="text-xs">Back to Clients</span>
         </button>
+        
         <button
           onClick={handleOverviewClick}
-          className="text-left w-full hover:opacity-75 transition-opacity mb-2"
+          className="text-left w-full hover:opacity-75 transition-opacity mb-3"
         >
-          <h1 className="text-base font-semibold text-slate-900 truncate">{client.clientName}</h1>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={client.profileImage} alt={client.clientName} />
+              <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
+                {client.clientName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base font-semibold text-slate-900 truncate">{client.clientName}</h1>
+            </div>
+          </div>
         </button>
-        <p className="text-xs text-slate-500 mb-2">{client.industry}</p>
         
         {/* Create Post Button with Modal */}
         <CreatePostModal>
