@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Plus, Upload, Youtube, Users, X } from 'lucide-react';
+import { Edit3, Mic, Youtube, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -26,11 +27,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [voiceNotes, setVoiceNotes] = useState('');
   const [recordingLanguage, setRecordingLanguage] = useState('English');
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [uploadRemarks, setUploadRemarks] = useState('');
-  const [interviewRemarks, setInterviewRemarks] = useState('');
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [textUploadedFiles, setTextUploadedFiles] = useState<File[]>([]);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlRemarks, setUrlRemarks] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   
   const navigate = useNavigate();
@@ -52,8 +50,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       const textData = {
         idea: ideaText.trim(),
         objective: selectedObjective,
-        template: selectedTemplate,
-        files: textUploadedFiles.map(file => ({ name: file.name, size: file.size, type: file.type }))
+        template: selectedTemplate
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=text&data=${encodeURIComponent(JSON.stringify(textData))}`);
       setIsOpen(false);
@@ -67,7 +64,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       const voiceData = {
         language: recordingLanguage,
         notes: voiceNotes,
-        // In a real implementation, you'd include the recorded audio data here
+        objective: selectedObjective,
+        template: selectedTemplate
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=voice&data=${encodeURIComponent(JSON.stringify(voiceData))}`);
       setIsOpen(false);
@@ -75,47 +73,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     }
   };
 
-  const handleCreateBlank = () => {
-    if (clientId) {
+  const handleCreateFromUrl = () => {
+    if (urlInput.trim() && clientId) {
       const tempIdeaId = `temp-${Date.now()}`;
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=blank`);
-      setIsOpen(false);
-    }
-  };
-
-  const handleUploadFile = () => {
-    if (uploadedFiles.length > 0 && clientId) {
-      const tempIdeaId = `temp-${Date.now()}`;
-      const uploadData = {
-        files: uploadedFiles.map(file => ({ name: file.name, size: file.size, type: file.type })),
-        remarks: uploadRemarks
+      const urlData = {
+        url: urlInput,
+        remarks: urlRemarks,
+        objective: selectedObjective,
+        template: selectedTemplate
       };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=upload&data=${encodeURIComponent(JSON.stringify(uploadData))}`);
-      setIsOpen(false);
-      resetForm();
-    }
-  };
-
-  const handleYoutubeSubmit = () => {
-    if (youtubeUrl.trim() && clientId) {
-      const tempIdeaId = `temp-${Date.now()}`;
-      const youtubeData = {
-        url: youtubeUrl,
-        remarks: uploadRemarks
-      };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=youtube&data=${encodeURIComponent(JSON.stringify(youtubeData))}`);
-      setIsOpen(false);
-      resetForm();
-    }
-  };
-
-  const handleContentInterview = () => {
-    if (clientId) {
-      const tempIdeaId = `temp-${Date.now()}`;
-      const interviewData = {
-        remarks: interviewRemarks
-      };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=interview&data=${encodeURIComponent(JSON.stringify(interviewData))}`);
+      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=url&data=${encodeURIComponent(JSON.stringify(urlData))}`);
       setIsOpen(false);
       resetForm();
     }
@@ -126,46 +93,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     setSelectedObjective('');
     setSelectedTemplate('');
     setVoiceNotes('');
-    setYoutubeUrl('');
-    setUploadRemarks('');
-    setInterviewRemarks('');
-    setUploadedFiles([]);
-    setTextUploadedFiles([]);
+    setUrlInput('');
+    setUrlRemarks('');
     setRecordingLanguage('English');
     setIsRecording(false);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
-    }
-  };
-
-  const handleTextFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setTextUploadedFiles(prev => [...prev, ...Array.from(files)]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeTextFile = (index: number) => {
-    setTextUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
   const startVoiceRecording = () => {
     setIsRecording(true);
-    // In a real implementation, you would start actual voice recording here
     console.log('Starting voice recording...');
   };
 
   const stopVoiceRecording = () => {
     setIsRecording(false);
-    // In a real implementation, you would stop recording and process the audio
     console.log('Stopping voice recording...');
   };
 
@@ -185,31 +125,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       color: 'bg-muted text-muted-foreground'
     },
     {
-      id: 'blank',
-      title: 'Blank',
-      description: 'Start a post from scratch',
-      icon: Plus,
-      color: 'bg-muted text-muted-foreground'
-    },
-    {
-      id: 'upload',
-      title: 'Upload file to content',
-      description: 'Upload audio, video, or text',
-      icon: Upload,
-      color: 'bg-muted text-muted-foreground'
-    },
-    {
-      id: 'youtube',
-      title: 'YouTube to content',
-      description: 'Turn YouTube videos into content',
+      id: 'url',
+      title: 'Generate from URL',
+      description: 'Turn YouTube videos or articles into content',
       icon: Youtube,
-      color: 'bg-muted text-muted-foreground'
-    },
-    {
-      id: 'interview',
-      title: 'Content interview',
-      description: 'Turn conversations into content',
-      icon: Users,
       color: 'bg-muted text-muted-foreground'
     }
   ];
@@ -217,6 +136,46 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const handleMethodSelect = (methodId: string) => {
     setSelectedMethod(methodId);
   };
+
+  const renderObjectiveAndTemplate = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Objective (optional)
+        </label>
+        <Select value={selectedObjective} onValueChange={setSelectedObjective}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select an objective" />
+          </SelectTrigger>
+          <SelectContent>
+            {objectives.map((objective) => (
+              <SelectItem key={objective} value={objective}>
+                {objective}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Template (optional)
+        </label>
+        <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a template" />
+          </SelectTrigger>
+          <SelectContent>
+            {mockTemplates.map((template) => (
+              <SelectItem key={template.id} value={template.id}>
+                {template.templateName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
   const renderRightPanel = () => {
     switch (selectedMethod) {
@@ -233,43 +192,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Objective (optional)
-                </label>
-                <Select value={selectedObjective} onValueChange={setSelectedObjective}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an objective" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {objectives.map((objective) => (
-                      <SelectItem key={objective} value={objective}>
-                        {objective}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Template (optional)
-                </label>
-                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.templateName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {renderObjectiveAndTemplate()}
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
@@ -281,50 +204,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
                 placeholder="Enter your idea here..."
                 className="min-h-[200px] resize-none"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Upload supporting files (optional)
-              </label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center bg-muted/20">
-                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-foreground mb-2">Add files to support your text</p>
-                <p className="text-xs text-muted-foreground mb-3">Audio, video, PDF, or text files</p>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleTextFileUpload}
-                  className="hidden"
-                  id="text-file-upload"
-                  accept="audio/*,video/*,.pdf,.txt,.doc,.docx"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('text-file-upload')?.click()}
-                >
-                  Select Files
-                </Button>
-              </div>
-
-              {textUploadedFiles.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  <h4 className="text-sm font-medium text-foreground">Uploaded Files:</h4>
-                  {textUploadedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                      <span className="text-sm text-foreground truncate">{file.name}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeTextFile(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="text-sm text-muted-foreground">
@@ -339,10 +218,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
             >
               Generate post from text
             </Button>
-
-            <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
-            </div>
           </div>
         );
 
@@ -358,6 +233,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
                 Record your thoughts about any topic and Scripe will turn them into a post.
               </p>
             </div>
+
+            {renderObjectiveAndTemplate()}
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
@@ -406,136 +283,32 @@ What you want to convey to your audience?"
                 </>
               )}
             </Button>
-
-            {!isRecording && (
-              <div className="text-center text-sm text-muted-foreground">
-                Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
-              </div>
-            )}
           </div>
         );
 
-      case 'blank':
-        return (
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Plus className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Blank</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Opens the editor without generating any content. Recommended if you already have a finished post draft that you want to finetune.
-              </p>
-            </div>
-
-            <Button
-              onClick={handleCreateBlank}
-              variant="secondary"
-              className="w-full py-3"
-            >
-              Create blank post
-            </Button>
-          </div>
-        );
-
-      case 'upload':
-        return (
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Upload className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Upload file to content</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Upload audio, video, or text files and turn them into posts.
-              </p>
-            </div>
-
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/20">
-              <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-              <p className="text-foreground mb-2">Drag and drop files here or click to upload</p>
-              <p className="text-sm text-muted-foreground mb-4">Audio, video, PDF, or text files</p>
-              <input
-                type="file"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-                accept="audio/*,video/*,.pdf,.txt,.doc,.docx"
-              />
-              <Button
-                variant="outline"
-                onClick={() => document.getElementById('file-upload')?.click()}
-              >
-                Select Files
-              </Button>
-            </div>
-
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-foreground">Uploaded Files:</h4>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                    <span className="text-sm text-foreground truncate">{file.name}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Additional remarks (optional)
-              </label>
-              <Textarea
-                value={uploadRemarks}
-                onChange={(e) => setUploadRemarks(e.target.value)}
-                placeholder="Any additional context or instructions..."
-                className="min-h-[100px] resize-none"
-              />
-            </div>
-
-            <Button
-              onClick={handleUploadFile}
-              disabled={uploadedFiles.length === 0}
-              className="w-full py-3"
-            >
-              Generate posts from files
-            </Button>
-
-            <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
-            </div>
-          </div>
-        );
-
-      case 'youtube':
+      case 'url':
         return (
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Youtube className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">YouTube to content</h3>
+                <h3 className="text-lg font-medium text-foreground">Generate from URL</h3>
               </div>
               <p className="text-muted-foreground mb-4">
-                Turn YouTube videos into engaging posts by providing the video URL.
+                Turn YouTube videos or articles into engaging posts by providing the URL.
               </p>
             </div>
 
+            {renderObjectiveAndTemplate()}
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                YouTube URL <span className="text-destructive">*</span>
+                YouTube or Article URL <span className="text-destructive">*</span>
               </label>
               <Input
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... or https://example.com/article"
               />
             </div>
 
@@ -544,62 +317,20 @@ What you want to convey to your audience?"
                 Additional remarks (optional)
               </label>
               <Textarea
-                value={uploadRemarks}
-                onChange={(e) => setUploadRemarks(e.target.value)}
+                value={urlRemarks}
+                onChange={(e) => setUrlRemarks(e.target.value)}
                 placeholder="Any specific aspects you want to focus on or additional context..."
                 className="min-h-[100px] resize-none"
               />
             </div>
 
             <Button
-              onClick={handleYoutubeSubmit}
-              disabled={!youtubeUrl.trim()}
+              onClick={handleCreateFromUrl}
+              disabled={!urlInput.trim()}
               className="w-full py-3"
             >
-              Generate posts from YouTube
+              Generate posts from URL
             </Button>
-
-            <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
-            </div>
-          </div>
-        );
-
-      case 'interview':
-        return (
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Content interview</h3>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Turn conversations and interviews into engaging content posts.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Interview context and remarks (optional)
-              </label>
-              <Textarea
-                value={interviewRemarks}
-                onChange={(e) => setInterviewRemarks(e.target.value)}
-                placeholder="Describe the interview topic, key participants, or any specific angles you want to focus on..."
-                className="min-h-[150px] resize-none"
-              />
-            </div>
-
-            <Button
-              onClick={handleContentInterview}
-              className="w-full py-3"
-            >
-              Start content interview
-            </Button>
-
-            <div className="text-center text-sm text-muted-foreground">
-              Using Standard AI model. <span className="text-primary cursor-pointer hover:underline">Upgrade now</span> for higher quality posts.
-            </div>
           </div>
         );
 
@@ -625,60 +356,28 @@ What you want to convey to your audience?"
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Left side - Creation methods (1/3) */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Create one post</h3>
-              <div className="space-y-2">
-                {createMethods.slice(0, 3).map((method) => (
-                  <button
-                    key={method.id}
-                    onClick={() => handleMethodSelect(method.id)}
-                    className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
-                      selectedMethod === method.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-card'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${method.color}`}>
-                        <method.icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">{method.title}</div>
-                        <div className="text-sm text-muted-foreground">{method.description}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Create many posts from input</h3>
-              <div className="space-y-2">
-                {createMethods.slice(3).map((method) => (
-                  <button
-                    key={method.id}
-                    onClick={() => handleMethodSelect(method.id)}
-                    className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
-                      selectedMethod === method.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-card'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${method.color}`}>
-                        <method.icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">{method.title}</div>
-                        <div className="text-sm text-muted-foreground">{method.description}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="space-y-2">
+            {createMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => handleMethodSelect(method.id)}
+                className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${
+                  selectedMethod === method.id 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border bg-card'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${method.color}`}>
+                    <method.icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-foreground">{method.title}</div>
+                    <div className="text-sm text-muted-foreground">{method.description}</div>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
 
           {/* Right side - Dynamic content based on selected method (2/3) */}
