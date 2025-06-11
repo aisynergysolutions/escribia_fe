@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const [urlInput, setUrlInput] = useState('');
   const [urlRemarks, setUrlRemarks] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [postSuggestions, setPostSuggestions] = useState([
+    'How AI is transforming enterprise software development',
+    'The future of remote work in tech companies',
+    'Best practices for implementing DevOps in small teams',
+    'Why cybersecurity should be every developer\'s priority'
+  ]);
+  const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string }>();
@@ -88,6 +95,36 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     }
   };
 
+  const handleCreateFromSuggestion = (suggestion: string) => {
+    if (clientId) {
+      const tempIdeaId = `temp-${Date.now()}`;
+      const suggestionData = {
+        idea: suggestion,
+        objective: selectedObjective,
+        template: selectedTemplate
+      };
+      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=suggestion&data=${encodeURIComponent(JSON.stringify(suggestionData))}`);
+      setIsOpen(false);
+      resetForm();
+    }
+  };
+
+  const refreshSuggestions = () => {
+    const allSuggestions = [
+      'How AI is transforming enterprise software development',
+      'The future of remote work in tech companies',
+      'Best practices for implementing DevOps in small teams',
+      'Why cybersecurity should be every developer\'s priority',
+      'Maximizing ROI with cloud infrastructure',
+      'The importance of user experience in enterprise apps',
+      'Scaling startup technology for enterprise clients',
+      'Digital transformation strategies that actually work'
+    ];
+    
+    const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
+    setPostSuggestions(shuffled.slice(0, 4));
+  };
+
   const resetForm = () => {
     setIdeaText('');
     setSelectedObjective('');
@@ -130,6 +167,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       description: 'Turn YouTube videos or articles into content',
       icon: Youtube,
       color: 'bg-muted text-muted-foreground'
+    },
+    {
+      id: 'suggestions',
+      title: 'Post Suggestions',
+      description: 'AI-generated post ideas',
+      icon: Sparkles,
+      color: 'bg-primary text-primary-foreground'
     }
   ];
 
@@ -334,6 +378,61 @@ What you want to convey to your audience?"
           </div>
         );
 
+      case 'suggestions':
+        return (
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-medium text-foreground">Post Suggestions</h3>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Choose from AI-generated post ideas tailored to your brand and industry.
+              </p>
+            </div>
+
+            {renderObjectiveAndTemplate()}
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-foreground">
+                  Select a post idea
+                </label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshSuggestions}
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Refresh
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                {postSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${
+                      hoveredSuggestion === suggestion ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                    onMouseEnter={() => setHoveredSuggestion(suggestion)}
+                    onMouseLeave={() => setHoveredSuggestion(null)}
+                    onClick={() => handleCreateFromSuggestion(suggestion)}
+                  >
+                    <p className="text-sm text-foreground">{suggestion}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p>Click on any idea to use it for post generation.</p>
+              <p>Ideas are personalized based on your brand profile.</p>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -349,7 +448,7 @@ What you want to convey to your audience?"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-xl font-normal">
             Choose how you want to create posts
           </DialogTitle>
         </DialogHeader>
