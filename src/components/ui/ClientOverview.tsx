@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Calendar, TrendingUp, Eye, MessageCircle, Heart, Share2, Sparkles, Copy, Send, MoreHorizontal } from 'lucide-react';
+import { FileText, Calendar, TrendingUp, Eye, MessageCircle, Heart, Share2, Sparkles, Copy, Send, MoreHorizontal, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatCard from './StatCard';
 import PostCalendar from './PostCalendar';
@@ -92,18 +92,18 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
           description="This month"
         />
         <StatCard
+          title="Scheduled"
+          value={scheduledPosts}
+          icon={<Clock className="h-4 w-4" />}
+          description="Ready to go"
+          className="border-blue-200 bg-blue-50"
+        />
+        <StatCard
           title="Published"
           value={publishedPosts}
           icon={<TrendingUp className="h-4 w-4" />}
           description="Live posts"
           className="border-green-200 bg-green-50"
-        />
-        <StatCard
-          title="Scheduled"
-          value={scheduledPosts}
-          icon={<Calendar className="h-4 w-4" />}
-          description="Ready to go"
-          className="border-blue-200 bg-blue-50"
         />
         <StatCard
           title="Avg. Views"
@@ -112,13 +112,22 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
           description="Per post this month"
           className="border-purple-200 bg-purple-50"
         />
+        <StatCard
+          title="Avg. Engagement"
+          value={`${avgEngagement}%`}
+          icon={<Heart className="h-4 w-4" />}
+          description="Engagement rate"
+          className="border-orange-200 bg-orange-50"
+        />
       </div>
 
       {/* Content Calendar */}
       <div className="bg-white rounded-2xl shadow-md">
         <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold">Content Calendar</h2>
-          <p className="text-gray-600 mt-1">Scheduled posts for {client.clientName}</p>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <h2 className="text-xl font-semibold">Content Calendar for {client.clientName}</h2>
+          </div>
         </div>
         <div className="p-6">
           <PostCalendar />
@@ -128,7 +137,10 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
       {/* Recent Posts */}
       <div className="bg-white rounded-2xl shadow-md">
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold">Recent Posts</h2>
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            <h2 className="text-xl font-semibold">Recent Posts</h2>
+          </div>
           <Link to={`/clients/${clientId}/posts`}>
             <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700">
               View All
