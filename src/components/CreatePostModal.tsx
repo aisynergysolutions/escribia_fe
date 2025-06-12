@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { mockTemplates } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -30,6 +30,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const [urlInput, setUrlInput] = useState('');
   const [urlRemarks, setUrlRemarks] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [hasRecording, setHasRecording] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState([
     'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
     'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.',
@@ -38,8 +40,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   ]);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string }>();
+  const { toast } = useToast();
 
   const objectives = [
     'Thought Leadership',
@@ -66,13 +73,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   };
 
   const handleCreateFromVoice = () => {
-    if (clientId) {
+    if (clientId && hasRecording) {
       const tempIdeaId = `temp-${Date.now()}`;
       const voiceData = {
         language: recordingLanguage,
         notes: voiceNotes,
         objective: selectedObjective,
-        template: selectedTemplate
+        template: selectedTemplate,
+        hasRecording: true
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=voice&data=${encodeURIComponent(JSON.stringify(voiceData))}`);
       setIsOpen(false);
@@ -134,16 +142,80 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     setUrlRemarks('');
     setRecordingLanguage('English');
     setIsRecording(false);
+    setRecordingTime(0);
+    setHasRecording(false);
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+    }
   };
 
-  const startVoiceRecording = () => {
-    setIsRecording(true);
-    console.log('Starting voice recording...');
+  const startVoiceRecording = async () => {
+    try {
+      // Request microphone permission
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Create MediaRecorder instance
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+      
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        console.log('Recording saved:', audioBlob);
+        setHasRecording(true);
+        
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      // Start recording
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      toast({
+        title: "Recording started",
+        description: "Speak clearly into your microphone",
+      });
+      
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to record audio",
+        variant: "destructive",
+      });
+    }
   };
 
   const stopVoiceRecording = () => {
-    setIsRecording(false);
-    console.log('Stopping voice recording...');
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      
+      toast({
+        title: "Recording stopped",
+        description: `Recorded ${recordingTime} seconds of audio`,
+      });
+    }
+  };
+
+  const formatRecordingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const createMethods = [
@@ -291,6 +363,23 @@ What you want to convey to your audience?"
               />
             </div>
 
+            {isRecording && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
+                <div className="flex items-center justify-center gap-2 text-destructive font-medium">
+                  <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                  Recording: {formatRecordingTime(recordingTime)}
+                </div>
+              </div>
+            )}
+
+            {hasRecording && !isRecording && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="text-green-700 font-medium">
+                  ✓ Recording completed ({formatRecordingTime(recordingTime)})
+                </div>
+              </div>
+            )}
+
             <Button
               onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
               className={`w-full py-3 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : ''}`}
@@ -303,10 +392,19 @@ What you want to convey to your audience?"
               ) : (
                 <>
                   <Mic className="w-4 h-4 mr-2" />
-                  Start voice recording
+                  {hasRecording ? 'Record again' : 'Start voice recording'}
                 </>
               )}
             </Button>
+
+            {hasRecording && (
+              <Button
+                onClick={handleCreateFromVoice}
+                className="w-full py-3"
+              >
+                Generate post from voice
+              </Button>
+            )}
           </div>
         );
 
