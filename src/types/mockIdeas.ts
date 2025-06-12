@@ -106,8 +106,6 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Cloud security best practices draft.', createdAt: { seconds: 1670198400, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // Global Marketing Corp posts
   {
     id: 'idea5',
     clientId: 'client2',
@@ -210,8 +208,6 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Video ROI measurement guide draft.', createdAt: { seconds: 1670457600, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // HealthFirst Medical posts
   {
     id: 'idea9',
     clientId: 'client3',
@@ -290,8 +286,6 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Preventive care technology draft.', createdAt: { seconds: 1670803200, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // EcoGreen Solutions posts
   {
     id: 'idea13',
     clientId: 'client4',
@@ -352,8 +346,6 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Green technology ROI analysis.', createdAt: { seconds: 1671062400, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // FinanceFlow Pro posts
   {
     id: 'idea16',
     clientId: 'client5',
@@ -414,8 +406,6 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Tax strategies for growing businesses.', createdAt: { seconds: 1671321600, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // BuildRight Construction posts
   {
     id: 'idea19',
     clientId: 'client6',
@@ -475,5 +465,384 @@ export const mockIdeas: Idea[] = [
       views: 720,
       lastFetched: { seconds: 1672444800, nanoseconds: 0 }
     }
+  },
+
+  // Additional posts to fill every day with 1, 2, or 4 posts
+  // January 1, 2025 - 3 more posts (total 4)
+  {
+    id: 'idea22',
+    clientId: 'client1',
+    title: 'New Year Tech Predictions',
+    currentDraftText: "2025 will be the year of quantum computing breakthroughs, AI governance, and sustainable tech. Here are our bold predictions for the tech industry.",
+    status: 'Scheduled',
+    objective: 'Thought Leadership',
+    scheduledPostAt: { seconds: 1735747200, nanoseconds: 0 }, // January 1, 2025 12:00 PM
+    createdAt: { seconds: 1671580800, nanoseconds: 0 },
+    updatedAt: { seconds: 1672012800, nanoseconds: 0 },
+    generatedHooks: [
+      { text: '2025 tech predictions that will blow your mind 🚀', angle: 'Exciting', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Tech predictions for 2025.', createdAt: { seconds: 1671580800, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea23',
+    clientId: 'client2',
+    title: 'New Year Marketing Goals',
+    currentDraftText: "New year, new marketing strategy. Here's how to set realistic, achievable marketing goals that will drive real business growth in 2025.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1735761600, nanoseconds: 0 }, // January 1, 2025 4:00 PM
+    createdAt: { seconds: 1671667200, nanoseconds: 0 },
+    updatedAt: { seconds: 1672099200, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Stop setting marketing goals that fail by February', angle: 'Challenging', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Marketing goals framework.', createdAt: { seconds: 1671667200, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea24',
+    clientId: 'client3',
+    title: 'Healthcare Resolutions That Work',
+    currentDraftText: "Most health resolutions fail by February. Here's how healthcare providers can help patients set and achieve sustainable health goals.",
+    status: 'Scheduled',
+    objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1735776000, nanoseconds: 0 }, // January 1, 2025 8:00 PM
+    createdAt: { seconds: 1671753600, nanoseconds: 0 },
+    updatedAt: { seconds: 1672185600, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Why 92% of health resolutions fail (and how to be the 8%)', angle: 'Statistical', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Sustainable health goals guide.', createdAt: { seconds: 1671753600, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 2, 2025 - 1 more post (total 2)
+  {
+    id: 'idea25',
+    clientId: 'client4',
+    title: 'Sustainable New Year Habits',
+    currentDraftText: "Make 2025 your most sustainable year yet. Small eco-friendly habits that make a big environmental impact throughout the year.",
+    status: 'Scheduled',
+    objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1735876800, nanoseconds: 0 }, // January 2, 2025 6:00 PM
+    createdAt: { seconds: 1671840000, nanoseconds: 0 },
+    updatedAt: { seconds: 1672272000, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Tiny eco-habits that save the planet (and your wallet) 🌍', angle: 'Beneficial', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Sustainable habits guide.', createdAt: { seconds: 1671840000, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 3, 2025 - 3 more posts (total 4)
+  {
+    id: 'idea26',
+    clientId: 'client2',
+    title: 'Q1 Content Planning Strategy',
+    currentDraftText: "Q1 sets the tone for your entire content year. Here's how to plan a content calendar that drives engagement and conversions from day one.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1735920000, nanoseconds: 0 }, // January 3, 2025 10:00 AM
+    createdAt: { seconds: 1671926400, nanoseconds: 0 },
+    updatedAt: { seconds: 1672358400, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Q1 content planning mistakes that kill your whole year', angle: 'Warning', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Q1 content strategy guide.', createdAt: { seconds: 1671926400, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea27',
+    clientId: 'client5',
+    title: 'January Financial Reset',
+    currentDraftText: "New year, clean financial slate. Here's how to reset your business finances for a profitable 2025, from budgeting to tax preparation.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1735934400, nanoseconds: 0 }, // January 3, 2025 2:00 PM
+    createdAt: { seconds: 1672012800, nanoseconds: 0 },
+    updatedAt: { seconds: 1672444800, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Financial reset checklist that saves businesses thousands', angle: 'Value-driven', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Financial reset guide.', createdAt: { seconds: 1672012800, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea28',
+    clientId: 'client6',
+    title: 'Winter Construction Tips',
+    currentDraftText: "Cold weather doesn't mean construction stops. Here are professional tips for safe, efficient winter building projects.",
+    status: 'Scheduled',
+    objective: 'Thought Leadership',
+    scheduledPostAt: { seconds: 1735948800, nanoseconds: 0 }, // January 3, 2025 6:00 PM
+    createdAt: { seconds: 1672099200, nanoseconds: 0 },
+    updatedAt: { seconds: 1672531200, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Winter construction secrets contractors don\'t want you to know', angle: 'Insider', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Winter construction best practices.', createdAt: { seconds: 1672099200, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 4, 2025 - 1 more post (total 2)
+  {
+    id: 'idea29',
+    clientId: 'client1',
+    title: 'Enterprise Security Audit 2025',
+    currentDraftText: "Start 2025 with a comprehensive security audit. Here's our checklist for identifying and fixing enterprise security vulnerabilities.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736035200, nanoseconds: 0 }, // January 4, 2025 2:00 PM
+    createdAt: { seconds: 1672185600, nanoseconds: 0 },
+    updatedAt: { seconds: 1672617600, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Security vulnerabilities hiding in your enterprise systems', angle: 'Alarming', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Enterprise security audit guide.', createdAt: { seconds: 1672185600, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 5, 2025 - 3 more posts (total 4)
+  {
+    id: 'idea30',
+    clientId: 'client3',
+    title: 'Digital Health Trends 2025',
+    currentDraftText: "Healthcare is going digital faster than ever. Here are the top digital health trends that will transform patient care in 2025.",
+    status: 'Scheduled',
+    objective: 'Thought Leadership',
+    scheduledPostAt: { seconds: 1736092800, nanoseconds: 0 }, // January 5, 2025 9:00 AM
+    createdAt: { seconds: 1672272000, nanoseconds: 0 },
+    updatedAt: { seconds: 1672704000, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Digital health innovations revolutionizing patient care', angle: 'Transformative', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Digital health trends overview.', createdAt: { seconds: 1672272000, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea31',
+    clientId: 'client4',
+    title: 'Corporate Sustainability Reporting',
+    currentDraftText: "Sustainability reporting is becoming mandatory. Here's how to prepare your company for new environmental disclosure requirements.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736107200, nanoseconds: 0 }, // January 5, 2025 1:00 PM
+    createdAt: { seconds: 1672358400, nanoseconds: 0 },
+    updatedAt: { seconds: 1672790400, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'New sustainability rules that could cost your company millions', angle: 'Urgent', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Sustainability reporting guide.', createdAt: { seconds: 1672358400, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea32',
+    clientId: 'client6',
+    title: 'Smart Home Integration Planning',
+    currentDraftText: "Planning a smart home renovation? Here's how to future-proof your home with integrated technology that adds real value.",
+    status: 'Scheduled',
+    objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1736121600, nanoseconds: 0 }, // January 5, 2025 5:00 PM
+    createdAt: { seconds: 1672444800, nanoseconds: 0 },
+    updatedAt: { seconds: 1672876800, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Smart home tech that actually increases property value', angle: 'Value-focused', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Smart home integration guide.', createdAt: { seconds: 1672444800, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // Continue adding posts for remaining days...
+  // January 6, 2025 - 1 more post (total 2)
+  {
+    id: 'idea33',
+    clientId: 'client2',
+    title: 'Influencer Marketing Ethics',
+    currentDraftText: "Influencer marketing is under scrutiny. Here's how brands can build ethical, transparent partnerships that benefit everyone.",
+    status: 'Scheduled',
+    objective: 'Thought Leadership',
+    scheduledPostAt: { seconds: 1736193600, nanoseconds: 0 }, // January 6, 2025 1:00 PM
+    createdAt: { seconds: 1672531200, nanoseconds: 0 },
+    updatedAt: { seconds: 1672963200, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Influencer scandals killing brand trust (how to avoid them)', angle: 'Risk-focused', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Ethical influencer marketing guide.', createdAt: { seconds: 1672531200, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 7, 2025 - 3 more posts (total 4)
+  {
+    id: 'idea34',
+    clientId: 'client1',
+    title: 'AI Ethics in Enterprise',
+    currentDraftText: "As AI becomes ubiquitous, ethical considerations are paramount. Here's how enterprises can implement responsible AI practices.",
+    status: 'Scheduled',
+    objective: 'Thought Leadership',
+    scheduledPostAt: { seconds: 1736265600, nanoseconds: 0 }, // January 7, 2025 10:00 AM
+    createdAt: { seconds: 1672617600, nanoseconds: 0 },
+    updatedAt: { seconds: 1673049600, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'AI bias in your enterprise systems (and how to fix it)', angle: 'Problem-solving', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'AI ethics implementation guide.', createdAt: { seconds: 1672617600, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea35',
+    clientId: 'client5',
+    title: 'Investment Strategies for 2025',
+    currentDraftText: "Market volatility requires new investment approaches. Here are proven strategies for building wealth in uncertain times.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736280000, nanoseconds: 0 }, // January 7, 2025 2:00 PM
+    createdAt: { seconds: 1672704000, nanoseconds: 0 },
+    updatedAt: { seconds: 1673136000, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Investment mistakes costing you thousands in 2025', angle: 'Financial Risk', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Investment strategy guide.', createdAt: { seconds: 1672704000, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea36',
+    clientId: 'client3',
+    title: 'Healthcare Worker Burnout Solutions',
+    currentDraftText: "Healthcare worker burnout is at crisis levels. Here are evidence-based solutions to support healthcare teams and improve patient care.",
+    status: 'Scheduled',
+    objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1736294400, nanoseconds: 0 }, // January 7, 2025 6:00 PM
+    createdAt: { seconds: 1672790400, nanoseconds: 0 },
+    updatedAt: { seconds: 1673222400, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Healthcare burnout crisis threatens patient safety', angle: 'Urgent Health', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Healthcare burnout solutions.', createdAt: { seconds: 1672790400, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 8, 2025 - 1 more post (total 2)
+  {
+    id: 'idea37',
+    clientId: 'client4',
+    title: 'Green Building Certification Guide',
+    currentDraftText: "LEED, BREEAM, WELL - navigating green building certifications can be complex. Here's our comprehensive guide to choosing the right certification.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736366400, nanoseconds: 0 }, // January 8, 2025 12:00 PM
+    createdAt: { seconds: 1672876800, nanoseconds: 0 },
+    updatedAt: { seconds: 1673308800, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Green certifications that boost property value by 20%', angle: 'Value Proposition', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Green building certification comparison.', createdAt: { seconds: 1672876800, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 9, 2025 - 3 more posts (total 4)
+  {
+    id: 'idea38',
+    clientId: 'client2',
+    title: 'Voice Search Optimization',
+    currentDraftText: "Voice search is changing SEO forever. Here's how to optimize your content for voice queries and conversational search.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736438400, nanoseconds: 0 }, // January 9, 2025 9:00 AM
+    createdAt: { seconds: 1672963200, nanoseconds: 0 },
+    updatedAt: { seconds: 1673395200, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Voice search killing your SEO (here\'s how to fight back)', angle: 'Competitive', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Voice search optimization guide.', createdAt: { seconds: 1672963200, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea39',
+    clientId: 'client1',
+    title: 'Cloud Migration Security',
+    currentDraftText: "Cloud migration introduces new security challenges. Here's how to maintain security during and after your cloud transition.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736452800, nanoseconds: 0 }, // January 9, 2025 1:00 PM
+    createdAt: { seconds: 1673049600, nanoseconds: 0 },
+    updatedAt: { seconds: 1673481600, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Cloud migration security gaps putting your data at risk', angle: 'Security Risk', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Cloud migration security checklist.', createdAt: { seconds: 1673049600, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea40',
+    clientId: 'client6',
+    title: 'Bathroom Renovation Trends 2025',
+    currentDraftText: "Bathroom renovations offer the highest ROI. Here are 2025's top bathroom trends that combine style, functionality, and value.",
+    status: 'Scheduled',
+    objective: 'Brand Awareness',
+    scheduledPostAt: { seconds: 1736467200, nanoseconds: 0 }, // January 9, 2025 5:00 PM
+    createdAt: { seconds: 1673136000, nanoseconds: 0 },
+    updatedAt: { seconds: 1673568000, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Bathroom trends that increase home value by 30%', angle: 'Value-driven', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Bathroom renovation trends guide.', createdAt: { seconds: 1673136000, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+
+  // January 10, 2025 - 2 posts
+  {
+    id: 'idea41',
+    clientId: 'client3',
+    title: 'Pediatric Telemedicine Best Practices',
+    currentDraftText: "Telemedicine with children requires special considerations. Here's how pediatric providers can deliver effective virtual care.",
+    status: 'Scheduled',
+    objective: 'Thought Leadership',
+    scheduledPostAt: { seconds: 1736524800, nanoseconds: 0 }, // January 10, 2025 10:00 AM
+    createdAt: { seconds: 1673222400, nanoseconds: 0 },
+    updatedAt: { seconds: 1673654400, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Pediatric telemedicine secrets for better patient outcomes', angle: 'Educational', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Pediatric telemedicine guide.', createdAt: { seconds: 1673222400, nanoseconds: 0 }, generatedByAI: true }
+    ]
+  },
+  {
+    id: 'idea42',
+    clientId: 'client5',
+    title: 'Small Business Tax Deadlines 2025',
+    currentDraftText: "Don't miss critical tax deadlines that could cost your business thousands. Here's your complete 2025 tax calendar.",
+    status: 'Scheduled',
+    objective: 'Lead Generation',
+    scheduledPostAt: { seconds: 1736553600, nanoseconds: 0 }, // January 10, 2025 6:00 PM
+    createdAt: { seconds: 1673308800, nanoseconds: 0 },
+    updatedAt: { seconds: 1673740800, nanoseconds: 0 },
+    generatedHooks: [
+      { text: 'Tax deadlines that bankrupt small businesses (mark your calendar)', angle: 'Urgent Warning', selected: true }
+    ],
+    drafts: [
+      { version: 1, text: 'Small business tax calendar.', createdAt: { seconds: 1673308800, nanoseconds: 0 }, generatedByAI: true }
+    ]
   }
 ];
