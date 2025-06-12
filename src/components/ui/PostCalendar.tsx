@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
@@ -55,13 +56,9 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
     navigate(`/clients/${post.clientId}/ideas/${post.id}`);
   };
 
-  const handleDayClick = (day: Date, postsForDay: any[]) => {
-    if (postsForDay.length > 1) {
-      setSelectedDate(day);
-      setIsModalOpen(true);
-    } else if (postsForDay.length === 1) {
-      handlePostClick(postsForDay[0]);
-    }
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day);
+    setIsModalOpen(true);
   };
 
   const goToPreviousMonth = () => {
@@ -109,9 +106,10 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
             return (
               <div
                 key={day.toISOString()}
-                className={`min-h-[80px] p-1 border rounded-sm ${
+                className={`min-h-[80px] p-1 border rounded-sm cursor-pointer hover:bg-gray-50 ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50'
                 } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+                onClick={() => handleDayClick(day)}
               >
                 <div className={`text-sm mb-1 ${
                   isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
@@ -121,12 +119,9 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
                 
                 <div className="space-y-1">
                   {postsForDay.length > 0 && (
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => handleDayClick(day, postsForDay)}
-                    >
+                    <div>
                       {postsForDay.length > 1 ? (
-                        <div className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs p-1 rounded transition-colors duration-200">
+                        <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
                           <div className="flex items-center gap-1 mb-1">
                             <Clock className="h-3 w-3 flex-shrink-0" />
                             <span className="font-medium">
@@ -134,17 +129,16 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
                             </span>
                           </div>
                           <div className="text-xs">
-                            Click to view timeline
+                            Click to view
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs p-1 rounded transition-colors duration-200 group">
+                        <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
                           <div className="flex items-center gap-1 mb-1">
                             <Clock className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">
                               {format(new Date(postsForDay[0].scheduledPostAt!.seconds * 1000), 'HH:mm')}
                             </span>
-                            <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                           <div className="truncate text-xs font-medium">
                             {postsForDay[0].title}
