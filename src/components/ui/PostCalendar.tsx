@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
 import { Button } from './button';
 import { Card } from './card';
 import { mockIdeas, mockClients } from '../../types';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface PostCalendarProps {
   showAllClients?: boolean;
@@ -14,6 +14,7 @@ interface PostCalendarProps {
 const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { clientId } = useParams<{ clientId: string }>();
+  const navigate = useNavigate();
 
   // Get scheduled posts for the current month
   const getScheduledPosts = () => {
@@ -46,6 +47,10 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
   const getClientName = (clientId: string) => {
     const client = mockClients.find(c => c.id === clientId);
     return client?.clientName || 'Unknown Client';
+  };
+
+  const handlePostClick = (post: any) => {
+    navigate(`/clients/${post.clientId}/ideas/${post.id}`);
   };
 
   const goToPreviousMonth = () => {
@@ -106,16 +111,18 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
                 {postsForDay.map(post => (
                   <div
                     key={post.id}
-                    className="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate cursor-pointer hover:bg-blue-200"
-                    title={`${post.title} - ${format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}${showAllClients ? ` (${getClientName(post.clientId)})` : ''}`}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs p-1 rounded cursor-pointer transition-colors duration-200 group"
+                    onClick={() => handlePostClick(post)}
+                    title={`Click to view post: ${post.title}`}
                   >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 mb-1">
                       <Clock className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">
                         {format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}
                       </span>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <div className="truncate text-xs mt-0.5">
+                    <div className="truncate text-xs font-medium">
                       {post.title}
                     </div>
                     {showAllClients && (
