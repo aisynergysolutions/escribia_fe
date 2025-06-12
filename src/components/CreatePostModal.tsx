@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [hasRecording, setHasRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState([
     'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
     'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.',
@@ -43,6 +46,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string }>();
@@ -144,8 +148,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
     setIsRecording(false);
     setRecordingTime(0);
     setHasRecording(false);
+    setAudioBlob(null);
+    setIsPlaying(false);
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
   };
 
@@ -165,6 +175,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         console.log('Recording saved:', audioBlob);
+        setAudioBlob(audioBlob);
         setHasRecording(true);
         
         // Stop all tracks to release microphone
@@ -209,6 +220,29 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ children }) => {
         title: "Recording stopped",
         description: `Recorded ${recordingTime} seconds of audio`,
       });
+    }
+  };
+
+  const playRecording = () => {
+    if (audioBlob && !isPlaying) {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      audioRef.current = new Audio(audioUrl);
+      
+      audioRef.current.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const stopPlayback = () => {
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
     }
   };
 
@@ -373,9 +407,29 @@ What you want to convey to your audience?"
             )}
 
             {hasRecording && !isRecording && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <div className="text-green-700 font-medium">
-                  ✓ Recording completed ({formatRecordingTime(recordingTime)})
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-green-700 font-medium">
+                    ✓ Recording completed ({formatRecordingTime(recordingTime)})
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={isPlaying ? stopPlayback : playRecording}
+                    className="flex items-center gap-2"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <Pause className="w-4 h-4" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4" />
+                        Play
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             )}
