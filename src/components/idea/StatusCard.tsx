@@ -1,15 +1,18 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import CustomInputModal from '../CustomInputModal';
+
 interface StatusCardProps {
   status: string;
   onStatusChange: (status: string) => void;
   onAddCustomStatus: (status: string) => void;
 }
+
 const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Posted':
@@ -28,28 +31,33 @@ const getStatusColor = (status: string) => {
       return 'bg-gray-100 text-gray-800';
   }
 };
+
 const StatusCard: React.FC<StatusCardProps> = ({
   status,
   onStatusChange,
   onAddCustomStatus
 }) => {
-  return <Card className="p-6">
+  return (
+    <Card className="p-6">
       <h2 className="font-semibold mb-4 text-lg">Status</h2>
       <div className="flex items-center gap-2">
-        <Badge className={`${getStatusColor(status)}`}>
-          {status}
-        </Badge>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              Change status
-            </Button>
+            <Badge className={`${getStatusColor(status)} cursor-pointer hover:opacity-80 transition-opacity`}>
+              {status}
+            </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {predefinedStatuses.map(s => <DropdownMenuItem key={s} onClick={() => onStatusChange(s)}>
+            {predefinedStatuses.map(s => (
+              <DropdownMenuItem key={s} onClick={() => onStatusChange(s)}>
                 {s}
-              </DropdownMenuItem>)}
-            <CustomInputModal title="Add Custom Status" placeholder="Enter custom status..." onSave={onAddCustomStatus}>
+              </DropdownMenuItem>
+            ))}
+            <CustomInputModal 
+              title="Add Custom Status" 
+              placeholder="Enter custom status..." 
+              onSave={onAddCustomStatus}
+            >
               <DropdownMenuItem onSelect={e => e.preventDefault()}>
                 Add custom status...
               </DropdownMenuItem>
@@ -57,6 +65,8 @@ const StatusCard: React.FC<StatusCardProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </Card>;
+    </Card>
+  );
 };
+
 export default StatusCard;
