@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -9,7 +8,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CustomInputModal from '../CustomInputModal';
 import { mockTemplates } from '../../types';
-
 interface InitialIdeaSectionProps {
   isExpanded: boolean;
   onExpandChange: (expanded: boolean) => void;
@@ -22,9 +20,7 @@ interface InitialIdeaSectionProps {
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
 }
-
 const predefinedObjectives = ['Thought Leadership', 'Lead Generation', 'Brand Awareness', 'Engagement', 'Product Launch', 'Event Promotion'];
-
 const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   isExpanded,
   onExpandChange,
@@ -42,7 +38,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
         <CollapsibleTrigger asChild>
           <div className="flex items-start justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
             <div className="flex-1 min-w-0">
-              <h2 className="font-medium text-gray-700 text-base mb-1">Initial Idea</h2>
+              <h2 className="font-semibold mb-4 text-lg">Initial Idea</h2>
               {!isExpanded && initialIdea && <span className="text-sm text-gray-500 block truncate">
                   {initialIdea}
                 </span>}
@@ -112,5 +108,4 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
       </Card>
     </Collapsible>;
 };
-
 export default InitialIdeaSection;
