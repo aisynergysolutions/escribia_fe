@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 interface ScheduleCardProps {
   postDate: string;
   postTime: string;
@@ -12,7 +10,6 @@ interface ScheduleCardProps {
   onPostTimeChange: (time: string) => void;
   onTimezoneChange: (timezone: string) => void;
 }
-
 const ScheduleCard: React.FC<ScheduleCardProps> = ({
   postDate,
   postTime,
@@ -21,24 +18,15 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   onPostTimeChange,
   onTimezoneChange
 }) => {
-  return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Post Schedule</h2>
+  return <Card className="p-6">
+      <h2 className="font-semibold mb-4 text-lg">Post Schedule</h2>
       
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Posting Date & Time</label>
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <Input 
-              type="date" 
-              value={postDate} 
-              onChange={e => onPostDateChange(e.target.value)} 
-            />
-            <Input 
-              type="time" 
-              value={postTime} 
-              onChange={e => onPostTimeChange(e.target.value)} 
-            />
+            <Input type="date" value={postDate} onChange={e => onPostDateChange(e.target.value)} />
+            <Input type="time" value={postTime} onChange={e => onPostTimeChange(e.target.value)} />
           </div>
         </div>
         
@@ -61,8 +49,6 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
           </Select>
         </div>
       </div>
-    </Card>
-  );
+    </Card>;
 };
-
 export default ScheduleCard;

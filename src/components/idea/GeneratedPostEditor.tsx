@@ -8,7 +8,6 @@ import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
 import PostPreviewModal from './PostPreviewModal';
-
 interface GeneratedPostEditorProps {
   generatedPost: string;
   onGeneratedPostChange: (value: string) => void;
@@ -29,7 +28,6 @@ interface GeneratedPostEditorProps {
   }>;
   onRestoreVersion: (text: string) => void;
 }
-
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   generatedPost,
   onGeneratedPostChange,
@@ -43,29 +41,30 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   versionHistory,
   onRestoreVersion
 }) => {
-  const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
+  const [toolbarPosition, setToolbarPosition] = useState({
+    top: 0,
+    left: 0
+  });
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [aiEditToolbarVisible, setAiEditToolbarVisible] = useState(false);
   const [originalPost, setOriginalPost] = useState(generatedPost);
   const [selectedText, setSelectedText] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
-
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) {
       const selectedText = selection.toString();
       setSelectedText(selectedText);
-      
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      
       setToolbarPosition({
         top: rect.top + window.scrollY,
-        left: rect.left + (rect.width / 2)
+        left: rect.left + rect.width / 2
       });
       setToolbarVisible(true);
       setAiEditToolbarVisible(false);
@@ -75,7 +74,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setSelectedText('');
     }
   };
-
   const handleAIEdit = () => {
     if (selectedText) {
       setToolbarVisible(false);
@@ -84,33 +82,27 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       }, 50);
     }
   };
-
   const handleAIEditApply = (instruction: string) => {
     if (selectedText) {
       toast({
         title: "AI Edit Applied",
-        description: `Instruction: "${instruction}" applied to selected text.`,
+        description: `Instruction: "${instruction}" applied to selected text.`
       });
-      
       setAiEditToolbarVisible(false);
     }
   };
-
   const handleAIEditClose = () => {
     setAiEditToolbarVisible(false);
     if (selectedText) {
       setToolbarVisible(true);
     }
   };
-
   const handleFormat = (format: string) => {
     const selection = window.getSelection();
     if (!selection || !editorRef.current) return;
-
     if (format === 'insertUnorderedList') {
       const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
       let listElement = null;
-      
       if (range) {
         let node = range.startContainer;
         while (node && node !== editorRef.current) {
@@ -121,7 +113,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           node = node.parentNode;
         }
       }
-
       if (listElement) {
         document.execCommand('insertUnorderedList', false);
       } else {
@@ -130,14 +121,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     } else {
       document.execCommand(format, false);
     }
-    
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML;
       onGeneratedPostChange(newContent);
       checkForChanges(newContent);
     }
   };
-
   const handleInput = () => {
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML;
@@ -145,7 +134,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
-
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.ctrlKey && event.key === 'c') {
       event.preventDefault();
@@ -156,14 +144,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       handleSave();
     }
   };
-
   const handleCopyWithFormatting = async () => {
     if (editorRef.current) {
       try {
         const selection = window.getSelection();
         let htmlContent = '';
         let textContent = '';
-        
         if (selection && selection.toString().length > 0) {
           const range = selection.getRangeAt(0);
           const fragment = range.cloneContents();
@@ -175,11 +161,14 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           htmlContent = editorRef.current.innerHTML;
           textContent = editorRef.current.innerText || editorRef.current.textContent || '';
         }
-        
         if (navigator.clipboard && window.ClipboardItem) {
           const clipboardItem = new ClipboardItem({
-            'text/html': new Blob([htmlContent], { type: 'text/html' }),
-            'text/plain': new Blob([textContent], { type: 'text/plain' })
+            'text/html': new Blob([htmlContent], {
+              type: 'text/html'
+            }),
+            'text/plain': new Blob([textContent], {
+              type: 'text/plain'
+            })
           });
           await navigator.clipboard.write([clipboardItem]);
         } else {
@@ -188,14 +177,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       } catch (err) {
         console.error('Failed to copy with formatting, falling back to plain text:', err);
         const selection = window.getSelection();
-        const textContent = selection && selection.toString().length > 0 
-          ? selection.toString() 
-          : editorRef.current.innerText || editorRef.current.textContent || '';
+        const textContent = selection && selection.toString().length > 0 ? selection.toString() : editorRef.current.innerText || editorRef.current.textContent || '';
         await navigator.clipboard.writeText(textContent);
       }
     }
   };
-
   const insertEmoji = (emoji: string) => {
     if (editorRef.current) {
       const selection = window.getSelection();
@@ -216,43 +202,36 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
-
   const checkForChanges = (currentContent: string) => {
     const hasChanges = currentContent !== originalPost;
     onUnsavedChangesChange(hasChanges);
   };
-
   const handleSave = () => {
     onSave();
     setOriginalPost(generatedPost);
     onUnsavedChangesChange(false);
     toast({
       title: "Saved",
-      description: "Your changes have been saved successfully.",
+      description: "Your changes have been saved successfully."
     });
   };
-
   const handlePost = () => {
     toast({
       title: "Post Published",
-      description: "Your post has been successfully published to LinkedIn.",
+      description: "Your post has been successfully published to LinkedIn."
     });
   };
-
   const handlePreview = () => {
     setShowPreviewModal(true);
   };
-
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
     }
   }, [generatedPost]);
-
   useEffect(() => {
     setOriginalPost(generatedPost);
   }, []);
-
   useEffect(() => {
     const handleClickOutside = () => {
       const selection = window.getSelection();
@@ -261,37 +240,19 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         setAiEditToolbarVisible(false);
       }
     };
-
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
-  return (
-    <div className="space-y-6">
-      <FloatingToolbar
-        position={toolbarPosition}
-        onFormat={handleFormat}
-        onAIEdit={handleAIEdit}
-        visible={toolbarVisible}
-      />
+  return <div className="space-y-6">
+      <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
       
-      <AIEditToolbar
-        position={toolbarPosition}
-        visible={aiEditToolbarVisible}
-        selectedText={selectedText}
-        onClose={handleAIEditClose}
-        onApplyEdit={handleAIEditApply}
-      />
+      <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
       
-      <PostPreviewModal
-        open={showPreviewModal}
-        onOpenChange={setShowPreviewModal}
-        postContent={generatedPost}
-      />
+      <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={generatedPost} />
       
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-xl font-semibold">Generated Post</h3>
+          <h3 className="font-semibold text-lg">Generated Post</h3>
           <TooltipProvider>
             <div className="flex gap-2">
               <Tooltip>
@@ -307,12 +268,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreview}
-                    className="h-8 w-8 p-0"
-                  >
+                  <Button variant="outline" size="sm" onClick={handlePreview} className="h-8 w-8 p-0">
                     <Eye className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -323,13 +279,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={!hasUnsavedChanges}
-                    className={`h-8 w-8 p-0 ${hasUnsavedChanges ? 'bg-blue-50 border-blue-300' : ''}`}
-                  >
+                  <Button variant="outline" size="sm" onClick={handleSave} disabled={!hasUnsavedChanges} className={`h-8 w-8 p-0 ${hasUnsavedChanges ? 'bg-blue-50 border-blue-300' : ''}`}>
                     <Save className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -351,11 +301,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    onClick={handlePost}
-                    className="bg-blue-600 hover:bg-blue-700 text-white h-8 w-8 p-0"
-                  >
+                  <Button size="sm" onClick={handlePost} className="h-8 w-8 p-0 bg-indigo-600 hover:bg-indigo-500 text-white">
                     <Send className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -369,90 +315,46 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         
         {/* Text Editor Toolbar */}
         <div className="border-b p-2 flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleFormat('bold')}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={() => handleFormat('bold')} className="h-8 w-8 p-0">
             <Bold className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleFormat('italic')}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={() => handleFormat('italic')} className="h-8 w-8 p-0">
             <Italic className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleFormat('underline')}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={() => handleFormat('underline')} className="h-8 w-8 p-0">
             <Underline className="h-4 w-4" />
           </Button>
           <div className="w-px h-6 bg-gray-300 mx-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleFormat('insertUnorderedList')}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={() => handleFormat('insertUnorderedList')} className="h-8 w-8 p-0">
             <List className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             <AlignLeft className="h-4 w-4" />
           </Button>
           <div className="w-px h-6 bg-gray-300 mx-1" />
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-              >
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Smile className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2">
               <div className="grid grid-cols-5 gap-1">
-                {emojis.map((emoji, index) => (
-                  <button
-                    key={index}
-                    onClick={() => insertEmoji(emoji)}
-                    className="p-2 hover:bg-gray-100 rounded text-lg"
-                  >
+                {emojis.map((emoji, index) => <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
                     {emoji}
-                  </button>
-                ))}
+                  </button>)}
               </div>
             </PopoverContent>
           </Popover>
         </div>
         
         <div className="p-4">
-          <div
-            ref={editorRef}
-            contentEditable
-            onInput={handleInput}
-            onMouseUp={handleTextSelection}
-            onKeyUp={handleTextSelection}
-            onKeyDown={handleKeyDown}
-            className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed"
-            style={{ whiteSpace: 'pre-wrap' }}
-            suppressContentEditableWarning={true}
-          />
-          {!generatedPost && (
-            <div className="text-gray-400 pointer-events-none absolute">
+          <div ref={editorRef} contentEditable onInput={handleInput} onMouseUp={handleTextSelection} onKeyUp={handleTextSelection} onKeyDown={handleKeyDown} className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed" style={{
+          whiteSpace: 'pre-wrap'
+        }} suppressContentEditableWarning={true} />
+          {!generatedPost && <div className="text-gray-400 pointer-events-none absolute">
               AI generated content will appear here...
-            </div>
-          )}
+            </div>}
         </div>
       </div>
       
@@ -461,12 +363,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <h3 className="text-xl font-semibold">Editing Instructions</h3>
         </div>
         <div className="p-4">
-          <textarea 
-            value={editingInstructions} 
-            onChange={e => onEditingInstructionsChange(e.target.value)} 
-            className="min-h-[100px] w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-            placeholder="Provide feedback or instructions for the AI to improve the generated content..." 
-          />
+          <textarea value={editingInstructions} onChange={e => onEditingInstructionsChange(e.target.value)} className="min-h-[100px] w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
         </div>
         <div className="p-4 pt-0">
           <Button onClick={onRegenerateWithInstructions} className="w-full bg-indigo-600 hover:bg-indigo-700">
@@ -474,8 +371,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default GeneratedPostEditor;
