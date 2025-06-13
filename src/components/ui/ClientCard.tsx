@@ -30,21 +30,23 @@ const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
 
 const ClientCard: React.FC<ClientCardProps> = ({ client }) => {
   return (
-    <Link to={`/clients/${client.id}`}>
-      <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-medium">{client.clientName}</CardTitle>
-            <Badge className={`${getStatusColor(client.status)}`}>
+    <Link to={`/clients/${client.id}`} className="block h-full">
+      <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+        <CardHeader className="pb-2 flex-shrink-0">
+          <div className="flex justify-between items-start gap-2">
+            <CardTitle className="text-lg font-medium truncate flex-1 min-w-0" title={client.clientName}>
+              {client.clientName}
+            </CardTitle>
+            <Badge className={`${getStatusColor(client.status)} flex-shrink-0`}>
               {client.status}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+        <CardContent className="flex-1 flex flex-col">
+          <p className="text-sm text-gray-600 mb-2 line-clamp-2 flex-1">
             {client.brandBriefSummary || 'No summary available'}
           </p>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 mt-auto">
             Last updated: {formatDate(client.updatedAt)}
           </div>
         </CardContent>
