@@ -378,7 +378,7 @@ What you want to convey to your audience?" className="min-h-[120px] resize-none"
               <Textarea value={urlRemarks} onChange={e => setUrlRemarks(e.target.value)} placeholder="Any specific aspects you want to focus on or additional context..." className="min-h-[100px] resize-none" />
             </div>
 
-            <Button onClick={handleCreateFromUrl} disabled={!urlInput.trim()} className="w-full py-3">
+            <Button onClick={handleCreateFromUrl} disabled={!urlInput.trim()} className="w-full py-3 bg-[4f46e5] bg-indigo-600 hover:bg-indigo-500">
               Generate posts from URL
             </Button>
           </div>;
