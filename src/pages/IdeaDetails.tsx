@@ -293,6 +293,9 @@ const IdeaDetails = () => {
         isNewPost={isNewPost}
         hasUnsavedChanges={hasUnsavedChanges}
         onSave={handleSaveNewIdea}
+        status={status}
+        onStatusChange={setStatus}
+        onAddCustomStatus={handleAddCustomStatus}
       />
       
       {/* Show a notice for new ideas */}
@@ -345,12 +348,6 @@ const IdeaDetails = () => {
         
         {/* Right section - 1/3 width */}
         <div className="space-y-6">
-          <StatusCard
-            status={status}
-            onStatusChange={setStatus}
-            onAddCustomStatus={handleAddCustomStatus}
-          />
-          
           {/* Initial Idea Section - moved here and initially collapsed */}
           <InitialIdeaSection
             isExpanded={isIdeaExpanded}
