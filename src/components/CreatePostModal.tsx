@@ -403,8 +403,8 @@ What you want to convey to your audience?" className="min-h-[120px] resize-none"
             </div>
 
             <div className="text-sm text-muted-foreground">
-              <p>Click on any idea to use it for post generation.</p>
-              <p>Ideas are personalized based on your brand profile.</p>
+              
+              
             </div>
           </div>;
       default:
