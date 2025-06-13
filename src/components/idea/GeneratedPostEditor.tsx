@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye, MessageSquare } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -241,6 +241,16 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     setShowPreviewModal(true);
   };
 
+  const handleRegeneratePost = () => {
+    // Simulate AI regenerating the entire post
+    toast({
+      title: "Regenerating Post",
+      description: "AI is generating a new version of your post..."
+    });
+    // In a real implementation, this would call your AI service
+    onRegenerateWithInstructions();
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -388,6 +398,16 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             >
               <MessageSquare className="h-4 w-4" />
               {showChatBox ? 'Hide' : 'Show'} editing instructions
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRegeneratePost}
+              className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              Regenerate with AI
             </Button>
           </div>
           
