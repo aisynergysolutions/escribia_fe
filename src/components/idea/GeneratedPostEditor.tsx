@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,7 +8,6 @@ import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
 import PostPreviewModal from './PostPreviewModal';
-
 interface GeneratedPostEditorProps {
   generatedPost: string;
   onGeneratedPostChange: (value: string) => void;
@@ -29,7 +28,6 @@ interface GeneratedPostEditorProps {
   }>;
   onRestoreVersion: (text: string) => void;
 }
-
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   generatedPost,
   onGeneratedPostChange,
@@ -58,7 +56,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     toast
   } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
-
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) {
@@ -78,7 +75,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setSelectedText('');
     }
   };
-
   const handleAIEdit = () => {
     if (selectedText) {
       setToolbarVisible(false);
@@ -87,7 +83,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       }, 50);
     }
   };
-
   const handleAIEditApply = (instruction: string) => {
     if (selectedText) {
       toast({
@@ -97,14 +92,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setAiEditToolbarVisible(false);
     }
   };
-
   const handleAIEditClose = () => {
     setAiEditToolbarVisible(false);
     if (selectedText) {
       setToolbarVisible(true);
     }
   };
-
   const handleFormat = (format: string) => {
     const selection = window.getSelection();
     if (!selection || !editorRef.current) return;
@@ -135,7 +128,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
-
   const handleInput = () => {
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML;
@@ -143,7 +135,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
-
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.ctrlKey && event.key === 'c') {
       event.preventDefault();
@@ -154,7 +145,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       handleSave();
     }
   };
-
   const handleCopyWithFormatting = async () => {
     if (editorRef.current) {
       try {
@@ -193,7 +183,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       }
     }
   };
-
   const insertEmoji = (emoji: string) => {
     if (editorRef.current) {
       const selection = window.getSelection();
@@ -214,12 +203,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
-
   const checkForChanges = (currentContent: string) => {
     const hasChanges = currentContent !== originalPost;
     onUnsavedChangesChange(hasChanges);
   };
-
   const handleSave = () => {
     onSave();
     setOriginalPost(generatedPost);
@@ -229,38 +216,23 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       description: "Your changes have been saved successfully."
     });
   };
-
   const handlePost = () => {
     toast({
       title: "Post Published",
       description: "Your post has been successfully published to LinkedIn."
     });
   };
-
   const handlePreview = () => {
     setShowPreviewModal(true);
   };
-
-  const handleRegeneratePost = () => {
-    // Simulate AI regenerating the entire post
-    toast({
-      title: "Regenerating Post",
-      description: "AI is generating a new version of your post..."
-    });
-    // In a real implementation, this would call your AI service
-    onRegenerateWithInstructions();
-  };
-
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
     }
   }, [generatedPost]);
-
   useEffect(() => {
     setOriginalPost(generatedPost);
   }, []);
-
   useEffect(() => {
     const handleClickOutside = () => {
       const selection = window.getSelection();
@@ -272,7 +244,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
   return <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
       
@@ -354,7 +325,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <Button variant="ghost" size="sm" onClick={() => handleFormat('underline')} className="h-8 w-8 p-0">
             <Underline className="h-4 w-4" />
           </Button>
-          <div className="w-px h-6 bg-gray-300 mx-1" />
+          
           <Button variant="ghost" size="sm" onClick={() => handleFormat('insertUnorderedList')} className="h-8 w-8 p-0">
             <List className="h-4 w-4" />
           </Button>
@@ -390,52 +361,24 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         {/* Chat-like Editing Instructions Section */}
         <div className="border-t bg-gray-50">
           <div className="flex items-center justify-between p-3 border-b border-gray-200">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowChatBox(!showChatBox)}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowChatBox(!showChatBox)} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
               <MessageSquare className="h-4 w-4" />
               {showChatBox ? 'Hide' : 'Show'} editing instructions
             </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRegeneratePost}
-              className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            >
-              <Sparkles className="h-4 w-4" />
-              Regenerate with AI
-            </Button>
           </div>
           
-          {showChatBox && (
-            <div className="p-4 space-y-3">
+          {showChatBox && <div className="p-4 space-y-3">
               <div className="flex gap-3">
-                <textarea
-                  value={editingInstructions}
-                  onChange={e => onEditingInstructionsChange(e.target.value)}
-                  className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white"
-                  placeholder="Provide feedback or instructions for the AI to improve the generated content..."
-                />
+                <textarea value={editingInstructions} onChange={e => onEditingInstructionsChange(e.target.value)} className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
               </div>
               <div className="flex justify-end">
-                <Button 
-                  onClick={onRegenerateWithInstructions} 
-                  size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                  disabled={!editingInstructions.trim()}
-                >
+                <Button onClick={onRegenerateWithInstructions} size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!editingInstructions.trim()}>
                   Send Instructions
                 </Button>
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </div>
     </div>;
 };
-
 export default GeneratedPostEditor;
