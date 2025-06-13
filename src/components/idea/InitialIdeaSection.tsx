@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CustomInputModal from '../CustomInputModal';
 import { mockTemplates } from '../../types';
+
 interface InitialIdeaSectionProps {
   isExpanded: boolean;
   onExpandChange: (expanded: boolean) => void;
@@ -20,7 +22,9 @@ interface InitialIdeaSectionProps {
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
 }
+
 const predefinedObjectives = ['Thought Leadership', 'Lead Generation', 'Brand Awareness', 'Engagement', 'Product Launch', 'Event Promotion'];
+
 const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   isExpanded,
   onExpandChange,
@@ -51,11 +55,10 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
         
         <CollapsibleContent className="space-y-4 pt-4 py-0">
           <div>
-            
             <Textarea id="initialIdea" value={initialIdea} onChange={e => onInitialIdeaChange(e.target.value)} placeholder="Write your initial idea here..." rows={4} className="w-full" />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
               <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
               <div className="flex items-center gap-2">
@@ -109,4 +112,5 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
       </Card>
     </Collapsible>;
 };
+
 export default InitialIdeaSection;
