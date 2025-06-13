@@ -1,15 +1,19 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import CustomInputModal from '../CustomInputModal';
+
 interface StatusCardProps {
   status: string;
   onStatusChange: (status: string) => void;
   onAddCustomStatus: (status: string) => void;
 }
+
 const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Posted':
@@ -28,35 +32,47 @@ const getStatusColor = (status: string) => {
       return 'bg-gray-100 text-gray-800';
   }
 };
+
 const StatusCard: React.FC<StatusCardProps> = ({
   status,
   onStatusChange,
   onAddCustomStatus
 }) => {
-  return <Card className="p-6">
+  return (
+    <Card className="p-6">
       <h2 className="font-semibold mb-4 text-lg">Status</h2>
-      <div className="flex items-center gap-2">
-        <Badge className={`${getStatusColor(status)}`}>
-          {status}
-        </Badge>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              Change status
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {predefinedStatuses.map(s => <DropdownMenuItem key={s} onClick={() => onStatusChange(s)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+            <Badge className={`${getStatusColor(status)}`}>
+              {status}
+            </Badge>
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56">
+          {predefinedStatuses.map(s => (
+            <DropdownMenuItem key={s} onClick={() => onStatusChange(s)} className="p-2">
+              <Badge className={`${getStatusColor(s)} cursor-pointer`}>
                 {s}
-              </DropdownMenuItem>)}
-            <CustomInputModal title="Add Custom Status" placeholder="Enter custom status..." onSave={onAddCustomStatus}>
-              <DropdownMenuItem onSelect={e => e.preventDefault()}>
+              </Badge>
+            </DropdownMenuItem>
+          ))}
+          <CustomInputModal 
+            title="Add Custom Status" 
+            placeholder="Enter custom status..." 
+            onSave={onAddCustomStatus}
+          >
+            <DropdownMenuItem onSelect={e => e.preventDefault()} className="p-2">
+              <Badge className="bg-gray-100 text-gray-800 cursor-pointer">
                 Add custom status...
-              </DropdownMenuItem>
-            </CustomInputModal>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </Card>;
+              </Badge>
+            </DropdownMenuItem>
+          </CustomInputModal>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Card>
+  );
 };
+
 export default StatusCard;
