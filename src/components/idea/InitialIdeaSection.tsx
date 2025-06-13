@@ -100,9 +100,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
             </div>
           </div>
           
-          <Button onClick={onSendToAI} className="w-full bg-indigo-600 hover:bg-indigo-700">
-            Send to AI
-          </Button>
+          <Button onClick={onSendToAI} className="w-full bg-indigo-600 hover:bg-indigo-700">Regenerate Post</Button>
         </CollapsibleContent>
       </Card>
     </Collapsible>;
