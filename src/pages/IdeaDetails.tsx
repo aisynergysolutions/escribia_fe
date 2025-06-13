@@ -307,20 +307,6 @@ const IdeaDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left section - 2/3 width */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Collapsible Initial Idea Section */}
-          <InitialIdeaSection
-            isExpanded={isIdeaExpanded}
-            onExpandChange={setIsIdeaExpanded}
-            initialIdea={initialIdea}
-            onInitialIdeaChange={setInitialIdea}
-            objective={objective}
-            onObjectiveChange={setObjective}
-            template={template}
-            onTemplateChange={setTemplate}
-            onSendToAI={handleSendToAI}
-            onAddCustomObjective={handleAddCustomObjective}
-          />
-          
           {/* Enhanced Generated Post Editor */}
           <div>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -363,6 +349,20 @@ const IdeaDetails = () => {
             status={status}
             onStatusChange={setStatus}
             onAddCustomStatus={handleAddCustomStatus}
+          />
+          
+          {/* Initial Idea Section - moved here and initially collapsed */}
+          <InitialIdeaSection
+            isExpanded={isIdeaExpanded}
+            onExpandChange={setIsIdeaExpanded}
+            initialIdea={initialIdea}
+            onInitialIdeaChange={setInitialIdea}
+            objective={objective}
+            onObjectiveChange={setObjective}
+            template={template}
+            onTemplateChange={setTemplate}
+            onSendToAI={handleSendToAI}
+            onAddCustomObjective={handleAddCustomObjective}
           />
           
           <ScheduleCard
