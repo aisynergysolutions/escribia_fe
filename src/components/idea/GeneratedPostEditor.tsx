@@ -74,7 +74,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     // Calculate precise line positioning
     const lineHeight = 21; // 14px * 1.5
-    const threeLineHeight = lineHeight * 3; // Height of exactly 3 lines
+    const paddingTop = 24; // Container's padding-top where text actually starts
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -99,8 +99,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.body.removeChild(tempDiv);
     
     // Position the line exactly after the 3rd line of text
-    // Start from where the text begins (not container top) and add 3 line heights
-    setCutoffLineTop(threeLineHeight);
+    // Account for padding-top and add exactly 3 line heights
+    const threeLineHeight = lineHeight * 3;
+    setCutoffLineTop(paddingTop + threeLineHeight);
     
     return { charCount, lineCount: lines };
   };
@@ -502,7 +503,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                     <div 
                       className="absolute left-6 right-6 border-t border-gray-300 cursor-help pointer-events-auto"
                       style={{ 
-                        top: `${cutoffLineTop + 8}px`, // Add 8px spacing below the 3rd line
+                        top: `${cutoffLineTop + 4}px`, // Add small spacing after the 3rd line
                         zIndex: 10
                       }}
                     />
