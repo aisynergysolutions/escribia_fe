@@ -24,12 +24,45 @@ const IdeaDetails = () => {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
+  // BEGIN: auto-populate initial idea if provided from url param (suggestion flow)
+  let suggestionInitialIdea = '';
+  if (isNewPost) {
+    const dataParam = searchParams.get('data');
+    if (dataParam) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(dataParam));
+        suggestionInitialIdea =
+          decoded.initialIdea ||
+          decoded.idea ||
+          '';
+      } catch (e) {
+        suggestionInitialIdea = '';
+      }
+    }
+  }
+  // END: auto-populate initial idea if provided from url param (suggestion flow)
+
   // Find the idea and client
   const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
   const client = mockClients.find(c => c.id === clientId);
 
   // Custom hooks
-  const ideaForm = useIdeaForm({ idea, isNewPost });
+  const ideaForm = useIdeaForm({
+    idea: idea
+      ? idea
+      : isNewPost && suggestionInitialIdea
+      ? {
+          id: 'temp',
+          title: '',
+          initialIdeaPrompt: suggestionInitialIdea,
+          objective: '',
+          templateUsedId: undefined,
+          status: 'Idea',
+          internalNotes: '',
+        }
+      : undefined,
+    isNewPost,
+  });
   const postEditor = usePostEditor({ initialText: idea?.currentDraftText });
   const scheduling = useScheduling({ idea });
 
