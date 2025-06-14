@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Edit3, Calendar, Clock, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,15 +19,15 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
   const getAIStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
       case 'training_queued':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
       case 'pending_data':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
     }
   };
 
@@ -58,12 +57,17 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <Badge className={`mt-1 ${
-                client.status === 'active' ? 'bg-green-100 text-green-800' :
-                client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' :
-                client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <Badge
+                className={`mt-1 ${
+                  client.status === 'active'
+                    ? 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800'
+                    : client.status === 'onboarding'
+                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800'
+                    : client.status === 'paused'
+                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800'
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800'
+                }`}
+              >
                 {client.status}
               </Badge>
             </div>
