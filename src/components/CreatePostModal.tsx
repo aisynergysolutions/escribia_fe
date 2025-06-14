@@ -32,6 +32,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState(['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).']);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -101,10 +102,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
-  const refreshSuggestions = () => {
+  const refreshSuggestions = async () => {
+    setIsRefreshing(true);
     const allSuggestions = ['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).', 'The Remote Work Revolution: 5 productivity tools that increased our team\'s output by 40% while reducing meeting time by half.', 'Cloud Migration Mistakes That Cost Companies Millions: What we learned from 100+ failed migrations and how to avoid them.', 'The Future of Cybersecurity: Why traditional firewalls are becoming obsolete and what\'s replacing them.', 'Building SaaS Products That Scale: Technical decisions we made at day 1 that saved us from rewriting everything at 1M users.'];
+    
+    // Simulate loading time
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
     setPostSuggestions(shuffled.slice(0, 4));
+    setIsRefreshing(false);
   };
 
   const resetForm = () => {
@@ -285,6 +292,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     </div>
   );
 
+  const truncateText = (text: string, maxLength: number = 120) => {
+    if (text.length <= maxLength) return text;
+    return text.substr(0, maxLength) + '...';
+  };
+
   const renderRightPanel = () => {
     switch (selectedMethod) {
       case 'text':
@@ -459,39 +471,76 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       case 'suggestions':
         return (
-          <div className="space-y-6 animate-fade-in">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <label className="block text-sm font-medium text-foreground">
-                  Select a post idea
-                </label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={refreshSuggestions} 
-                  className="flex items-center gap-1 hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Refresh
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                {postSuggestions.map((suggestion, index) => (
-                  <div 
-                    key={index} 
-                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 transform hover:scale-[1.01] ${
-                      hoveredSuggestion === suggestion 
-                        ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-md' 
-                        : 'border-border hover:border-[#4F46E5] hover:bg-[#4F46E5]/5'
-                    }`}
-                    onMouseEnter={() => setHoveredSuggestion(suggestion)}
-                    onMouseLeave={() => setHoveredSuggestion(null)}
-                    onClick={() => handleCreateFromSuggestion(suggestion)}
-                  >
-                    <p className="text-sm text-foreground leading-relaxed">{suggestion}</p>
-                  </div>
-                ))}
+          <div className="h-full flex flex-col animate-fade-in">
+            <div className="relative h-full">
+              {/* Floating Refresh Button */}
+              <button 
+                onClick={refreshSuggestions}
+                disabled={isRefreshing}
+                className="absolute top-0 right-0 z-10 p-2 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group"
+                aria-label="Refresh suggestions"
+              >
+                <RefreshCw className={`h-4 w-4 text-gray-600 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              </button>
+
+              {/* 2x2 Grid Container */}
+              <div className="grid grid-cols-2 gap-3 h-full pr-12">
+                {isRefreshing ? (
+                  // Skeleton loading states
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <div 
+                      key={`skeleton-${index}`}
+                      className="relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <div className="space-y-2">
+                        <div className="h-3 bg-gray-300 rounded animate-pulse"></div>
+                        <div className="h-3 bg-gray-300 rounded w-4/5 animate-pulse"></div>
+                        <div className="h-3 bg-gray-300 rounded w-3/5 animate-pulse"></div>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                    </div>
+                  ))
+                ) : (
+                  postSuggestions.map((suggestion, index) => (
+                    <div 
+                      key={index} 
+                      className="relative p-4 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/50 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group"
+                      style={{ 
+                        animationDelay: `${index * 100}ms`,
+                        minHeight: '120px'
+                      }}
+                      onMouseEnter={() => setHoveredSuggestion(suggestion)}
+                      onMouseLeave={() => setHoveredSuggestion(null)}
+                      onClick={() => handleCreateFromSuggestion(suggestion)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleCreateFromSuggestion(suggestion);
+                        }
+                      }}
+                      aria-label={`Select post idea: ${truncateText(suggestion, 50)}`}
+                    >
+                      <div className="relative z-10">
+                        <p className="text-xs text-foreground leading-relaxed line-clamp-6 font-medium">
+                          {truncateText(suggestion, 150)}
+                        </p>
+                      </div>
+                      
+                      {/* Hover overlay effect */}
+                      <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${
+                        hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
+                      }`} />
+                      
+                      {/* Selection indicator */}
+                      <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${
+                        hoveredSuggestion === suggestion ? 'opacity-100' : ''
+                      }`} />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
