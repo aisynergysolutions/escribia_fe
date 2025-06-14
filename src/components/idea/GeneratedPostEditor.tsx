@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,6 +8,9 @@ import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
 import PostPreviewModal from './PostPreviewModal';
+import SchedulePostModal from './SchedulePostModal';
+import PostNowModal from './PostNowModal';
+
 interface GeneratedPostEditorProps {
   generatedPost: string;
   onGeneratedPostChange: (value: string) => void;
@@ -51,6 +54,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [selectedText, setSelectedText] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showChatBox, setShowChatBox] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showPostNowModal, setShowPostNowModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const {
     toast
@@ -234,6 +239,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     // In a real implementation, this would call your AI service
     onRegenerateWithInstructions();
   };
+  const handleSchedule = (date: Date, time: string) => {
+    toast({
+      title: "Post Scheduled",
+      description: `Your post has been scheduled for ${date.toLocaleDateString()} at ${time}.`
+    });
+  };
+
+  const handlePostNow = () => {
+    toast({
+      title: "Post Published",
+      description: "Your post has been successfully published to LinkedIn."
+    });
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -259,6 +278,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
       
       <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={generatedPost} />
+      
+      <SchedulePostModal 
+        open={showScheduleModal} 
+        onOpenChange={setShowScheduleModal} 
+        postContent={generatedPost}
+        onSchedule={handleSchedule}
+      />
+      
+      <PostNowModal 
+        open={showPostNowModal} 
+        onOpenChange={setShowPostNowModal} 
+        postContent={generatedPost}
+        onPost={handlePostNow}
+      />
       
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
@@ -345,7 +378,18 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button size="sm" onClick={handlePost} className="h-8 w-8 p-0 bg-indigo-600 hover:bg-indigo-500 text-white">
+                  <Button variant="outline" size="sm" onClick={() => setShowScheduleModal(true)} className="h-8 w-8 p-0">
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Schedule</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" onClick={() => setShowPostNowModal(true)} className="h-8 w-8 p-0 bg-indigo-600 hover:bg-indigo-500 text-white">
                     <Send className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
