@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { calendar, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import StatusBadge from '../common/StatusBadge';
 import { Idea } from '../../types';
@@ -48,7 +48,7 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
         </div>
         {idea.scheduledPostAt && (
           <div className="flex items-center">
-            <calendar className="w-3 h-3 mr-1" />
+            <Calendar className="w-3 h-3 mr-1" />
             Scheduled {formatCardDate(idea.scheduledPostAt, '')}
           </div>
         )}
