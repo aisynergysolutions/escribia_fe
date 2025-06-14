@@ -12,11 +12,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ clientId }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Content Calendar</h2>
-        <p className="text-gray-600">View scheduled posts for {client?.clientName}</p>
-      </div>
-      <PostCalendar />
+      <PostCalendar clientName={client?.clientName} />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
@@ -10,9 +9,10 @@ import DayPostsModal from './DayPostsModal';
 
 interface PostCalendarProps {
   showAllClients?: boolean;
+  clientName?: string;
 }
 
-const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) => {
+const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false, clientName }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,12 +69,19 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false }) =
     setCurrentMonth(addMonths(currentMonth, 1));
   };
 
+  const getCalendarTitle = () => {
+    if (showAllClients) {
+      return 'All Clients Calendar';
+    }
+    return clientName ? `${clientName} Content Calendar` : 'Content Calendar';
+  };
+
   return (
     <>
       <Card className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">
-            {showAllClients ? 'All Clients Calendar' : 'Content Calendar'}
+            {getCalendarTitle()}
           </h3>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
