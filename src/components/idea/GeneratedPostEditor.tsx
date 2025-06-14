@@ -62,7 +62,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
-  const [isHoveringTruncation, setIsHoveringTruncation] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -496,20 +495,13 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation indicator with hover-only "see more" text */}
+              {/* Truncation indicator - positioned exactly at 3 lines */}
               {showTruncation && (
-                <div 
-                  className="absolute left-6 right-6 cursor-pointer" 
-                  style={{ top: `${cutoffLineTop}px` }}
-                  onMouseEnter={() => setIsHoveringTruncation(true)}
-                  onMouseLeave={() => setIsHoveringTruncation(false)}
-                >
+                <div className="absolute left-6 right-6" style={{ top: `${cutoffLineTop}px` }}>
                   <div className="border-t border-dotted border-gray-300 relative">
-                    {isHoveringTruncation && (
-                      <div className="absolute right-0 text-xs text-gray-500 bg-white px-2 transition-opacity duration-200" style={{ top: '-10px' }}>
-                        ...see more
-                      </div>
-                    )}
+                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-1" style={{ top: '-7px' }}>
+                      ...see more
+                    </div>
                   </div>
                 </div>
               )}
