@@ -18,51 +18,59 @@ import { mockClients, mockIdeas, Idea } from '../types';
 import CreatePostModal from '../components/CreatePostModal';
 
 // Mock LinkedIn posts data
-const mockLinkedInPosts = [
-  {
-    id: '1',
-    author: {
-      name: 'Sarah Johnson',
-      title: 'CTO at InnovateNow',
-      profileImage: undefined
-    },
-    content: 'Just implemented a new AI-powered solution that reduced our processing time by 60%. The key was finding the right balance between automation and human oversight. What challenges are you facing with AI implementation in your organization?',
-    publishedAt: '2024-01-15T10:30:00Z',
-    engagement: { likes: 124, comments: 18, shares: 7 },
-    url: 'https://linkedin.com/posts/example1',
-    relevanceScore: 92
+const mockLinkedInPosts = [{
+  id: '1',
+  author: {
+    name: 'Sarah Johnson',
+    title: 'CTO at InnovateNow',
+    profileImage: undefined
   },
-  {
-    id: '2',
-    author: {
-      name: 'Mike Chen',
-      title: 'VP Engineering at DataFlow',
-      profileImage: undefined
-    },
-    content: 'Enterprise software development is evolving rapidly. The companies that thrive are those that can adapt their architecture to be more modular and scalable. Thoughts on microservices vs monoliths in 2024?',
-    publishedAt: '2024-01-14T14:15:00Z',
-    engagement: { likes: 89, comments: 23, shares: 12 },
-    url: 'https://linkedin.com/posts/example2',
-    relevanceScore: 78
-  }
-];
-
+  content: 'Just implemented a new AI-powered solution that reduced our processing time by 60%. The key was finding the right balance between automation and human oversight. What challenges are you facing with AI implementation in your organization?',
+  publishedAt: '2024-01-15T10:30:00Z',
+  engagement: {
+    likes: 124,
+    comments: 18,
+    shares: 7
+  },
+  url: 'https://linkedin.com/posts/example1',
+  relevanceScore: 92
+}, {
+  id: '2',
+  author: {
+    name: 'Mike Chen',
+    title: 'VP Engineering at DataFlow',
+    profileImage: undefined
+  },
+  content: 'Enterprise software development is evolving rapidly. The companies that thrive are those that can adapt their architecture to be more modular and scalable. Thoughts on microservices vs monoliths in 2024?',
+  publishedAt: '2024-01-14T14:15:00Z',
+  engagement: {
+    likes: 89,
+    comments: 23,
+    shares: 12
+  },
+  url: 'https://linkedin.com/posts/example2',
+  relevanceScore: 78
+}];
 const ClientDetails = () => {
-  const { clientId } = useParams<{ clientId: string }>();
+  const {
+    clientId
+  } = useParams<{
+    clientId: string;
+  }>();
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Posts filtering and sorting state
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'status'>('updated');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  
+
   // Find client data
   const client = mockClients.find(c => c.id === clientId);
-  
+
   // Find ideas for this client
   const clientIdeas = mockIdeas.filter(idea => idea.clientId === clientId);
-  
+
   // Determine current section based on path
   const getCurrentSection = () => {
     const path = location.pathname;
@@ -74,37 +82,30 @@ const ClientDetails = () => {
     if (path.endsWith('/settings')) return 'settings';
     return 'overview';
   };
-
   const currentSection = getCurrentSection();
-  
   if (!client) {
-    return (
-      <div className="text-center py-12">
+    return <div className="text-center py-12">
         <h2 className="text-2xl font-semibold">Client not found</h2>
         <Link to="/clients" className="text-indigo-600 hover:underline mt-4 inline-block">
           Return to clients list
         </Link>
-      </div>
-    );
+      </div>;
   }
-  
+
   // Filter and sort posts
   const getFilteredAndSortedPosts = (): Idea[] => {
     let filtered = clientIdeas;
-    
+
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(idea => 
-        idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        idea.currentDraftText.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(idea => idea.title.toLowerCase().includes(searchTerm.toLowerCase()) || idea.currentDraftText.toLowerCase().includes(searchTerm.toLowerCase()));
     }
-    
+
     // Filter by status
     if (statusFilter !== 'all') {
       filtered = filtered.filter(idea => idea.status === statusFilter);
     }
-    
+
     // Sort posts
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -120,7 +121,6 @@ const ClientDetails = () => {
           return 0;
       }
     });
-    
     return filtered;
   };
 
@@ -128,7 +128,6 @@ const ClientDetails = () => {
   const getAllowedStatuses = () => {
     return ['Drafting', 'Reviewed', 'Scheduled', 'Published'];
   };
-
   const getAIStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -143,27 +142,21 @@ const ClientDetails = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   const formatDate = (seconds: number) => {
     if (!seconds) return 'N/A';
     return new Date(seconds * 1000).toLocaleDateString();
   };
-
   const handleNewIdea = () => {
     const tempIdeaId = `temp-${Date.now()}`;
     navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true`);
   };
-
   const renderOverview = () => {
     return <ClientOverview clientId={clientId!} />;
   };
-
   const renderPosts = () => {
     const filteredPosts = getFilteredAndSortedPosts();
     const allowedStatuses = getAllowedStatuses();
-    
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">All Posts</h2>
           <CreatePostModal>
@@ -180,12 +173,7 @@ const ClientDetails = () => {
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search posts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+                <Input placeholder="Search posts..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
               </div>
             </div>
             <div className="flex gap-2">
@@ -211,66 +199,41 @@ const ClientDetails = () => {
             <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
               All ({clientIdeas.length})
             </TabsTrigger>
-            {allowedStatuses.map((status) => {
-              const count = clientIdeas.filter(idea => idea.status === status).length;
-              return (
-                <TabsTrigger 
-                  key={status} 
-                  value={status}
-                  className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-                >
+            {allowedStatuses.map(status => {
+            const count = clientIdeas.filter(idea => idea.status === status).length;
+            return <TabsTrigger key={status} value={status} className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
                   {status} ({count})
-                </TabsTrigger>
-              );
-            })}
+                </TabsTrigger>;
+          })}
           </TabsList>
         </Tabs>
         
         {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPosts.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} />
-          ))}
+          {filteredPosts.map(idea => <IdeaCard key={idea.id} idea={idea} />)}
           
-          {filteredPosts.length === 0 && (
-            <div className="col-span-3 text-center py-12">
+          {filteredPosts.length === 0 && <div className="col-span-3 text-center py-12">
               <p className="text-gray-500">
-                {searchTerm || statusFilter !== 'all' 
-                  ? "No posts match your filters." 
-                  : "No posts found for this client yet."
-                }
+                {searchTerm || statusFilter !== 'all' ? "No posts match your filters." : "No posts found for this client yet."}
               </p>
-              {(searchTerm || statusFilter !== 'all') && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setStatusFilter('all');
-                  }}
-                  className="mt-2"
-                >
+              {(searchTerm || statusFilter !== 'all') && <Button variant="outline" onClick={() => {
+            setSearchTerm('');
+            setStatusFilter('all');
+          }} className="mt-2">
                   Clear Filters
-                </Button>
-              )}
-            </div>
-          )}
+                </Button>}
+            </div>}
         </div>
-      </div>
-    );
+      </div>;
   };
-
-  const renderCalendar = () => (
-    <div className="space-y-6">
+  const renderCalendar = () => <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Content Calendar</h2>
         <p className="text-gray-600">View scheduled posts for {client.clientName}</p>
       </div>
       <PostCalendar />
-    </div>
-  );
-
-  const renderResources = () => (
-    <div className="bg-white p-6 rounded-2xl shadow-md">
+    </div>;
+  const renderResources = () => <div className="bg-white p-6 rounded-2xl shadow-md">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Resources</h2>
         <Button className="bg-indigo-600 hover:bg-indigo-700">
@@ -282,22 +245,16 @@ const ClientDetails = () => {
         <p>Resource management for {client.clientName} will be implemented here.</p>
         <p className="text-sm mt-2">Upload brand assets, guidelines, and other resources.</p>
       </div>
-    </div>
-  );
-
-  const renderAnalytics = () => (
-    <div className="bg-white p-6 rounded-2xl shadow-md">
+    </div>;
+  const renderAnalytics = () => <div className="bg-white p-6 rounded-2xl shadow-md">
       <h2 className="text-xl font-semibold mb-4">Analytics</h2>
       <div className="text-center text-gray-500 py-12">
         <BarChart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
         <p>Analytics dashboard for {client.clientName} will be implemented here.</p>
         <p className="text-sm mt-2">Track engagement, reach, and content performance.</p>
       </div>
-    </div>
-  );
-
-  const renderSettings = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    </div>;
+  const renderSettings = () => <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Client Information Section */}
       <Card>
         <CardHeader>
@@ -317,12 +274,7 @@ const ClientDetails = () => {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <Badge className={`mt-1 ${
-                client.status === 'active' ? 'bg-green-100 text-green-800' :
-                client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' :
-                client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <Badge className={`mt-1 ${client.status === 'active' ? 'bg-green-100 text-green-800' : client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' : client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
                 {client.status}
               </Badge>
             </div>
@@ -370,11 +322,9 @@ const ClientDetails = () => {
               <Badge className={`mt-1 ${getAIStatusColor(client.aiTraining.status)}`}>
                 {client.aiTraining.status}
               </Badge>
-              {client.aiTraining.lastTrainedAt.seconds > 0 && (
-                <div className="text-sm mt-1">
+              {client.aiTraining.lastTrainedAt.seconds > 0 && <div className="text-sm mt-1">
                   Last trained: {formatDate(client.aiTraining.lastTrainedAt.seconds)}
-                </div>
-              )}
+                </div>}
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">LinkedIn API Tokens</h3>
@@ -433,12 +383,7 @@ const ClientDetails = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">LinkedIn Profile</h3>
-                    <a 
-                      href={client.brandProfile.linkedinProfileUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="mt-1 text-indigo-600 hover:underline flex items-center"
-                    >
+                    <a href={client.brandProfile.linkedinProfileUrl} target="_blank" rel="noopener noreferrer" className="mt-1 text-indigo-600 hover:underline flex items-center">
                       <Linkedin className="h-4 w-4 mr-1" />
                       View Profile
                     </a>
@@ -454,9 +399,7 @@ const ClientDetails = () => {
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Brand Personality</h3>
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {client.brandProfile.brandPersonality.map((trait, idx) => (
-                        <Badge key={idx} variant="outline">{trait}</Badge>
-                      ))}
+                      {client.brandProfile.brandPersonality.map((trait, idx) => <Badge key={idx} variant="outline">{trait}</Badge>)}
                     </div>
                   </div>
                   
@@ -468,9 +411,7 @@ const ClientDetails = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Emotions to Evoke</h3>
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
-                        {client.brandProfile.emotionsToEvoke.map((emotion, idx) => (
-                          <Badge key={idx} variant="secondary">{emotion}</Badge>
-                        ))}
+                        {client.brandProfile.emotionsToEvoke.map((emotion, idx) => <Badge key={idx} variant="secondary">{emotion}</Badge>)}
                       </div>
                     </div>
                     <div>
@@ -508,26 +449,13 @@ const ClientDetails = () => {
                 <div className="space-y-4 py-2">
                   <h3 className="text-sm font-medium text-gray-500">Data Sources</h3>
                   <div className="grid grid-cols-1 gap-2">
-                    {client.brandProfile.trainingDataUrls.map((url, idx) => (
-                      <a 
-                        key={idx} 
-                        href={url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:underline block text-sm"
-                      >
+                    {client.brandProfile.trainingDataUrls.map((url, idx) => <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline block text-sm">
                         {url}
-                      </a>
-                    ))}
+                      </a>)}
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Raw Training Data</h3>
-                    <Textarea 
-                      className="h-40" 
-                      placeholder="No training data" 
-                      value={client.brandProfile.trainingDataUrls.join("\n")} 
-                      readOnly
-                    />
+                    <Textarea className="h-40" placeholder="No training data" value={client.brandProfile.trainingDataUrls.join("\n")} readOnly />
                   </div>
                 </div>
               </AccordionContent>
@@ -535,22 +463,17 @@ const ClientDetails = () => {
           </Accordion>
         </CardContent>
       </Card>
-    </div>
-  );
-
+    </div>;
   const renderComments = () => {
     const handleRewrite = async (postId: string, guidelines?: string) => {
       console.log(`Rewriting comment for post ${postId} with guidelines:`, guidelines);
       // Here you would call your AI service to generate a new comment
     };
-
     const handlePost = (postId: string, comment: string) => {
       console.log(`Posting comment for post ${postId}:`, comment);
       // Here you would handle the actual posting logic
     };
-
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Comment Opportunities</h2>
@@ -563,27 +486,15 @@ const ClientDetails = () => {
         </div>
 
         <div className="space-y-6">
-          {mockLinkedInPosts.map((post) => (
-            <CommentCard
-              key={post.id}
-              post={post}
-              aiGeneratedComment={`Great insights on ${post.content.slice(0, 50)}... As someone working in ${client.industry}, I'd love to share our experience with similar implementations. We've found that...`}
-              onRewrite={(guidelines) => handleRewrite(post.id, guidelines)}
-              onPost={(comment) => handlePost(post.id, comment)}
-            />
-          ))}
+          {mockLinkedInPosts.map(post => <CommentCard key={post.id} post={post} aiGeneratedComment={`Great insights on ${post.content.slice(0, 50)}... As someone working in ${client.industry}, I'd love to share our experience with similar implementations. We've found that...`} onRewrite={guidelines => handleRewrite(post.id, guidelines)} onPost={comment => handlePost(post.id, comment)} />)}
         </div>
 
-        {mockLinkedInPosts.length === 0 && (
-          <div className="text-center text-gray-500 py-12">
+        {mockLinkedInPosts.length === 0 && <div className="text-center text-gray-500 py-12">
             <p>No relevant posts found at the moment.</p>
             <p className="text-sm mt-2">We'll continue monitoring LinkedIn for engagement opportunities.</p>
-          </div>
-        )}
-      </div>
-    );
+          </div>}
+      </div>;
   };
-
   const renderContent = () => {
     switch (currentSection) {
       case 'posts':
@@ -602,16 +513,10 @@ const ClientDetails = () => {
         return renderOverview();
     }
   };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <h1 className="text-3xl font-bold capitalize">{currentSection}</h1>
-      </div>
+  return <div className="space-y-6">
+      
       
       {renderContent()}
-    </div>
-  );
+    </div>;
 };
-
 export default ClientDetails;
