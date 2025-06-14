@@ -51,8 +51,8 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
     <div
       className="fixed z-[9999] bg-white border rounded-lg shadow-lg flex items-center gap-1 p-1"
       style={{
-        top: position.top - 50,
-        left: position.left - 50,
+        top: position.top - 10,
+        left: position.left,
         transform: 'translateX(-50%)',
         pointerEvents: 'auto'
       }}
