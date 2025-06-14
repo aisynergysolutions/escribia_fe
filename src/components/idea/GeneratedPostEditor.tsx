@@ -498,22 +498,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               
               {/* Truncation line positioned properly as an overlay */}
               {showTruncation && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div 
-                        className="absolute left-6 right-6 border-t border-gray-300 cursor-help pointer-events-auto"
-                        style={{ 
-                          top: `${cutoffLineTop + 4}px`, // Add small spacing after the 3rd line
-                          zIndex: 10
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>LinkedIn shows only the first 3 lines in feeds. Content below this line may be truncated with "...see more".</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="absolute left-6 right-6 border-t border-gray-300 cursor-help pointer-events-auto"
+                      style={{ 
+                        top: `${cutoffLineTop + 4}px`, // Add small spacing after the 3rd line
+                        zIndex: 10
+                      }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>LinkedIn shows only the first 3 lines in feeds. Content below this line may be truncated with "...see more".</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
               
               {/* Character and line counter - stays grey */}
