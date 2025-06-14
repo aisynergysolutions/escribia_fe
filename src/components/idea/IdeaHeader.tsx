@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,14 +52,24 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   onStatusChange,
   onAddCustomStatus
 }) => {
+  const navigate = useNavigate();
+
+  const handleBackClick = () => {
+    // Check if there's previous history to go back to
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      // Fallback to client overview if no history (e.g., direct URL access)
+      navigate(`/clients/${clientId}`);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-3">
-        <Link to={`/clients/${clientId}`}>
-          <Button variant="outline" size="icon" className="rounded-full">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+        <Button variant="outline" size="icon" className="rounded-full" onClick={handleBackClick}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         {isNewPost ? (
           <div className="flex items-center gap-2">
             <input
