@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
@@ -57,10 +58,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) {
@@ -376,7 +377,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </TooltipContent>
               </Tooltip>
               
-              {/* Fused Schedule and Post Buttons */}
+              {/* Fused Schedule and Post Buttons with responsive text */}
               <div className="flex rounded-md overflow-hidden border border-gray-300">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -384,10 +385,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                       variant="outline" 
                       size="sm" 
                       onClick={() => setShowScheduleModal(true)} 
-                      className="h-8 px-3 border-0 border-r border-gray-300 rounded-none bg-white hover:bg-gray-50 flex items-center gap-1.5"
+                      className={`h-8 border-0 border-r border-gray-300 rounded-none bg-white hover:bg-gray-50 flex items-center ${isMobile ? 'w-8 px-0' : 'px-3 gap-1.5'}`}
                     >
                       <Calendar className="h-4 w-4" />
-                      <span className="text-xs">Schedule</span>
+                      {!isMobile && <span className="text-xs">Schedule</span>}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -400,10 +401,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                     <Button 
                       size="sm" 
                       onClick={() => setShowPostNowModal(true)} 
-                      className="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-none flex items-center gap-1.5"
+                      className={`h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-none flex items-center ${isMobile ? 'w-8 px-0' : 'px-3 gap-1.5'}`}
                     >
                       <Send className="h-4 w-4" />
-                      <span className="text-xs">Post Now</span>
+                      {!isMobile && <span className="text-xs">Post Now</span>}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -440,7 +441,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           
           {showChatBox && <div className="p-4 space-y-3">
               <div className="flex gap-3">
-                <textarea value={editingInstructions} onChange={e => onEditingInstructionsChange(e.target.value)} className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
+                <textarea value={editingInstructions} onChange={e => onEditingInstructionsChange(e.target.value)} className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
               </div>
               <div className="flex justify-end">
                 <Button onClick={onRegenerateWithInstructions} size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!editingInstructions.trim()}>
