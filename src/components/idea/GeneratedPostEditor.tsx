@@ -32,6 +32,7 @@ interface GeneratedPostEditorProps {
   }>;
   onRestoreVersion: (text: string) => void;
 }
+
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   generatedPost,
   onGeneratedPostChange,
@@ -57,10 +58,44 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [showChatBox, setShowChatBox] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
+  const [charCount, setCharCount] = useState(0);
+  const [lineCount, setLineCount] = useState(1);
+  const [showTruncation, setShowTruncation] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
+  // Utility function to calculate content metrics
+  const calculateContentMetrics = (content: string) => {
+    const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
+    const charCount = textContent.length;
+    
+    // Create a temporary element to measure line count
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = `
+      position: absolute;
+      visibility: hidden;
+      width: 552px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    `;
+    tempDiv.innerHTML = content || 'A';
+    document.body.appendChild(tempDiv);
+    
+    const lineHeight = 21; // 14px * 1.5
+    const height = tempDiv.offsetHeight;
+    const lines = Math.max(1, Math.ceil(height / lineHeight));
+    
+    document.body.removeChild(tempDiv);
+    
+    return { charCount, lineCount: lines };
+  };
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
@@ -139,6 +174,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       const newContent = editorRef.current.innerHTML;
       onGeneratedPostChange(newContent);
       checkForChanges(newContent);
+      
+      // Update metrics
+      const metrics = calculateContentMetrics(newContent);
+      setCharCount(metrics.charCount);
+      setLineCount(metrics.lineCount);
+      setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
     }
   };
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -232,12 +273,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     setShowPreviewModal(true);
   };
   const handleRegeneratePost = () => {
-    // Simulate AI regenerating the entire post
     toast({
       title: "Regenerating Post",
       description: "AI is generating a new version of your post..."
     });
-    // In a real implementation, this would call your AI service
     onRegenerateWithInstructions();
   };
   const handleSchedule = (date: Date, time: string) => {
@@ -257,6 +296,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
+      // Update metrics when content changes
+      const metrics = calculateContentMetrics(generatedPost);
+      setCharCount(metrics.charCount);
+      setLineCount(metrics.lineCount);
+      setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
     }
   }, [generatedPost]);
   useEffect(() => {
@@ -273,7 +317,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
       
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
@@ -296,7 +341,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
-          {/* Text Editor Toolbar - moved here from below */}
+          {/* Text Editor Toolbar */}
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" onClick={() => handleFormat('bold')} className="h-8 w-8 p-0">
               <Bold className="h-4 w-4" />
@@ -316,9 +361,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               </PopoverTrigger>
               <PopoverContent className="w-64 p-2">
                 <div className="grid grid-cols-5 gap-1">
-                  {emojis.map((emoji, index) => <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
+                  {emojis.map((emoji, index) => (
+                    <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
                       {emoji}
-                    </button>)}
+                    </button>
+                  ))}
                 </div>
               </PopoverContent>
             </Popover>
@@ -370,7 +417,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </TooltipContent>
               </Tooltip>
               
-              {/* Fused Schedule and Post Buttons with responsive text */}
+              {/* Fused Schedule and Post Buttons */}
               <div className="flex rounded-md overflow-hidden border border-gray-300">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -409,13 +456,57 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           </TooltipProvider>
         </div>
         
-        <div className="p-4">
-          <div ref={editorRef} contentEditable onInput={handleInput} onMouseUp={handleTextSelection} onKeyUp={handleTextSelection} onKeyDown={handleKeyDown} className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed" style={{
-          whiteSpace: 'pre-wrap'
-        }} suppressContentEditableWarning={true} />
-          {!generatedPost && <div className="text-gray-400 pointer-events-none absolute">
-              AI generated content will appear here...
-            </div>}
+        {/* LinkedIn-style editor container */}
+        <div className="p-4 bg-gray-50">
+          <div 
+            className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200"
+            style={{
+              maxWidth: '552px',
+              width: '100%'
+            }}
+          >
+            <div className="relative p-6">
+              <div 
+                ref={editorRef} 
+                contentEditable 
+                onInput={handleInput} 
+                onMouseUp={handleTextSelection} 
+                onKeyUp={handleTextSelection} 
+                onKeyDown={handleKeyDown} 
+                className="min-h-[200px] w-full border-0 focus:outline-none resize-none linkedin-typography" 
+                style={{
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  color: '#000000',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word'
+                }}
+                suppressContentEditableWarning={true} 
+              />
+              
+              {!generatedPost && (
+                <div className="text-gray-400 pointer-events-none absolute top-6 left-6">
+                  AI generated content will appear here...
+                </div>
+              )}
+              
+              {/* Truncation indicator */}
+              {showTruncation && (
+                <div className="absolute left-6 right-6" style={{ top: '132px' }}>
+                  <div className="border-t border-dotted border-gray-300 mb-1"></div>
+                  <div className="text-xs text-gray-500">...see more</div>
+                </div>
+              )}
+              
+              {/* Character and line counter */}
+              <div className="absolute bottom-2 right-2">
+                <span className={`text-xs ${charCount > 200 || lineCount > 3 ? 'text-amber-600' : 'text-gray-500'}`}>
+                  {charCount} chars • {lineCount} {lineCount === 1 ? 'line' : 'lines'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Chat-like Editing Instructions Section */}
@@ -432,18 +523,35 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             </Button>
           </div>
           
-          {showChatBox && <div className="p-4 space-y-3">
+          {showChatBox && (
+            <div className="p-4 space-y-3">
               <div className="flex gap-3">
-                <textarea value={editingInstructions} onChange={e => onEditingInstructionsChange(e.target.value)} className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
+                <textarea 
+                  value={editingInstructions} 
+                  onChange={e => onEditingInstructionsChange(e.target.value)} 
+                  className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white" 
+                  placeholder="Provide feedback or instructions for the AI to improve the generated content..." 
+                />
               </div>
               <div className="flex justify-end">
                 <Button onClick={onRegenerateWithInstructions} size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!editingInstructions.trim()}>
                   Send Instructions
                 </Button>
               </div>
-            </div>}
+            </div>
+          )}
         </div>
       </div>
-    </div>;
+      
+      <style jsx>{`
+        @media (max-width: 600px) {
+          .linkedin-safe {
+            max-width: 100% !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
 };
+
 export default GeneratedPostEditor;
