@@ -76,9 +76,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     const lineHeight = 21; // 14px * 1.5
     const fontSize = 14;
     const threeLineHeight = lineHeight * 3;
-    const containerPaddingTop = 24; // px, from style
-    const marginAfterLine = 8; // px, to separate line from content
-
+    
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
     tempDiv.style.cssText = `
@@ -95,15 +93,15 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     `;
     tempDiv.innerHTML = content || 'A';
     document.body.appendChild(tempDiv);
-
+    
     const height = tempDiv.offsetHeight;
     const lines = Math.max(1, Math.ceil(height / lineHeight));
-
+    
     document.body.removeChild(tempDiv);
-
-    // Line goes below 3rd line, so add container padding and margin for space
-    setCutoffLineTop(containerPaddingTop + threeLineHeight + marginAfterLine);
-
+    
+    // Set cutoff line position exactly at 3 lines
+    setCutoffLineTop(threeLineHeight);
+    
     return { charCount, lineCount: lines };
   };
 
@@ -490,27 +488,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 }}
                 suppressContentEditableWarning={true} 
               />
-
+              
               {!generatedPost && (
                 <div className="text-gray-400 pointer-events-none absolute top-6 left-6">
                   AI generated content will appear here...
-                </div>
-              )}
-
-              {/* Truncation line - positioned below the 3rd line */}
-              {showTruncation && (
-                <div
-                  className="absolute left-6 right-6 flex items-center"
-                  style={{ top: `${cutoffLineTop}px` }}
-                  aria-hidden="true"
-                >
-                  <div
-                    className="w-full border-t border-gray-300"
-                    style={{
-                      marginTop: '8px',   // space above the line
-                      marginBottom: '8px' // space below the line
-                    }}
-                  />
                 </div>
               )}
               
