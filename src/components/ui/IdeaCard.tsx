@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,14 +64,18 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
           </Badge>
         </div>
       </CardHeader>
-      {/* CardContent with flex-grow to take available space */}
-      <CardContent className="flex-grow">
+      {/* CardContent with flex-grow to take available space.
+          Overriding default p-6 pt-0 to control bottom padding explicitly.
+          p-6 sets all padding to 1.5rem. pt-0 sets top padding to 0. pb-1 sets bottom padding to 0.25rem.
+          This means: pl-1.5rem, pr-1.5rem, pt-0, pb-0.25rem
+      */}
+      <CardContent className="flex-grow p-6 pt-0 pb-1">
         <p className="text-sm text-gray-700 line-clamp-3">
           {idea.currentDraftText}
         </p>
       </CardContent>
-      {/* CardFooter will now be at the bottom */}
-      <CardFooter className="pt-2 text-xs text-gray-500 flex justify-between">
+      {/* CardFooter will now be at the bottom. Reducing pt-2 to pt-1. */}
+      <CardFooter className="pt-1 text-xs text-gray-500 flex justify-between">
         <div className="flex items-center">
           <Clock className="w-3 h-3 mr-1" />
           Updated {formatDate(idea.updatedAt)}
@@ -89,4 +92,3 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
 };
 
 export default IdeaCard;
-
