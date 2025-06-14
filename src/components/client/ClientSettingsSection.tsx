@@ -32,6 +32,21 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
     }
   };
 
+  const getClientStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'onboarding':
+        return 'bg-blue-100 text-blue-800';
+      case 'paused':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'archived':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const formatDate = (seconds: number) => {
     if (!seconds) return 'N/A';
     return new Date(seconds * 1000).toLocaleDateString();
@@ -58,12 +73,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <Badge className={`mt-1 ${
-                client.status === 'active' ? 'bg-green-100 text-green-800' :
-                client.status === 'onboarding' ? 'bg-blue-100 text-blue-800' :
-                client.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <Badge className={`mt-1 ${getClientStatusColor(client.status)}`}>
                 {client.status}
               </Badge>
             </div>
