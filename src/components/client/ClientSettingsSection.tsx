@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
+import StatusBadge from '../common/StatusBadge';
+import { formatDate } from '../../utils/dateUtils';
 import { mockClients } from '../../types';
 
 interface ClientSettingsSectionProps {
@@ -15,26 +17,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
   const client = mockClients.find(c => c.id === clientId);
 
   if (!client) return null;
-
-  const getAIStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
-      case 'training_queued':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
-      case 'pending_data':
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
-    }
-  };
-
-  const formatDate = (seconds: number) => {
-    if (!seconds) return 'N/A';
-    return new Date(seconds * 1000).toLocaleDateString();
-  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -57,32 +39,20 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <Badge
-                className={`mt-1 ${
-                  client.status === 'active'
-                    ? 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800'
-                    : client.status === 'onboarding'
-                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800'
-                    : client.status === 'paused'
-                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800'
-                }`}
-              >
-                {client.status}
-              </Badge>
+              <StatusBadge status={client.status} type="client" className="mt-1" />
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Created At</h3>
               <div className="mt-1 flex items-center gap-1">
                 <Calendar className="h-4 w-4 text-gray-400" />
-                <span>{formatDate(client.createdAt.seconds)}</span>
+                <span>{formatDate(client.createdAt)}</span>
               </div>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Last Update</h3>
               <div className="mt-1 flex items-center gap-1">
                 <Clock className="h-4 w-4 text-gray-400" />
-                <span>{formatDate(client.updatedAt.seconds)}</span>
+                <span>{formatDate(client.updatedAt)}</span>
               </div>
             </div>
             <div>
@@ -112,12 +82,10 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500">AI Training Status</h3>
-              <Badge className={`mt-1 ${getAIStatusColor(client.aiTraining.status)}`}>
-                {client.aiTraining.status}
-              </Badge>
+              <StatusBadge status={client.aiTraining.status} type="ai" className="mt-1" />
               {client.aiTraining.lastTrainedAt.seconds > 0 && (
                 <div className="text-sm mt-1">
-                  Last trained: {formatDate(client.aiTraining.lastTrainedAt.seconds)}
+                  Last trained: {formatDate(client.aiTraining.lastTrainedAt)}
                 </div>
               )}
             </div>

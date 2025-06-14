@@ -1,36 +1,59 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ClientCard from '../components/ui/ClientCard';
+import LoadingGrid from '../components/common/LoadingGrid';
 import AddClientModal from '../components/AddClientModal';
+import { useSearchAndFilter } from '../hooks/useSearchAndFilter';
 import { mockClients } from '../types';
 import { Client } from '../types';
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>(mockClients);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    filteredItems: filteredClients,
+    hasResults
+  } = useSearchAndFilter({
+    items: clients,
+    searchFields: ['clientName', 'industry', 'contactName', 'contactEmail', 'status'],
+    filterFn: (client, query) => {
+      return (
+        client.clientName.toLowerCase().includes(query) ||
+        client.industry.toLowerCase().includes(query) ||
+        client.contactName.toLowerCase().includes(query) ||
+        client.contactEmail.toLowerCase().includes(query) ||
+        client.status.toLowerCase().includes(query)
+      );
+    }
+  });
 
   const handleAddClient = (newClient: Client) => {
     console.log('Adding new client:', newClient);
     setClients(prev => [...prev, newClient]);
   };
 
-  const filteredClients = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return clients;
-    }
-
-    const query = searchQuery.toLowerCase();
-    return clients.filter(client => 
-      client.clientName.toLowerCase().includes(query) ||
-      client.industry.toLowerCase().includes(query) ||
-      client.contactName.toLowerCase().includes(query) ||
-      client.contactEmail.toLowerCase().includes(query) ||
-      client.status.toLowerCase().includes(query)
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Clients</h1>
+          <AddClientModal onAddClient={handleAddClient}>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add New Client
+            </Button>
+          </AddClientModal>
+        </div>
+        <LoadingGrid count={9} variant="client" />
+      </div>
     );
-  }, [clients, searchQuery]);
+  }
 
   return (
     <div className="space-y-6">
@@ -60,9 +83,10 @@ const Clients = () => {
         ))}
       </div>
 
-      {filteredClients.length === 0 && searchQuery && (
+      {!hasResults && searchQuery && (
         <div className="text-center text-gray-500 py-8">
-          No clients found matching "{searchQuery}"
+          <p className="text-lg font-medium">No clients found</p>
+          <p className="text-sm">Try adjusting your search terms or add a new client</p>
         </div>
       )}
     </div>
