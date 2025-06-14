@@ -102,10 +102,20 @@
 }
 
 @layer utilities {
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  /* The existing line-clamp-3 is applied directly as a class, which is fine.
+     If you need a global .line-clamp-3, it can be added here too.
+  */
 }
+
