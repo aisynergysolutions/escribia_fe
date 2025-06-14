@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Bold, Italic, Underline, List, Smile, Sparkles } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -82,14 +82,6 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         <Underline className="h-4 w-4" />
       </Button>
       <div className="w-px h-6 bg-gray-300 mx-1" />
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onFormat('insertUnorderedList')}
-        className="h-8 w-8 p-0 hover:bg-gray-100"
-      >
-        <List className="h-4 w-4" />
-      </Button>
       <Popover>
         <PopoverTrigger asChild>
           <Button

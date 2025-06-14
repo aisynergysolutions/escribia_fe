@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, List, AlignLeft, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -306,13 +306,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             </Button>
             <Button variant="ghost" size="sm" onClick={() => handleFormat('underline')} className="h-8 w-8 p-0">
               <Underline className="h-4 w-4" />
-            </Button>
-            <div className="w-px h-6 bg-gray-300 mx-1" />
-            <Button variant="ghost" size="sm" onClick={() => handleFormat('insertUnorderedList')} className="h-8 w-8 p-0">
-              <List className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <AlignLeft className="h-4 w-4" />
             </Button>
             <div className="w-px h-6 bg-gray-300 mx-1" />
             <Popover>
