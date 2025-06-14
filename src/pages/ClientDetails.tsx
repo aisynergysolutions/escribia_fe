@@ -157,6 +157,42 @@ const ClientDetails = () => {
     const filteredPosts = getFilteredAndSortedPosts();
     const allowedStatuses = getAllowedStatuses();
     return <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">All Posts</h2>
+          <CreatePostModal>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Post
+            </Button>
+          </CreatePostModal>
+        </div>
+
+        {/* Search and Sort Controls */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input placeholder="Search posts..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated">Last Updated</SelectItem>
+                  <SelectItem value="created">Date Created</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
         {/* Status Filter Tabs */}
         <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
           <TabsList className="grid grid-cols-5 w-full">
@@ -171,47 +207,6 @@ const ClientDetails = () => {
           })}
           </TabsList>
         </Tabs>
-
-        {/* Search and Sort Controls */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-            {/* Search Input */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input 
-                  placeholder="Search posts..." 
-                  value={searchTerm} 
-                  onChange={e => setSearchTerm(e.target.value)} 
-                  className="pl-9" 
-                />
-              </div>
-            </div>
-            
-            {/* Sort and New Post Button */}
-            <div className="flex gap-4 items-center">
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                <SelectTrigger className="w-[160px]">
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="updated">Last Updated</SelectItem>
-                  <SelectItem value="created">Date Created</SelectItem>
-                  <SelectItem value="title">Title</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <CreatePostModal>
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  New Post
-                </Button>
-              </CreatePostModal>
-            </div>
-          </div>
-        </div>
         
         {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
