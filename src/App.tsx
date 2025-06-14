@@ -1,23 +1,38 @@
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
-import Dashboard from "./pages/Dashboard";
-import Clients from "./pages/Clients";
-import ClientDetails from "./pages/ClientDetails";
-import IdeaDetails from "./pages/IdeaDetails";
-import Calendar from "./pages/Calendar";
-import Templates from "./pages/Templates";
-import TemplateDetails from "./pages/TemplateDetails";
-import Analytics from "./pages/Analytics";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load components for code splitting
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Clients = React.lazy(() => import("./pages/Clients"));
+const ClientDetails = React.lazy(() => import("./pages/ClientDetails"));
+const IdeaDetails = React.lazy(() => import("./pages/IdeaDetails"));
+const Calendar = React.lazy(() => import("./pages/Calendar"));
+const Templates = React.lazy(() => import("./pages/Templates"));
+const TemplateDetails = React.lazy(() => import("./pages/TemplateDetails"));
+const Analytics = React.lazy(() => import("./pages/Analytics"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+// Loading fallback component
+const PageSkeleton = () => (
+  <div className="space-y-6 p-6">
+    <Skeleton className="h-8 w-64" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="h-48 w-full rounded-lg" />
+      ))}
+    </div>
+  </div>
+);
 
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,23 +42,87 @@ const App: React.FC = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="clients/:clientId" element={<ClientDetails />} />
-            <Route path="clients/:clientId/posts" element={<ClientDetails />} />
-            <Route path="clients/:clientId/comments" element={<ClientDetails />} />
-            <Route path="clients/:clientId/calendar" element={<ClientDetails />} />
-            <Route path="clients/:clientId/resources" element={<ClientDetails />} />
-            <Route path="clients/:clientId/analytics" element={<ClientDetails />} />
-            <Route path="clients/:clientId/settings" element={<ClientDetails />} />
-            <Route path="clients/:clientId/ideas/:ideaId" element={<IdeaDetails />} />
-            <Route path="calendar" element={<Calendar />} />
-            <Route path="templates" element={<Templates />} />
-            <Route path="templates/:templateId" element={<TemplateDetails />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="profile" element={<Profile />} />
+            <Route index element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Dashboard />
+              </Suspense>
+            } />
+            <Route path="clients" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Clients />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/posts" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/comments" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/calendar" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/resources" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/analytics" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/settings" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ClientDetails />
+              </Suspense>
+            } />
+            <Route path="clients/:clientId/ideas/:ideaId" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <IdeaDetails />
+              </Suspense>
+            } />
+            <Route path="calendar" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Calendar />
+              </Suspense>
+            } />
+            <Route path="templates" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Templates />
+              </Suspense>
+            } />
+            <Route path="templates/:templateId" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <TemplateDetails />
+              </Suspense>
+            } />
+            <Route path="analytics" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Analytics />
+              </Suspense>
+            } />
+            <Route path="profile" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Profile />
+              </Suspense>
+            } />
           </Route>
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={
+            <Suspense fallback={<PageSkeleton />}>
+              <NotFound />
+            </Suspense>
+          } />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
