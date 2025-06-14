@@ -52,13 +52,27 @@ const IdeaDetails = () => {
       ? idea
       : isNewPost && suggestionInitialIdea
       ? {
+          // Fully match the Idea interface for suggestion flow
           id: 'temp',
+          clientId: clientId || 'unknown',
           title: '',
           initialIdeaPrompt: suggestionInitialIdea,
+          currentDraftText: '',
+          finalApprovedText: '',
+          status: 'Idea',
           objective: '',
           templateUsedId: undefined,
-          status: 'Idea',
+          scheduledPostAt: undefined,
+          actuallyPostedAt: undefined,
+          livePostUrl: '',
           internalNotes: '',
+          createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
+          updatedAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
+          generatedHooks: [],
+          drafts: [],
+          visuals: undefined,
+          performance: undefined,
+          aiProcessingInfo: undefined
         }
       : undefined,
     isNewPost,
