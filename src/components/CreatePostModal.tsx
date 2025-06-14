@@ -284,8 +284,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
 
             <div className="text-sm text-muted-foreground">
-              <p>No need to prompt, turn content into posts.</p>
-              <p>Recommended min length is 100 characters.</p>
+              
+              
             </div>
 
             <Button onClick={handleCreateFromText} disabled={!ideaText.trim()} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500">
