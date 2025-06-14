@@ -13,9 +13,6 @@ interface IdeaCardProps {
 
 // Helper to format timestamp for display
 const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
-  if (!timestamp || typeof timestamp.seconds !== 'number') {
-    return 'Invalid date'; // Or handle as you see fit
-  }
   return new Date(timestamp.seconds * 1000).toLocaleDateString();
 };
 
@@ -47,32 +44,25 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
     }
   };
 
-  // A fixed height for the card, e.g., h-60 (240px). Adjust as needed.
-  // Using flex flex-col to allow CardContent to grow and push CardFooter to the bottom.
   return (
     <Card 
-      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-60"
+      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       onClick={handleClick}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          {/* Title with line-clamp-1 for single line truncation */}
-          <CardTitle className="text-lg font-semibold line-clamp-1">
-            {idea.title}
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold">{idea.title}</CardTitle>
           <Badge className={`${getStatusColor(idea.status)}`}>
             {idea.status}
           </Badge>
         </div>
       </CardHeader>
-      {/* CardContent with flex-grow to take available space and reduced bottom padding */}
-      <CardContent className="flex-grow pb-1">
+      <CardContent>
         <p className="text-sm text-gray-700 line-clamp-3">
           {idea.currentDraftText}
         </p>
       </CardContent>
-      {/* CardFooter with reduced top padding */}
-      <CardFooter className="pt-1 text-xs text-gray-500 flex justify-between">
+      <CardFooter className="pt-2 text-xs text-gray-500 flex justify-between">
         <div className="flex items-center">
           <Clock className="w-3 h-3 mr-1" />
           Updated {formatDate(idea.updatedAt)}
