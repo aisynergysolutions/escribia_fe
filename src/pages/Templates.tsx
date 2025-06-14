@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,13 +20,17 @@ const Templates = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
 
-  const handleCreateTemplate = (templateData: any) => {
+  const handleCreateTemplate = useCallback((templateData: any) => {
     console.log('Creating template:', templateData);
     toast({
       title: "Template Created",
       description: `Template "${templateData.templateName}" has been created successfully.`,
     });
-  };
+  }, [toast]);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
 
   const filteredAndSortedTemplates = useMemo(() => {
     let filtered = mockTemplates.filter(template =>
@@ -53,6 +57,12 @@ const Templates = () => {
     return filtered;
   }, [searchTerm, sortBy]);
 
+  const memoizedTemplateCards = useMemo(() => {
+    return filteredAndSortedTemplates.map((template) => (
+      <TemplateCard key={template.id} template={template} />
+    ));
+  }, [filteredAndSortedTemplates]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -72,7 +82,7 @@ const Templates = () => {
           <Input
             placeholder="Search templates by name, content, or tags..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="pl-10"
           />
         </div>
@@ -95,9 +105,7 @@ const Templates = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedTemplates.map((template) => (
-          <TemplateCard key={template.id} template={template} />
-        ))}
+        {memoizedTemplateCards}
       </div>
 
       {/* No results message */}

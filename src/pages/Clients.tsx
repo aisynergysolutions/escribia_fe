@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ const Clients = () => {
   } = useSearchAndFilter({
     items: clients,
     searchFields: ['clientName', 'industry', 'contactName', 'contactEmail', 'status'],
-    filterFn: (client, query) => {
+    filterFn: useCallback((client: Client, query: string) => {
       return (
         client.clientName.toLowerCase().includes(query) ||
         client.industry.toLowerCase().includes(query) ||
@@ -30,13 +30,23 @@ const Clients = () => {
         client.contactEmail.toLowerCase().includes(query) ||
         client.status.toLowerCase().includes(query)
       );
-    }
+    }, [])
   });
 
-  const handleAddClient = (newClient: Client) => {
+  const handleAddClient = useCallback((newClient: Client) => {
     console.log('Adding new client:', newClient);
     setClients(prev => [...prev, newClient]);
-  };
+  }, []);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, [setSearchQuery]);
+
+  const memoizedClientCards = useMemo(() => {
+    return filteredClients.map((client) => (
+      <ClientCard key={client.id} client={client} />
+    ));
+  }, [filteredClients]);
 
   if (isLoading) {
     return (
@@ -72,15 +82,13 @@ const Clients = () => {
         <Input
           placeholder="Search clients by name, industry, contact, or status..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="pl-10"
         />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map((client) => (
-          <ClientCard key={client.id} client={client} />
-        ))}
+        {memoizedClientCards}
       </div>
 
       {!hasResults && searchQuery && (

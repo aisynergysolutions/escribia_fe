@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import StatusBadge from '../common/StatusBadge';
@@ -12,16 +12,16 @@ interface IdeaCardProps {
   onClick?: () => void;
 }
 
-const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
+const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
   const navigate = useNavigate();
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (onClick) {
       onClick();
     } else {
       navigate(`/clients/${idea.clientId}/ideas/${idea.id}`);
     }
-  };
+  }, [onClick, navigate, idea.clientId, idea.id]);
 
   return (
     <Card 
@@ -55,6 +55,8 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
       </CardFooter>
     </Card>
   );
-};
+});
+
+IdeaCard.displayName = 'IdeaCard';
 
 export default IdeaCard;

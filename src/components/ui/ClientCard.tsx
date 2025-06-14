@@ -10,7 +10,7 @@ interface ClientCardProps {
   client: Client;
 }
 
-const ClientCard: React.FC<ClientCardProps> = ({ client }) => {
+const ClientCard: React.FC<ClientCardProps> = React.memo(({ client }) => {
   return (
     <Link to={`/clients/${client.id}`} className="block h-full">
       <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
@@ -33,6 +33,8 @@ const ClientCard: React.FC<ClientCardProps> = ({ client }) => {
       </Card>
     </Link>
   );
-};
+});
+
+ClientCard.displayName = 'ClientCard';
 
 export default ClientCard;

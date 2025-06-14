@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from './button';
 import { Card } from './card';
 import { mockIdeas, mockClients } from '../../types';
@@ -16,7 +16,7 @@ interface PostCalendarProps {
   currentMonth?: Date;
 }
 
-const PostCalendar: React.FC<PostCalendarProps> = ({ 
+const PostCalendar: React.FC<PostCalendarProps> = React.memo(({ 
   showAllClients = false, 
   clientName,
   hideTitle = false,
@@ -32,8 +32,8 @@ const PostCalendar: React.FC<PostCalendarProps> = ({
   // Use external month if provided, otherwise use internal state
   const currentMonth = externalCurrentMonth || internalCurrentMonth;
 
-  // Get scheduled posts for the current month
-  const getScheduledPosts = () => {
+  // Memoize scheduled posts for better performance
+  const scheduledPosts = useMemo(() => {
     let filteredIdeas = mockIdeas.filter(idea => 
       idea.scheduledPostAt && 
       idea.status === 'Scheduled'
@@ -45,59 +45,124 @@ const PostCalendar: React.FC<PostCalendarProps> = ({
     }
 
     return filteredIdeas;
-  };
+  }, [showAllClients, clientId]);
 
-  const scheduledPosts = getScheduledPosts();
+  // Memoize month calculations
+  const monthData = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    return { monthStart, monthEnd, monthDays };
+  }, [currentMonth]);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  const getPostsForDay = (day: Date) => {
+  const getPostsForDay = useCallback((day: Date) => {
     return scheduledPosts.filter(post => 
       post.scheduledPostAt && 
       isSameDay(new Date(post.scheduledPostAt.seconds * 1000), day)
     );
-  };
+  }, [scheduledPosts]);
 
-  const getClientName = (clientId: string) => {
+  const getClientName = useCallback((clientId: string) => {
     const client = mockClients.find(c => c.id === clientId);
     return client?.clientName || 'Unknown Client';
-  };
+  }, []);
 
-  const handlePostClick = (post: any) => {
+  const handlePostClick = useCallback((post: any) => {
     navigate(`/clients/${post.clientId}/ideas/${post.id}`);
-  };
+  }, [navigate]);
 
-  const handleDayClick = (day: Date) => {
+  const handleDayClick = useCallback((day: Date) => {
     setSelectedDate(day);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const goToPreviousMonth = () => {
+  const goToPreviousMonth = useCallback(() => {
     const newMonth = subMonths(currentMonth, 1);
     if (onMonthChange) {
       onMonthChange(newMonth);
     } else {
       setInternalCurrentMonth(newMonth);
     }
-  };
+  }, [currentMonth, onMonthChange]);
 
-  const goToNextMonth = () => {
+  const goToNextMonth = useCallback(() => {
     const newMonth = addMonths(currentMonth, 1);
     if (onMonthChange) {
       onMonthChange(newMonth);
     } else {
       setInternalCurrentMonth(newMonth);
     }
-  };
+  }, [currentMonth, onMonthChange]);
 
-  const getCalendarTitle = () => {
+  const getCalendarTitle = useCallback(() => {
     if (showAllClients) {
       return 'All Clients Calendar';
     }
     return clientName ? `${clientName} Content Calendar` : 'Content Calendar';
-  };
+  }, [showAllClients, clientName]);
+
+  // Memoize calendar days rendering for better performance
+  const calendarDays = useMemo(() => {
+    return monthData.monthDays.map(day => {
+      const postsForDay = getPostsForDay(day);
+      const isCurrentMonth = isSameMonth(day, currentMonth);
+      const isToday = isSameDay(day, new Date());
+
+      return (
+        <div
+          key={day.toISOString()}
+          className={`min-h-[80px] p-1 border rounded-sm cursor-pointer hover:bg-gray-50 ${
+            isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+          } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+          onClick={() => handleDayClick(day)}
+        >
+          <div className={`text-sm mb-1 ${
+            isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+          } ${isToday ? 'font-bold' : ''}`}>
+            {format(day, 'd')}
+          </div>
+          
+          <div className="space-y-1">
+            {postsForDay.length > 0 && (
+              <div>
+                {postsForDay.length > 1 ? (
+                  <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span className="font-medium">
+                        {postsForDay.length} posts
+                      </span>
+                    </div>
+                    <div className="text-xs">
+                      Click to view
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">
+                        {format(new Date(postsForDay[0].scheduledPostAt!.seconds * 1000), 'HH:mm')}
+                      </span>
+                    </div>
+                    <div className="truncate text-xs font-medium">
+                      {postsForDay[0].title}
+                    </div>
+                    {showAllClients && (
+                      <div className="truncate text-xs mt-0.5 text-blue-600 font-medium">
+                        {getClientName(postsForDay[0].clientId)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    });
+  }, [monthData.monthDays, getPostsForDay, currentMonth, handleDayClick, showAllClients, getClientName]);
 
   return (
     <>
@@ -130,64 +195,7 @@ const PostCalendar: React.FC<PostCalendarProps> = ({
         </div>
 
         <div className="grid grid-cols-7 gap-1">
-          {monthDays.map(day => {
-            const postsForDay = getPostsForDay(day);
-            const isCurrentMonth = isSameMonth(day, currentMonth);
-            const isToday = isSameDay(day, new Date());
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`min-h-[80px] p-1 border rounded-sm cursor-pointer hover:bg-gray-50 ${
-                  isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
-                onClick={() => handleDayClick(day)}
-              >
-                <div className={`text-sm mb-1 ${
-                  isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                } ${isToday ? 'font-bold' : ''}`}>
-                  {format(day, 'd')}
-                </div>
-                
-                <div className="space-y-1">
-                  {postsForDay.length > 0 && (
-                    <div>
-                      {postsForDay.length > 1 ? (
-                        <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
-                          <div className="flex items-center gap-1 mb-1">
-                            <Clock className="h-3 w-3 flex-shrink-0" />
-                            <span className="font-medium">
-                              {postsForDay.length} posts
-                            </span>
-                          </div>
-                          <div className="text-xs">
-                            Click to view
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
-                          <div className="flex items-center gap-1 mb-1">
-                            <Clock className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">
-                              {format(new Date(postsForDay[0].scheduledPostAt!.seconds * 1000), 'HH:mm')}
-                            </span>
-                          </div>
-                          <div className="truncate text-xs font-medium">
-                            {postsForDay[0].title}
-                          </div>
-                          {showAllClients && (
-                            <div className="truncate text-xs mt-0.5 text-blue-600 font-medium">
-                              {getClientName(postsForDay[0].clientId)}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {calendarDays}
         </div>
 
         {scheduledPosts.length === 0 && (
@@ -207,6 +215,8 @@ const PostCalendar: React.FC<PostCalendarProps> = ({
       />
     </>
   );
-};
+});
+
+PostCalendar.displayName = 'PostCalendar';
 
 export default PostCalendar;

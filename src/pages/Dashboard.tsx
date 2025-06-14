@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LineChart, TrendingUp, Users } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
 import IdeaCard from '../components/ui/IdeaCard';
@@ -7,10 +7,27 @@ import PostCalendar from '../components/ui/PostCalendar';
 import { mockAgency, mockIdeas } from '../types';
 
 const Dashboard = () => {
-  // Get recent ideas
-  const recentIdeas = [...mockIdeas].sort((a, b) => 
-    b.updatedAt.seconds - a.updatedAt.seconds
-  ).slice(0, 5);
+  // Memoize recent ideas calculation for better performance
+  const recentIdeas = useMemo(() => {
+    return [...mockIdeas]
+      .sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds)
+      .slice(0, 5);
+  }, []);
+
+  // Memoize stat calculations
+  const stats = useMemo(() => ({
+    postsGenerated: mockAgency.apiUsage.postsGeneratedThisMonth,
+    clientsManaged: mockAgency.apiUsage.clientsManagedCount,
+    successfulExecutions: mockAgency.successfulExecutions,
+    planId: mockAgency.subscription.planId,
+    planExpiry: new Date(mockAgency.subscription.currentPeriodEnd.seconds * 1000).toLocaleDateString()
+  }), []);
+
+  const memoizedIdeaCards = useMemo(() => {
+    return recentIdeas.map((idea) => (
+      <IdeaCard key={idea.id} idea={idea} />
+    ));
+  }, [recentIdeas]);
 
   return (
     <div className="space-y-6">
@@ -24,23 +41,23 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Posts Generated This Month" 
-          value={mockAgency.apiUsage.postsGeneratedThisMonth}
+          value={stats.postsGenerated}
           icon={<LineChart className="h-5 w-5" />}
         />
         <StatCard 
           title="Clients Managed" 
-          value={mockAgency.apiUsage.clientsManagedCount}
+          value={stats.clientsManaged}
           icon={<Users className="h-5 w-5" />}
         />
         <StatCard 
           title="Successful Executions" 
-          value={mockAgency.successfulExecutions}
+          value={stats.successfulExecutions}
           icon={<TrendingUp className="h-5 w-5" />}
         />
         <StatCard 
           title="Current Plan" 
-          value={mockAgency.subscription.planId}
-          description={`Expires: ${new Date(mockAgency.subscription.currentPeriodEnd.seconds * 1000).toLocaleDateString()}`}
+          value={stats.planId}
+          description={`Expires: ${stats.planExpiry}`}
         />
       </div>
 
@@ -50,9 +67,7 @@ const Dashboard = () => {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Recent Activity</h2>
           <div className="space-y-4">
-            {recentIdeas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
-            ))}
+            {memoizedIdeaCards}
           </div>
         </div>
       </div>
