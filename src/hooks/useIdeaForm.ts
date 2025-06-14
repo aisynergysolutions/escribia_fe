@@ -1,13 +1,21 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Idea } from '../types';
 
 interface UseIdeaFormProps {
   idea?: Idea;
   isNewPost: boolean;
+  initialIdeaFromUrl?: string;
+  objectiveFromUrl?: string;
+  templateFromUrl?: string;
 }
 
-export const useIdeaForm = ({ idea, isNewPost }: UseIdeaFormProps) => {
+export const useIdeaForm = ({ 
+  idea, 
+  isNewPost, 
+  initialIdeaFromUrl = '', 
+  objectiveFromUrl = '', 
+  templateFromUrl = '' 
+}: UseIdeaFormProps) => {
   const [title, setTitle] = useState('');
   const [initialIdea, setInitialIdea] = useState('');
   const [objective, setObjective] = useState('');
@@ -29,17 +37,33 @@ export const useIdeaForm = ({ idea, isNewPost }: UseIdeaFormProps) => {
         setTemplate('none');
       }
     } else if (isNewPost) {
-      setTitle('');
-      setInitialIdea('');
-      setObjective('');
-      setStatus('Idea');
-      setInternalNotes('');
-      setTemplate('none');
+      if (initialIdeaFromUrl || objectiveFromUrl || templateFromUrl) {
+        setTitle('');
+        setInitialIdea(initialIdeaFromUrl);
+        setObjective(objectiveFromUrl);
+        setTemplate(templateFromUrl || 'none');
+        setStatus('Idea');
+        setInternalNotes('');
+      } else {
+        setTitle('');
+        setInitialIdea('');
+        setObjective('');
+        setStatus('Idea');
+        setInternalNotes('');
+        setTemplate('none');
+      }
     }
-  }, [idea, isNewPost]);
+  }, [idea, isNewPost, initialIdeaFromUrl, objectiveFromUrl, templateFromUrl]);
 
   const handleTitleChange = useCallback((newTitle: string) => {
     setTitle(newTitle);
+    if (isNewPost) {
+      setHasUnsavedChanges(true);
+    }
+  }, [isNewPost]);
+
+  const handleInitialIdeaChange = useCallback((newInitialIdea: string) => {
+    setInitialIdea(newInitialIdea);
     if (isNewPost) {
       setHasUnsavedChanges(true);
     }
@@ -66,7 +90,7 @@ export const useIdeaForm = ({ idea, isNewPost }: UseIdeaFormProps) => {
     },
     setters: {
       setTitle: handleTitleChange,
-      setInitialIdea,
+      setInitialIdea: handleInitialIdeaChange,
       setObjective,
       setTemplate,
       setStatus,
