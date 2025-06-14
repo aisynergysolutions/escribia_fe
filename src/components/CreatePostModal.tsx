@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { mockTemplates } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+
 interface CreatePostModalProps {
   children: React.ReactNode;
 }
+
 const CreatePostModal: React.FC<CreatePostModalProps> = ({
   children
 }) => {
@@ -30,20 +32,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState(['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).']);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
-  const {
-    clientId
-  } = useParams<{
-    clientId: string;
-  }>();
-  const {
-    toast
-  } = useToast();
+  const { clientId } = useParams<{ clientId: string; }>();
+  const { toast } = useToast();
   const objectives = ['Thought Leadership', 'Product Launch', 'Event Promotion', 'Brand Awareness', 'Lead Generation', 'Customer Education', 'Community Building'];
+
   const handleCreateFromText = () => {
     if (ideaText.trim() && clientId) {
       const tempIdeaId = `temp-${Date.now()}`;
@@ -57,6 +55,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       resetForm();
     }
   };
+
   const handleCreateFromVoice = () => {
     if (clientId && hasRecording) {
       const tempIdeaId = `temp-${Date.now()}`;
@@ -72,6 +71,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       resetForm();
     }
   };
+
   const handleCreateFromUrl = () => {
     if (urlInput.trim() && clientId) {
       const tempIdeaId = `temp-${Date.now()}`;
@@ -86,6 +86,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       resetForm();
     }
   };
+
   const handleCreateFromSuggestion = (suggestion: string) => {
     if (clientId) {
       const tempIdeaId = `temp-${Date.now()}`;
@@ -99,11 +100,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       resetForm();
     }
   };
+
   const refreshSuggestions = () => {
     const allSuggestions = ['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).', 'The Remote Work Revolution: 5 productivity tools that increased our team\'s output by 40% while reducing meeting time by half.', 'Cloud Migration Mistakes That Cost Companies Millions: What we learned from 100+ failed migrations and how to avoid them.', 'The Future of Cybersecurity: Why traditional firewalls are becoming obsolete and what\'s replacing them.', 'Building SaaS Products That Scale: Technical decisions we made at day 1 that saved us from rewriting everything at 1M users.'];
     const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
     setPostSuggestions(shuffled.slice(0, 4));
   };
+
   const resetForm = () => {
     setIdeaText('');
     setSelectedObjective('');
@@ -125,40 +128,33 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       audioRef.current = null;
     }
   };
+
   const startVoiceRecording = async () => {
     try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
-
-      // Create MediaRecorder instance
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
+
       mediaRecorderRef.current.ondataavailable = event => {
         audioChunksRef.current.push(event.data);
       };
+
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/wav'
-        });
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         console.log('Recording saved:', audioBlob);
         setAudioBlob(audioBlob);
         setHasRecording(true);
-
-        // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
       };
 
-      // Start recording
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setRecordingTime(0);
 
-      // Start timer
       recordingTimerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
+
       toast({
         title: "Recording started",
         description: "Speak clearly into your microphone"
@@ -172,6 +168,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       });
     }
   };
+
   const stopVoiceRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -185,6 +182,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       });
     }
   };
+
   const playRecording = () => {
     if (audioBlob && !isPlaying) {
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -197,6 +195,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setIsPlaying(true);
     }
   };
+
   const stopPlayback = () => {
     if (audioRef.current && isPlaying) {
       audioRef.current.pause();
@@ -204,52 +203,64 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setIsPlaying(false);
     }
   };
+
   const formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  const createMethods = [{
-    id: 'text',
-    title: 'Generate from text',
-    description: 'Turn any text into a post',
-    icon: Edit3,
-    color: 'bg-muted text-muted-foreground'
-  }, {
-    id: 'voice',
-    title: 'Generate from voice',
-    description: 'Record voice memo',
-    icon: Mic,
-    color: 'bg-muted text-muted-foreground'
-  }, {
-    id: 'url',
-    title: 'Generate from URL',
-    description: 'Turn YouTube videos or articles into content',
-    icon: Youtube,
-    color: 'bg-muted text-muted-foreground'
-  }, {
-    id: 'suggestions',
-    title: 'Post Suggestions',
-    description: 'AI-generated post ideas',
-    icon: Sparkles,
-    color: 'bg-primary text-primary-foreground'
-  }];
+
+  const createMethods = [
+    {
+      id: 'text',
+      title: 'Generate from text',
+      description: 'Turn any text into a post',
+      icon: Edit3,
+      color: 'bg-muted text-muted-foreground'
+    },
+    {
+      id: 'voice',
+      title: 'Generate from voice',
+      description: 'Record voice memo',
+      icon: Mic,
+      color: 'bg-muted text-muted-foreground'
+    },
+    {
+      id: 'url',
+      title: 'Generate from URL',
+      description: 'Turn YouTube videos or articles into content',
+      icon: Youtube,
+      color: 'bg-muted text-muted-foreground'
+    },
+    {
+      id: 'suggestions',
+      title: 'Post Suggestions',
+      description: 'AI-generated post ideas',
+      icon: Sparkles,
+      color: 'bg-[#4F46E5] text-white'
+    }
+  ];
+
   const handleMethodSelect = (methodId: string) => {
     setSelectedMethod(methodId);
   };
-  const renderObjectiveAndTemplate = () => <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+  const renderObjectiveAndTemplate = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
           Objective (optional)
         </label>
         <Select value={selectedObjective} onValueChange={setSelectedObjective}>
-          <SelectTrigger>
+          <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
             <SelectValue placeholder="Select an objective" />
           </SelectTrigger>
           <SelectContent>
-            {objectives.map(objective => <SelectItem key={objective} value={objective}>
+            {objectives.map(objective => (
+              <SelectItem key={objective} value={objective}>
                 {objective}
-              </SelectItem>)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -259,41 +270,53 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           Template (optional)
         </label>
         <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-          <SelectTrigger>
+          <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
             <SelectValue placeholder="Select a template" />
           </SelectTrigger>
           <SelectContent>
-            {mockTemplates.map(template => <SelectItem key={template.id} value={template.id}>
+            {mockTemplates.map(template => (
+              <SelectItem key={template.id} value={template.id}>
                 {template.templateName}
-              </SelectItem>)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
-    </div>;
+    </div>
+  );
+
   const renderRightPanel = () => {
     switch (selectedMethod) {
       case 'text':
-        return <div className="space-y-4">
+        return (
+          <div className="space-y-6 animate-fade-in">
             {renderObjectiveAndTemplate()}
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Insert any text to turn into a post <span className="text-destructive">*</span>
               </label>
-              <Textarea value={ideaText} onChange={e => setIdeaText(e.target.value)} placeholder="Enter your idea here..." className="min-h-[200px] resize-none" />
+              <Textarea 
+                value={ideaText} 
+                onChange={e => setIdeaText(e.target.value)} 
+                placeholder="Enter your idea here..." 
+                className="min-h-[200px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]" 
+              />
             </div>
 
-            <div className="text-sm text-muted-foreground">
-              
-              
-            </div>
-
-            <Button onClick={handleCreateFromText} disabled={!ideaText.trim()} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500">
+            <Button 
+              onClick={handleCreateFromText} 
+              disabled={!ideaText.trim()} 
+              className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
+            >
               Generate post from text
             </Button>
-          </div>;
+          </div>
+        );
+
       case 'voice':
-        return <div className="space-y-4">
+        return (
+          <div className="space-y-6 animate-fade-in">
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -301,7 +324,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 Recording Language
               </label>
               <Select value={recordingLanguage} onValueChange={setRecordingLanguage}>
-                <SelectTrigger>
+                <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -318,110 +341,192 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Take notes before recording (optional)
               </label>
-              <Textarea value={voiceNotes} onChange={e => setVoiceNotes(e.target.value)} placeholder="Why you want to speak on this topic?
-What you want to convey to your audience?" className="min-h-[120px] resize-none" />
+              <Textarea 
+                value={voiceNotes} 
+                onChange={e => setVoiceNotes(e.target.value)} 
+                placeholder="Why you want to speak on this topic?&#10;What you want to convey to your audience?" 
+                className="min-h-[120px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]" 
+              />
             </div>
 
-            {isRecording && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-2 text-destructive font-medium">
-                  <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+            {isRecording && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center animate-fade-in">
+                <div className="flex items-center justify-center gap-2 text-red-600 font-medium">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                   Recording: {formatRecordingTime(recordingTime)}
                 </div>
-              </div>}
+              </div>
+            )}
 
-            {hasRecording && !isRecording && <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            {hasRecording && !isRecording && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div className="text-green-700 font-medium">
                     ✓ Recording completed ({formatRecordingTime(recordingTime)})
                   </div>
-                  <Button variant="outline" size="sm" onClick={isPlaying ? stopPlayback : playRecording} className="flex items-center gap-2">
-                    {isPlaying ? <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={isPlaying ? stopPlayback : playRecording} 
+                    className="flex items-center gap-2 hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
+                  >
+                    {isPlaying ? (
+                      <>
                         <Pause className="w-4 h-4" />
                         Stop
-                      </> : <>
+                      </>
+                    ) : (
+                      <>
                         <Play className="w-4 h-4" />
                         Play
-                      </>}
+                      </>
+                    )}
                   </Button>
                 </div>
-              </div>}
+              </div>
+            )}
 
-            <Button onClick={isRecording ? stopVoiceRecording : startVoiceRecording} className={`w-full py-3 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : ''}`}>
-              {isRecording ? <>
+            <Button 
+              onClick={isRecording ? stopVoiceRecording : startVoiceRecording} 
+              className={`w-full py-3 transition-all transform hover:scale-[1.02] ${
+                isRecording 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-[#4F46E5] hover:bg-[#4338CA]'
+              }`}
+            >
+              {isRecording ? (
+                <>
                   <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse" />
                   Stop voice recording
-                </> : <>
+                </>
+              ) : (
+                <>
                   <Mic className="w-4 h-4 mr-2" />
                   {hasRecording ? 'Record again' : 'Start voice recording'}
-                </>}
+                </>
+              )}
             </Button>
 
-            {hasRecording && <Button onClick={handleCreateFromVoice} className="w-full py-3">
+            {hasRecording && (
+              <Button 
+                onClick={handleCreateFromVoice} 
+                className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02]"
+              >
                 Generate post from voice
-              </Button>}
-          </div>;
+              </Button>
+            )}
+          </div>
+        );
+
       case 'url':
-        return <div className="space-y-4">
+        return (
+          <div className="space-y-6 animate-fade-in">
             {renderObjectiveAndTemplate()}
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 YouTube or Article URL <span className="text-destructive">*</span>
               </label>
-              <Input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://www.youtube.com/watch?v=... or https://example.com/article" />
+              <Input 
+                value={urlInput} 
+                onChange={e => setUrlInput(e.target.value)} 
+                placeholder="https://www.youtube.com/watch?v=... or https://example.com/article" 
+                className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Additional remarks (optional)
               </label>
-              <Textarea value={urlRemarks} onChange={e => setUrlRemarks(e.target.value)} placeholder="Any specific aspects you want to focus on or additional context..." className="min-h-[100px] resize-none" />
+              <Textarea 
+                value={urlRemarks} 
+                onChange={e => setUrlRemarks(e.target.value)} 
+                placeholder="Any specific aspects you want to focus on or additional context..." 
+                className="min-h-[100px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]" 
+              />
             </div>
 
-            <Button onClick={handleCreateFromUrl} disabled={!urlInput.trim()} className="w-full py-3 bg-[4f46e5] bg-indigo-600 hover:bg-indigo-500">
+            <Button 
+              onClick={handleCreateFromUrl} 
+              disabled={!urlInput.trim()} 
+              className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
+            >
               Generate posts from URL
             </Button>
-          </div>;
+          </div>
+        );
+
       case 'suggestions':
-        return <div className="space-y-4">
+        return (
+          <div className="space-y-6 animate-fade-in">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <label className="block text-sm font-medium text-foreground">
                   Select a post idea
                 </label>
-                <Button variant="outline" size="sm" onClick={refreshSuggestions} className="flex items-center gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshSuggestions} 
+                  className="flex items-center gap-1 hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
+                >
                   <RefreshCw className="h-3 w-3" />
                   Refresh
                 </Button>
               </div>
               
               <div className="space-y-3">
-                {postSuggestions.map((suggestion, index) => <div key={index} className={`p-4 rounded-lg border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${hoveredSuggestion === suggestion ? 'border-primary bg-primary/5' : 'border-border'}`} onMouseEnter={() => setHoveredSuggestion(suggestion)} onMouseLeave={() => setHoveredSuggestion(null)} onClick={() => handleCreateFromSuggestion(suggestion)}>
+                {postSuggestions.map((suggestion, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 transform hover:scale-[1.01] ${
+                      hoveredSuggestion === suggestion 
+                        ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-md' 
+                        : 'border-border hover:border-[#4F46E5] hover:bg-[#4F46E5]/5'
+                    }`}
+                    onMouseEnter={() => setHoveredSuggestion(suggestion)}
+                    onMouseLeave={() => setHoveredSuggestion(null)}
+                    onClick={() => handleCreateFromSuggestion(suggestion)}
+                  >
                     <p className="text-sm text-foreground leading-relaxed">{suggestion}</p>
-                  </div>)}
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
+        );
 
-            <div className="text-sm text-muted-foreground">
-              
-              
-            </div>
-          </div>;
       default:
         return null;
     }
   };
-  return <Dialog open={isOpen} onOpenChange={setIsOpen}>
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">Create New Post</DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
           {/* Left side - Creation methods (1/3) */}
-          <div className="space-y-2">
-            {createMethods.map(method => <button key={method.id} onClick={() => handleMethodSelect(method.id)} className={`w-full p-3 rounded-lg text-left transition-all hover:bg-accent border ${selectedMethod === method.id ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
+          <div className="space-y-3">
+            {createMethods.map(method => (
+              <button 
+                key={method.id} 
+                onClick={() => handleMethodSelect(method.id)} 
+                className={`w-full p-4 rounded-lg text-left transition-all duration-200 transform hover:scale-[1.02] border ${
+                  selectedMethod === method.id 
+                    ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-lg' 
+                    : 'border-border bg-card hover:border-[#4F46E5]/50 hover:bg-[#4F46E5]/5'
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${method.color}`}>
+                  <div className={`p-2.5 rounded-lg transition-all ${method.color}`}>
                     <method.icon className="h-4 w-4" />
                   </div>
                   <div>
@@ -429,15 +534,18 @@ What you want to convey to your audience?" className="min-h-[120px] resize-none"
                     <div className="text-sm text-muted-foreground">{method.description}</div>
                   </div>
                 </div>
-              </button>)}
+              </button>
+            ))}
           </div>
 
           {/* Right side - Dynamic content based on selected method (2/3) */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2">
             {renderRightPanel()}
           </div>
         </div>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 };
+
 export default CreatePostModal;
