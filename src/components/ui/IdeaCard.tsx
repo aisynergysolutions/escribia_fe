@@ -65,14 +65,14 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
           </Badge>
         </div>
       </CardHeader>
-      {/* CardContent with flex-grow to take available space */}
-      <CardContent className="flex-grow">
+      {/* CardContent with flex-grow to take available space and reduced bottom padding */}
+      <CardContent className="flex-grow pb-1">
         <p className="text-sm text-gray-700 line-clamp-3">
           {idea.currentDraftText}
         </p>
       </CardContent>
-      {/* CardFooter will now be at the bottom */}
-      <CardFooter className="pt-2 text-xs text-gray-500 flex justify-between">
+      {/* CardFooter with reduced top padding */}
+      <CardFooter className="pt-1 text-xs text-gray-500 flex justify-between">
         <div className="flex items-center">
           <Clock className="w-3 h-3 mr-1" />
           Updated {formatDate(idea.updatedAt)}
@@ -89,4 +89,3 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
 };
 
 export default IdeaCard;
-
