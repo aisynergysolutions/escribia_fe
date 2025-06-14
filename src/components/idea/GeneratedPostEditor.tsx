@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles, Monitor, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,6 +11,8 @@ import AIEditToolbar from './AIEditToolbar';
 import PostPreviewModal from './PostPreviewModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
+import LinkedInPostPreview from './LinkedInPostPreview';
+import ContentMetrics from './ContentMetrics';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -32,6 +34,7 @@ interface GeneratedPostEditorProps {
   }>;
   onRestoreVersion: (text: string) => void;
 }
+
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   generatedPost,
   onGeneratedPostChange,
@@ -45,6 +48,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   versionHistory,
   onRestoreVersion
 }) => {
+  const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
     left: 0
@@ -57,6 +61,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [showChatBox, setShowChatBox] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const [truncatedLength, setTruncatedLength] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -254,6 +260,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
+  const handleTruncationChange = (truncated: boolean, length: number) => {
+    setIsTruncated(truncated);
+    setTruncatedLength(length);
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -446,4 +457,5 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       </div>
     </div>;
 };
+
 export default GeneratedPostEditor;
