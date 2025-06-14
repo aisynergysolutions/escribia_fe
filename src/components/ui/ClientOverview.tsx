@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, Calendar, TrendingUp, Eye, MessageCircle, Heart, Share2, Sparkles, Copy, Send, MoreHorizontal, Clock, ExternalLink } from 'lucide-react';
+import { FileText, Calendar, TrendingUp, Eye, MessageCircle, Heart, Share2, Sparkles, Copy, Send, MoreHorizontal, Clock, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { format, addMonths, subMonths } from 'date-fns';
 import StatCard from './StatCard';
 import PostCalendar from './PostCalendar';
 import IdeaCard from './IdeaCard';
@@ -60,6 +61,7 @@ const mockRecentComments = [
 
 const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
   
   const client = mockClients.find(c => c.id === clientId);
   const clientIdeas = mockIdeas.filter(idea => idea.clientId === clientId);
@@ -97,6 +99,14 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
 
   const updateReplyInput = (commentId: string, value: string) => {
     setReplyInputs(prev => ({ ...prev, [commentId]: value }));
+  };
+
+  const goToPreviousMonth = () => {
+    setCalendarMonth(subMonths(calendarMonth, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCalendarMonth(addMonths(calendarMonth, 1));
   };
 
   return (
@@ -137,13 +147,30 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
         {/* Content Calendar */}
         <div className="bg-white rounded-2xl shadow-md">
           <div className="p-6 border-b">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <h2 className="text-xl font-semibold">Content Calendar for {client.clientName}</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <h2 className="text-xl font-semibold">Content Calendar for {client.clientName}</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="font-medium min-w-[120px] text-center">
+                  {format(calendarMonth, 'MMMM yyyy')}
+                </span>
+                <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           <div className="p-6">
-            <PostCalendar />
+            <PostCalendar 
+              hideTitle={true}
+              currentMonth={calendarMonth}
+              onMonthChange={setCalendarMonth}
+            />
           </div>
         </div>
 

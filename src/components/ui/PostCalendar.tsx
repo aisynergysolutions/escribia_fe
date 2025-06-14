@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
@@ -10,14 +11,26 @@ import DayPostsModal from './DayPostsModal';
 interface PostCalendarProps {
   showAllClients?: boolean;
   clientName?: string;
+  hideTitle?: boolean;
+  onMonthChange?: (month: Date) => void;
+  currentMonth?: Date;
 }
 
-const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false, clientName }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+const PostCalendar: React.FC<PostCalendarProps> = ({ 
+  showAllClients = false, 
+  clientName,
+  hideTitle = false,
+  onMonthChange,
+  currentMonth: externalCurrentMonth
+}) => {
+  const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
+
+  // Use external month if provided, otherwise use internal state
+  const currentMonth = externalCurrentMonth || internalCurrentMonth;
 
   // Get scheduled posts for the current month
   const getScheduledPosts = () => {
@@ -62,11 +75,21 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false, cli
   };
 
   const goToPreviousMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
+    const newMonth = subMonths(currentMonth, 1);
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    } else {
+      setInternalCurrentMonth(newMonth);
+    }
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
+    const newMonth = addMonths(currentMonth, 1);
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    } else {
+      setInternalCurrentMonth(newMonth);
+    }
   };
 
   const getCalendarTitle = () => {
@@ -79,22 +102,24 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ showAllClients = false, cli
   return (
     <>
       <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">
-            {getCalendarTitle()}
-          </h3>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-medium min-w-[120px] text-center">
-              {format(currentMonth, 'MMMM yyyy')}
-            </span>
-            <Button variant="outline" size="sm" onClick={goToNextMonth}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        {!hideTitle && (
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">
+              {getCalendarTitle()}
+            </h3>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-medium min-w-[120px] text-center">
+                {format(currentMonth, 'MMMM yyyy')}
+              </span>
+              <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
