@@ -61,15 +61,21 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [charCount, setCharCount] = useState(0);
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
+  const [cutoffLineTop, setCutoffLineTop] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
 
-  // Utility function to calculate content metrics
+  // Updated utility function to calculate content metrics with precise cutoff positioning
   const calculateContentMetrics = (content: string) => {
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
     const charCount = textContent.length;
+    
+    // Calculate precise line positioning
+    const lineHeight = 21; // 14px * 1.5
+    const fontSize = 14;
+    const threeLineHeight = lineHeight * 3;
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -88,11 +94,13 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     tempDiv.innerHTML = content || 'A';
     document.body.appendChild(tempDiv);
     
-    const lineHeight = 21; // 14px * 1.5
     const height = tempDiv.offsetHeight;
     const lines = Math.max(1, Math.ceil(height / lineHeight));
     
     document.body.removeChild(tempDiv);
+    
+    // Set cutoff line position exactly at 3 lines
+    setCutoffLineTop(threeLineHeight);
     
     return { charCount, lineCount: lines };
   };
@@ -461,7 +469,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <div 
             className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px]"
           >
-            <div className="relative p-6">
+            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '45px' }}>
               <div 
                 ref={editorRef} 
                 contentEditable 
@@ -487,17 +495,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation indicator */}
+              {/* Truncation indicator - positioned exactly at 3 lines */}
               {showTruncation && (
-                <div className="absolute left-6 right-6" style={{ top: '132px' }}>
-                  <div className="border-t border-dotted border-gray-300 mb-1"></div>
-                  <div className="text-xs text-gray-500">...see more</div>
+                <div className="absolute left-6 right-6" style={{ top: `${cutoffLineTop}px` }}>
+                  <div className="border-t border-dotted border-gray-300 relative">
+                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-1" style={{ top: '-7px' }}>
+                      ...see more
+                    </div>
+                  </div>
                 </div>
               )}
               
-              {/* Character and line counter */}
+              {/* Character and line counter - stays grey */}
               <div className="absolute bottom-2 right-2">
-                <span className={`text-xs ${charCount > 200 || lineCount > 3 ? 'text-amber-600' : 'text-gray-500'}`}>
+                <span className="text-xs text-gray-500">
                   {charCount} chars • {lineCount} {lineCount === 1 ? 'line' : 'lines'}
                 </span>
               </div>
