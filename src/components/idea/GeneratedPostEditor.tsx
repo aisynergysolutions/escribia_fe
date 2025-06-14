@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -74,8 +75,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     // Calculate precise line positioning
     const lineHeight = 21; // 14px * 1.5
-    const fontSize = 14;
-    const threeLineHeight = lineHeight * 3;
+    const paddingTop = 24; // Container padding-top
+    const threeLineHeight = paddingTop + (lineHeight * 3); // Account for padding
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -99,7 +100,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     document.body.removeChild(tempDiv);
     
-    // Set cutoff line position exactly at 3 lines
+    // Set cutoff line position exactly at 3 lines from container top (including padding)
     setCutoffLineTop(threeLineHeight);
     
     return { charCount, lineCount: lines };
@@ -311,9 +312,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
     }
   }, [generatedPost]);
+  
   useEffect(() => {
     setOriginalPost(generatedPost);
   }, []);
+  
   useEffect(() => {
     const handleClickOutside = () => {
       const selection = window.getSelection();
@@ -325,6 +328,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
   return (
     <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
@@ -469,7 +473,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <div 
             className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px]"
           >
-            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '45px' }}>
+            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '66px' }}>
               <div 
                 ref={editorRef} 
                 contentEditable 
@@ -495,11 +499,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation indicator - positioned exactly at 3 lines */}
+              {/* Truncation indicator - positioned exactly at 3 lines from container top */}
               {showTruncation && (
                 <div className="absolute left-6 right-6" style={{ top: `${cutoffLineTop}px` }}>
                   <div className="border-t border-dotted border-gray-300 relative">
-                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-1" style={{ top: '-7px' }}>
+                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-2" style={{ top: '-10px' }}>
                       ...see more
                     </div>
                   </div>
