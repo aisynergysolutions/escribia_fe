@@ -24,12 +24,59 @@ const IdeaDetails = () => {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
+  // BEGIN: auto-populate initial idea if provided from url param (suggestion flow)
+  let suggestionInitialIdea = '';
+  if (isNewPost) {
+    const dataParam = searchParams.get('data');
+    if (dataParam) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(dataParam));
+        suggestionInitialIdea =
+          decoded.initialIdea ||
+          decoded.idea ||
+          '';
+      } catch (e) {
+        suggestionInitialIdea = '';
+      }
+    }
+  }
+  // END: auto-populate initial idea if provided from url param (suggestion flow)
+
   // Find the idea and client
   const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
   const client = mockClients.find(c => c.id === clientId);
 
   // Custom hooks
-  const ideaForm = useIdeaForm({ idea, isNewPost });
+  const ideaForm = useIdeaForm({
+    idea: idea
+      ? idea
+      : isNewPost && suggestionInitialIdea
+      ? {
+          // Fully match the Idea interface for suggestion flow
+          id: 'temp',
+          clientId: clientId || 'unknown',
+          title: '',
+          initialIdeaPrompt: suggestionInitialIdea,
+          currentDraftText: '',
+          finalApprovedText: '',
+          status: 'Idea',
+          objective: '',
+          templateUsedId: undefined,
+          scheduledPostAt: undefined,
+          actuallyPostedAt: undefined,
+          livePostUrl: '',
+          internalNotes: '',
+          createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
+          updatedAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
+          generatedHooks: [],
+          drafts: [],
+          visuals: undefined,
+          performance: undefined,
+          aiProcessingInfo: undefined
+        }
+      : undefined,
+    isNewPost,
+  });
   const postEditor = usePostEditor({ initialText: idea?.currentDraftText });
   const scheduling = useScheduling({ idea });
 

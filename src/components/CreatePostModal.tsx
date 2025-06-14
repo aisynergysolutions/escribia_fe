@@ -91,8 +91,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const handleCreateFromSuggestion = (suggestion: string) => {
     if (clientId) {
       const tempIdeaId = `temp-${Date.now()}`;
+      // Send as initialIdea for population
       const suggestionData = {
-        idea: suggestion,
+        initialIdea: suggestion, // This is the key expected by form!
         objective: selectedObjective,
         template: selectedTemplate
       };
@@ -292,9 +293,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     </div>
   );
 
-  const truncateText = (text: string, maxLength: number = 120) => {
+  const truncateText = (text: string, maxLength: number = 350) => {
+    // Only truncate if it's extremely long; CSS line clamp does the rest
     if (text.length <= maxLength) return text;
-    return text.substr(0, maxLength) + '...';
+    return text.slice(0, maxLength) + '...';
   };
 
   const renderRightPanel = () => {
@@ -486,11 +488,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               {/* 2x2 Grid Container */}
               <div className="grid grid-cols-2 gap-3 h-full pr-12">
                 {isRefreshing ? (
-                  // Skeleton loading states
                   Array.from({ length: 4 }).map((_, index) => (
                     <div 
                       key={`skeleton-${index}`}
-                      className="relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse"
+                      className="relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse h-[170px]"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="space-y-2">
@@ -505,10 +506,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   postSuggestions.map((suggestion, index) => (
                     <div 
                       key={index} 
-                      className="relative p-4 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/50 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group"
+                      className="relative p-5 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start min-h-[140px]"
                       style={{ 
                         animationDelay: `${index * 100}ms`,
-                        minHeight: '120px'
+                        height: '170px'
                       }}
                       onMouseEnter={() => setHoveredSuggestion(suggestion)}
                       onMouseLeave={() => setHoveredSuggestion(null)}
@@ -521,20 +522,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                           handleCreateFromSuggestion(suggestion);
                         }
                       }}
-                      aria-label={`Select post idea: ${truncateText(suggestion, 50)}`}
+                      aria-label={`Select post idea: ${truncateText(suggestion, 60)}`}
                     >
-                      <div className="relative z-10">
-                        <p className="text-xs text-foreground leading-relaxed line-clamp-6 font-medium">
-                          {truncateText(suggestion, 150)}
+                      <div className="relative z-10 w-full">
+                        <p className="text-sm text-foreground leading-relaxed font-medium line-clamp-6 break-words">
+                          {suggestion}
                         </p>
                       </div>
-                      
-                      {/* Hover overlay effect */}
                       <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${
                         hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
                       }`} />
-                      
-                      {/* Selection indicator */}
                       <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${
                         hoveredSuggestion === suggestion ? 'opacity-100' : ''
                       }`} />
