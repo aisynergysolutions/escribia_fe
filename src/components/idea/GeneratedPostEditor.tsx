@@ -459,11 +459,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         {/* LinkedIn-style editor container */}
         <div className="p-4 bg-gray-50">
           <div 
-            className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200"
-            style={{
-              maxWidth: '552px',
-              width: '100%'
-            }}
+            className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px]"
           >
             <div className="relative p-6">
               <div 
