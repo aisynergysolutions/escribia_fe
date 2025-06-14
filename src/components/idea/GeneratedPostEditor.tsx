@@ -62,7 +62,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
-  const [isHoveringTruncation, setIsHoveringTruncation] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -73,11 +72,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
     const charCount = textContent.length;
     
-    // Calculate precise line positioning - position at the END of the 3rd line
+    // Calculate precise line positioning
     const lineHeight = 21; // 14px * 1.5
-    const paddingTop = 24; // Container padding-top
-    // Position the line at the end of the 3rd line (2.85 lines to be more precise)
-    const threeLineEndHeight = paddingTop + (lineHeight * 2.85);
+    const fontSize = 14;
+    const threeLineHeight = lineHeight * 3;
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -101,8 +99,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     document.body.removeChild(tempDiv);
     
-    // Set cutoff line position at the end of the 3rd line
-    setCutoffLineTop(threeLineEndHeight);
+    // Set cutoff line position exactly at 3 lines
+    setCutoffLineTop(threeLineHeight);
     
     return { charCount, lineCount: lines };
   };
@@ -313,11 +311,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
     }
   }, [generatedPost]);
-  
   useEffect(() => {
     setOriginalPost(generatedPost);
   }, []);
-  
   useEffect(() => {
     const handleClickOutside = () => {
       const selection = window.getSelection();
@@ -329,7 +325,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
   return (
     <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
@@ -474,7 +469,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <div 
             className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px]"
           >
-            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '66px' }}>
+            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '45px' }}>
               <div 
                 ref={editorRef} 
                 contentEditable 
@@ -500,20 +495,13 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation indicator - positioned at the end of the 3rd line with hover-only text */}
+              {/* Truncation indicator - positioned exactly at 3 lines */}
               {showTruncation && (
-                <div 
-                  className="absolute left-6 right-6 cursor-pointer" 
-                  style={{ top: `${cutoffLineTop}px` }}
-                  onMouseEnter={() => setIsHoveringTruncation(true)}
-                  onMouseLeave={() => setIsHoveringTruncation(false)}
-                >
-                  <div className="border-t border-dotted border-gray-300 relative transition-all duration-200 hover:border-gray-400">
-                    {isHoveringTruncation && (
-                      <div className="absolute right-0 text-xs text-gray-500 bg-white px-2 transition-opacity duration-200" style={{ top: '-10px' }}>
-                        ...see more
-                      </div>
-                    )}
+                <div className="absolute left-6 right-6" style={{ top: `${cutoffLineTop}px` }}>
+                  <div className="border-t border-dotted border-gray-300 relative">
+                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-1" style={{ top: '-7px' }}>
+                      ...see more
+                    </div>
                   </div>
                 </div>
               )}
