@@ -46,23 +46,25 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
 
   return (
     <Card 
-      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
       onClick={handleClick}
     >
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold">{idea.title}</CardTitle>
-          <Badge className={`${getStatusColor(idea.status)}`}>
+      <CardHeader className="pb-3 flex-shrink-0">
+        <div className="flex justify-between items-start gap-2">
+          <CardTitle className="text-lg font-medium truncate flex-1 min-w-0" title={idea.title}>
+            {idea.title}
+          </CardTitle>
+          <Badge className={`${getStatusColor(idea.status)} flex-shrink-0`}>
             {idea.status}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-gray-700 line-clamp-3">
+      <CardContent className="flex-1 flex flex-col pb-3">
+        <p className="text-sm text-gray-600 line-clamp-3 flex-1">
           {idea.currentDraftText}
         </p>
       </CardContent>
-      <CardFooter className="pt-2 text-xs text-gray-500 flex justify-between">
+      <CardFooter className="pt-0 text-xs text-gray-500 flex justify-between flex-shrink-0">
         <div className="flex items-center">
           <Clock className="w-3 h-3 mr-1" />
           Updated {formatDate(idea.updatedAt)}
