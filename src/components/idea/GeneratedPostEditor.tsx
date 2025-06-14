@@ -467,65 +467,60 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         
         {/* LinkedIn-style editor container */}
         <div className="p-4 bg-gray-50">
-          <div className="flex items-start gap-4">
-            <div 
-              className="linkedin-safe bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px] flex-1"
-            >
-              <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '45px' }}>
-                <div 
-                  ref={editorRef} 
-                  contentEditable 
-                  onInput={handleInput} 
-                  onMouseUp={handleTextSelection} 
-                  onKeyUp={handleTextSelection} 
-                  onKeyDown={handleKeyDown} 
-                  className="min-h-[200px] w-full border-0 focus:outline-none resize-none linkedin-typography" 
-                  style={{
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
-                    fontSize: '14px',
-                    lineHeight: '1.5',
-                    color: '#000000',
-                    whiteSpace: 'pre-wrap',
-                    wordWrap: 'break-word'
-                  }}
-                  suppressContentEditableWarning={true} 
-                />
-                
-                {!generatedPost && (
-                  <div className="text-gray-400 pointer-events-none absolute top-6 left-6">
-                    AI generated content will appear here...
-                  </div>
-                )}
-                
-                {/* Truncation line positioned properly as an overlay */}
-                {showTruncation && (
-                  <div 
-                    className="absolute left-6 right-6 border-t border-gray-300"
-                    style={{ 
-                      top: `${cutoffLineTop + 4}px`, // Add small spacing after the 3rd line
-                      zIndex: 10
-                    }}
-                  />
-                )}
-                
-                {/* Character and line counter - stays grey */}
-                <div className="absolute bottom-2 right-2">
-                  <span className="text-xs text-gray-500">
-                    {charCount} chars • {lineCount} {lineCount === 1 ? 'line' : 'lines'}
-                  </span>
+          <div 
+            className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px]"
+          >
+            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '45px' }}>
+              <div 
+                ref={editorRef} 
+                contentEditable 
+                onInput={handleInput} 
+                onMouseUp={handleTextSelection} 
+                onKeyUp={handleTextSelection} 
+                onKeyDown={handleKeyDown} 
+                className="min-h-[200px] w-full border-0 focus:outline-none resize-none linkedin-typography" 
+                style={{
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  color: '#000000',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word'
+                }}
+                suppressContentEditableWarning={true} 
+              />
+              
+              {!generatedPost && (
+                <div className="text-gray-400 pointer-events-none absolute top-6 left-6">
+                  AI generated content will appear here...
                 </div>
+              )}
+              
+              {/* Truncation line positioned properly as an overlay */}
+              {showTruncation && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="absolute left-6 right-6 border-t border-gray-300 cursor-help pointer-events-auto"
+                      style={{ 
+                        top: `${cutoffLineTop + 4}px`, // Add small spacing after the 3rd line
+                        zIndex: 10
+                      }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>LinkedIn shows only the first 3 lines in feeds. Content below this line may be truncated with "...see more".</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* Character and line counter - stays grey */}
+              <div className="absolute bottom-2 right-2">
+                <span className="text-xs text-gray-500">
+                  {charCount} chars • {lineCount} {lineCount === 1 ? 'line' : 'lines'}
+                </span>
               </div>
             </div>
-            
-            {/* Explanation text positioned to the right */}
-            {showTruncation && (
-              <div className="flex items-center gap-2 mt-16 text-sm text-gray-600 max-w-[200px]">
-                <div className="flex items-center gap-1">
-                  <span>←</span>
-                  <span className="text-xs leading-tight">LinkedIn shows only first 3 lines in feeds</span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
