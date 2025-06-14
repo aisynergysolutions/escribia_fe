@@ -113,7 +113,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -121,12 +121,12 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pr-4">
-              {/* Post Preview */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Post Preview</h3>
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Post Preview - Left Column with Independent Scroll */}
+          <div className="flex flex-col min-h-0">
+            <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Post Preview</h3>
+            <ScrollArea className="flex-1">
+              <div className="pr-4">
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-3">
@@ -185,84 +185,84 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                   </div>
                 </div>
               </div>
+            </ScrollArea>
+          </div>
 
-              {/* Scheduling Interface */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Choose Date & Time</h3>
-                  
-                  {/* Date Selection */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">Select Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !selectedDate && "text-muted-foreground"
-                          )}
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+          {/* Scheduling Interface - Right Column */}
+          <div className="flex flex-col min-h-0">
+            <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Choose Date & Time</h3>
+            
+            <div className="flex-1 overflow-y-auto space-y-6">
+              {/* Date Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-                  {/* Recommended Times */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Recommended Times</label>
-                    <div className="grid gap-2">
-                      {recommendedTimes.map((timeSlot) => (
-                        <button
-                          key={timeSlot.time}
-                          onClick={() => setSelectedTime(timeSlot.time)}
-                          className={cn(
-                            "p-3 text-left rounded-lg border transition-colors",
-                            selectedTime === timeSlot.time
-                              ? "bg-indigo-50 border-indigo-300 text-indigo-700"
-                              : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                          )}
-                        >
-                          <div className="font-medium">{formatTime(timeSlot.time)}</div>
-                          <div className="text-sm text-gray-500">{timeSlot.label}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {/* Recommended Times */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Recommended Times</label>
+                <div className="grid gap-2">
+                  {recommendedTimes.map((timeSlot) => (
+                    <button
+                      key={timeSlot.time}
+                      onClick={() => setSelectedTime(timeSlot.time)}
+                      className={cn(
+                        "p-3 text-left rounded-lg border transition-colors",
+                        selectedTime === timeSlot.time
+                          ? "bg-indigo-50 border-indigo-300 text-indigo-700"
+                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      )}
+                    >
+                      <div className="font-medium">{formatTime(timeSlot.time)}</div>
+                      <div className="text-sm text-gray-500">{timeSlot.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Custom Times */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Other Times</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {customTimes.map((time) => (
-                        <Button
-                          key={time}
-                          variant={selectedTime === time ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedTime(time)}
-                          className="text-sm"
-                        >
-                          {formatTime(time)}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
+              {/* Custom Times */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Other Times</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {customTimes.map((time) => (
+                    <Button
+                      key={time}
+                      variant={selectedTime === time ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedTime(time)}
+                      className="text-sm"
+                    >
+                      {formatTime(time)}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Footer */}
