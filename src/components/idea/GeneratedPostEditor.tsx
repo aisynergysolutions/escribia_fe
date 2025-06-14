@@ -8,6 +8,7 @@ import VersionHistory from '../VersionHistory';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
 import PostPreviewModal from './PostPreviewModal';
+
 interface GeneratedPostEditorProps {
   generatedPost: string;
   onGeneratedPostChange: (value: string) => void;
@@ -28,6 +29,7 @@ interface GeneratedPostEditorProps {
   }>;
   onRestoreVersion: (text: string) => void;
 }
+
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   generatedPost,
   onGeneratedPostChange,
@@ -56,6 +58,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     toast
   } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) {
@@ -75,6 +78,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setSelectedText('');
     }
   };
+
   const handleAIEdit = () => {
     if (selectedText) {
       setToolbarVisible(false);
@@ -83,6 +87,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       }, 50);
     }
   };
+
   const handleAIEditApply = (instruction: string) => {
     if (selectedText) {
       toast({
@@ -92,15 +97,83 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setAiEditToolbarVisible(false);
     }
   };
+
   const handleAIEditClose = () => {
     setAiEditToolbarVisible(false);
     if (selectedText) {
       setToolbarVisible(true);
     }
   };
+
+  const getCurrentLine = () => {
+    const selection = window.getSelection();
+    if (!selection || !editorRef.current) return null;
+
+    const range = selection.getRangeAt(0);
+    let node = range.startContainer;
+    
+    // Find the current line (text node or element)
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const textContent = node.textContent || '';
+        const offset = range.startOffset;
+        const beforeCursor = textContent.substring(0, offset);
+        const afterCursor = textContent.substring(offset);
+        const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+        const lineEnd = afterCursor.indexOf('\n');
+        const currentLineText = beforeCursor.substring(lineStart) + afterCursor.substring(0, lineEnd === -1 ? afterCursor.length : lineEnd);
+        
+        return {
+          node,
+          text: currentLineText,
+          cursorPosition: beforeCursor.length - lineStart,
+          fullText: textContent,
+          offset,
+          lineStart: beforeCursor.lastIndexOf('\n') + 1
+        };
+      }
+      node = node.parentNode;
+    }
+    return null;
+  };
+
+  const insertBulletAtCursor = () => {
+    const selection = window.getSelection();
+    if (!selection || !editorRef.current) return;
+
+    const range = selection.getRangeAt(0);
+    const bulletText = '\n• ';
+    
+    const textNode = document.createTextNode(bulletText);
+    range.deleteContents();
+    range.insertNode(textNode);
+    
+    // Position cursor after the bullet
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    updateContent();
+  };
+
+  const updateContent = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
+    }
+  };
+
   const handleFormat = (format: string) => {
     const selection = window.getSelection();
     if (!selection || !editorRef.current) return;
+
+    if (format === 'insertUnorderedList') {
+      insertBulletAtCursor();
+      return;
+    }
+
     if (format === 'insertUnorderedList') {
       const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
       let listElement = null;
@@ -128,23 +201,164 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
+
   const handleInput = () => {
     if (editorRef.current) {
+      // Handle automatic bullet conversion
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const textContent = editorRef.current.textContent || '';
+        
+        // Check for * or - at the beginning of lines and convert to bullets
+        const lines = textContent.split('\n');
+        let modified = false;
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (line.match(/^[\s]*[\*\-]\s/)) {
+            lines[i] = line.replace(/^([\s]*)([\*\-]\s)/, '$1• ');
+            modified = true;
+          }
+        }
+        
+        if (modified) {
+          const newContent = lines.join('\n');
+          editorRef.current.textContent = newContent;
+          
+          // Restore cursor position
+          const newRange = document.createRange();
+          const textNode = editorRef.current.firstChild;
+          if (textNode) {
+            newRange.setStart(textNode, Math.min(range.startOffset, textNode.textContent?.length || 0));
+            newRange.setEnd(textNode, Math.min(range.endOffset, textNode.textContent?.length || 0));
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          }
+        }
+      }
+      
       const newContent = editorRef.current.innerHTML;
       onGeneratedPostChange(newContent);
       checkForChanges(newContent);
     }
   };
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.ctrlKey && event.key === 'c') {
       event.preventDefault();
       handleCopyWithFormatting();
+      return;
     }
     if (event.ctrlKey && event.key === 's') {
       event.preventDefault();
       handleSave();
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (!selection || !editorRef.current) return;
+
+    const range = selection.getRangeAt(0);
+    const textContent = editorRef.current.textContent || '';
+    const cursorPosition = range.startOffset;
+    
+    // Get current line
+    const beforeCursor = textContent.substring(0, cursorPosition);
+    const afterCursor = textContent.substring(cursorPosition);
+    const lineStart = beforeCursor.lastIndexOf('\n');
+    const lineEnd = afterCursor.indexOf('\n');
+    const currentLine = beforeCursor.substring(lineStart + 1) + afterCursor.substring(0, lineEnd === -1 ? afterCursor.length : lineEnd);
+    const cursorInLine = beforeCursor.length - lineStart - 1;
+
+    // Handle Enter key
+    if (event.key === 'Enter') {
+      const bulletMatch = currentLine.match(/^(\s*)(•\s)/);
+      if (bulletMatch) {
+        event.preventDefault();
+        const indentation = bulletMatch[1];
+        const bulletText = `\n${indentation}• `;
+        
+        // Insert new bullet line
+        const textNode = document.createTextNode(bulletText);
+        range.deleteContents();
+        range.insertNode(textNode);
+        
+        // Position cursor after bullet
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        updateContent();
+        return;
+      }
+    }
+
+    // Handle Backspace key
+    if (event.key === 'Backspace') {
+      const bulletOnlyMatch = currentLine.match(/^(\s*)(•\s)$/);
+      if (bulletOnlyMatch && cursorInLine === currentLine.length) {
+        event.preventDefault();
+        
+        // Remove the bullet and any indentation
+        const lineStartPos = beforeCursor.lastIndexOf('\n') + 1;
+        const lineEndPos = cursorPosition + (lineEnd === -1 ? afterCursor.length : lineEnd);
+        
+        const newText = textContent.substring(0, lineStartPos) + textContent.substring(lineEndPos);
+        editorRef.current.textContent = newText;
+        
+        // Position cursor at line start
+        const newRange = document.createRange();
+        const textNode = editorRef.current.firstChild;
+        if (textNode) {
+          newRange.setStart(textNode, lineStartPos);
+          newRange.setEnd(textNode, lineStartPos);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+        
+        updateContent();
+        return;
+      }
+    }
+
+    // Handle Tab key for indentation
+    if (event.key === 'Tab') {
+      const bulletMatch = currentLine.match(/^(\s*)(•\s)/);
+      if (bulletMatch) {
+        event.preventDefault();
+        
+        const currentIndentation = bulletMatch[1];
+        const newIndentation = event.shiftKey 
+          ? currentIndentation.substring(2) // Remove 2 spaces
+          : currentIndentation + '  '; // Add 2 spaces
+        
+        const lineStartPos = beforeCursor.lastIndexOf('\n') + 1;
+        const newLine = currentLine.replace(/^(\s*)(•\s)/, `${newIndentation}• `);
+        const newText = textContent.substring(0, lineStartPos) + newLine + textContent.substring(cursorPosition + (lineEnd === -1 ? afterCursor.length : lineEnd));
+        
+        editorRef.current.textContent = newText;
+        
+        // Adjust cursor position
+        const indentationDiff = newIndentation.length - currentIndentation.length;
+        const newCursorPos = cursorPosition + indentationDiff;
+        
+        const newRange = document.createRange();
+        const textNode = editorRef.current.firstChild;
+        if (textNode) {
+          newRange.setStart(textNode, newCursorPos);
+          newRange.setEnd(textNode, newCursorPos);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+        
+        updateContent();
+        return;
+      }
     }
   };
+
   const handleCopyWithFormatting = async () => {
     if (editorRef.current) {
       try {
@@ -183,6 +397,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       }
     }
   };
+
   const insertEmoji = (emoji: string) => {
     if (editorRef.current) {
       const selection = window.getSelection();
@@ -203,10 +418,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       checkForChanges(newContent);
     }
   };
+
   const checkForChanges = (currentContent: string) => {
     const hasChanges = currentContent !== originalPost;
     onUnsavedChangesChange(hasChanges);
   };
+
   const handleSave = () => {
     onSave();
     setOriginalPost(generatedPost);
@@ -216,15 +433,18 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       description: "Your changes have been saved successfully."
     });
   };
+
   const handlePost = () => {
     toast({
       title: "Post Published",
       description: "Your post has been successfully published to LinkedIn."
     });
   };
+
   const handlePreview = () => {
     setShowPreviewModal(true);
   };
+
   const handleRegeneratePost = () => {
     // Simulate AI regenerating the entire post
     toast({
@@ -234,6 +454,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     // In a real implementation, this would call your AI service
     onRegenerateWithInstructions();
   };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -253,6 +474,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
   return <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
       
@@ -394,4 +616,5 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       </div>
     </div>;
 };
+
 export default GeneratedPostEditor;
