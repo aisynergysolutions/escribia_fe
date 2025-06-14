@@ -539,13 +539,15 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         </div>
       </div>
       
-      <style jsx>{`
-        @media (max-width: 600px) {
-          .linkedin-safe {
-            max-width: 100% !important;
+      <style>
+        {`
+          @media (max-width: 600px) {
+            .linkedin-safe {
+              max-width: 100% !important;
+            }
           }
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
