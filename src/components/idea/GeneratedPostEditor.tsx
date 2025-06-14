@@ -376,27 +376,41 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </TooltipContent>
               </Tooltip>
               
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={() => setShowScheduleModal(true)} className="h-8 w-8 p-0">
-                    <Calendar className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Schedule</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="sm" onClick={() => setShowPostNowModal(true)} className="h-8 w-8 p-0 bg-indigo-600 hover:bg-indigo-500 text-white">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Post Now</p>
-                </TooltipContent>
-              </Tooltip>
+              {/* Fused Schedule and Post Buttons */}
+              <div className="flex rounded-md overflow-hidden border border-gray-300">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowScheduleModal(true)} 
+                      className="h-8 px-3 border-0 border-r border-gray-300 rounded-none bg-white hover:bg-gray-50 flex items-center gap-1.5"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-xs">Schedule</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Schedule Post</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      onClick={() => setShowPostNowModal(true)} 
+                      className="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-none flex items-center gap-1.5"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span className="text-xs">Post Now</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Post Now</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </TooltipProvider>
         </div>
