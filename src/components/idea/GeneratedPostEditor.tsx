@@ -68,10 +68,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   // Utility function to calculate content metrics
   const calculateContentMetrics = (content: string) => {
-    const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
+    const textContent = content.replace(/<[^>]*>/g, '');
     const charCount = textContent.length;
     
-    // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
     tempDiv.style.cssText = `
       position: absolute;
@@ -88,7 +87,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     tempDiv.innerHTML = content || 'A';
     document.body.appendChild(tempDiv);
     
-    const lineHeight = 21; // 14px * 1.5
+    const lineHeight = 21;
     const height = tempDiv.offsetHeight;
     const lines = Math.max(1, Math.ceil(height / lineHeight));
     
@@ -175,7 +174,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       onGeneratedPostChange(newContent);
       checkForChanges(newContent);
       
-      // Update metrics
       const metrics = calculateContentMetrics(newContent);
       setCharCount(metrics.charCount);
       setLineCount(metrics.lineCount);
@@ -296,7 +294,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
-      // Update metrics when content changes
       const metrics = calculateContentMetrics(generatedPost);
       setCharCount(metrics.charCount);
       setLineCount(metrics.lineCount);
@@ -459,11 +456,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         {/* LinkedIn-style editor container */}
         <div className="p-4 bg-gray-50">
           <div 
-            className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200"
-            style={{
-              maxWidth: '552px',
-              width: '100%'
-            }}
+            className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-[552px] w-full sm:max-w-full"
           >
             <div className="relative p-6">
               <div 
