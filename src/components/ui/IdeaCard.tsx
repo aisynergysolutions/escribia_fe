@@ -46,23 +46,23 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
 
   return (
     <Card 
-      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer h-[280px] flex flex-col"
       onClick={handleClick}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold">{idea.title}</CardTitle>
-          <Badge className={`${getStatusColor(idea.status)}`}>
+          <CardTitle className="text-lg font-semibold line-clamp-1 pr-2">{idea.title}</CardTitle>
+          <Badge className={`${getStatusColor(idea.status)} flex-shrink-0`}>
             {idea.status}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 pb-1">
         <p className="text-sm text-gray-700 line-clamp-3">
           {idea.currentDraftText}
         </p>
       </CardContent>
-      <CardFooter className="pt-2 text-xs text-gray-500 flex justify-between">
+      <CardFooter className="pt-1 text-xs text-gray-500 flex justify-between flex-shrink-0">
         <div className="flex items-center">
           <Clock className="w-3 h-3 mr-1" />
           Updated {formatDate(idea.updatedAt)}
