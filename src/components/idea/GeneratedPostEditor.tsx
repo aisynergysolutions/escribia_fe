@@ -74,8 +74,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     // Calculate precise line positioning
     const lineHeight = 21; // 14px * 1.5
-    const fontSize = 14;
-    const threeLineHeight = lineHeight * 3;
+    const threeLineHeight = lineHeight * 3; // Height of exactly 3 lines
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -99,10 +98,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     document.body.removeChild(tempDiv);
     
-    // Position line below the 3rd line with proper spacing
-    const paddingTop = 24; // Container's padding-top
-    const separationGap = 8; // Space between 3rd line and the divider
-    setCutoffLineTop(paddingTop + threeLineHeight + separationGap);
+    // Position the line exactly after the 3rd line of text
+    // Start from where the text begins (not container top) and add 3 line heights
+    setCutoffLineTop(threeLineHeight);
     
     return { charCount, lineCount: lines };
   };
@@ -497,16 +495,15 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation line - only the line, no text */}
+              {/* Truncation line positioned properly as an overlay */}
               {showTruncation && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div 
-                      className="absolute left-6 right-6 border-t border-gray-300 cursor-help"
+                      className="absolute left-6 right-6 border-t border-gray-300 cursor-help pointer-events-auto"
                       style={{ 
-                        top: `${cutoffLineTop}px`,
-                        marginTop: '8px',
-                        marginBottom: '8px'
+                        top: `${cutoffLineTop + 8}px`, // Add 8px spacing below the 3rd line
+                        zIndex: 10
                       }}
                     />
                   </TooltipTrigger>
