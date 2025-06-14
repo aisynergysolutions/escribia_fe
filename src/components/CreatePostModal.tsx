@@ -512,7 +512,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <DialogTitle className="text-xl font-semibold">Create New Post</DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2 pb-6">
           {/* Left side - Creation methods (1/3) */}
           <div className="space-y-3">
             {createMethods.map(method => (
