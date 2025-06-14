@@ -495,17 +495,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation indicator - positioned exactly at 3 lines */}
-              {showTruncation && (
-                <div className="absolute left-6 right-6" style={{ top: `${cutoffLineTop}px` }}>
-                  <div className="border-t border-dotted border-gray-300 relative">
-                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-1" style={{ top: '-7px' }}>
-                      ...see more
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               {/* Character and line counter - stays grey */}
               <div className="absolute bottom-2 right-2">
                 <span className="text-xs text-gray-500">
