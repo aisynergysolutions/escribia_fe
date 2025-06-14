@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
-import { Search, ArrowUpDown, PlusCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import IdeaCard from '../ui/IdeaCard';
 import CreatePostModal from '../CreatePostModal';
 import { mockIdeas, Idea } from '../../types';
@@ -13,10 +13,50 @@ interface PostsSectionProps {
   clientId: string;
 }
 
+type SortField = 'updated' | 'created' | 'title' | 'status';
+type SortDirection = 'asc' | 'desc';
+
+const SORT_STORAGE_KEY = 'posts-sort-preferences';
+
+const getSortFieldLabel = (field: SortField): string => {
+  switch (field) {
+    case 'updated': return 'Last Updated';
+    case 'created': return 'Date Created';
+    case 'title': return 'Title';
+    case 'status': return 'Status';
+    default: return 'Last Updated';
+  }
+};
+
 const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'status'>('updated');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // Load sort preferences from localStorage
+  const loadSortPreferences = () => {
+    try {
+      const stored = localStorage.getItem(SORT_STORAGE_KEY);
+      if (stored) {
+        const { field, direction } = JSON.parse(stored);
+        return { field: field as SortField, direction: direction as SortDirection };
+      }
+    } catch (error) {
+      console.error('Failed to load sort preferences:', error);
+    }
+    return { field: 'updated' as SortField, direction: 'desc' as SortDirection };
+  };
+
+  const [sortField, setSortField] = useState<SortField>(() => loadSortPreferences().field);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() => loadSortPreferences().direction);
+
+  // Save sort preferences to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({ field: sortField, direction: sortDirection }));
+    } catch (error) {
+      console.error('Failed to save sort preferences:', error);
+    }
+  }, [sortField, sortDirection]);
 
   // Find ideas for this client
   const clientIdeas = mockIdeas.filter(idea => idea.clientId === clientId);
@@ -40,19 +80,28 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
     // Sort posts
     filtered.sort((a, b) => {
-      switch (sortBy) {
+      let comparison = 0;
+      
+      switch (sortField) {
         case 'updated':
-          return b.updatedAt.seconds - a.updatedAt.seconds;
+          comparison = a.updatedAt.seconds - b.updatedAt.seconds;
+          break;
         case 'created':
-          return b.createdAt.seconds - a.createdAt.seconds;
+          comparison = a.createdAt.seconds - b.createdAt.seconds;
+          break;
         case 'title':
-          return a.title.localeCompare(b.title);
+          comparison = a.title.localeCompare(b.title);
+          break;
         case 'status':
-          return a.status.localeCompare(b.status);
+          comparison = a.status.localeCompare(b.status);
+          break;
         default:
-          return 0;
+          comparison = a.updatedAt.seconds - b.updatedAt.seconds;
       }
+      
+      return sortDirection === 'desc' ? -comparison : comparison;
     });
+    
     return filtered;
   };
 
@@ -63,6 +112,14 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   const filteredPosts = getFilteredAndSortedPosts();
   const allowedStatuses = getAllowedStatuses();
+
+  const handleSortFieldChange = (field: SortField) => {
+    setSortField(field);
+  };
+
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
 
   return (
     <div className="space-y-6">
@@ -92,37 +149,66 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
       {/* Search and Sort Controls */}
       <div className="bg-white p-6 rounded-xl shadow-sm border">
-        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-          {/* Search Input */}
-          <div className="flex-1 max-w-md">
+        <div className="flex items-center gap-4 h-10">
+          {/* Extended Search Input */}
+          <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input 
                 placeholder="Search posts..." 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9" 
+                className="pl-9 h-10" 
               />
             </div>
           </div>
           
-          {/* Sort and New Post Button */}
-          <div className="flex gap-4 items-center">
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-[160px]">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="updated">Last Updated</SelectItem>
-                <SelectItem value="created">Date Created</SelectItem>
-                <SelectItem value="title">Title</SelectItem>
-                <SelectItem value="status">Status</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Sort Controls */}
+          <div className="flex items-center gap-2">
+            {/* Sort Field Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-10 px-3 min-w-[140px] justify-between"
+                  aria-haspopup="listbox"
+                  aria-label="Select sort field"
+                >
+                  <span className="text-sm">Sort by: {getSortFieldLabel(sortField)}</span>
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[140px]">
+                <DropdownMenuItem onClick={() => handleSortFieldChange('updated')}>
+                  Last Updated
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSortFieldChange('created')}>
+                  Date Created
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSortFieldChange('title')}>
+                  Title
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSortFieldChange('status')}>
+                  Status
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Sort Direction Toggle */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              onClick={toggleSortDirection}
+              aria-label="Toggle sort direction"
+              title={`Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}`}
+            >
+              {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </Button>
             
+            {/* New Post Button */}
             <CreatePostModal>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 h-10">
                 <PlusCircle className="h-4 w-4 mr-2" />
                 New Post
               </Button>
