@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles, Monitor, Maximize2 } from 'lucide-react';
+import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -32,7 +32,6 @@ interface GeneratedPostEditorProps {
   }>;
   onRestoreVersion: (text: string) => void;
 }
-
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   generatedPost,
   onGeneratedPostChange,
@@ -58,40 +57,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [showChatBox, setShowChatBox] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
-  const [isLinkedInWidth, setIsLinkedInWidth] = useState(true);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
-
-  // Calculate content metrics
-  const getContentMetrics = () => {
-    if (!editorRef.current) return { characters: 0, lines: 0, showsTruncation: false };
-    
-    const textContent = editorRef.current.innerText || '';
-    const characters = textContent.length;
-    
-    // Create a temporary element to measure lines
-    const temp = document.createElement('div');
-    temp.style.position = 'absolute';
-    temp.style.visibility = 'hidden';
-    temp.style.width = '552px';
-    temp.style.fontSize = '14px';
-    temp.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    temp.style.lineHeight = '1.5';
-    temp.style.whiteSpace = 'pre-wrap';
-    temp.innerHTML = editorRef.current.innerHTML;
-    
-    document.body.appendChild(temp);
-    const lines = Math.ceil(temp.scrollHeight / (14 * 1.5));
-    document.body.removeChild(temp);
-    
-    const showsTruncation = characters > 200 || lines > 3;
-    
-    return { characters, lines, showsTruncation };
-  };
-
-  const metrics = getContentMetrics();
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
@@ -304,8 +273,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
       
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
@@ -328,7 +296,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
-          {/* Text Editor Toolbar */}
+          {/* Text Editor Toolbar - moved here from below */}
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" onClick={() => handleFormat('bold')} className="h-8 w-8 p-0">
               <Bold className="h-4 w-4" />
@@ -348,49 +316,16 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               </PopoverTrigger>
               <PopoverContent className="w-64 p-2">
                 <div className="grid grid-cols-5 gap-1">
-                  {emojis.map((emoji, index) => (
-                    <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
+                  {emojis.map((emoji, index) => <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
                       {emoji}
-                    </button>
-                  ))}
+                    </button>)}
                 </div>
               </PopoverContent>
             </Popover>
-            
-            {/* Width Toggle */}
-            <div className="w-px h-6 bg-gray-300 mx-1" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setIsLinkedInWidth(!isLinkedInWidth)}
-                  className={`h-8 w-8 p-0 ${isLinkedInWidth ? 'bg-blue-50 text-blue-600' : ''}`}
-                >
-                  {isLinkedInWidth ? <Monitor className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isLinkedInWidth ? 'LinkedIn Width' : 'Full Width'}</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
           
           <TooltipProvider>
             <div className="flex gap-2">
-              {/* Content Metrics */}
-              <div className="flex items-center gap-2 text-xs text-gray-500 mr-2">
-                <span className={metrics.characters > 200 ? 'text-orange-600' : ''}>
-                  {metrics.characters} chars
-                </span>
-                <span className={metrics.lines > 3 ? 'text-orange-600' : ''}>
-                  {metrics.lines} lines
-                </span>
-                {metrics.showsTruncation && (
-                  <span className="text-orange-600 font-medium">Truncates</span>
-                )}
-              </div>
-              
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
@@ -475,38 +410,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         </div>
         
         <div className="p-4">
-          <div className={`relative ${isLinkedInWidth ? 'mx-auto' : ''}`} style={{ maxWidth: isLinkedInWidth ? '552px' : 'none' }}>
-            {/* Truncation indicator */}
-            {isLinkedInWidth && metrics.showsTruncation && (
-              <div className="absolute right-0 top-0 -mr-8 flex items-center">
-                <div className="w-1 h-12 bg-orange-300 rounded-full opacity-50"></div>
-                <span className="text-xs text-orange-600 ml-1 font-medium">truncates</span>
-              </div>
-            )}
-            
-            <div 
-              ref={editorRef} 
-              contentEditable 
-              onInput={handleInput} 
-              onMouseUp={handleTextSelection} 
-              onKeyUp={handleTextSelection} 
-              onKeyDown={handleKeyDown} 
-              className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed"
-              style={{
-                whiteSpace: 'pre-wrap',
-                fontFamily: isLinkedInWidth ? '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'inherit',
-                fontSize: isLinkedInWidth ? '14px' : 'inherit',
-                lineHeight: isLinkedInWidth ? '1.5' : 'inherit'
-              }} 
-              suppressContentEditableWarning={true} 
-            />
-            
-            {!generatedPost && (
-              <div className="text-gray-400 pointer-events-none absolute top-0">
-                AI generated content will appear here...
-              </div>
-            )}
-          </div>
+          <div ref={editorRef} contentEditable onInput={handleInput} onMouseUp={handleTextSelection} onKeyUp={handleTextSelection} onKeyDown={handleKeyDown} className="min-h-[300px] w-full border-0 focus:outline-none resize-none text-base leading-relaxed" style={{
+          whiteSpace: 'pre-wrap'
+        }} suppressContentEditableWarning={true} />
+          {!generatedPost && <div className="text-gray-400 pointer-events-none absolute">
+              AI generated content will appear here...
+            </div>}
         </div>
 
         {/* Chat-like Editing Instructions Section */}
@@ -523,27 +432,18 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             </Button>
           </div>
           
-          {showChatBox && (
-            <div className="p-4 space-y-3">
+          {showChatBox && <div className="p-4 space-y-3">
               <div className="flex gap-3">
-                <textarea 
-                  value={editingInstructions} 
-                  onChange={e => onEditingInstructionsChange(e.target.value)} 
-                  className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white" 
-                  placeholder="Provide feedback or instructions for the AI to improve the generated content..." 
-                />
+                <textarea value={editingInstructions} onChange={e => onEditingInstructionsChange(e.target.value)} className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white" placeholder="Provide feedback or instructions for the AI to improve the generated content..." />
               </div>
               <div className="flex justify-end">
                 <Button onClick={onRegenerateWithInstructions} size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!editingInstructions.trim()}>
                   Send Instructions
                 </Button>
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default GeneratedPostEditor;
