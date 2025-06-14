@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import EditableTitle from '../EditableTitle';
 import CustomInputModal from '../CustomInputModal';
 
@@ -64,6 +64,41 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
     }
   };
 
+  const StatusDropdown = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-50/50 p-1 rounded transition-colors">
+          <Badge className={`${getStatusColor(status)} cursor-pointer flex items-center gap-1`}>
+            {status}
+            <ChevronDown className="h-3 w-3" />
+          </Badge>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56 bg-white border shadow-lg rounded-lg p-1" align="start">
+        {predefinedStatuses.map(s => (
+          <DropdownMenuItem key={s} onClick={() => onStatusChange(s)} className="p-2 rounded-md">
+            <Badge className={`${getStatusColor(s)} cursor-pointer`}>
+              {s}
+            </Badge>
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator className="my-1" />
+        <CustomInputModal 
+          title="Add Custom Status" 
+          placeholder="Enter custom status..." 
+          onSave={onAddCustomStatus}
+        >
+          <DropdownMenuItem onSelect={e => e.preventDefault()} className="p-2 rounded-md">
+            <div className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
+              <Plus className="h-3 w-3" />
+              <span className="text-sm">Add custom status...</span>
+            </div>
+          </DropdownMenuItem>
+        </CustomInputModal>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-3">
@@ -80,36 +115,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
               className="text-2xl font-bold bg-transparent border-b-2 border-gray-300 focus:border-indigo-500 outline-none"
               autoFocus
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                  <Badge className={`${getStatusColor(status)}`}>
-                    {status}
-                  </Badge>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                {predefinedStatuses.map(s => (
-                  <DropdownMenuItem key={s} onClick={() => onStatusChange(s)} className="p-2">
-                    <Badge className={`${getStatusColor(s)} cursor-pointer`}>
-                      {s}
-                    </Badge>
-                  </DropdownMenuItem>
-                ))}
-                <CustomInputModal 
-                  title="Add Custom Status" 
-                  placeholder="Enter custom status..." 
-                  onSave={onAddCustomStatus}
-                >
-                  <DropdownMenuItem onSelect={e => e.preventDefault()} className="p-2">
-                    <Badge className="bg-gray-100 text-gray-800 cursor-pointer">
-                      Add custom status...
-                    </Badge>
-                  </DropdownMenuItem>
-                </CustomInputModal>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <StatusDropdown />
             {hasUnsavedChanges && (
               <Button onClick={onSave} className="bg-indigo-600 hover:bg-indigo-700" size="sm">
                 Save
@@ -119,36 +125,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
         ) : (
           <div className="flex items-center gap-3">
             <EditableTitle title={title} onSave={onTitleChange} className="text-2xl font-bold" />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                  <Badge className={`${getStatusColor(status)}`}>
-                    {status}
-                  </Badge>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                {predefinedStatuses.map(s => (
-                  <DropdownMenuItem key={s} onClick={() => onStatusChange(s)} className="p-2">
-                    <Badge className={`${getStatusColor(s)} cursor-pointer`}>
-                      {s}
-                    </Badge>
-                  </DropdownMenuItem>
-                ))}
-                <CustomInputModal 
-                  title="Add Custom Status" 
-                  placeholder="Enter custom status..." 
-                  onSave={onAddCustomStatus}
-                >
-                  <DropdownMenuItem onSelect={e => e.preventDefault()} className="p-2">
-                    <Badge className="bg-gray-100 text-gray-800 cursor-pointer">
-                      Add custom status...
-                    </Badge>
-                  </DropdownMenuItem>
-                </CustomInputModal>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <StatusDropdown />
           </div>
         )}
       </div>
