@@ -99,8 +99,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     document.body.removeChild(tempDiv);
     
-    // Set cutoff line position exactly at 3 lines
-    setCutoffLineTop(threeLineHeight);
+    // Position line below the 3rd line with proper spacing
+    const paddingTop = 24; // Container's padding-top
+    const separationGap = 8; // Space between 3rd line and the divider
+    setCutoffLineTop(paddingTop + threeLineHeight + separationGap);
     
     return { charCount, lineCount: lines };
   };
@@ -493,6 +495,25 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 <div className="text-gray-400 pointer-events-none absolute top-6 left-6">
                   AI generated content will appear here...
                 </div>
+              )}
+              
+              {/* Truncation line - only the line, no text */}
+              {showTruncation && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="absolute left-6 right-6 border-t border-gray-300 cursor-help"
+                      style={{ 
+                        top: `${cutoffLineTop}px`,
+                        marginTop: '8px',
+                        marginBottom: '8px'
+                      }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>LinkedIn shows only the first 3 lines in feeds. Content below this line may be truncated.</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
               
               {/* Character and line counter - stays grey */}
