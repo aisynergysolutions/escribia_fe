@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle } from 'lucide-react';
+import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle, Check } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -149,7 +149,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
       {/* Search and Sort Controls */}
       <div className="bg-white p-6 rounded-xl shadow-sm border">
-        <div className="flex items-center gap-4 h-10">
+        <div className="flex items-center gap-6 h-10">
           {/* Extended Search Input */}
           <div className="flex-1">
             <div className="relative">
@@ -163,48 +163,64 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             </div>
           </div>
           
-          {/* Sort Controls */}
-          <div className="flex items-center gap-2">
-            {/* Sort Field Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-10 px-3 min-w-[140px] justify-between"
-                  aria-haspopup="listbox"
-                  aria-label="Select sort field"
+          {/* Sort Control - Single Container with Split Interactivity */}
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <div className="flex items-center h-10 border border-input bg-background rounded-lg overflow-hidden">
+                {/* Arrow Icon (Left) - Toggles Direction */}
+                <button
+                  onClick={toggleSortDirection}
+                  className="flex items-center justify-center w-10 h-full hover:bg-accent transition-colors border-r border-input"
+                  aria-label="Toggle sort direction"
+                  title={`Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}`}
                 >
-                  <span className="text-sm">Sort by: {getSortFieldLabel(sortField)}</span>
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[140px]">
-                <DropdownMenuItem onClick={() => handleSortFieldChange('updated')}>
-                  Last Updated
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSortFieldChange('created')}>
-                  Date Created
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSortFieldChange('title')}>
-                  Title
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSortFieldChange('status')}>
-                  Status
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {sortDirection === 'asc' ? 
+                    <ArrowUp className="h-4 w-4" /> : 
+                    <ArrowDown className="h-4 w-4" />
+                  }
+                </button>
 
-            {/* Sort Direction Toggle */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10"
-              onClick={toggleSortDirection}
-              aria-label="Toggle sort direction"
-              title={`Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}`}
-            >
-              {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-            </Button>
+                {/* Dropdown Trigger (Rest of Container) */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center justify-between px-3 h-full min-w-[120px] hover:bg-accent transition-colors">
+                      <span className="text-sm">{getSortFieldLabel(sortField)}</span>
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[160px]">
+                    <DropdownMenuItem 
+                      onClick={() => handleSortFieldChange('updated')}
+                      className="flex items-center justify-between"
+                    >
+                      Last Updated
+                      {sortField === 'updated' && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleSortFieldChange('created')}
+                      className="flex items-center justify-between"
+                    >
+                      Date Created
+                      {sortField === 'created' && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleSortFieldChange('title')}
+                      className="flex items-center justify-between"
+                    >
+                      Title
+                      {sortField === 'title' && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleSortFieldChange('status')}
+                      className="flex items-center justify-between"
+                    >
+                      Status
+                      {sortField === 'status' && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
             
             {/* New Post Button */}
             <CreatePostModal>
