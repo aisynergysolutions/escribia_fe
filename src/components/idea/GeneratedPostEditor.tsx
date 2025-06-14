@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Bold, Italic, Underline, Smile, Save, Calendar, Send, Eye, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,6 +62,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
+  const [isHoveringTruncation, setIsHoveringTruncation] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -73,10 +73,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
     const charCount = textContent.length;
     
-    // Calculate precise line positioning
+    // Calculate precise line positioning - position at the END of the 3rd line
     const lineHeight = 21; // 14px * 1.5
     const paddingTop = 24; // Container padding-top
-    const threeLineHeight = paddingTop + (lineHeight * 3); // Account for padding
+    // Position the line at the end of the 3rd line (2.85 lines to be more precise)
+    const threeLineEndHeight = paddingTop + (lineHeight * 2.85);
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -100,8 +101,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     
     document.body.removeChild(tempDiv);
     
-    // Set cutoff line position exactly at 3 lines from container top (including padding)
-    setCutoffLineTop(threeLineHeight);
+    // Set cutoff line position at the end of the 3rd line
+    setCutoffLineTop(threeLineEndHeight);
     
     return { charCount, lineCount: lines };
   };
@@ -499,13 +500,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
                 </div>
               )}
               
-              {/* Truncation indicator - positioned exactly at 3 lines from container top */}
+              {/* Truncation indicator - positioned at the end of the 3rd line with hover-only text */}
               {showTruncation && (
-                <div className="absolute left-6 right-6" style={{ top: `${cutoffLineTop}px` }}>
-                  <div className="border-t border-dotted border-gray-300 relative">
-                    <div className="absolute right-0 text-xs text-gray-500 bg-white px-2" style={{ top: '-10px' }}>
-                      ...see more
-                    </div>
+                <div 
+                  className="absolute left-6 right-6 cursor-pointer" 
+                  style={{ top: `${cutoffLineTop}px` }}
+                  onMouseEnter={() => setIsHoveringTruncation(true)}
+                  onMouseLeave={() => setIsHoveringTruncation(false)}
+                >
+                  <div className="border-t border-dotted border-gray-300 relative transition-all duration-200 hover:border-gray-400">
+                    {isHoveringTruncation && (
+                      <div className="absolute right-0 text-xs text-gray-500 bg-white px-2 transition-opacity duration-200" style={{ top: '-10px' }}>
+                        ...see more
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
