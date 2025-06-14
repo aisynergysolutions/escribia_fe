@@ -262,7 +262,41 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       
       <div className="bg-white rounded-lg border">
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="font-semibold text-lg">Generated Post</h3>
+          {/* Text Editor Toolbar - moved here from below */}
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => handleFormat('bold')} className="h-8 w-8 p-0">
+              <Bold className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleFormat('italic')} className="h-8 w-8 p-0">
+              <Italic className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleFormat('underline')} className="h-8 w-8 p-0">
+              <Underline className="h-4 w-4" />
+            </Button>
+            <div className="w-px h-6 bg-gray-300 mx-1" />
+            <Button variant="ghost" size="sm" onClick={() => handleFormat('insertUnorderedList')} className="h-8 w-8 p-0">
+              <List className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <AlignLeft className="h-4 w-4" />
+            </Button>
+            <div className="w-px h-6 bg-gray-300 mx-1" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Smile className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="grid grid-cols-5 gap-1">
+                  {emojis.map((emoji, index) => <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
+                      {emoji}
+                    </button>)}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          
           <TooltipProvider>
             <div className="flex gap-2">
               <Tooltip>
@@ -321,41 +355,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               </Tooltip>
             </div>
           </TooltipProvider>
-        </div>
-        
-        {/* Text Editor Toolbar */}
-        <div className="border-b p-2 flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => handleFormat('bold')} className="h-8 w-8 p-0">
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleFormat('italic')} className="h-8 w-8 p-0">
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleFormat('underline')} className="h-8 w-8 p-0">
-            <Underline className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-gray-300 mx-1" />
-          <Button variant="ghost" size="sm" onClick={() => handleFormat('insertUnorderedList')} className="h-8 w-8 p-0">
-            <List className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <AlignLeft className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-gray-300 mx-1" />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Smile className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-2">
-              <div className="grid grid-cols-5 gap-1">
-                {emojis.map((emoji, index) => <button key={index} onClick={() => insertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
-                    {emoji}
-                  </button>)}
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
         
         <div className="p-4">
