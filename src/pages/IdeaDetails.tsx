@@ -5,7 +5,6 @@ import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
-import CustomBreadcrumb from '../components/navigation/Breadcrumb';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import { useScheduling } from '../hooks/useScheduling';
@@ -94,13 +93,6 @@ const IdeaDetails = () => {
     );
   }
 
-  // Breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Clients', href: '/clients' },
-    { label: client.clientName, href: `/clients/${clientId}` },
-    { label: isNewPost ? 'New Idea' : idea?.title || 'Idea' }
-  ];
-
   // Event handlers
   const handleSendToAI = () => {
     postEditor.handlePostChange("In today's rapidly evolving business landscape, staying ahead of industry trends is more critical than ever...");
@@ -165,8 +157,6 @@ const IdeaDetails = () => {
 
   return (
     <div className="space-y-6">
-      <CustomBreadcrumb items={breadcrumbItems} />
-
       <UnsavedChangesDialog
         open={showUnsavedDialog}
         onOpenChange={setShowUnsavedDialog}
