@@ -233,34 +233,32 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         </div>
       </div>
       
-      {/* Posts Grid - Improved Symmetrical Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* Posts Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPosts.map(idea => (
           <IdeaCard key={idea.id} idea={idea} />
         ))}
         
         {filteredPosts.length === 0 && (
-          <div className="col-span-full text-center py-16">
-            <div className="max-w-md mx-auto">
-              <p className="text-gray-500 text-lg mb-4">
-                {searchTerm || statusFilter !== 'all' 
-                  ? "No posts match your filters." 
-                  : "No posts found for this client yet."
-                }
-              </p>
-              {(searchTerm || statusFilter !== 'all') && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setStatusFilter('all');
-                  }} 
-                  className="mt-2"
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+          <div className="col-span-3 text-center py-12">
+            <p className="text-gray-500">
+              {searchTerm || statusFilter !== 'all' 
+                ? "No posts match your filters." 
+                : "No posts found for this client yet."
+              }
+            </p>
+            {(searchTerm || statusFilter !== 'all') && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                }} 
+                className="mt-2"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         )}
       </div>

@@ -19,21 +19,17 @@ const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Posted':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-green-100 text-green-800';
     case 'Scheduled':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-blue-100 text-blue-800';
     case 'AwaitingReview':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-yellow-100 text-yellow-800';
     case 'NeedsRevision':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'bg-red-100 text-red-800';
     case 'Drafting':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'Reviewed':
-      return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-    case 'Published':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-purple-100 text-purple-800';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
@@ -50,41 +46,33 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onClick }) => {
 
   return (
     <Card 
-      className="h-[280px] flex flex-col rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 hover:border-gray-300 bg-white"
+      className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       onClick={handleClick}
     >
-      <CardHeader className="pb-3 px-6 pt-6 flex-shrink-0">
-        <div className="flex justify-between items-start gap-3">
-          <CardTitle className="text-lg font-semibold text-gray-900 line-clamp-2 leading-tight">
-            {idea.title}
-          </CardTitle>
-          <Badge 
-            className={`${getStatusColor(idea.status)} text-xs font-medium px-2.5 py-1 rounded-full border flex-shrink-0`}
-          >
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg font-semibold">{idea.title}</CardTitle>
+          <Badge className={`${getStatusColor(idea.status)}`}>
             {idea.status}
           </Badge>
         </div>
       </CardHeader>
-      
-      <CardContent className="px-6 pb-4 flex-1 flex flex-col">
-        <p className="text-sm text-gray-600 line-clamp-4 leading-relaxed flex-1">
+      <CardContent>
+        <p className="text-sm text-gray-700 line-clamp-3">
           {idea.currentDraftText}
         </p>
       </CardContent>
-      
-      <CardFooter className="px-6 pb-6 pt-0 flex-shrink-0">
-        <div className="w-full flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Updated {formatDate(idea.updatedAt)}</span>
-          </div>
-          {idea.scheduledPostAt && (
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Scheduled {formatDate(idea.scheduledPostAt)}</span>
-            </div>
-          )}
+      <CardFooter className="pt-2 text-xs text-gray-500 flex justify-between">
+        <div className="flex items-center">
+          <Clock className="w-3 h-3 mr-1" />
+          Updated {formatDate(idea.updatedAt)}
         </div>
+        {idea.scheduledPostAt && (
+          <div className="flex items-center">
+            <Calendar className="w-3 h-3 mr-1" />
+            Scheduled {formatDate(idea.scheduledPostAt)}
+          </div>
+        )}
       </CardFooter>
     </Card>
   );
