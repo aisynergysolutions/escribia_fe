@@ -82,6 +82,18 @@ const IdeaDetails = () => {
     notes: 'Latest version with improved structure'
   }]);
 
+  // Sample hooks to demonstrate functionality
+  const sampleHooks = [
+    {
+      text: "Cloud migration security gaps putting your data at risk.\nHow to bridge them effectively.",
+      angle: "Security Risk",
+    },
+    {
+      text: "Is your cloud transition secure? Common pitfalls to avoid.",
+      angle: "Fear-based",
+    },
+  ];
+
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (postEditor.hasUnsavedChanges) {
@@ -258,7 +270,7 @@ const IdeaDetails = () => {
             onExpandChange={setIsIdeaExpanded}
             onSendToAI={handleSendToAI}
             onAddCustomObjective={handleAddCustomObjective}
-            hooks={idea?.generatedHooks}
+            hooks={sampleHooks}
             selectedHookIndex={selectedHookIndex}
             onHookSelect={handleHookSelect}
             onRegenerateHooks={handleRegenerateHooks}
