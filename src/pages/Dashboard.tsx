@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { LineChart, TrendingUp, Users } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
@@ -7,7 +8,7 @@ import { mockAgency, mockIdeas } from '../types';
 const Dashboard = () => {
   // Memoize recent ideas calculation for better performance
   const recentIdeas = useMemo(() => {
-    return [...mockIdeas].sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds).slice(0, 5);
+    return [...mockIdeas].sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds).slice(0, 3);
   }, []);
 
   // Memoize stat calculations
