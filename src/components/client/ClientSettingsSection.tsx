@@ -9,6 +9,7 @@ import StatusBadge from '../common/StatusBadge';
 import { formatDate } from '../../utils/dateUtils';
 import { mockClients } from '../../types';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
+import { Separator } from "@/components/ui/separator";
 
 interface ClientSettingsSectionProps {
   clientId: string;
@@ -68,7 +69,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         </CardContent>
       </Card>
 
-      {/* Integrations (AI & Integration Settings, updated) */}
+      {/* INTEGRATIONS CARD */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -79,20 +80,40 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">AI Training Status</h3>
-              <StatusBadge status={client.aiTraining.status} type="ai" className="mt-1" />
-              {client.aiTraining.lastTrainedAt.seconds > 0 && (
-                <div className="text-sm mt-1">
-                  Last trained: {formatDate(client.aiTraining.lastTrainedAt)}
-                </div>
-              )}
-              {/* LinkedIn connection panel (below AI status) */}
-              <LinkedInConnectionPanel />
+        <CardContent>
+          {/* AI Section */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">
+              AI Training Status
+            </h3>
+            <StatusBadge status={client.aiTraining.status} type="ai" className="mb-1" />
+            {client.aiTraining.lastTrainedAt.seconds > 0 && (
+              <div className="text-sm mt-1 mb-4">
+                Last trained: {formatDate(client.aiTraining.lastTrainedAt)}
+              </div>
+            )}
+            <div className="mt-1">
+              <div className="text-xs font-semibold text-gray-500 mb-1">
+                Custom AI Instructions
+              </div>
+              <div className="text-sm text-gray-700 leading-snug">
+                {client.aiTraining.instructions ||
+                  "No custom instructions provided for this client."}
+              </div>
             </div>
-            {/* Removed LinkedIn API Tokens section */}
+          </div>
+
+          {/* Divider and spacing (24px = 6 * 4 in Tailwind) */}
+          <div className="my-6">
+            <Separator />
+          </div>
+
+          {/* LinkedIn Integration Section (Header + box) */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-3">
+              LinkedIn Integration
+            </h3>
+            <LinkedInConnectionPanel />
           </div>
         </CardContent>
       </Card>
