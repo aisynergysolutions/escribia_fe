@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Edit3, Calendar, Clock, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import StatusBadge from '../common/StatusBadge';
 import { formatDate } from '../../utils/dateUtils';
 import { mockClients } from '../../types';
-import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 import { Separator } from "@/components/ui/separator";
+import { cn } from '@/lib/utils';
 
 const MOCK_LINKEDIN_ACCOUNT = "Acme Corp";
 const MOCK_LINKEDIN_EXPIRY = "June 15, 2025";
@@ -119,37 +120,37 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
               LinkedIn Integration
             </h3>
             {/* LinkedIn content box */}
-            <div className="w-full rounded-lg bg-secondary px-6 py-3 flex items-center transition hover:bg-secondary/90 focus-within:ring-2 focus-within:ring-blue-400 outline-none gap-0">
+            <div
+              className={cn(
+                "w-full rounded-lg bg-secondary px-6 py-4 flex items-center transition-colors hover:bg-secondary/80",
+                !linkedinConnected ? "justify-center" : "justify-start gap-4"
+              )}
+            >
               {!linkedinConnected ? (
-                <>
-                  <Linkedin className="h-5 w-5 text-[#0A66C2] mr-3" />
-                  <Button
-                    onClick={() => setLinkedinConnected(true)}
-                    type="button"
-                    variant="default"
-                    className="ml-0"
-                  >
-                    <Linkedin className="mr-2 h-4 w-4" />
-                    Connect LinkedIn
-                  </Button>
-                </>
+                <Button
+                  onClick={() => setLinkedinConnected(true)}
+                  type="button"
+                  variant="default"
+                >
+                  <Linkedin className="mr-2 h-4 w-4" />
+                  Connect LinkedIn
+                </Button>
               ) : (
                 <>
-                  <Linkedin className="h-5 w-5 text-[#0A66C2] mr-3" />
-                  <span className="font-bold text-base mr-4 whitespace-nowrap">
+                  <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+                  <span className="font-bold text-base whitespace-nowrap">
                     Connected as {MOCK_LINKEDIN_ACCOUNT}
                   </span>
-                  <span className="text-sm text-muted-foreground mr-4 whitespace-nowrap">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
                     Expires on {MOCK_LINKEDIN_EXPIRY}
                   </span>
-                  <button
-                    type="button"
-                    className="ml-auto text-sm font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-1"
-                    tabIndex={0}
+                  <Button
+                    variant="link"
+                    className="ml-auto p-0 h-auto"
                     onClick={() => setLinkedinConnected(false)}
                   >
                     Disconnect
-                  </button>
+                  </Button>
                 </>
               )}
             </div>
