@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { mockIdeas, mockClients } from '../types';
@@ -6,7 +5,6 @@ import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
-import LoadingGrid from '../components/common/LoadingGrid';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import { useScheduling } from '../hooks/useScheduling';
@@ -17,7 +15,6 @@ const IdeaDetails = () => {
   const navigate = useNavigate();
   
   const isNewPost = searchParams.get('new') === 'true';
-  const [isLoading, setIsLoading] = useState(true);
   
   const [activeTab, setActiveTab] = useState('generatedPost');
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
@@ -62,15 +59,6 @@ const IdeaDetails = () => {
 
   const postEditor = usePostEditor({ initialText: idea?.currentDraftText });
   const scheduling = useScheduling({ idea });
-
-  // Simulate loading delay for complex form initialization
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [ideaId, clientId]);
 
   // Mock version history data
   const [versionHistory] = useState([{
@@ -128,23 +116,6 @@ const IdeaDetails = () => {
         <Link to="/clients" className="text-indigo-600 hover:underline mt-4 inline-block">
           Return to clients list
         </Link>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-16 bg-gray-100 rounded-lg animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
-          </div>
-          <div className="space-y-4">
-            <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />
-            <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
-          </div>
-        </div>
       </div>
     );
   }
