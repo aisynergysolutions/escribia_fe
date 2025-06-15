@@ -394,7 +394,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onCopy={handleCopyWithFormatting}
           onSchedule={() => setShowScheduleModal(true)}
           onPostNow={() => setShowPostNowModal(true)}
-          hasUnsavedChanges={hasUnsavedChanges}
           versionHistory={versionHistory}
           currentVersionIndex={currentVersionIndex}
           onPreviousVersion={handlePreviousVersion}
