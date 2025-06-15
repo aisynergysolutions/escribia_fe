@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { Bold, Italic, Underline, Smile, Save, Copy, Eye, Calendar, Send } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Save, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
-import VersionHistory from '../VersionHistory';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -24,7 +23,9 @@ interface EditorToolbarProps {
     generatedByAI: boolean;
     notes: string;
   }>;
-  onRestoreVersion: (text: string) => void;
+  currentVersionIndex: number;
+  onPreviousVersion: () => void;
+  onNextVersion: () => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -37,10 +38,15 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onPostNow,
   hasUnsavedChanges,
   versionHistory,
-  onRestoreVersion
+  currentVersionIndex,
+  onPreviousVersion,
+  onNextVersion
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
+  const canGoPrevious = currentVersionIndex > 0;
+  const canGoNext = currentVersionIndex < versionHistory.length - 1;
 
   return (
     <div className="flex justify-between items-center p-4 border-b">
@@ -76,16 +82,42 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       
       <TooltipProvider>
         <div className="flex gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <VersionHistory versions={versionHistory} onRestore={onRestoreVersion} />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Version History</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Version Navigation */}
+          <div className="flex gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onPreviousVersion}
+                  disabled={!canGoPrevious}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Previous Version</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onNextVersion}
+                  disabled={!canGoNext}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Next Version</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           
           <Tooltip>
             <TooltipTrigger asChild>

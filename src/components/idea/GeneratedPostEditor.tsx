@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import FloatingToolbar from './FloatingToolbar';
@@ -60,6 +59,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(versionHistory.length - 1);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -305,6 +305,30 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
+  const handlePreviousVersion = () => {
+    if (currentVersionIndex > 0) {
+      const newIndex = currentVersionIndex - 1;
+      setCurrentVersionIndex(newIndex);
+      onRestoreVersion(versionHistory[newIndex].text);
+      toast({
+        title: "Version Restored",
+        description: `Switched to version ${versionHistory[newIndex].version}`
+      });
+    }
+  };
+
+  const handleNextVersion = () => {
+    if (currentVersionIndex < versionHistory.length - 1) {
+      const newIndex = currentVersionIndex + 1;
+      setCurrentVersionIndex(newIndex);
+      onRestoreVersion(versionHistory[newIndex].text);
+      toast({
+        title: "Version Restored",
+        description: `Switched to version ${versionHistory[newIndex].version}`
+      });
+    }
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -365,7 +389,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onPostNow={() => setShowPostNowModal(true)}
           hasUnsavedChanges={hasUnsavedChanges}
           versionHistory={versionHistory}
-          onRestoreVersion={onRestoreVersion}
+          currentVersionIndex={currentVersionIndex}
+          onPreviousVersion={handlePreviousVersion}
+          onNextVersion={handleNextVersion}
         />
         
         <EditorContainer
