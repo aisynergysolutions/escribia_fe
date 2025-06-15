@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { mockIdeas, mockClients } from '../types';
@@ -5,6 +6,7 @@ import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
+import MediaDropZone from '../components/idea/MediaDropZone';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import { useScheduling } from '../hooks/useScheduling';
@@ -235,6 +237,14 @@ const IdeaDetails = () => {
             onRegenerateHooks={handleRegenerateHooks}
             versionHistory={versionHistory}
             onRestoreVersion={postEditor.handlePostChange}
+          />
+          
+          <MediaDropZone
+            uploadedFiles={uploadedFiles}
+            onFileUpload={handleFileUpload}
+            onFileDrop={handleFileDrop}
+            onDragOver={handleDragOver}
+            onRemoveFile={removeFile}
           />
         </div>
         
