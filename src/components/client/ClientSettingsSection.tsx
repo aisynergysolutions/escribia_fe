@@ -21,7 +21,7 @@ interface ClientSettingsSectionProps {
 
 const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId }) => {
   const client = mockClients.find(c => c.id === clientId);
-  const [linkedinConnected, setLinkedinConnected] = React.useState(false);
+  const [linkedinConnected, setLinkedinConnected] = React.useState(true);
 
   if (!client) return null;
 
@@ -122,8 +122,8 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             {/* LinkedIn content box */}
             <div
               className={cn(
-                "w-full rounded-lg bg-secondary px-6 py-4 flex items-center transition-colors hover:bg-secondary/80",
-                !linkedinConnected ? "justify-center" : "justify-start gap-4"
+                "w-full rounded-lg bg-secondary py-3 px-4 flex items-center transition-colors hover:bg-secondary/80",
+                !linkedinConnected ? "justify-center" : "gap-4"
               )}
             >
               {!linkedinConnected ? (
@@ -146,7 +146,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                   </span>
                   <Button
                     variant="link"
-                    className="ml-auto p-0 h-auto"
+                    className="ml-auto p-0 h-auto text-sm"
                     onClick={() => setLinkedinConnected(false)}
                   >
                     Disconnect
