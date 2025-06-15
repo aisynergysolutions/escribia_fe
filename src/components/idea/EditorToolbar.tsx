@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bold, Italic, Underline, Smile, Save, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,11 +10,10 @@ interface EditorToolbarProps {
   onFormat: (format: string) => void;
   onInsertEmoji: (emoji: string) => void;
   onPreview: () => void;
-  onSave: () => void;
+  onShowComments: () => void;
   onCopy: () => void;
   onSchedule: () => void;
   onPostNow: () => void;
-  hasUnsavedChanges: boolean;
   versionHistory: Array<{
     id: string;
     version: number;
@@ -32,11 +31,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onFormat,
   onInsertEmoji,
   onPreview,
-  onSave,
+  onShowComments,
   onCopy,
   onSchedule,
   onPostNow,
-  hasUnsavedChanges,
   versionHistory,
   currentVersionIndex,
   onPreviousVersion,
@@ -121,34 +119,34 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={onPreview} className="h-8 w-8 p-0">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Preview</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={onSave} disabled={!hasUnsavedChanges} className={`h-8 w-8 p-0 ${hasUnsavedChanges ? 'bg-blue-50 border-blue-300' : ''}`}>
-                <Save className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Save</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
               <Button variant="outline" size="sm" onClick={onCopy} className="h-8 w-8 p-0">
                 <Copy className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>Copy</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={onShowComments} className="h-8 w-8 p-0">
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Show Comments</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={onPreview} className="h-8 w-8 p-0">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Preview</p>
             </TooltipContent>
           </Tooltip>
           

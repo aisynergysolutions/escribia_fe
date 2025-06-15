@@ -283,6 +283,13 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     setShowPreviewModal(true);
   };
 
+  const handleShowComments = () => {
+    toast({
+      title: "Show Comments",
+      description: "Comments functionality will be added soon."
+    });
+  };
+
   const handleRegeneratePost = () => {
     toast({
       title: "Regenerating Post",
@@ -383,7 +390,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onFormat={handleFormat}
           onInsertEmoji={insertEmoji}
           onPreview={handlePreview}
-          onSave={handleSave}
+          onShowComments={handleShowComments}
           onCopy={handleCopyWithFormatting}
           onSchedule={() => setShowScheduleModal(true)}
           onPostNow={() => setShowPostNowModal(true)}
