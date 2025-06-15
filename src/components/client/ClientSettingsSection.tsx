@@ -122,9 +122,11 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             {/* LinkedIn content box */}
             <div
               className={cn(
-                "w-full rounded-lg bg-secondary py-3 px-4 flex items-center transition-colors hover:bg-secondary/80",
-                !linkedinConnected ? "justify-center" : "gap-4"
+                "w-full min-w-0 rounded-lg bg-secondary py-3 px-4 flex transition-colors hover:bg-secondary/80",
+                !linkedinConnected ? "justify-center items-center" : "items-center"
               )}
+              // Make content container handle overflow horizontally
+              style={{ overflowX: linkedinConnected ? 'auto' : undefined }}
             >
               {!linkedinConnected ? (
                 <Button
@@ -136,22 +138,27 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                   Connect LinkedIn
                 </Button>
               ) : (
-                <>
-                  <Linkedin className="h-5 w-5 text-[#0A66C2] shrink-0" />
-                  <span className="font-bold text-base whitespace-nowrap">
+                <div className="flex flex-nowrap items-center gap-4 min-w-0 w-full">
+                  {/* 8px left padding */}
+                  <span className="pl-2 flex-shrink-0">
+                    <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+                  </span>
+                  <span className="font-bold text-base body-medium whitespace-nowrap flex-shrink-0">
                     Connected as {MOCK_LINKEDIN_ACCOUNT}
                   </span>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  <span className="text-sm text-muted-foreground body-small whitespace-nowrap flex-shrink-0">
                     Expires on {MOCK_LINKEDIN_EXPIRY}
                   </span>
+                  {/* Spacer flexes to push Disconnect right */}
+                  <span className="flex-1 min-w-0"></span>
                   <Button
                     variant="link"
-                    className="ml-auto p-0 h-auto text-sm"
+                    className="p-0 h-auto text-sm body-small pr-4"
                     onClick={() => setLinkedinConnected(false)}
                   >
                     Disconnect
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -290,3 +297,4 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
 };
 
 export default ClientSettingsSection;
+
