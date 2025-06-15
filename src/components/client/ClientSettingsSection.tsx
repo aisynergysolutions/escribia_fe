@@ -137,7 +137,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                 </Button>
               ) : (
                 <>
-                  <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+                  <Linkedin className="h-5 w-5 text-[#0A66C2] shrink-0" />
                   <span className="font-bold text-base whitespace-nowrap">
                     Connected as {MOCK_LINKEDIN_ACCOUNT}
                   </span>
