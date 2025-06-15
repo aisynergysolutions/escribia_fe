@@ -1,6 +1,8 @@
 
 import React from 'react';
 import InitialIdeaSection from './InitialIdeaSection';
+import ScheduleCard from './ScheduleCard';
+import AssetsCard from './AssetsCard';
 import OptionsCard from './OptionsCard';
 
 interface IdeaFormProps {
@@ -44,6 +46,8 @@ interface IdeaFormProps {
 const IdeaForm: React.FC<IdeaFormProps> = ({
   formData,
   setters,
+  scheduling,
+  assets,
   options,
   isExpanded,
   onExpandChange,
@@ -63,6 +67,23 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         onTemplateChange={setters.setTemplate}
         onSendToAI={onSendToAI}
         onAddCustomObjective={onAddCustomObjective}
+      />
+      
+      <ScheduleCard
+        postDate={scheduling.postDate}
+        postTime={scheduling.postTime}
+        timezone={scheduling.timezone}
+        onPostDateChange={scheduling.setPostDate}
+        onPostTimeChange={scheduling.setPostTime}
+        onTimezoneChange={scheduling.setTimezone}
+      />
+      
+      <AssetsCard
+        uploadedFiles={assets.uploadedFiles}
+        onFileUpload={assets.onFileUpload}
+        onFileDrop={assets.onFileDrop}
+        onDragOver={assets.onDragOver}
+        onRemoveFile={assets.onRemoveFile}
       />
       
       <OptionsCard
