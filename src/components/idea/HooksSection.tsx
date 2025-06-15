@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 export interface Hook {
   text: string;
@@ -68,14 +69,22 @@ const HooksSection: React.FC<HooksSectionProps> = ({
     <div className="bg-card rounded-lg border p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Hooks</h3>
-        <Button onClick={handleRegenerateClick} variant="outline" className="text-sm" disabled={isRegenerating}>
-          {isRegenerating ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4 mr-2" />
-          )}
-          Regenerate hooks
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleRegenerateClick} variant="outline" size="icon" disabled={isRegenerating}>
+                {isRegenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Regenerate hooks</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <div className="space-y-3">
         {displayableItems.map((hook, index) => {
