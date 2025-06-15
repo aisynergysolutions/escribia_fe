@@ -11,12 +11,16 @@ import { mockClients } from '../../types';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 import { Separator } from "@/components/ui/separator";
 
+const MOCK_LINKEDIN_ACCOUNT = "Acme Corp";
+const MOCK_LINKEDIN_EXPIRY = "June 15, 2025";
+
 interface ClientSettingsSectionProps {
   clientId: string;
 }
 
 const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId }) => {
   const client = mockClients.find(c => c.id === clientId);
+  const [linkedinConnected, setLinkedinConnected] = React.useState(false);
 
   if (!client) return null;
 
@@ -104,17 +108,51 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             </div>
           </div>
 
-          {/* Divider and spacing */}
+          {/* Divider and 24px spacing */}
           <div className="my-6">
             <Separator />
           </div>
 
-          {/* LinkedIn Integration Section (Header + box) */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-3">
+          {/* LinkedIn Integration Section */}
+          <div className="flex flex-col gap-4">
+            <h3 className="text-sm font-medium text-gray-500">
               LinkedIn Integration
             </h3>
-            <LinkedInConnectionPanel />
+            {/* LinkedIn content box */}
+            <div className="w-full rounded-lg bg-secondary px-6 py-3 flex items-center transition hover:bg-secondary/90 focus-within:ring-2 focus-within:ring-blue-400 outline-none gap-0">
+              {!linkedinConnected ? (
+                <>
+                  <Linkedin className="h-5 w-5 text-[#0A66C2] mr-3" />
+                  <Button
+                    onClick={() => setLinkedinConnected(true)}
+                    type="button"
+                    variant="default"
+                    className="ml-0"
+                  >
+                    <Linkedin className="mr-2 h-4 w-4" />
+                    Connect LinkedIn
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Linkedin className="h-5 w-5 text-[#0A66C2] mr-3" />
+                  <span className="font-bold text-base mr-4 whitespace-nowrap">
+                    Connected as {MOCK_LINKEDIN_ACCOUNT}
+                  </span>
+                  <span className="text-sm text-muted-foreground mr-4 whitespace-nowrap">
+                    Expires on {MOCK_LINKEDIN_EXPIRY}
+                  </span>
+                  <button
+                    type="button"
+                    className="ml-auto text-sm font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-1"
+                    tabIndex={0}
+                    onClick={() => setLinkedinConnected(false)}
+                  >
+                    Disconnect
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
