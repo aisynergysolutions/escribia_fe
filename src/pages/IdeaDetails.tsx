@@ -4,10 +4,10 @@ import { mockIdeas, mockClients } from '../types';
 import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
+import MediaDropZone from '../components/idea/MediaDropZone';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
-import { useScheduling } from '../hooks/useScheduling';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
@@ -58,7 +58,6 @@ const IdeaDetails = () => {
   });
 
   const postEditor = usePostEditor({ initialText: idea?.currentDraftText });
-  const scheduling = useScheduling({ idea });
 
   // Mock version history data
   const [versionHistory] = useState([{
@@ -236,6 +235,13 @@ const IdeaDetails = () => {
             versionHistory={versionHistory}
             onRestoreVersion={postEditor.handlePostChange}
           />
+          <MediaDropZone
+            uploadedFiles={uploadedFiles}
+            onFileUpload={handleFileUpload}
+            onFileDrop={handleFileDrop}
+            onDragOver={handleDragOver}
+            onRemoveFile={removeFile}
+          />
         </div>
         
         <div className="space-y-6">
@@ -251,14 +257,6 @@ const IdeaDetails = () => {
               setObjective: ideaForm.setters.setObjective,
               setTemplate: ideaForm.setters.setTemplate,
               setInternalNotes: ideaForm.setters.setInternalNotes
-            }}
-            scheduling={scheduling}
-            assets={{
-              uploadedFiles,
-              onFileUpload: handleFileUpload,
-              onFileDrop: handleFileDrop,
-              onDragOver: handleDragOver,
-              onRemoveFile: removeFile
             }}
             options={{
               useAsTrainingData,
