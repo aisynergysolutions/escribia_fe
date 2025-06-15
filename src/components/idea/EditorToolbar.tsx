@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +50,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     // Handle adding to queue functionality
     console.log('Add to queue clicked');
   };
+
+  // Custom style tokens for the Add to Queue split-button
+  const ADD_TO_QUEUE_BG = "#4E46DD";
+  const ADD_TO_QUEUE_TEXT = "#fff";
+  const ADD_TO_QUEUE_DIVIDER = "#372fad"; // A slightly darker variant for divider, optional
 
   return (
     <div className="flex justify-between items-center p-4 border-b">
@@ -156,37 +160,71 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </TooltipContent>
           </Tooltip>
           
-          {/* Add to Queue with Dropdown - Primary Styled Split Button */}
+          {/* Add to Queue Split Button */}
           <div className="flex">
             <DropdownMenu>
-              <div className="flex rounded-md overflow-hidden">
+              <div
+                className="flex rounded-md overflow-hidden"
+                style={{
+                  boxShadow: "0 1px 2px 0 rgba(16,30,54,.02)",
+                  // Ensures the focus outline is around the whole split-button
+                }}
+              >
                 {/* Main Action Button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      size="sm" 
-                      onClick={handleAddToQueue} 
-                      className={`h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-r-none border-r border-primary-foreground/20 flex items-center ${isMobile ? 'px-3' : 'px-3 gap-1.5'}`}
+                    <Button
+                      size="sm"
+                      style={{
+                        background: ADD_TO_QUEUE_BG,
+                        color: ADD_TO_QUEUE_TEXT,
+                        borderTopRightRadius: 6,
+                        borderBottomRightRadius: 6,
+                        borderTopLeftRadius: 6,
+                        borderBottomLeftRadius: 6,
+                        borderRight: `1px solid ${ADD_TO_QUEUE_DIVIDER}`,
+                        boxShadow: 'none'
+                      }}
+                      className="flex gap-2 items-center h-8 font-medium text-sm px-3 py-0 shadow-none rounded-r-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-[#3b34b2] transition-colors rounded-l-md"
+                      onClick={handleAddToQueue}
                     >
-                      <Send className="h-5 w-5" />
-                      {!isMobile && <span className="text-sm font-medium">Add to Queue</span>}
+                      <span className="flex items-center">
+                        <Send
+                          size={20}
+                          strokeWidth={2}
+                          className="mr-1"
+                        />
+                        Add to Queue
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Add to Queue</p>
                   </TooltipContent>
                 </Tooltip>
-                
                 {/* Dropdown Trigger */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        size="sm" 
-                        className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none px-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      <button
+                        type="button"
+                        style={{
+                          background: ADD_TO_QUEUE_BG,
+                          color: ADD_TO_QUEUE_TEXT,
+                          width: 36,
+                          minWidth: 36,
+                          borderTopRightRadius: 6,
+                          borderBottomRightRadius: 6,
+                          borderTopLeftRadius: 0,
+                          borderBottomLeftRadius: 0,
+                          boxShadow: 'none'
+                        }}
+                        className="flex items-center justify-center h-8 p-0 hover:bg-[#3b34b2] transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-label="Show queue options"
+                        tabIndex={0}
                       >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
+                        <ChevronDown className="h-3 w-3 transition-transform duration-150" />
+                      </button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -194,7 +232,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                   </TooltipContent>
                 </Tooltip>
               </div>
-              
               <DropdownMenuContent align="end" className="w-32">
                 <DropdownMenuItem onClick={onSchedule} className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
