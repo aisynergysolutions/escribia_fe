@@ -45,7 +45,7 @@ const HooksSection: React.FC<HooksSectionProps> = ({
     } else {
       setErrorHook({
         index,
-        message: "Couldn’t apply—try again"
+        message: "Couldn't apply—try again"
       });
     }
     setLoadingHookIndex(null);
@@ -107,7 +107,7 @@ const HooksSection: React.FC<HooksSectionProps> = ({
               ) : (
                 <>
                   <div className="flex justify-between items-start">
-                    <p className="pr-2 whitespace-pre-line text-xs">{hook.text}</p>
+                    <p className="pr-2 whitespace-pre-line text-sm">{hook.text}</p>
                     {isSelected && <Badge className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 flex-shrink-0">Selected</Badge>}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Angle: {hook.angle}</p>
