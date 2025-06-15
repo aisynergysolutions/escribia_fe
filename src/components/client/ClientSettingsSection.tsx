@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import StatusBadge from '../common/StatusBadge';
 import { formatDate } from '../../utils/dateUtils';
 import { mockClients } from '../../types';
+import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 
 interface ClientSettingsSectionProps {
   clientId: string;
@@ -67,11 +68,11 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         </CardContent>
       </Card>
 
-      {/* AI and Integration Settings */}
+      {/* Integrations (AI & Integration Settings, updated) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>AI & Integration Settings</span>
+            <span>Integrations</span>
             <Button variant="outline" size="sm">
               <Edit3 className="h-4 w-4 mr-2" />
               Configure
@@ -79,7 +80,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500">AI Training Status</h3>
               <StatusBadge status={client.aiTraining.status} type="ai" className="mt-1" />
@@ -88,21 +89,10 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                   Last trained: {formatDate(client.aiTraining.lastTrainedAt)}
                 </div>
               )}
+              {/* LinkedIn connection panel (below AI status) */}
+              <LinkedInConnectionPanel />
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">LinkedIn API Tokens</h3>
-              <div className="mt-1">
-                <div className="flex items-center">
-                  <Linkedin className="h-4 w-4 text-gray-400 mr-1" />
-                  <span>125 remaining</span>
-                </div>
-                <div className="text-sm mt-1">Expires: June 15, 2025</div>
-              </div>
-            </div>
-            <div className="col-span-2">
-              <h3 className="text-sm font-medium text-gray-500">Custom AI Instructions</h3>
-              <p className="mt-1 text-sm">{client.brandProfile.customInstructionsAI || "No custom instructions"}</p>
-            </div>
+            {/* Removed LinkedIn API Tokens section */}
           </div>
         </CardContent>
       </Card>
@@ -118,134 +108,120 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full">
-            <AccordionItem value="basics">
-              <AccordionTrigger className="text-base font-medium">Business Basics</AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Language</h3>
-                    <p className="mt-1">{client.brandProfile.language}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Location Focus</h3>
-                    <p className="mt-1">{client.brandProfile.locationFocus}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Business Size</h3>
-                    <p className="mt-1">{client.brandProfile.businessSize}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Sells What</h3>
-                    <p className="mt-1">{client.brandProfile.sellsWhat}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Sells to Whom</h3>
-                    <p className="mt-1">{client.brandProfile.sellsToWhom}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">LinkedIn Profile</h3>
-                    <a 
-                      href={client.brandProfile.linkedinProfileUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="mt-1 text-indigo-600 hover:underline flex items-center"
-                    >
-                      <Linkedin className="h-4 w-4 mr-1" />
-                      View Profile
-                    </a>
-                  </div>
+        <CardContent className="space-y-8">
+
+          {/* Business Basics */}
+          <div>
+            <h4 className="font-semibold text-base mb-3">Business Basics</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Language</span>
+                <span>{client.brandProfile.language}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Location Focus</span>
+                <span>{client.brandProfile.locationFocus}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Business Size</span>
+                <span>{client.brandProfile.businessSize}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Sells What</span>
+                <span>{client.brandProfile.sellsWhat}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Sells to Whom</span>
+                <span>{client.brandProfile.sellsToWhom}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">LinkedIn Profile</span>
+                <a 
+                  href={client.brandProfile.linkedinProfileUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 hover:underline flex items-center"
+                >
+                  <Linkedin className="h-4 w-4 mr-1" />
+                  View Profile
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200" />
+
+          {/* Brand Voice & Personality */}
+          <div>
+            <h4 className="font-semibold text-base mb-3">Brand Voice & Personality</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Brand Personality</span>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {client.brandProfile.brandPersonality.map((trait, idx) => (
+                    <Badge key={idx} variant="outline">{trait}</Badge>
+                  ))}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="brandPersonality">
-              <AccordionTrigger className="text-base font-medium">Brand Voice & Personality</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-2">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Brand Personality</h3>
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {client.brandProfile.brandPersonality.map((trait, idx) => (
-                        <Badge key={idx} variant="outline">{trait}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Brand Tone</h3>
-                      <p className="mt-1">{client.brandProfile.brandTone}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Emotions to Evoke</h3>
-                      <div className="flex flex-wrap gap-1.5 mt-1.5">
-                        {client.brandProfile.emotionsToEvoke.map((emotion, idx) => (
-                          <Badge key={idx} variant="secondary">{emotion}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Emoji Use</h3>
-                      <p className="mt-1">{client.brandProfile.emojiUsage}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Desired Post Length</h3>
-                      <p className="mt-1">{client.brandProfile.desiredPostLength}</p>
-                    </div>
-                  </div>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Brand Tone</span>
+                <span>{client.brandProfile.brandTone}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Emotions to Evoke</span>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {client.brandProfile.emotionsToEvoke.map((emotion, idx) => (
+                    <Badge key={idx} variant="secondary">{emotion}</Badge>
+                  ))}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="brandStory">
-              <AccordionTrigger className="text-base font-medium">Brand Story & Values</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-2">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Core Values</h3>
-                    <p className="mt-1">{client.brandProfile.coreValues}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Brand Story</h3>
-                    <p className="mt-1">{client.brandProfile.brandStory}</p>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="trainingData">
-              <AccordionTrigger className="text-base font-medium">Training Data</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-2">
-                  <h3 className="text-sm font-medium text-gray-500">Data Sources</h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {client.brandProfile.trainingDataUrls.map((url, idx) => (
-                      <a 
-                        key={idx} 
-                        href={url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:underline block text-sm"
-                      >
-                        {url}
-                      </a>
-                    ))}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Raw Training Data</h3>
-                    <Textarea 
-                      className="h-40" 
-                      placeholder="No training data" 
-                      value={client.brandProfile.trainingDataUrls.join("\n")} 
-                      readOnly 
-                    />
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Emoji Use</span>
+                <span>{client.brandProfile.emojiUsage}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Desired Post Length</span>
+                <span>{client.brandProfile.desiredPostLength}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200" />
+
+          {/* Brand Story & Values */}
+          <div>
+            <h4 className="font-semibold text-base mb-3">Brand Story & Values</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Core Values</span>
+                <span>{client.brandProfile.coreValues}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Brand Story</span>
+                <span>{client.brandProfile.brandStory}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Mission Statement</span>
+                <span>{client.brandProfile.missionStatement}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Unique Selling Proposition</span>
+                <span>{client.brandProfile.uniqueSellingProposition}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Hot Takes/Opinions</span>
+                <span>{client.brandProfile.hotTakesOrOpinions}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Inspiration Sources</span>
+                <span>{client.brandProfile.inspirationSources}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500">Recent Company Events</span>
+                <span>{client.brandProfile.recentCompanyEvents}</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
