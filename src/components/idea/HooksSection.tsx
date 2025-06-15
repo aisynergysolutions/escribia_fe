@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,10 +95,10 @@ const HooksSection: React.FC<HooksSectionProps> = ({
               onClick={() => handleHookClick(index)}
               disabled={isLoading || isRegenerating}
               className={`w-full p-3 rounded-md border text-left transition-all 
-                  focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                  hover:border-primary
+                  focus-visible:outline-none focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-[#4F46E5]/20 focus-visible:ring-offset-2
+                  hover:border-[#4F46E5]
                   ${isLoading || isRegenerating ? 'cursor-wait' : ''}
-                  ${isSelected && !isLoading ? 'border-primary bg-primary/10' : ''}`}
+                  ${isSelected && !isLoading ? 'border-[#4F46E5] bg-[#4F46E5]/10' : ''}`}
             >
               {isLoading ? (
                 <div className="flex justify-center items-center h-[42px]">
@@ -106,10 +107,10 @@ const HooksSection: React.FC<HooksSectionProps> = ({
               ) : (
                 <>
                   <div className="flex justify-between items-start">
-                    <p className="pr-2 whitespace-pre-line text-sm">{hook.text}</p>
-                    {isSelected && <Badge className="bg-primary flex-shrink-0">Selected</Badge>}
+                    <p className="pr-2 whitespace-pre-line text-xs">{hook.text}</p>
+                    {isSelected && <Badge className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 flex-shrink-0">Selected</Badge>}
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">Angle: {hook.angle}</p>
+                  <p className="text-xs text-gray-500 mt-1">Angle: {hook.angle}</p>
                 </>
               )}
             </button>
