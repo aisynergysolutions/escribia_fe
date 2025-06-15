@@ -156,26 +156,46 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </TooltipContent>
           </Tooltip>
           
-          {/* Add to Queue with Dropdown */}
-          <div className="flex rounded-md overflow-hidden border border-gray-300">
+          {/* Add to Queue with Dropdown - Primary Styled Split Button */}
+          <div className="flex">
             <DropdownMenu>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
+              <div className="flex rounded-md overflow-hidden">
+                {/* Main Action Button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button 
-                      variant="outline" 
                       size="sm" 
-                      className="h-8 border-0 border-r border-gray-300 rounded-none bg-white hover:bg-gray-50 flex items-center w-8 px-0"
+                      onClick={handleAddToQueue} 
+                      className={`h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-r-none border-r border-primary-foreground/20 flex items-center ${isMobile ? 'px-3' : 'px-3 gap-1.5'}`}
                     >
-                      <ChevronDown className="h-4 w-4" />
+                      <Send className="h-5 w-5" />
+                      {!isMobile && <span className="text-sm font-medium">Add to Queue</span>}
                     </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>More Options</p>
-                </TooltipContent>
-              </Tooltip>
-              <DropdownMenuContent align="start" className="w-32">
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add to Queue</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                {/* Dropdown Trigger */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none px-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>More Options</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
+              <DropdownMenuContent align="end" className="w-32">
                 <DropdownMenuItem onClick={onSchedule} className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Schedule
@@ -186,22 +206,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="sm" 
-                  onClick={handleAddToQueue} 
-                  className={`h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-none flex items-center ${isMobile ? 'w-8 px-0' : 'px-3 gap-1.5'}`}
-                >
-                  <Plus className="h-4 w-4" />
-                  {!isMobile && <span className="text-xs">Add to Queue</span>}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add to Queue</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
       </TooltipProvider>
