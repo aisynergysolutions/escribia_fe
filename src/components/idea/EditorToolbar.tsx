@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,9 @@ interface EditorToolbarProps {
   onPreviousVersion: () => void;
   onNextVersion: () => void;
 }
+
+const PRIMARY_QUEUE_COLOR = '#4E46DD';
+const PRIMARY_QUEUE_DIVIDER = '#3125C2'; // darken #4E46DD for divider
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onFormat,
@@ -156,36 +158,80 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </TooltipContent>
           </Tooltip>
           
-          {/* Add to Queue with Dropdown - Primary Styled Split Button */}
+          {/* --- Add to Queue Split Button --- */}
           <div className="flex">
             <DropdownMenu>
-              <div className="flex rounded-md overflow-hidden">
-                {/* Main Action Button */}
+              <div
+                className="flex rounded-md overflow-hidden"
+                style={{
+                  boxShadow: "0px 1.5px 2.5px rgba(78,70,221,0.03)",
+                }}
+              >
+                {/* Action Zone */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      size="sm" 
-                      onClick={handleAddToQueue} 
-                      className={`h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-r-none border-r border-primary-foreground/20 flex items-center ${isMobile ? 'px-3' : 'px-3 gap-1.5'}`}
+                    <Button
+                      size="sm"
+                      onClick={handleAddToQueue}
+                      className="h-8 px-3 gap-2 flex items-center font-medium text-primary-foreground rounded-none focus-visible:z-10"
+                      style={{
+                        background: PRIMARY_QUEUE_COLOR,
+                        color: "#fff",
+                        borderRadius: "0.375rem 0 0 0.375rem",
+                        borderRight: `1px solid ${PRIMARY_QUEUE_DIVIDER}`,
+                        height: "40px",
+                        transition: "background 0.2s",
+                      }}
+                      onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = "#362FCC"; }}
+                      onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = PRIMARY_QUEUE_COLOR; }}
+                      onFocus={e => { (e.currentTarget as HTMLElement).style.background = "#362FCC"; }}
+                      onBlur={e => { (e.currentTarget as HTMLElement).style.background = PRIMARY_QUEUE_COLOR; }}
                     >
-                      <Send className="h-5 w-5" />
-                      {!isMobile && <span className="text-sm font-medium">Add to Queue</span>}
+                      <Send className="h-5 w-5" style={{ minWidth: 20, minHeight: 20 }} />
+                      <span className="text-base font-semibold leading-none" style={{ fontFamily: "inherit" }}>
+                        Add to Queue
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Add to Queue</p>
                   </TooltipContent>
                 </Tooltip>
-                
-                {/* Dropdown Trigger */}
+                {/* Dropdown Zone */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        size="sm" 
-                        className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none px-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      <Button
+                        size="sm"
+                        aria-label="More Options"
+                        className="h-8 w-8 flex items-center justify-center rounded-none focus-visible:z-10"
+                        style={{
+                          background: PRIMARY_QUEUE_COLOR,
+                          color: "#fff",
+                          borderRadius: "0 0.375rem 0.375rem 0",
+                          borderLeft: "none",
+                          transition: "background 0.2s",
+                          height: "40px",
+                          padding: 0,
+                          minWidth: 40,
+                        }}
+                        onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = "#362FCC"; }}
+                        onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = PRIMARY_QUEUE_COLOR; }}
+                        onFocus={e => { (e.currentTarget as HTMLElement).style.background = "#362FCC"; }}
+                        onBlur={e => { (e.currentTarget as HTMLElement).style.background = PRIMARY_QUEUE_COLOR; }}
+                        tabIndex={0}
                       >
-                        <ChevronDown className="h-3 w-3" />
+                        {/* Caret */}
+                        <ChevronDown
+                          className={`transition-transform duration-150 h-3 w-3`}
+                          style={{
+                            color: "#fff",
+                            minWidth: 12,
+                            minHeight: 12,
+                            transform: "rotate(0deg)",
+                          }}
+                          // The rotate state must be controlled via aria-expanded if open, but we can't in this simple split-button pattern, so static
+                        />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
@@ -194,8 +240,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                   </TooltipContent>
                 </Tooltip>
               </div>
-              
-              <DropdownMenuContent align="end" className="w-32">
+              <DropdownMenuContent align="start" className="w-32">
                 <DropdownMenuItem onClick={onSchedule} className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Schedule
