@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 export interface Hook {
   text: string;
@@ -72,7 +71,7 @@ const HooksSection: React.FC<HooksSectionProps> = ({
           {isRegenerating ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
-            <Sparkles className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 mr-2" />
           )}
           Regenerate hooks
         </Button>
