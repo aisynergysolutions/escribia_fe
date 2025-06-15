@@ -8,6 +8,7 @@ import MediaDropZone from '../components/idea/MediaDropZone';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
+import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
@@ -22,6 +23,8 @@ const IdeaDetails = () => {
   const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [showCommentsPanel, setShowCommentsPanel] = useState(false);
+  const [comments, setComments] = useState<CommentThread[]>([]);
 
   // Extract initial idea data from URL params (for all creation methods)
   let initialIdeaText = '';
@@ -191,6 +194,24 @@ const IdeaDetails = () => {
     }
   };
 
+  const handleAddReply = (threadId: string, replyText: string) => {
+    setComments(prev => prev.map(thread => {
+      if (thread.id === threadId) {
+        return {
+          ...thread,
+          replies: [...thread.replies, { id: `reply-${Date.now()}`, author: 'You', text: replyText, createdAt: new Date() }]
+        };
+      }
+      return thread;
+    }));
+  };
+
+  const handleResolve = (threadId: string) => {
+    setComments(prev => prev.map(thread => 
+      thread.id === threadId ? { ...thread, resolved: true } : thread
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <UnsavedChangesDialog
@@ -238,6 +259,9 @@ const IdeaDetails = () => {
             }}
             versionHistory={versionHistory}
             onRestoreVersion={postEditor.handlePostChange}
+            onToggleCommentsPanel={() => setShowCommentsPanel(p => !p)}
+            comments={comments}
+            setComments={setComments}
           />
           <MediaDropZone
             uploadedFiles={uploadedFiles}
@@ -249,32 +273,36 @@ const IdeaDetails = () => {
         </div>
         
         <div className="space-y-6">
-          <IdeaForm
-            formData={{
-              initialIdea: ideaForm.formData.initialIdea,
-              objective: ideaForm.formData.objective,
-              template: ideaForm.formData.template,
-              internalNotes: ideaForm.formData.internalNotes
-            }}
-            setters={{
-              setInitialIdea: ideaForm.setters.setInitialIdea,
-              setObjective: ideaForm.setters.setObjective,
-              setTemplate: ideaForm.setters.setTemplate,
-              setInternalNotes: ideaForm.setters.setInternalNotes
-            }}
-            options={{
-              useAsTrainingData,
-              onUseAsTrainingDataChange: setUseAsTrainingData
-            }}
-            isExpanded={isIdeaExpanded}
-            onExpandChange={setIsIdeaExpanded}
-            onSendToAI={handleSendToAI}
-            onAddCustomObjective={handleAddCustomObjective}
-            hooks={sampleHooks}
-            selectedHookIndex={selectedHookIndex}
-            onHookSelect={handleHookSelect}
-            onRegenerateHooks={handleRegenerateHooks}
-          />
+          {showCommentsPanel ? (
+            <CommentsPanel comments={comments} onAddReply={handleAddReply} onResolve={handleResolve} />
+          ) : (
+            <IdeaForm
+              formData={{
+                initialIdea: ideaForm.formData.initialIdea,
+                objective: ideaForm.formData.objective,
+                template: ideaForm.formData.template,
+                internalNotes: ideaForm.formData.internalNotes
+              }}
+              setters={{
+                setInitialIdea: ideaForm.setters.setInitialIdea,
+                setObjective: ideaForm.setters.setObjective,
+                setTemplate: ideaForm.setters.setTemplate,
+                setInternalNotes: ideaForm.setters.setInternalNotes
+              }}
+              options={{
+                useAsTrainingData,
+                onUseAsTrainingDataChange: setUseAsTrainingData
+              }}
+              isExpanded={isIdeaExpanded}
+              onExpandChange={setIsIdeaExpanded}
+              onSendToAI={handleSendToAI}
+              onAddCustomObjective={handleAddCustomObjective}
+              hooks={sampleHooks}
+              selectedHookIndex={selectedHookIndex}
+              onHookSelect={handleHookSelect}
+              onRegenerateHooks={handleRegenerateHooks}
+            />
+          )}
         </div>
       </div>
     </div>

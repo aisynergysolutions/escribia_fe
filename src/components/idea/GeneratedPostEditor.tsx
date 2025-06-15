@@ -8,6 +8,8 @@ import PostNowModal from './PostNowModal';
 import EditorToolbar from './EditorToolbar';
 import EditorContainer from './EditorContainer';
 import EditingInstructions from './EditingInstructions';
+import CommentPopover from './CommentPopover';
+import { CommentThread } from './CommentsPanel';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -28,6 +30,9 @@ interface GeneratedPostEditorProps {
     notes: string;
   }>;
   onRestoreVersion: (text: string) => void;
+  onToggleCommentsPanel: () => void;
+  comments: CommentThread[];
+  setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
 }
 
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
@@ -41,7 +46,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   hasUnsavedChanges,
   onUnsavedChangesChange,
   versionHistory,
-  onRestoreVersion
+  onRestoreVersion,
+  onToggleCommentsPanel,
+  comments,
+  setComments
 }) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -62,6 +70,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [currentVersionIndex, setCurrentVersionIndex] = useState(versionHistory.length - 1);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const lastSelection = useRef<Range | null>(null);
+
+  // NEW state for comment popover
+  const [commentPopover, setCommentPopover] = useState({ visible: false, top: 0, left: 0 });
 
   // Updated utility function to calculate content metrics with precise cutoff positioning
   const calculateContentMetrics = (content: string) => {
@@ -104,10 +116,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
-    if (selection && selection.toString().length > 0) {
+    if (selection && selection.toString().length > 0 && editorRef.current?.contains(selection.anchorNode)) {
       const selectedText = selection.toString();
       setSelectedText(selectedText);
       const range = selection.getRangeAt(0);
+      lastSelection.current = range.cloneRange();
       const rect = range.getBoundingClientRect();
       setToolbarPosition({
         top: rect.top + window.scrollY,
@@ -146,6 +159,55 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     if (selectedText) {
       setToolbarVisible(true);
     }
+  };
+
+  const handleCommentRequest = () => {
+    if (lastSelection.current) {
+      const rect = lastSelection.current.getBoundingClientRect();
+      setCommentPopover({
+        visible: true,
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2,
+      });
+      setToolbarVisible(false);
+    }
+  };
+
+  const handleSaveComment = (commentText: string) => {
+    if (!lastSelection.current || !editorRef.current) return;
+    
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    selection.removeAllRanges();
+    selection.addRange(lastSelection.current);
+
+    const commentId = `comment-${Date.now()}`;
+    const mark = document.createElement('mark');
+    mark.dataset.commentId = commentId;
+    
+    try {
+      lastSelection.current.surroundContents(mark);
+    } catch(e) {
+      console.error("Could not wrap selection", e);
+      toast({ title: "Error", description: "Could not add comment to a selection that spans multiple paragraphs.", variant: "destructive" });
+      setCommentPopover({ visible: false, top: 0, left: 0 });
+      return;
+    }
+    
+    const newThread: CommentThread = {
+      id: commentId,
+      selectionText: lastSelection.current.toString(),
+      replies: [{ id: `reply-${Date.now()}`, author: 'You', text: commentText, createdAt: new Date() }],
+      resolved: false,
+    };
+    setComments([...comments, newThread]);
+
+    onGeneratedPostChange(editorRef.current.innerHTML);
+    setCommentPopover({ visible: false, top: 0, left: 0 });
+    lastSelection.current = null;
+    selection.removeAllRanges();
+    toast({ title: "Comment added." });
   };
 
   const handleFormat = (format: string) => {
@@ -284,10 +346,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   };
 
   const handleShowComments = () => {
-    toast({
-      title: "Show Comments",
-      description: "Comments functionality will be added soon."
-    });
+    onToggleCommentsPanel();
   };
 
   const handleRegeneratePost = () => {
@@ -365,9 +424,19 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   return (
     <div className="space-y-6">
-      <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} />
+      <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} onComment={handleCommentRequest} />
       
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
+      
+      <CommentPopover
+        visible={commentPopover.visible}
+        position={commentPopover}
+        onSave={handleSaveComment}
+        onCancel={() => {
+          setCommentPopover({ visible: false, top: 0, left: 0 });
+          lastSelection.current = null;
+        }}
+      />
       
       <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={generatedPost} />
       
@@ -425,6 +494,14 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       
       <style>
         {`
+          mark[data-comment-id] {
+            background-color: rgba(186, 230, 253, 0.7);
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          mark[data-comment-id]:hover {
+            background-color: rgba(147, 216, 253, 0.9);
+          }
           @media (max-width: 600px) {
             .linkedin-safe {
               max-width: 100% !important;

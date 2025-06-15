@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Bold, Italic, Underline, Smile, Sparkles } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Sparkles, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -9,6 +8,7 @@ interface FloatingToolbarProps {
   position: { top: number; left: number };
   onFormat: (format: string) => void;
   onAIEdit: () => void;
+  onComment: () => void;
   visible: boolean;
 }
 
@@ -16,6 +16,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   position,
   onFormat,
   onAIEdit,
+  onComment,
   visible
 }) => {
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
@@ -107,6 +108,15 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         </PopoverContent>
       </Popover>
       <div className="w-px h-6 bg-gray-300 mx-1" />
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onComment}
+        className="h-8 w-8 p-0 hover:bg-blue-100"
+        title="Add a comment"
+      >
+        <MessageSquare className="h-4 w-4 text-blue-600" />
+      </Button>
       <Button
         variant="ghost"
         size="sm"

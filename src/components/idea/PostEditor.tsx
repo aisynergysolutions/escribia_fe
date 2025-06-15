@@ -1,6 +1,7 @@
 
 import React from 'react';
 import GeneratedPostEditor from './GeneratedPostEditor';
+import { CommentThread } from './CommentsPanel';
 
 interface PostEditorProps {
   postData: {
@@ -18,13 +19,20 @@ interface PostEditorProps {
   };
   versionHistory: any[];
   onRestoreVersion: (text: string) => void;
+  // New Props
+  onToggleCommentsPanel: () => void;
+  comments: CommentThread[];
+  setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
 }
 
 const PostEditor: React.FC<PostEditorProps> = ({
   postData,
   postHandlers,
   versionHistory,
-  onRestoreVersion
+  onRestoreVersion,
+  onToggleCommentsPanel,
+  comments,
+  setComments,
 }) => {
   return (
     <GeneratedPostEditor
@@ -39,6 +47,9 @@ const PostEditor: React.FC<PostEditorProps> = ({
       onUnsavedChangesChange={postHandlers.onUnsavedChangesChange}
       versionHistory={versionHistory}
       onRestoreVersion={onRestoreVersion}
+      onToggleCommentsPanel={onToggleCommentsPanel}
+      comments={comments}
+      setComments={setComments}
     />
   );
 };
