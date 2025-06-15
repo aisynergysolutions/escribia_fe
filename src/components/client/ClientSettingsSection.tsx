@@ -1,16 +1,14 @@
-
-import React from 'react';
-import { Edit3, Calendar, Clock, Linkedin } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Edit3, Calendar, Clock, Linkedin, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Textarea } from '@/components/ui/textarea';
+import { Separator } from "@/components/ui/separator";
+import { cn } from '@/lib/utils';
 import StatusBadge from '../common/StatusBadge';
 import { formatDate } from '../../utils/dateUtils';
 import { mockClients } from '../../types';
-import { Separator } from "@/components/ui/separator";
-import { cn } from '@/lib/utils';
+import EditableField from './EditableField';
 
 const MOCK_LINKEDIN_ACCOUNT = "Acme Corp";
 const MOCK_LINKEDIN_EXPIRY = "June 15, 2025";
@@ -22,54 +20,244 @@ interface ClientSettingsSectionProps {
 const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId }) => {
   const client = mockClients.find(c => c.id === clientId);
   const [linkedinConnected, setLinkedinConnected] = React.useState(true);
+  
+  // Edit mode states
+  const [editModes, setEditModes] = useState({
+    clientInfo: false,
+    integrations: false,
+    brandProfile: false
+  });
+
+  // Form data state
+  const [formData, setFormData] = useState({
+    clientName: client?.clientName || '',
+    status: client?.status || 'active',
+    writingStyle: client?.writingStyle || '',
+    brandBriefSummary: client?.brandBriefSummary || '',
+    customInstructionsAI: client?.brandProfile.customInstructionsAI || '',
+    language: client?.brandProfile.language || '',
+    locationFocus: client?.brandProfile.locationFocus || '',
+    businessSize: client?.brandProfile.businessSize || '',
+    sellsWhat: client?.brandProfile.sellsWhat || '',
+    sellsToWhom: client?.brandProfile.sellsToWhom || '',
+    brandPersonality: client?.brandProfile.brandPersonality || [],
+    brandTone: client?.brandProfile.brandTone || '',
+    emotionsToEvoke: client?.brandProfile.emotionsToEvoke || [],
+    emojiUsage: client?.brandProfile.emojiUsage || '',
+    desiredPostLength: client?.brandProfile.desiredPostLength || '',
+    coreValues: client?.brandProfile.coreValues || '',
+    brandStory: client?.brandProfile.brandStory || '',
+    missionStatement: client?.brandProfile.missionStatement || '',
+    uniqueSellingProposition: client?.brandProfile.uniqueSellingProposition || '',
+    hotTakesOrOpinions: client?.brandProfile.hotTakesOrOpinions || '',
+    inspirationSources: client?.brandProfile.inspirationSources || '',
+    recentCompanyEvents: client?.brandProfile.recentCompanyEvents || '',
+    linkedinProfileUrl: client?.brandProfile.linkedinProfileUrl || ''
+  });
+
+  // Error state
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Refs for focus management
+  const firstInputRefs = {
+    clientInfo: useRef<HTMLInputElement>(null),
+    integrations: useRef<HTMLTextAreaElement>(null),
+    brandProfile: useRef<HTMLInputElement>(null)
+  };
 
   if (!client) return null;
 
+  const handleEditToggle = (section: 'clientInfo' | 'integrations' | 'brandProfile') => {
+    setEditModes(prev => ({ ...prev, [section]: !prev[section] }));
+    setErrors({});
+    
+    // Focus first input when entering edit mode
+    setTimeout(() => {
+      if (!editModes[section]) {
+        firstInputRefs[section].current?.focus();
+      }
+    }, 0);
+  };
+
+  const handleCancel = (section: 'clientInfo' | 'integrations' | 'brandProfile') => {
+    // Reset form data to original values
+    setFormData({
+      clientName: client.clientName,
+      status: client.status,
+      writingStyle: client.writingStyle || '',
+      brandBriefSummary: client.brandBriefSummary || '',
+      customInstructionsAI: client.brandProfile.customInstructionsAI || '',
+      language: client.brandProfile.language,
+      locationFocus: client.brandProfile.locationFocus,
+      businessSize: client.brandProfile.businessSize,
+      sellsWhat: client.brandProfile.sellsWhat,
+      sellsToWhom: client.brandProfile.sellsToWhom,
+      brandPersonality: client.brandProfile.brandPersonality,
+      brandTone: client.brandProfile.brandTone,
+      emotionsToEvoke: client.brandProfile.emotionsToEvoke,
+      emojiUsage: client.brandProfile.emojiUsage,
+      desiredPostLength: client.brandProfile.desiredPostLength,
+      coreValues: client.brandProfile.coreValues,
+      brandStory: client.brandProfile.brandStory,
+      missionStatement: client.brandProfile.missionStatement,
+      uniqueSellingProposition: client.brandProfile.uniqueSellingProposition,
+      hotTakesOrOpinions: client.brandProfile.hotTakesOrOpinions,
+      inspirationSources: client.brandProfile.inspirationSources,
+      recentCompanyEvents: client.brandProfile.recentCompanyEvents,
+      linkedinProfileUrl: client.brandProfile.linkedinProfileUrl
+    });
+    setErrors({});
+    setEditModes(prev => ({ ...prev, [section]: false }));
+  };
+
+  const validateForm = (section: 'clientInfo' | 'integrations' | 'brandProfile') => {
+    const newErrors: Record<string, string> = {};
+
+    if (section === 'clientInfo') {
+      if (!formData.clientName.trim()) newErrors.clientName = 'Client name is required';
+      if (!formData.status) newErrors.status = 'Status is required';
+    }
+
+    if (section === 'brandProfile') {
+      if (!formData.language.trim()) newErrors.language = 'Language is required';
+      if (!formData.businessSize.trim()) newErrors.businessSize = 'Business size is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = (section: 'clientInfo' | 'integrations' | 'brandProfile') => {
+    if (!validateForm(section)) return;
+
+    // Here you would typically save to your backend
+    console.log('Saving data for section:', section, formData);
+    
+    setEditModes(prev => ({ ...prev, [section]: false }));
+    setErrors({});
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, section: 'clientInfo' | 'integrations' | 'brandProfile') => {
+    if (e.key === 'Escape') {
+      handleCancel(section);
+    }
+  };
+
+  const updateFormData = (field: string, value: string | string[]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" onKeyDown={(e) => {
+      if (editModes.clientInfo) handleKeyDown(e, 'clientInfo');
+      if (editModes.integrations) handleKeyDown(e, 'integrations');
+      if (editModes.brandProfile) handleKeyDown(e, 'brandProfile');
+    }}>
       {/* Client Information Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Client Information</span>
-            <Button variant="outline" size="sm">
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+            {!editModes.clientInfo ? (
+              <Button variant="outline" size="sm" onClick={() => handleEditToggle('clientInfo')}>
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleSave('clientInfo')}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleCancel('clientInfo')}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Client Name</h3>
-              <p className="mt-1">{client.clientName}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <StatusBadge status={client.status} type="client" className="mt-1" />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Created At</h3>
-              <div className="mt-1 flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span>{formatDate(client.createdAt)}</span>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Last Update</h3>
-              <div className="mt-1 flex items-center gap-1">
-                <Clock className="h-4 w-4 text-gray-400" />
-                <span>{formatDate(client.updatedAt)}</span>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Writing Style</h3>
-              <p className="mt-1">{client.writingStyle || "Not specified"}</p>
-            </div>
-            <div className="col-span-2">
-              <h3 className="text-sm font-medium text-gray-500">Brand Brief Summary</h3>
-              <p className="mt-1">{client.brandBriefSummary || "No summary available"}</p>
-            </div>
+            {!editModes.clientInfo ? (
+              // Display mode
+              <>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Client Name</h3>
+                  <p className="mt-1">{client.clientName}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                  <StatusBadge status={client.status} type="client" className="mt-1" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Created At</h3>
+                  <div className="mt-1 flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span>{formatDate(client.createdAt)}</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Last Update</h3>
+                  <div className="mt-1 flex items-center gap-1">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <span>{formatDate(client.updatedAt)}</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Writing Style</h3>
+                  <p className="mt-1">{client.writingStyle || "Not specified"}</p>
+                </div>
+                <div className="col-span-2">
+                  <h3 className="text-sm font-medium text-gray-500">Brand Brief Summary</h3>
+                  <p className="mt-1">{client.brandBriefSummary || "No summary available"}</p>
+                </div>
+              </>
+            ) : (
+              // Edit mode
+              <>
+                <EditableField
+                  label="Client Name"
+                  value={formData.clientName}
+                  onChange={(value) => updateFormData('clientName', value)}
+                  error={errors.clientName}
+                />
+                <EditableField
+                  label="Status"
+                  value={formData.status}
+                  onChange={(value) => updateFormData('status', value)}
+                  type="select"
+                  options={['active', 'onboarding', 'paused']}
+                  error={errors.status}
+                />
+                <EditableField
+                  label="Created At"
+                  value={formatDate(client.createdAt)}
+                  onChange={() => {}}
+                  readOnly
+                />
+                <EditableField
+                  label="Last Update"
+                  value={formatDate(client.updatedAt)}
+                  onChange={() => {}}
+                  readOnly
+                />
+                <EditableField
+                  label="Writing Style"
+                  value={formData.writingStyle}
+                  onChange={(value) => updateFormData('writingStyle', value)}
+                  placeholder="e.g., Professional and informative"
+                />
+                <div className="col-span-2">
+                  <EditableField
+                    label="Brand Brief Summary"
+                    value={formData.brandBriefSummary}
+                    onChange={(value) => updateFormData('brandBriefSummary', value)}
+                    type="textarea"
+                    placeholder="Brief description of the client's business..."
+                  />
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -79,10 +267,22 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Integrations</span>
-            <Button variant="outline" size="sm">
-              <Edit3 className="h-4 w-4 mr-2" />
-              Configure
-            </Button>
+            {!editModes.integrations ? (
+              <Button variant="outline" size="sm" onClick={() => handleEditToggle('integrations')}>
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleSave('integrations')}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleCancel('integrations')}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -101,11 +301,21 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
               <div className="text-xs font-semibold text-gray-500 mb-1">
                 Custom AI Instructions
               </div>
-              <div className="text-sm text-gray-700 leading-snug">
-                {client.brandProfile.customInstructionsAI?.trim()
-                  ? client.brandProfile.customInstructionsAI
-                  : "No custom instructions provided for this client."}
-              </div>
+              {!editModes.integrations ? (
+                <div className="text-sm text-gray-700 leading-snug">
+                  {client.brandProfile.customInstructionsAI?.trim()
+                    ? client.brandProfile.customInstructionsAI
+                    : "No custom instructions provided for this client."}
+                </div>
+              ) : (
+                <EditableField
+                  label=""
+                  value={formData.customInstructionsAI}
+                  onChange={(value) => updateFormData('customInstructionsAI', value)}
+                  type="textarea"
+                  placeholder="Enter custom AI instructions..."
+                />
+              )}
             </div>
           </div>
 
@@ -125,7 +335,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                 "w-full min-w-0 rounded-lg bg-secondary py-3 px-4 flex transition-colors hover:bg-secondary/80",
                 !linkedinConnected ? "justify-center items-center" : "items-center"
               )}
-              // Make content container handle overflow horizontally
               style={{ overflowX: linkedinConnected ? 'auto' : undefined }}
             >
               {!linkedinConnected ? (
@@ -139,7 +348,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                 </Button>
               ) : (
                 <div className="flex flex-nowrap items-center gap-4 min-w-0 w-full">
-                  {/* 8px left padding */}
                   <span className="pl-2 flex-shrink-0">
                     <Linkedin className="h-5 w-5 text-[#0A66C2]" />
                   </span>
@@ -149,7 +357,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                   <span className="text-sm text-muted-foreground body-small whitespace-nowrap flex-shrink-0">
                     Expires on {MOCK_LINKEDIN_EXPIRY}
                   </span>
-                  {/* Spacer flexes to push Disconnect right */}
                   <span className="flex-1 min-w-0"></span>
                   <Button
                     variant="link"
@@ -170,50 +377,105 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Brand Profile</span>
-            <Button variant="outline" size="sm">
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
+            {!editModes.brandProfile ? (
+              <Button variant="outline" size="sm" onClick={() => handleEditToggle('brandProfile')}>
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleSave('brandProfile')}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleCancel('brandProfile')}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-8">
-
           {/* Business Basics */}
           <div>
             <h4 className="font-semibold text-base mb-3">Business Basics</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Language</span>
-                <span>{client.brandProfile.language}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Location Focus</span>
-                <span>{client.brandProfile.locationFocus}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Business Size</span>
-                <span>{client.brandProfile.businessSize}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Sells What</span>
-                <span>{client.brandProfile.sellsWhat}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Sells to Whom</span>
-                <span>{client.brandProfile.sellsToWhom}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">LinkedIn Profile</span>
-                <a 
-                  href={client.brandProfile.linkedinProfileUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-indigo-600 hover:underline flex items-center"
-                >
-                  <Linkedin className="h-4 w-4 mr-1" />
-                  View Profile
-                </a>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+              {!editModes.brandProfile ? (
+                // Display mode
+                <>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Language</span>
+                    <span>{client.brandProfile.language}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Location Focus</span>
+                    <span>{client.brandProfile.locationFocus}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Business Size</span>
+                    <span>{client.brandProfile.businessSize}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Sells What</span>
+                    <span>{client.brandProfile.sellsWhat}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Sells to Whom</span>
+                    <span>{client.brandProfile.sellsToWhom}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">LinkedIn Profile</span>
+                    <a 
+                      href={client.brandProfile.linkedinProfileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:underline flex items-center"
+                    >
+                      <Linkedin className="h-4 w-4 mr-1" />
+                      View Profile
+                    </a>
+                  </div>
+                </>
+              ) : (
+                // Edit mode
+                <>
+                  <EditableField
+                    label="Language"
+                    value={formData.language}
+                    onChange={(value) => updateFormData('language', value)}
+                    error={errors.language}
+                  />
+                  <EditableField
+                    label="Location Focus"
+                    value={formData.locationFocus}
+                    onChange={(value) => updateFormData('locationFocus', value)}
+                  />
+                  <EditableField
+                    label="Business Size"
+                    value={formData.businessSize}
+                    onChange={(value) => updateFormData('businessSize', value)}
+                    type="select"
+                    options={['Small', 'Mid-market', 'Enterprise']}
+                    error={errors.businessSize}
+                  />
+                  <EditableField
+                    label="Sells What"
+                    value={formData.sellsWhat}
+                    onChange={(value) => updateFormData('sellsWhat', value)}
+                  />
+                  <EditableField
+                    label="Sells to Whom"
+                    value={formData.sellsToWhom}
+                    onChange={(value) => updateFormData('sellsToWhom', value)}
+                  />
+                  <EditableField
+                    label="LinkedIn Profile URL"
+                    value={formData.linkedinProfileUrl}
+                    onChange={(value) => updateFormData('linkedinProfileUrl', value)}
+                    placeholder="https://linkedin.com/company/..."
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -222,35 +484,75 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
           {/* Brand Voice & Personality */}
           <div>
             <h4 className="font-semibold text-base mb-3">Brand Voice & Personality</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Brand Personality</span>
-                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  {client.brandProfile.brandPersonality.map((trait, idx) => (
-                    <Badge key={idx} variant="outline">{trait}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Brand Tone</span>
-                <span>{client.brandProfile.brandTone}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Emotions to Evoke</span>
-                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  {client.brandProfile.emotionsToEvoke.map((emotion, idx) => (
-                    <Badge key={idx} variant="secondary">{emotion}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Emoji Use</span>
-                <span>{client.brandProfile.emojiUsage}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Desired Post Length</span>
-                <span>{client.brandProfile.desiredPostLength}</span>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+              {!editModes.brandProfile ? (
+                // Display mode
+                <>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Brand Personality</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {client.brandProfile.brandPersonality.map((trait, idx) => (
+                        <Badge key={idx} variant="outline">{trait}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Brand Tone</span>
+                    <span>{client.brandProfile.brandTone}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Emotions to Evoke</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {client.brandProfile.emotionsToEvoke.map((emotion, idx) => (
+                        <Badge key={idx} variant="secondary">{emotion}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Emoji Use</span>
+                    <span>{client.brandProfile.emojiUsage}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Desired Post Length</span>
+                    <span>{client.brandProfile.desiredPostLength}</span>
+                  </div>
+                </>
+              ) : (
+                // Edit mode
+                <>
+                  <EditableField
+                    label="Brand Personality"
+                    value={formData.brandPersonality}
+                    onChange={(value) => updateFormData('brandPersonality', value)}
+                    type="badges"
+                  />
+                  <EditableField
+                    label="Brand Tone"
+                    value={formData.brandTone}
+                    onChange={(value) => updateFormData('brandTone', value)}
+                  />
+                  <EditableField
+                    label="Emotions to Evoke"
+                    value={formData.emotionsToEvoke}
+                    onChange={(value) => updateFormData('emotionsToEvoke', value)}
+                    type="badges"
+                  />
+                  <EditableField
+                    label="Emoji Use"
+                    value={formData.emojiUsage}
+                    onChange={(value) => updateFormData('emojiUsage', value)}
+                    type="select"
+                    options={['None', 'Minimal', 'Strategic', 'Frequent']}
+                  />
+                  <EditableField
+                    label="Desired Post Length"
+                    value={formData.desiredPostLength}
+                    onChange={(value) => updateFormData('desiredPostLength', value)}
+                    type="select"
+                    options={['Short (50-150 words)', 'Short to medium (100-250 words)', 'Medium (150-300 words)', 'Medium (200-350 words)', 'Long (300+ words)']}
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -259,35 +561,86 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
           {/* Brand Story & Values */}
           <div>
             <h4 className="font-semibold text-base mb-3">Brand Story & Values</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Core Values</span>
-                <span>{client.brandProfile.coreValues}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Brand Story</span>
-                <span>{client.brandProfile.brandStory}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Mission Statement</span>
-                <span>{client.brandProfile.missionStatement}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Unique Selling Proposition</span>
-                <span>{client.brandProfile.uniqueSellingProposition}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Hot Takes/Opinions</span>
-                <span>{client.brandProfile.hotTakesOrOpinions}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Inspiration Sources</span>
-                <span>{client.brandProfile.inspirationSources}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-semibold text-gray-500">Recent Company Events</span>
-                <span>{client.brandProfile.recentCompanyEvents}</span>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+              {!editModes.brandProfile ? (
+                // Display mode - keep existing code (all brand story fields display)
+                <>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Core Values</span>
+                    <span>{client.brandProfile.coreValues}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Brand Story</span>
+                    <span>{client.brandProfile.brandStory}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Mission Statement</span>
+                    <span>{client.brandProfile.missionStatement}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Unique Selling Proposition</span>
+                    <span>{client.brandProfile.uniqueSellingProposition}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Hot Takes/Opinions</span>
+                    <span>{client.brandProfile.hotTakesOrOpinions}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Inspiration Sources</span>
+                    <span>{client.brandProfile.inspirationSources}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-500">Recent Company Events</span>
+                    <span>{client.brandProfile.recentCompanyEvents}</span>
+                  </div>
+                </>
+              ) : (
+                // Edit mode
+                <>
+                  <EditableField
+                    label="Core Values"
+                    value={formData.coreValues}
+                    onChange={(value) => updateFormData('coreValues', value)}
+                    type="textarea"
+                  />
+                  <EditableField
+                    label="Brand Story"
+                    value={formData.brandStory}
+                    onChange={(value) => updateFormData('brandStory', value)}
+                    type="textarea"
+                  />
+                  <EditableField
+                    label="Mission Statement"
+                    value={formData.missionStatement}
+                    onChange={(value) => updateFormData('missionStatement', value)}
+                    type="textarea"
+                  />
+                  <EditableField
+                    label="Unique Selling Proposition"
+                    value={formData.uniqueSellingProposition}
+                    onChange={(value) => updateFormData('uniqueSellingProposition', value)}
+                    type="textarea"
+                  />
+                  <EditableField
+                    label="Hot Takes/Opinions"
+                    value={formData.hotTakesOrOpinions}
+                    onChange={(value) => updateFormData('hotTakesOrOpinions', value)}
+                    type="textarea"
+                  />
+                  <EditableField
+                    label="Inspiration Sources"
+                    value={formData.inspirationSources}
+                    onChange={(value) => updateFormData('inspirationSources', value)}
+                    type="textarea"
+                  />
+                  <EditableField
+                    label="Recent Company Events"
+                    value={formData.recentCompanyEvents}
+                    onChange={(value) => updateFormData('recentCompanyEvents', value)}
+                    type="textarea"
+                  />
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -297,4 +650,3 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
 };
 
 export default ClientSettingsSection;
-
