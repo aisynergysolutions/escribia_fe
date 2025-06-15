@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Edit3, Calendar, Clock, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -121,7 +122,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
             {/* LinkedIn content box */}
             <div
               className={cn(
-                "w-full rounded-lg bg-secondary py-3 px-4 flex flex-wrap items-center transition-colors hover:bg-secondary/80",
+                "w-full rounded-lg bg-secondary py-3 px-4 flex items-center transition-colors hover:bg-secondary/80",
                 !linkedinConnected ? "justify-center" : "gap-4"
               )}
             >
@@ -137,10 +138,10 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
               ) : (
                 <>
                   <Linkedin className="h-5 w-5 text-[#0A66C2] shrink-0" />
-                  <span className="font-bold text-base">
+                  <span className="font-bold text-base whitespace-nowrap">
                     Connected as {MOCK_LINKEDIN_ACCOUNT}
                   </span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
                     Expires on {MOCK_LINKEDIN_EXPIRY}
                   </span>
                   <Button
