@@ -97,13 +97,14 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                 Custom AI Instructions
               </div>
               <div className="text-sm text-gray-700 leading-snug">
-                {client.aiTraining.instructions ||
-                  "No custom instructions provided for this client."}
+                {client.brandProfile.customInstructionsAI?.trim()
+                  ? client.brandProfile.customInstructionsAI
+                  : "No custom instructions provided for this client."}
               </div>
             </div>
           </div>
 
-          {/* Divider and spacing (24px = 6 * 4 in Tailwind) */}
+          {/* Divider and spacing */}
           <div className="my-6">
             <Separator />
           </div>
@@ -118,7 +119,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         </CardContent>
       </Card>
 
-      {/* Brand Profile Settings */}
+      {/* Brand Profile */}
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
