@@ -34,7 +34,7 @@ const Dashboard = () => {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">
-          Welcome back, {mockAgency.agencyName} – here's what's happening with your content.
+          Here's what's happening with your content.
         </p>
       </div>
       
