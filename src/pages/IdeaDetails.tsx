@@ -16,8 +16,7 @@ const IdeaDetails = () => {
   
   const isNewPost = searchParams.get('new') === 'true';
   
-  const [activeTab, setActiveTab] = useState('generatedPost');
-  const [selectedHookIndex, setSelectedHookIndex] = useState(0);
+  const [selectedHookIndex, setSelectedHookIndex] = useState(-1);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [useAsTrainingData, setUseAsTrainingData] = useState(false);
   const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
@@ -122,7 +121,6 @@ const IdeaDetails = () => {
   // Event handlers
   const handleSendToAI = () => {
     postEditor.handlePostChange("In today's rapidly evolving business landscape, staying ahead of industry trends is more critical than ever...");
-    setActiveTab('generatedPost');
   };
 
   const handleAddCustomObjective = (customObjective: string) => {
@@ -213,8 +211,6 @@ const IdeaDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <PostEditor
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
             postData={{
               generatedPost: postEditor.generatedPost,
               editingInstructions: postEditor.editingInstructions,
@@ -228,10 +224,6 @@ const IdeaDetails = () => {
               onSave: postEditor.handleSave,
               onUnsavedChangesChange: () => {}
             }}
-            hooks={idea?.generatedHooks}
-            selectedHookIndex={selectedHookIndex}
-            onHookSelect={handleHookSelect}
-            onRegenerateHooks={handleRegenerateHooks}
             versionHistory={versionHistory}
             onRestoreVersion={postEditor.handlePostChange}
           />
@@ -266,6 +258,10 @@ const IdeaDetails = () => {
             onExpandChange={setIsIdeaExpanded}
             onSendToAI={handleSendToAI}
             onAddCustomObjective={handleAddCustomObjective}
+            hooks={idea?.generatedHooks}
+            selectedHookIndex={selectedHookIndex}
+            onHookSelect={handleHookSelect}
+            onRegenerateHooks={handleRegenerateHooks}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@
 import React from 'react';
 import InitialIdeaSection from './InitialIdeaSection';
 import OptionsCard from './OptionsCard';
+import HooksSection, { type Hook } from './HooksSection';
 
 interface IdeaFormProps {
   formData: {
@@ -24,6 +25,10 @@ interface IdeaFormProps {
   onExpandChange: (expanded: boolean) => void;
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
+  hooks?: Hook[];
+  selectedHookIndex: number;
+  onHookSelect: (index: number) => void;
+  onRegenerateHooks: () => void;
 }
 
 const IdeaForm: React.FC<IdeaFormProps> = ({
@@ -33,7 +38,11 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
   isExpanded,
   onExpandChange,
   onSendToAI,
-  onAddCustomObjective
+  onAddCustomObjective,
+  hooks,
+  selectedHookIndex,
+  onHookSelect,
+  onRegenerateHooks,
 }) => {
   return (
     <div className="space-y-6">
@@ -48,6 +57,13 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         onTemplateChange={setters.setTemplate}
         onSendToAI={onSendToAI}
         onAddCustomObjective={onAddCustomObjective}
+      />
+      
+      <HooksSection
+        hooks={hooks}
+        selectedHookIndex={selectedHookIndex}
+        onHookSelect={onHookSelect}
+        onRegenerateHooks={onRegenerateHooks}
       />
       
       <OptionsCard
