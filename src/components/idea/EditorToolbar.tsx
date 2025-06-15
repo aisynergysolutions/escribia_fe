@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -45,6 +46,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
   const canGoPrevious = currentVersionIndex > 0;
   const canGoNext = currentVersionIndex < versionHistory.length - 1;
+
+  const handleAddToQueue = () => {
+    // Handle adding to queue functionality
+    console.log('Add to queue clicked');
+  };
 
   return (
     <div className="flex justify-between items-center p-4 border-b">
@@ -150,38 +156,50 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </TooltipContent>
           </Tooltip>
           
-          {/* Fused Schedule and Post Buttons */}
+          {/* Add to Queue with Dropdown */}
           <div className="flex rounded-md overflow-hidden border border-gray-300">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onSchedule} 
-                  className={`h-8 border-0 border-r border-gray-300 rounded-none bg-white hover:bg-gray-50 flex items-center ${isMobile ? 'w-8 px-0' : 'px-3 gap-1.5'}`}
-                >
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 border-0 border-r border-gray-300 rounded-none bg-white hover:bg-gray-50 flex items-center w-8 px-0"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>More Options</p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="start" className="w-32">
+                <DropdownMenuItem onClick={onSchedule} className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  {!isMobile && <span className="text-xs">Schedule</span>}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Schedule Post</p>
-              </TooltipContent>
-            </Tooltip>
+                  Schedule
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onPostNow} className="flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  Post Now
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   size="sm" 
-                  onClick={onPostNow} 
+                  onClick={handleAddToQueue} 
                   className={`h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-none flex items-center ${isMobile ? 'w-8 px-0' : 'px-3 gap-1.5'}`}
                 >
-                  <Send className="h-4 w-4" />
-                  {!isMobile && <span className="text-xs">Post Now</span>}
+                  <Plus className="h-4 w-4" />
+                  {!isMobile && <span className="text-xs">Add to Queue</span>}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Post Now</p>
+                <p>Add to Queue</p>
               </TooltipContent>
             </Tooltip>
           </div>
