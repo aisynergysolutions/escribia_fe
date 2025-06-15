@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import ClientOverview from '../components/ui/ClientOverview';
 import PostsSection from '../components/client/PostsSection';
@@ -8,14 +8,25 @@ import CalendarSection from '../components/client/CalendarSection';
 import ResourcesSection from '../components/client/ResourcesSection';
 import AnalyticsSection from '../components/client/AnalyticsSection';
 import ClientSettingsSection from '../components/client/ClientSettingsSection';
+import LoadingGrid from '../components/common/LoadingGrid';
 import { mockClients } from '../types';
 
 const ClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const location = useLocation();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Find client data
   const client = mockClients.find(c => c.id === clientId);
+
+  // Simulate loading delay for better UX
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [clientId, location.pathname]);
 
   // Determine current section based on path
   const getCurrentSection = () => {
@@ -40,6 +51,10 @@ const ClientDetails = () => {
         </Link>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <LoadingGrid count={4} variant="client" className="grid grid-cols-1 lg:grid-cols-2 gap-6" />;
   }
 
   const renderContent = () => {

@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Edit3, Calendar, Clock, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import StatusBadge from '../common/StatusBadge';
+import ClientSectionSkeleton from '../common/ClientSectionSkeleton';
 import { formatDate } from '../../utils/dateUtils';
 import { mockClients } from '../../types';
 
@@ -14,9 +16,22 @@ interface ClientSettingsSectionProps {
 }
 
 const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const client = mockClients.find(c => c.id === clientId);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [clientId]);
+
   if (!client) return null;
+
+  if (isLoading) {
+    return <ClientSectionSkeleton variant="settings" />;
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
