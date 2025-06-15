@@ -24,7 +24,7 @@ const EditorMetrics: React.FC<EditorMetricsProps> = ({
             <div 
               className="absolute left-6 right-6 border-t border-gray-300 cursor-help pointer-events-auto"
               style={{ 
-                top: `${cutoffLineTop + 4}px`, // Add small spacing after the 3rd line
+                top: `${cutoffLineTop + 1}px`, // Adjust spacing to be between 3rd and 4th line
                 zIndex: 10
               }}
             />
