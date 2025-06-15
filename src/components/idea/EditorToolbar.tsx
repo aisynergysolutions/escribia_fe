@@ -166,7 +166,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <Button 
                       size="sm" 
                       onClick={handleAddToQueue} 
-                      className={`h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-r-none border-r border-primary-foreground/20 flex items-center ${isMobile ? 'px-3' : 'px-3 gap-1.5'}`}
+                      className={`h-8 bg-[#4E46DD] hover:bg-[#453fca] text-primary-foreground rounded-r-none border-r border-[#372fad] flex items-center ${isMobile ? 'px-3' : 'px-3 gap-1.5'}`}
                     >
                       <Send className="h-5 w-5" />
                       {!isMobile && <span className="text-sm font-medium">Add to Queue</span>}
@@ -183,7 +183,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <DropdownMenuTrigger asChild>
                       <Button 
                         size="sm" 
-                        className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none px-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 w-8 bg-[#4E46DD] hover:bg-[#453fca] text-primary-foreground rounded-l-none px-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <ChevronDown className="h-3 w-3" />
                       </Button>
