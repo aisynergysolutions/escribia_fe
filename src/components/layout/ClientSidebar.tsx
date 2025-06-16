@@ -10,7 +10,8 @@ import {
   BarChart3,
   Settings,
   MessageCircle,
-  PlusCircle
+  PlusCircle,
+  Linkedin
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,12 @@ const clientNavItems = [
     title: 'Overview', 
     path: '', 
     icon: LayoutDashboard,
+    group: 'main'
+  },
+  { 
+    title: 'LinkedIn Accounts', 
+    path: '/linkedin-accounts', 
+    icon: Linkedin,
     group: 'main'
   },
   { 
