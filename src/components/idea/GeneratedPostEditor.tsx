@@ -69,6 +69,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(versionHistory.length - 1);
   const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('desktop');
+  const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const lastSelection = useRef<Range | null>(null);
@@ -350,6 +351,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   };
 
   const handleShowComments = () => {
+    setShowCommentsPanel(prev => !prev);
     onToggleCommentsPanel();
   };
 
@@ -477,6 +479,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onNextVersion={handleNextVersion}
           viewMode={viewMode}
           onViewModeToggle={handleViewModeToggle}
+          showCommentsPanel={showCommentsPanel}
         />
         
         <EditorContainer
