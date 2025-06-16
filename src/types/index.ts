@@ -1,5 +1,4 @@
 
-
 // Re-export interfaces
 export type {
   Idea,
@@ -8,12 +7,8 @@ export type {
   Agency
 } from './interfaces';
 
-export type { LinkedInAccount } from './linkedinAccount';
-
 // Re-export mock data
 export { mockIdeas } from './mockIdeas';
 export { mockClients } from './mockClients';
 export { mockTemplates } from './mockTemplates';
 export { mockAgency } from './mockAgency';
-export { mockLinkedInAccounts } from './mockLinkedInAccounts';
-

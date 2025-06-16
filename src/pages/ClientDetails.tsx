@@ -8,7 +8,6 @@ import CalendarSection from '../components/client/CalendarSection';
 import ResourcesSection from '../components/client/ResourcesSection';
 import AnalyticsSection from '../components/client/AnalyticsSection';
 import ClientSettingsSection from '../components/client/ClientSettingsSection';
-import LinkedInAccountsSection from '../components/client/LinkedInAccountsSection';
 import { mockClients } from '../types';
 
 const ClientDetails = () => {
@@ -21,7 +20,6 @@ const ClientDetails = () => {
   // Determine current section based on path
   const getCurrentSection = () => {
     const path = location.pathname;
-    if (path.endsWith('/linkedin-accounts')) return 'linkedin-accounts';
     if (path.endsWith('/posts')) return 'posts';
     if (path.endsWith('/comments')) return 'comments';
     if (path.endsWith('/calendar')) return 'calendar';
@@ -46,8 +44,6 @@ const ClientDetails = () => {
 
   const renderContent = () => {
     switch (currentSection) {
-      case 'linkedin-accounts':
-        return <LinkedInAccountsSection clientId={clientId!} />;
       case 'posts':
         return <PostsSection clientId={clientId!} />;
       case 'comments':
