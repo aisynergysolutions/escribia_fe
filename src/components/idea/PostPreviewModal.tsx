@@ -131,8 +131,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
           </div>
         </div>
         
-        {/* Preview Area */}
-        <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
+        {/* Preview Area with Scroll Container */}
+        <div className="flex-1 flex items-start justify-center p-6 overflow-auto">
           <div 
             className={`
               ${deviceType === 'mobile' ? 'w-[375px]' : 'w-full max-w-[600px]'} 
@@ -140,8 +140,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               rounded-lg shadow-lg border overflow-hidden
             `}
           >
-            {/* LinkedIn Header */}
-            <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+            {/* LinkedIn Header - Always visible */}
+            <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} flex-shrink-0`}>
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-full ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
                 <div>
@@ -155,54 +155,56 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               </div>
             </div>
             
-            {/* Post Content */}
-            <div className="p-4">
-              <div className="relative">
-                <div 
-                  ref={contentRef}
-                  className={`text-sm leading-relaxed mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
-                >
-                  {isExpanded ? (
-                    <div>
-                      <span dangerouslySetInnerHTML={{ __html: postContent }} />
-                      {shouldShowMore && (
-                        <span>
-                          {' '}
-                          <button
-                            onClick={handleSeeLess}
-                            className={`font-medium ${
-                              theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                            }`}
-                          >
-                            See less
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      {shouldShowMore ? (
-                        <span>
-                          {truncatedContent}
-                          <button
-                            onClick={handleSeeMore}
-                            className={`font-medium ${
-                              theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                            }`}
-                          >
-                            ...more
-                          </button>
-                        </span>
-                      ) : (
+            {/* Post Content with Proper Scrolling */}
+            <div className="flex flex-col max-h-[60vh] overflow-hidden">
+              <div className="p-4 overflow-y-auto flex-1">
+                <div className="relative">
+                  <div 
+                    ref={contentRef}
+                    className={`text-sm leading-relaxed mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
+                  >
+                    {isExpanded ? (
+                      <div>
                         <span dangerouslySetInnerHTML={{ __html: postContent }} />
-                      )}
-                    </div>
-                  )}
+                        {shouldShowMore && (
+                          <span>
+                            {' '}
+                            <button
+                              onClick={handleSeeLess}
+                              className={`font-medium ${
+                                theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                              }`}
+                            >
+                              See less
+                            </button>
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        {shouldShowMore ? (
+                          <span>
+                            {truncatedContent}
+                            <button
+                              onClick={handleSeeMore}
+                              className={`font-medium ${
+                                theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                              }`}
+                            >
+                              ...more
+                            </button>
+                          </span>
+                        ) : (
+                          <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              {/* LinkedIn Engagement Bar */}
-              <div className={`pt-3 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+              {/* LinkedIn Engagement Bar - Always visible at bottom */}
+              <div className={`p-4 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} flex-shrink-0`}>
                 <div className="flex items-center justify-between text-sm">
                   <div className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     <div className="flex -space-x-1">
