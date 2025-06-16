@@ -1,29 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Copy, Save, Sparkles, MessageCircle, RotateCcw, ExternalLink, Calendar, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import EditorMetrics from './EditorMetrics';
-import VersionHistory from '../VersionHistory';
-import { CommentThread } from './CommentsPanel';
+import FloatingToolbar from './FloatingToolbar';
+import AIEditToolbar from './AIEditToolbar';
 import PostPreviewModal from './PostPreviewModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
+import EditorToolbar from './EditorToolbar';
+import EditorContainer from './EditorContainer';
+import EditingInstructions from './EditingInstructions';
+import CommentPopover from './CommentPopover';
+import { CommentThread } from './CommentsPanel';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
-  onGeneratedPostChange: (text: string) => void;
+  onGeneratedPostChange: (value: string) => void;
   editingInstructions: string;
-  onEditingInstructionsChange: (text: string) => void;
+  onEditingInstructionsChange: (value: string) => void;
   onCopyText: () => void;
   onRegenerateWithInstructions: () => void;
   onSave: () => void;
   hasUnsavedChanges: boolean;
   onUnsavedChangesChange: (hasChanges: boolean) => void;
-  versionHistory: any[];
+  versionHistory: Array<{
+    id: string;
+    version: number;
+    text: string;
+    createdAt: Date;
+    generatedByAI: boolean;
+    notes: string;
+  }>;
   onRestoreVersion: (text: string) => void;
   onToggleCommentsPanel: () => void;
   comments: CommentThread[];
@@ -39,282 +44,486 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   onRegenerateWithInstructions,
   onSave,
   hasUnsavedChanges,
+  onUnsavedChangesChange,
   versionHistory,
   onRestoreVersion,
   onToggleCommentsPanel,
   comments,
   setComments
 }) => {
-  const [showEditingInstructions, setShowEditingInstructions] = useState(false);
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [toolbarPosition, setToolbarPosition] = useState({
+    top: 0,
+    left: 0
+  });
+  const [toolbarVisible, setToolbarVisible] = useState(false);
+  const [aiEditToolbarVisible, setAiEditToolbarVisible] = useState(false);
+  const [originalPost, setOriginalPost] = useState(generatedPost);
+  const [selectedText, setSelectedText] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showChatBox, setShowChatBox] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
-  const [isCommentsActive, setIsCommentsActive] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
-
   const [charCount, setCharCount] = useState(0);
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(versionHistory.length - 1);
+  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('desktop');
+  const [showCommentsPanel, setShowCommentsPanel] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const lastSelection = useRef<Range | null>(null);
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const text = textarea.value;
-      setCharCount(text.length);
+  // NEW state for comment popover
+  const [commentPopover, setCommentPopover] = useState({ visible: false, top: 0, left: 0 });
 
-      // Calculate line count and truncation
-      const lineHeight = 24; // Approximate line height in pixels
-      const lines = text.split('\n');
-      let totalLines = 0;
-      
-      // Calculate visual lines accounting for text wrapping
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        const textareaWidth = textarea.clientWidth - 32; // Account for padding
-        
-        for (const line of lines) {
-          if (line === '') {
-            totalLines += 1;
-          } else {
-            const lineWidth = context.measureText(line).width;
-            const wrappedLines = Math.ceil(lineWidth / textareaWidth) || 1;
-            totalLines += wrappedLines;
-          }
-        }
-      } else {
-        totalLines = lines.length;
-      }
-      
-      setLineCount(totalLines);
-      setShowTruncation(totalLines > 3);
-      setCutoffLineTop(lineHeight * 3 + 12); // 12px for top padding
-    }
-  }, [generatedPost]);
-
-  const handleCommentsToggle = () => {
-    setIsCommentsActive(!isCommentsActive);
-    onToggleCommentsPanel();
+  // Updated utility function to calculate content metrics with precise cutoff positioning
+  const calculateContentMetrics = (content: string) => {
+    const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
+    const charCount = textContent.length;
+    
+    // Calculate precise line positioning based on view mode
+    const lineHeight = 21; // 14px * 1.5
+    const paddingTop = 24; // Container's padding-top where text actually starts
+    
+    // Use different widths based on view mode
+    const containerWidth = viewMode === 'mobile' ? 272 : 504; // Effective content width (excluding padding)
+    
+    // Create a temporary element to measure line count
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = `
+      position: absolute;
+      visibility: hidden;
+      width: ${containerWidth}px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    `;
+    tempDiv.innerHTML = content || 'A';
+    document.body.appendChild(tempDiv);
+    
+    const height = tempDiv.offsetHeight;
+    const lines = Math.max(1, Math.ceil(height / lineHeight));
+    
+    document.body.removeChild(tempDiv);
+    
+    // Position the line exactly after the 3rd line of text
+    // Account for padding-top and add exactly 3 line heights
+    const threeLineHeight = lineHeight * 3;
+    setCutoffLineTop(paddingTop + threeLineHeight);
+    
+    return { charCount, lineCount: lines };
   };
 
   const handleTextSelection = () => {
-    if (!textareaRef.current) return;
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0 && editorRef.current?.contains(selection.anchorNode)) {
+      const selectedText = selection.toString();
+      setSelectedText(selectedText);
+      const range = selection.getRangeAt(0);
+      lastSelection.current = range.cloneRange();
+      const rect = range.getBoundingClientRect();
+      setToolbarPosition({
+        top: rect.top + window.scrollY,
+        left: rect.left + rect.width / 2
+      });
+      setToolbarVisible(true);
+      setAiEditToolbarVisible(false);
+    } else {
+      setToolbarVisible(false);
+      setAiEditToolbarVisible(false);
+      setSelectedText('');
+    }
+  };
+
+  const handleAIEdit = () => {
+    if (selectedText) {
+      setToolbarVisible(false);
+      setTimeout(() => {
+        setAiEditToolbarVisible(true);
+      }, 50);
+    }
+  };
+
+  const handleAIEditApply = (instruction: string) => {
+    if (selectedText) {
+      toast({
+        title: "AI Edit Applied",
+        description: `Instruction: "${instruction}" applied to selected text.`
+      });
+      setAiEditToolbarVisible(false);
+    }
+  };
+
+  const handleAIEditClose = () => {
+    setAiEditToolbarVisible(false);
+    if (selectedText) {
+      setToolbarVisible(true);
+    }
+  };
+
+  const handleCommentRequest = () => {
+    if (lastSelection.current) {
+      const rect = lastSelection.current.getBoundingClientRect();
+      setCommentPopover({
+        visible: true,
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2,
+      });
+      setToolbarVisible(false);
+    }
+  };
+
+  const handleSaveComment = (commentText: string) => {
+    if (!lastSelection.current || !editorRef.current) return;
     
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    selection.removeAllRanges();
+    selection.addRange(lastSelection.current);
+
+    const commentId = `comment-${Date.now()}`;
+    const mark = document.createElement('mark');
+    mark.dataset.commentId = commentId;
     
-    if (start !== end) {
-      const selectedText = textarea.value.substring(start, end);
-      if (selectedText.trim()) {
-        const newComment: CommentThread = {
-          id: `comment-${Date.now()}`,
-          selectionText: selectedText,
-          replies: [{
-            id: `reply-${Date.now()}`,
-            author: 'You',
-            text: `Comment on: "${selectedText}"`,
-            createdAt: new Date()
-          }],
-          resolved: false
-        };
-        setComments(prev => [...prev, newComment]);
-        toast({ title: "Comment added to selection" });
+    try {
+      lastSelection.current.surroundContents(mark);
+    } catch(e) {
+      console.error("Could not wrap selection", e);
+      toast({ title: "Error", description: "Could not add comment to a selection that spans multiple paragraphs.", variant: "destructive" });
+      setCommentPopover({ visible: false, top: 0, left: 0 });
+      return;
+    }
+    
+    const newThread: CommentThread = {
+      id: commentId,
+      selectionText: lastSelection.current.toString(),
+      replies: [{ id: `reply-${Date.now()}`, author: 'You', text: commentText, createdAt: new Date() }],
+      resolved: false,
+    };
+    setComments([...comments, newThread]);
+
+    onGeneratedPostChange(editorRef.current.innerHTML);
+    setCommentPopover({ visible: false, top: 0, left: 0 });
+    lastSelection.current = null;
+    selection.removeAllRanges();
+    toast({ title: "Comment added." });
+  };
+
+  const handleFormat = (format: string) => {
+    const selection = window.getSelection();
+    if (!selection || !editorRef.current) return;
+    if (format === 'insertUnorderedList') {
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      let listElement = null;
+      if (range) {
+        let node = range.startContainer;
+        while (node && node !== editorRef.current) {
+          if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'UL') {
+            listElement = node as Element;
+            break;
+          }
+          node = node.parentNode;
+        }
+      }
+      if (listElement) {
+        document.execCommand('insertUnorderedList', false);
+      } else {
+        document.execCommand('insertUnorderedList', false);
+      }
+    } else {
+      document.execCommand(format, false);
+    }
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
+    }
+  };
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
+      
+      // Update metrics
+      const metrics = calculateContentMetrics(newContent);
+      setCharCount(metrics.charCount);
+      setLineCount(metrics.lineCount);
+      setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.ctrlKey && event.key === 'c') {
+      event.preventDefault();
+      handleCopyWithFormatting();
+    }
+    if (event.ctrlKey && event.key === 's') {
+      event.preventDefault();
+      handleSave();
+    }
+  };
+
+  const handleCopyWithFormatting = async () => {
+    if (editorRef.current) {
+      try {
+        const selection = window.getSelection();
+        let htmlContent = '';
+        let textContent = '';
+        if (selection && selection.toString().length > 0) {
+          const range = selection.getRangeAt(0);
+          const fragment = range.cloneContents();
+          const tempDiv = document.createElement('div');
+          tempDiv.appendChild(fragment);
+          htmlContent = tempDiv.innerHTML;
+          textContent = selection.toString();
+        } else {
+          htmlContent = editorRef.current.innerHTML;
+          textContent = editorRef.current.innerText || editorRef.current.textContent || '';
+        }
+        if (navigator.clipboard && window.ClipboardItem) {
+          const clipboardItem = new ClipboardItem({
+            'text/html': new Blob([htmlContent], {
+              type: 'text/html'
+            }),
+            'text/plain': new Blob([textContent], {
+              type: 'text/plain'
+            })
+          });
+          await navigator.clipboard.write([clipboardItem]);
+        } else {
+          await navigator.clipboard.writeText(textContent);
+        }
+      } catch (err) {
+        console.error('Failed to copy with formatting, falling back to plain text:', err);
+        const selection = window.getSelection();
+        const textContent = selection && selection.toString().length > 0 ? selection.toString() : editorRef.current.innerText || editorRef.current.textContent || '';
+        await navigator.clipboard.writeText(textContent);
       }
     }
   };
 
-  const handleCopy = () => {
-    onCopyText();
-    toast({ title: "Copied to clipboard" });
+  const insertEmoji = (emoji: string) => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const textNode = document.createTextNode(emoji);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        editorRef.current.appendChild(document.createTextNode(emoji));
+      }
+      const newContent = editorRef.current.innerHTML;
+      onGeneratedPostChange(newContent);
+      checkForChanges(newContent);
+    }
+  };
+
+  const checkForChanges = (currentContent: string) => {
+    const hasChanges = currentContent !== originalPost;
+    onUnsavedChangesChange(hasChanges);
   };
 
   const handleSave = () => {
     onSave();
-    toast({ title: "Changes saved" });
-  };
-
-  const handleSchedulePost = () => {
-    setShowScheduleModal(true);
-  };
-
-  const handlePostNow = () => {
-    setShowPostNowModal(true);
+    setOriginalPost(generatedPost);
+    onUnsavedChangesChange(false);
+    toast({
+      title: "Saved",
+      description: "Your changes have been saved successfully."
+    });
   };
 
   const handlePreview = () => {
     setShowPreviewModal(true);
   };
 
-  const handleRegenerateWithInstructions = () => {
-    onRegenerateWithInstructions();
-    setShowEditingInstructions(false);
+  const handleShowComments = () => {
+    setShowCommentsPanel(prev => !prev);
+    onToggleCommentsPanel();
   };
 
+  const handleRegeneratePost = () => {
+    toast({
+      title: "Regenerating Post",
+      description: "AI is generating a new version of your post..."
+    });
+    onRegenerateWithInstructions();
+  };
+
+  const handleSchedule = (date: Date, time: string) => {
+    toast({
+      title: "Post Scheduled",
+      description: `Your post has been scheduled for ${date.toLocaleDateString()} at ${time}.`
+    });
+  };
+
+  const handlePostNow = () => {
+    toast({
+      title: "Post Published",
+      description: "Your post has been successfully published to LinkedIn."
+    });
+  };
+
+  const handlePreviousVersion = () => {
+    if (currentVersionIndex > 0) {
+      const newIndex = currentVersionIndex - 1;
+      setCurrentVersionIndex(newIndex);
+      onRestoreVersion(versionHistory[newIndex].text);
+      toast({
+        title: "Version Restored",
+        description: `Switched to version ${versionHistory[newIndex].version}`
+      });
+    }
+  };
+
+  const handleNextVersion = () => {
+    if (currentVersionIndex < versionHistory.length - 1) {
+      const newIndex = currentVersionIndex + 1;
+      setCurrentVersionIndex(newIndex);
+      onRestoreVersion(versionHistory[newIndex].text);
+      toast({
+        title: "Version Restored",
+        description: `Switched to version ${versionHistory[newIndex].version}`
+      });
+    }
+  };
+
+  const handleViewModeToggle = () => {
+    setViewMode(prev => prev === 'desktop' ? 'mobile' : 'desktop');
+  };
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
+      editorRef.current.innerHTML = generatedPost;
+      // Update metrics when content changes
+      const metrics = calculateContentMetrics(generatedPost);
+      setCharCount(metrics.charCount);
+      setLineCount(metrics.lineCount);
+      setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
+    }
+  }, [generatedPost, viewMode]); // Added viewMode dependency
+
+  useEffect(() => {
+    setOriginalPost(generatedPost);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.toString().length === 0) {
+        setToolbarVisible(false);
+        setAiEditToolbarVisible(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
-    <TooltipProvider>
-      <Card className="w-full">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Generated Post</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowVersionHistory(!showVersionHistory)}
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                History
-              </Button>
-              <Button
-                variant={isCommentsActive ? "default" : "outline"}
-                size="sm"
-                onClick={handleCommentsToggle}
-                className={isCommentsActive ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-50 text-gray-600 hover:bg-gray-100"}
-              >
-                <MessageCircle className="h-4 w-4 mr-1" />
-                Comments ({comments.filter(c => !c.resolved).length})
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <div className="relative">
-            <Textarea
-              ref={textareaRef}
-              value={generatedPost}
-              onChange={(e) => onGeneratedPostChange(e.target.value)}
-              onMouseUp={handleTextSelection}
-              onKeyUp={handleTextSelection}
-              placeholder="Your generated post will appear here..."
-              className="min-h-[200px] resize-none pr-20 pb-8 text-sm leading-relaxed"
-              style={{ lineHeight: '1.7' }}
-            />
-            
-            <EditorMetrics
-              charCount={charCount}
-              lineCount={lineCount}
-              showTruncation={showTruncation}
-              cutoffLineTop={cutoffLineTop}
-            />
-          </div>
-
-          {showVersionHistory && (
-            <div className="border rounded-lg p-4 bg-gray-50">
-              <VersionHistory
-                versions={versionHistory}
-                onRestore={onRestoreVersion}
-              />
-            </div>
-          )}
-
-          {showEditingInstructions && (
-            <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-blue-900">Editing Instructions</h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowEditingInstructions(false)}
-                  className="text-blue-700 hover:text-blue-900"
-                >
-                  Cancel
-                </Button>
-              </div>
-              <Textarea
-                value={editingInstructions}
-                onChange={(e) => onEditingInstructionsChange(e.target.value)}
-                placeholder="Describe how you'd like to modify this post..."
-                className="bg-white border-blue-200"
-                rows={3}
-              />
-              <Button
-                onClick={handleRegenerateWithInstructions}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={!editingInstructions.trim()}
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Regenerate with Instructions
-              </Button>
-            </div>
-          )}
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={handleCopy}>
-                <Copy className="h-4 w-4 mr-1" />
-                Copy
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEditingInstructions(!showEditingInstructions)}
-              >
-                <Sparkles className="h-4 w-4 mr-1" />
-                Edit with AI
-              </Button>
-              <Button variant="outline" size="sm" onClick={handlePreview}>
-                <ExternalLink className="h-4 w-4 mr-1" />
-                Preview
-              </Button>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSave}
-                disabled={!hasUnsavedChanges}
-              >
-                <Save className="h-4 w-4 mr-1" />
-                Save
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleSchedulePost}>
-                <Calendar className="h-4 w-4 mr-1" />
-                Schedule
-              </Button>
-              <Button size="sm" onClick={handlePostNow} className="bg-indigo-600 hover:bg-indigo-700">
-                <Send className="h-4 w-4 mr-1" />
-                Post Now
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-
-        <PostPreviewModal
-          open={showPreviewModal}
-          onOpenChange={setShowPreviewModal}
-          postContent={generatedPost}
+    <div className="space-y-6">
+      <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} onComment={handleCommentRequest} />
+      
+      <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
+      
+      <CommentPopover
+        visible={commentPopover.visible}
+        position={commentPopover}
+        onSave={handleSaveComment}
+        onCancel={() => {
+          setCommentPopover({ visible: false, top: 0, left: 0 });
+          lastSelection.current = null;
+        }}
+      />
+      
+      <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={generatedPost} />
+      
+      <SchedulePostModal 
+        open={showScheduleModal} 
+        onOpenChange={setShowScheduleModal} 
+        postContent={generatedPost}
+        onSchedule={handleSchedule}
+      />
+      
+      <PostNowModal 
+        open={showPostNowModal} 
+        onOpenChange={setShowPostNowModal} 
+        postContent={generatedPost}
+        onPost={handlePostNow}
+      />
+      
+      <div className="bg-white rounded-lg border">
+        <EditorToolbar
+          onFormat={handleFormat}
+          onInsertEmoji={insertEmoji}
+          onPreview={handlePreview}
+          onShowComments={handleShowComments}
+          onCopy={handleCopyWithFormatting}
+          onSchedule={() => setShowScheduleModal(true)}
+          onPostNow={() => setShowPostNowModal(true)}
+          versionHistory={versionHistory}
+          currentVersionIndex={currentVersionIndex}
+          onPreviousVersion={handlePreviousVersion}
+          onNextVersion={handleNextVersion}
+          viewMode={viewMode}
+          onViewModeToggle={handleViewModeToggle}
+          showCommentsPanel={showCommentsPanel}
+        />
+        
+        <EditorContainer
+          editorRef={editorRef}
+          generatedPost={generatedPost}
+          onInput={handleInput}
+          onMouseUp={handleTextSelection}
+          onKeyUp={handleTextSelection}
+          onKeyDown={handleKeyDown}
+          charCount={charCount}
+          lineCount={lineCount}
+          showTruncation={showTruncation}
+          cutoffLineTop={cutoffLineTop}
+          viewMode={viewMode}
         />
 
-        <SchedulePostModal
-          open={showScheduleModal}
-          onOpenChange={setShowScheduleModal}
-          postContent={generatedPost}
-          onSchedule={() => {
-            toast({ title: "Post scheduled successfully" });
-            setShowScheduleModal(false);
-          }}
+        <EditingInstructions
+          showChatBox={showChatBox}
+          onToggleChatBox={() => setShowChatBox(!showChatBox)}
+          editingInstructions={editingInstructions}
+          onEditingInstructionsChange={onEditingInstructionsChange}
+          onRegeneratePost={handleRegeneratePost}
+          onRegenerateWithInstructions={onRegenerateWithInstructions}
         />
-
-        <PostNowModal
-          open={showPostNowModal}
-          onOpenChange={setShowPostNowModal}
-          postContent={generatedPost}
-          onPost={() => {
-            toast({ title: "Post published successfully" });
-            setShowPostNowModal(false);
-          }}
-        />
-      </Card>
-    </TooltipProvider>
+      </div>
+      
+      <style>
+        {`
+          mark[data-comment-id] {
+            background-color: rgba(186, 230, 253, 0.7);
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          mark[data-comment-id]:hover {
+            background-color: rgba(147, 216, 253, 0.9);
+          }
+          @media (max-width: 600px) {
+            .linkedin-safe {
+              max-width: 100% !important;
+            }
+          }
+        `}
+      </style>
+    </div>
   );
 };
 

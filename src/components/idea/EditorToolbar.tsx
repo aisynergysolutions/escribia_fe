@@ -28,6 +28,7 @@ interface EditorToolbarProps {
   onNextVersion: () => void;
   viewMode: 'mobile' | 'desktop';
   onViewModeToggle: () => void;
+  showCommentsPanel?: boolean;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -43,7 +44,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onPreviousVersion,
   onNextVersion,
   viewMode,
-  onViewModeToggle
+  onViewModeToggle,
+  showCommentsPanel = false
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
@@ -152,7 +154,16 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={onShowComments} className="h-8 w-8 p-0">
+              <Button 
+                variant={showCommentsPanel ? "default" : "outline"} 
+                size="sm" 
+                onClick={onShowComments} 
+                className={`h-8 w-8 p-0 ${
+                  showCommentsPanel 
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200' 
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'
+                }`}
+              >
                 <MessageSquare className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
