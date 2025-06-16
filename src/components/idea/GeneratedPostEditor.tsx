@@ -208,8 +208,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             <div className="border rounded-lg p-4 bg-gray-50">
               <VersionHistory
                 versions={versionHistory}
-                onRestoreVersion={onRestoreVersion}
-                onClose={() => setShowVersionHistory(false)}
+                onRestore={onRestoreVersion}
               />
             </div>
           )}
