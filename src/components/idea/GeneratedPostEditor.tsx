@@ -68,6 +68,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(versionHistory.length - 1);
+  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('desktop');
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const lastSelection = useRef<Range | null>(null);
@@ -80,16 +81,19 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
     const charCount = textContent.length;
     
-    // Calculate precise line positioning
+    // Calculate precise line positioning based on view mode
     const lineHeight = 21; // 14px * 1.5
     const paddingTop = 24; // Container's padding-top where text actually starts
+    
+    // Use different widths based on view mode
+    const containerWidth = viewMode === 'mobile' ? 272 : 504; // Effective content width (excluding padding)
     
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
     tempDiv.style.cssText = `
       position: absolute;
       visibility: hidden;
-      width: 552px;
+      width: ${containerWidth}px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
       font-size: 14px;
       line-height: 1.5;
@@ -395,6 +399,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     }
   };
 
+  const handleViewModeToggle = () => {
+    setViewMode(prev => prev === 'desktop' ? 'mobile' : 'desktop');
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
       editorRef.current.innerHTML = generatedPost;
@@ -404,7 +412,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       setLineCount(metrics.lineCount);
       setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
     }
-  }, [generatedPost]);
+  }, [generatedPost, viewMode]); // Added viewMode dependency
 
   useEffect(() => {
     setOriginalPost(generatedPost);
@@ -467,6 +475,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           currentVersionIndex={currentVersionIndex}
           onPreviousVersion={handlePreviousVersion}
           onNextVersion={handleNextVersion}
+          viewMode={viewMode}
+          onViewModeToggle={handleViewModeToggle}
         />
         
         <EditorContainer
@@ -480,6 +490,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           lineCount={lineCount}
           showTruncation={showTruncation}
           cutoffLineTop={cutoffLineTop}
+          viewMode={viewMode}
         />
 
         <EditingInstructions

@@ -13,6 +13,7 @@ interface EditorContainerProps {
   lineCount: number;
   showTruncation: boolean;
   cutoffLineTop: number;
+  viewMode: 'mobile' | 'desktop';
 }
 
 const EditorContainer: React.FC<EditorContainerProps> = ({
@@ -25,12 +26,15 @@ const EditorContainer: React.FC<EditorContainerProps> = ({
   charCount,
   lineCount,
   showTruncation,
-  cutoffLineTop
+  cutoffLineTop,
+  viewMode
 }) => {
+  const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
+
   return (
     <div className="p-4 bg-gray-50">
       <div 
-        className="linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-200 max-w-full sm:max-w-[552px]"
+        className={`linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-300 ${maxWidthClass}`}
       >
         <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '45px' }}>
           <div 

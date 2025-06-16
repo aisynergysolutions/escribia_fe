@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Plus } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Plus, Monitor, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -26,6 +26,8 @@ interface EditorToolbarProps {
   currentVersionIndex: number;
   onPreviousVersion: () => void;
   onNextVersion: () => void;
+  viewMode: 'mobile' | 'desktop';
+  onViewModeToggle: () => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -39,7 +41,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   versionHistory,
   currentVersionIndex,
   onPreviousVersion,
-  onNextVersion
+  onNextVersion,
+  viewMode,
+  onViewModeToggle
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
@@ -82,6 +86,18 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </div>
           </PopoverContent>
         </Popover>
+        
+        {/* View Mode Toggle Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onViewModeToggle} className="h-8 w-8 p-0">
+              {viewMode === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{viewMode === 'desktop' ? 'Switch to Mobile View' : 'Switch to Desktop View'}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
       
       <TooltipProvider>
