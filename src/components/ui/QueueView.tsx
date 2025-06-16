@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { MoreVertical, GripVertical, Calendar as CalendarIcon } from 'lucide-react';
@@ -44,10 +43,10 @@ const QueueView: React.FC = () => {
         clientId: idea.clientId,
         scheduledTime: new Date(idea.scheduledPostAt!.seconds * 1000),
         title: idea.title,
-        preview: idea.content.substring(0, 60) + (idea.content.length > 60 ? '...' : ''),
+        preview: idea.currentDraftText.substring(0, 60) + (idea.currentDraftText.length > 60 ? '...' : ''),
         status: idea.status,
         clientName: client?.clientName || 'Unknown Client',
-        clientAvatar: client?.avatar,
+        clientAvatar: client?.profileImage,
       };
     }).sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
   });
