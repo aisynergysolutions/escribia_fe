@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -41,7 +42,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   ];
 
   useEffect(() => {
-    if (contentRef.current && open) {
+    if (contentRef.current && open && postContent) {
       // Strip HTML tags for text measurement
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = postContent;
@@ -51,33 +52,51 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       const measuringDiv = document.createElement('div');
       measuringDiv.style.visibility = 'hidden';
       measuringDiv.style.position = 'absolute';
-      measuringDiv.style.width = contentRef.current.offsetWidth + 'px';
+      measuringDiv.style.width = '504px'; // LinkedIn post width
       measuringDiv.style.fontSize = '14px';
       measuringDiv.style.lineHeight = '1.5';
-      measuringDiv.style.fontFamily = window.getComputedStyle(contentRef.current).fontFamily;
+      measuringDiv.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      measuringDiv.style.padding = '0';
+      measuringDiv.style.margin = '0';
       document.body.appendChild(measuringDiv);
       
-      // Calculate how much text fits in 3 lines
+      // Calculate how much text fits in exactly 3 lines
       const lineHeight = 21; // 14px * 1.5 line-height
       const maxHeight = lineHeight * 3;
       
-      let truncateAt = plainText.length;
-      let testText = plainText;
+      // Binary search to find the optimal truncation point
+      let start = 0;
+      let end = plainText.length;
+      let bestFit = 0;
       
-      while (testText.length > 0) {
-        measuringDiv.textContent = testText + '...more';
+      while (start <= end) {
+        const mid = Math.floor((start + end) / 2);
+        const testText = plainText.substring(0, mid);
+        measuringDiv.textContent = testText;
+        
         if (measuringDiv.offsetHeight <= maxHeight) {
-          truncateAt = testText.length;
-          break;
+          bestFit = mid;
+          start = mid + 1;
+        } else {
+          end = mid - 1;
         }
-        testText = testText.substring(0, testText.length - 10);
       }
       
       document.body.removeChild(measuringDiv);
       
-      if (truncateAt < plainText.length) {
+      // Check if we need truncation
+      if (bestFit < plainText.length && bestFit > 0) {
         setShouldShowMore(true);
-        setTruncatedContent(plainText.substring(0, truncateAt));
+        // Find the last complete word within the character limit
+        let truncateAt = bestFit;
+        while (truncateAt > 0 && plainText[truncateAt] !== ' ') {
+          truncateAt--;
+        }
+        // If we went too far back, use the original truncation point
+        if (truncateAt < bestFit * 0.8) {
+          truncateAt = bestFit;
+        }
+        setTruncatedContent(plainText.substring(0, truncateAt).trim());
       } else {
         setShouldShowMore(false);
         setTruncatedContent(plainText);
@@ -147,6 +166,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       <div 
                         ref={contentRef}
                         className="text-sm leading-relaxed text-gray-900 mb-4"
+                        style={{
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontSize: '14px',
+                          lineHeight: '1.5'
+                        }}
                       >
                         {isExpanded ? (
                           <div>
@@ -156,9 +180,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                                 {' '}
                                 <button
                                   onClick={handleSeeLess}
-                                  className="font-medium text-blue-600 hover:text-blue-700"
+                                  className="font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
                                 >
-                                  See less
+                                  ...see less
                                 </button>
                               </span>
                             )}
@@ -170,9 +194,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                                 {truncatedContent}
                                 <button
                                   onClick={handleSeeMore}
-                                  className="font-medium text-blue-600 hover:text-blue-700"
+                                  className="font-medium text-blue-600 hover:text-blue-700 cursor-pointer ml-1"
                                 >
-                                  ...more
+                                  ...see more
                                 </button>
                               </span>
                             ) : (
@@ -181,6 +205,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                           </div>
                         )}
                       </div>
+                      
+                      {/* Separator line at 3rd line position when collapsed */}
+                      {!isExpanded && shouldShowMore && (
+                        <Separator className="mb-4" />
+                      )}
                     </div>
                   </div>
                 </div>
