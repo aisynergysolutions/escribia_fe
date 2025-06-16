@@ -22,7 +22,7 @@ const EditorMetrics: React.FC<EditorMetricsProps> = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div 
-              className="absolute left-6 right-6 border-t border-dashed border-gray-300 cursor-help pointer-events-auto"
+              className="absolute left-6 right-6 border-t-2 border-dashed border-gray-400 cursor-help pointer-events-auto"
               style={{ 
                 top: `${cutoffLineTop + 1}px`, // Adjust spacing to be between 3rd and 4th line
                 zIndex: 10
