@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +88,15 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ onAddClient, children }
       writingStyle: formData.writingStyle,
       createdAt: now,
       updatedAt: now,
+      subClients: [
+        {
+          id: `subclient_${Date.now()}_company`,
+          name: formData.clientName,
+          role: 'Company',
+          linkedinConnected: false,
+          createdAt: now
+        }
+      ],
       brandProfile: {
         language: formData.language,
         locationFocus: formData.locationFocus,

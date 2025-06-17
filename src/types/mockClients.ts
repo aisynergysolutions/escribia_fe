@@ -13,6 +13,28 @@ export const mockClients: Client[] = [
     writingStyle: 'Professional and informative',
     createdAt: { seconds: 1669852800, nanoseconds: 0 },
     updatedAt: { seconds: 1672531200, nanoseconds: 0 },
+    subClients: [
+      {
+        id: 'subclient1_company',
+        name: 'Tech Solutions Inc.',
+        role: 'Company',
+        linkedinConnected: true,
+        linkedinAccountName: 'Tech Solutions Inc.',
+        linkedinExpiryDate: 'June 15, 2025',
+        writingStyle: 'Professional and informative',
+        customInstructions: 'Always mention ROI and business impact',
+        createdAt: { seconds: 1669852800, nanoseconds: 0 }
+      },
+      {
+        id: 'subclient1_ceo',
+        name: 'John Doe',
+        role: 'CEO',
+        linkedinConnected: false,
+        writingStyle: 'Authoritative and visionary',
+        customInstructions: 'Focus on industry leadership and innovation',
+        createdAt: { seconds: 1669852800, nanoseconds: 0 }
+      }
+    ],
     brandProfile: {
       language: 'English',
       locationFocus: 'Global',
@@ -52,6 +74,15 @@ export const mockClients: Client[] = [
     writingStyle: 'Creative and engaging',
     createdAt: { seconds: 1669939200, nanoseconds: 0 },
     updatedAt: { seconds: 1672444800, nanoseconds: 0 },
+    subClients: [
+      {
+        id: 'subclient2_company',
+        name: 'Global Marketing Corp',
+        role: 'Company',
+        linkedinConnected: false,
+        createdAt: { seconds: 1669939200, nanoseconds: 0 }
+      }
+    ],
     brandProfile: {
       language: 'English',
       locationFocus: 'North America',
@@ -90,6 +121,17 @@ export const mockClients: Client[] = [
     writingStyle: 'Compassionate and educational',
     createdAt: { seconds: 1670112000, nanoseconds: 0 },
     updatedAt: { seconds: 1672617600, nanoseconds: 0 },
+    subClients: [
+      {
+        id: 'subclient3_company',
+        name: 'HealthFirst Medical',
+        role: 'Company',
+        linkedinConnected: true,
+        linkedinAccountName: 'HealthFirst Medical',
+        linkedinExpiryDate: 'August 20, 2025',
+        createdAt: { seconds: 1670112000, nanoseconds: 0 }
+      }
+    ],
     brandProfile: {
       language: 'English',
       locationFocus: 'United States',
@@ -129,6 +171,15 @@ export const mockClients: Client[] = [
     writingStyle: 'Passionate and informative',
     createdAt: { seconds: 1670198400, nanoseconds: 0 },
     updatedAt: { seconds: 1672704000, nanoseconds: 0 },
+    subClients: [
+      {
+        id: 'subclient4_company',
+        name: 'EcoGreen Solutions',
+        role: 'Company',
+        linkedinConnected: false,
+        createdAt: { seconds: 1670198400, nanoseconds: 0 }
+      }
+    ],
     brandProfile: {
       language: 'English',
       locationFocus: 'Global',
@@ -168,6 +219,15 @@ export const mockClients: Client[] = [
     writingStyle: 'Clear and trustworthy',
     createdAt: { seconds: 1670284800, nanoseconds: 0 },
     updatedAt: { seconds: 1672790400, nanoseconds: 0 },
+    subClients: [
+      {
+        id: 'subclient5_company',
+        name: 'FinanceFlow Pro',
+        role: 'Company',
+        linkedinConnected: false,
+        createdAt: { seconds: 1670284800, nanoseconds: 0 }
+      }
+    ],
     brandProfile: {
       language: 'English',
       locationFocus: 'North America',
@@ -206,6 +266,15 @@ export const mockClients: Client[] = [
     writingStyle: 'Straightforward and reliable',
     createdAt: { seconds: 1670371200, nanoseconds: 0 },
     updatedAt: { seconds: 1672876800, nanoseconds: 0 },
+    subClients: [
+      {
+        id: 'subclient6_company',
+        name: 'BuildRight Construction',
+        role: 'Company',
+        linkedinConnected: false,
+        createdAt: { seconds: 1670371200, nanoseconds: 0 }
+      }
+    ],
     brandProfile: {
       language: 'English',
       locationFocus: 'Regional',
