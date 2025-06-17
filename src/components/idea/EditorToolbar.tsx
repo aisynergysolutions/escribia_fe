@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Bold, Italic, Underline, Strikethrough, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AddToQueueModal from './AddToQueueModal';
+import SchedulePostModal from './SchedulePostModal';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -50,6 +50,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const isFormatActive = (format: string) => activeFormats.includes(format);
 
@@ -60,6 +61,16 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const handleAddToQueueConfirm = (selectedTime: string, status: string) => {
     console.log('Adding to queue:', { selectedTime, status });
     // Here you would typically update the post status and add to queue
+  };
+
+  const handleOpenScheduleModal = () => {
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleConfirm = (date: Date, time: string) => {
+    console.log('Scheduling post:', { date, time });
+    setShowScheduleModal(false);
+    // Here you would typically handle the scheduling logic
   };
 
   return (
@@ -292,6 +303,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onOpenChange={setShowAddToQueueModal}
         postContent={postContent}
         onAddToQueue={handleAddToQueueConfirm}
+        onOpenScheduleModal={handleOpenScheduleModal}
+      />
+
+      <SchedulePostModal
+        open={showScheduleModal}
+        onOpenChange={setShowScheduleModal}
+        postContent={postContent}
+        onSchedule={handleScheduleConfirm}
       />
     </>
   );

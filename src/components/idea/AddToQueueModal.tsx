@@ -12,6 +12,7 @@ interface AddToQueueModalProps {
   onOpenChange: (open: boolean) => void;
   postContent: string;
   onAddToQueue: (selectedTime: string, status: string) => void;
+  onOpenScheduleModal: () => void;
 }
 
 const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
@@ -39,7 +40,8 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   open,
   onOpenChange,
   postContent,
-  onAddToQueue
+  onAddToQueue,
+  onOpenScheduleModal
 }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
@@ -60,12 +62,9 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
     }
   };
 
-  const formatPostPreview = (content: string) => {
-    // Strip HTML tags and truncate for preview
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    const plainText = tempDiv.textContent || tempDiv.innerText || '';
-    return plainText.length > 150 ? plainText.substring(0, 150) + '...' : plainText;
+  const handleCustomTime = () => {
+    onOpenChange(false);
+    onOpenScheduleModal();
   };
 
   return (
@@ -79,14 +78,6 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Post Preview */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Post Preview</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {formatPostPreview(postContent)}
-            </p>
-          </div>
-
           {/* Suggested Posting Time */}
           <div>
             <h3 className="text-lg font-semibold mb-4">When would you like to post this?</h3>
@@ -117,7 +108,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
             </div>
 
             {/* Other Suggested Times */}
-            <div>
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Other suggested times
               </label>
@@ -136,6 +127,18 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Custom Time Option */}
+            <div>
+              <Button
+                variant="outline"
+                onClick={handleCustomTime}
+                className="w-full flex items-center justify-center gap-2 p-3 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700"
+              >
+                <Calendar className="h-4 w-4" />
+                Choose custom time
+              </Button>
             </div>
           </div>
 
