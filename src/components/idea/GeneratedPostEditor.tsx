@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import FloatingToolbar from './FloatingToolbar';
@@ -95,32 +94,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     onContentChange: onGeneratedPostChange,
     pauseDelay: 1000 // Reduced from 3000 to 1000ms for more frequent undo/redo points
   });
-
-  // NEW function to format hashtags
-  const formatHashtags = (content: string) => {
-    // Replace hashtags with styled spans
-    return content.replace(/(#\w+)/g, '<span class="hashtag">$1</span>');
-  };
-
-  // NEW function to preserve cursor position
-  const preserveCursorPosition = () => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      return selection.getRangeAt(0).cloneRange();
-    }
-    return null;
-  };
-
-  // NEW function to restore cursor position
-  const restoreCursorPosition = (range: Range | null) => {
-    if (range) {
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-    }
-  };
 
   const calculateContentMetrics = (content: string) => {
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
@@ -292,30 +265,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleInput = () => {
     if (editorRef.current) {
-      // Preserve cursor position
-      const range = preserveCursorPosition();
-      
-      // Get the raw content
-      const rawContent = editorRef.current.innerHTML;
-      
-      // Remove existing hashtag spans to avoid nested formatting
-      const cleanContent = rawContent.replace(/<span class="hashtag">(#\w+)<\/span>/g, '$1');
-      
-      // Apply hashtag formatting
-      const formattedContent = formatHashtags(cleanContent);
-      
-      // Only update if content actually changed to prevent cursor jumping
-      if (editorRef.current.innerHTML !== formattedContent) {
-        editorRef.current.innerHTML = formattedContent;
-        // Restore cursor position
-        restoreCursorPosition(range);
-      }
-      
-      handleUndoRedoContentChange(formattedContent);
-      checkForChanges(formattedContent);
+      const newContent = editorRef.current.innerHTML;
+      handleUndoRedoContentChange(newContent);
+      checkForChanges(newContent);
       
       // Update metrics
-      const metrics = calculateContentMetrics(formattedContent);
+      const metrics = calculateContentMetrics(newContent);
       setCharCount(metrics.charCount);
       setLineCount(metrics.lineCount);
       setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
@@ -468,7 +423,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== currentContent) {
-      editorRef.current.innerHTML = formatHashtags(currentContent);
+      editorRef.current.innerHTML = currentContent;
       // Update metrics when content changes
       const metrics = calculateContentMetrics(currentContent);
       setCharCount(metrics.charCount);
@@ -585,10 +540,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           }
           mark[data-comment-id]:hover {
             background-color: rgba(147, 216, 253, 0.9);
-          }
-          .hashtag {
-            color: #1d4ed8;
-            font-weight: 400;
           }
           @media (max-width: 600px) {
             .linkedin-safe {
