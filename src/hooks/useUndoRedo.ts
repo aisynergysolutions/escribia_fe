@@ -17,7 +17,7 @@ interface UseUndoRedoProps {
 export const useUndoRedo = ({ 
   initialContent, 
   onContentChange, 
-  pauseDelay = 3000 
+  pauseDelay = 1000 // Reduced from 3000 to 1000ms for more frequent undo/redo points
 }: UseUndoRedoProps) => {
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);

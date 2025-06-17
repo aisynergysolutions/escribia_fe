@@ -63,7 +63,48 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button variant="ghost" size="sm" onClick={() => onFormat('underline')} className="h-8 w-8 p-0">
           <Underline className="h-4 w-4" />
         </Button>
+        
+        {/* Separator */}
         <div className="w-px h-6 bg-gray-300 mx-1" />
+        
+        {/* Undo/Redo Controls */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onUndo}
+              disabled={!canUndo}
+              className="h-8 w-8 p-0"
+            >
+              <Undo className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Undo (Ctrl+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onRedo}
+              disabled={!canRedo}
+              className="h-8 w-8 p-0"
+            >
+              <Redo className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Redo (Ctrl+Y)</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        {/* Separator */}
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+        
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -96,58 +137,22 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       
       <TooltipProvider>
         <div className="flex gap-2">
-          {/* Undo/Redo Controls */}
-          <div className="flex gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onUndo}
-                  disabled={!canUndo}
-                  className="h-8 w-8 p-0"
-                >
-                  <Undo className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Undo (Ctrl+Z)</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onRedo}
-                  disabled={!canRedo}
-                  className="h-8 w-8 p-0"
-                >
-                  <Redo className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Redo (Ctrl+Y)</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onShowVersionHistory}
-                  className="h-8 w-8 p-0"
-                >
-                  <History className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Version History</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+          {/* Version History Control */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onShowVersionHistory}
+                className="h-8 w-8 p-0"
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Version History</p>
+            </TooltipContent>
+          </Tooltip>
           
           <Tooltip>
             <TooltipTrigger asChild>

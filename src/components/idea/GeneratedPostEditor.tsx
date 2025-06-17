@@ -92,7 +92,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   } = useUndoRedo({
     initialContent: generatedPost,
     onContentChange: onGeneratedPostChange,
-    pauseDelay: 3000 // 3 seconds pause to create new version
+    pauseDelay: 1000 // Reduced from 3000 to 1000ms for more frequent undo/redo points
   });
 
   const calculateContentMetrics = (content: string) => {
