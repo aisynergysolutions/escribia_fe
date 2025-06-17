@@ -350,19 +350,19 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
               {/* Time Selection */}
               <div>
-                <label className="block text-sm font-medium mb-4">Enter Time</label>
-                <div className="flex items-center justify-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium mb-3">Enter Time</label>
+                <div className="flex items-center justify-center gap-2 p-3 bg-gray-50 rounded-lg">
                   {/* Hour Selection */}
                   <div className="flex flex-col items-center">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(true)}
-                      className="h-6 w-6 p-0 mb-1"
+                      className="h-5 w-5 p-0 mb-1"
                     >
                       <ChevronUp className="h-3 w-3" />
                     </Button>
-                    <div className="bg-white rounded-md border px-3 py-2 min-w-[50px] text-center cursor-pointer" onClick={handleHourClick}>
+                    <div className="bg-white rounded border px-2 py-1 min-w-[40px] text-center cursor-pointer" onClick={handleHourClick}>
                       {isEditingHour ? (
                         <Input
                           ref={hourInputRef}
@@ -370,11 +370,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                           onChange={(e) => setHourInput(e.target.value)}
                           onBlur={handleHourInputBlur}
                           onKeyDown={handleHourInputKeyDown}
-                          className="text-lg font-semibold text-center border-0 p-0 h-auto bg-transparent"
+                          className="text-sm font-medium text-center border-0 p-0 h-auto bg-transparent"
                           maxLength={2}
                         />
                       ) : (
-                        <span className="text-lg font-semibold text-gray-900">
+                        <span className="text-sm font-medium text-gray-900">
                           {selectedHour.toString().padStart(2, '0')}
                         </span>
                       )}
@@ -383,7 +383,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(false)}
-                      className="h-6 w-6 p-0 mt-1"
+                      className="h-5 w-5 p-0 mt-1"
                     >
                       <ChevronDown className="h-3 w-3" />
                     </Button>
@@ -391,7 +391,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                   </div>
 
                   {/* Colon Separator */}
-                  <div className="text-lg font-semibold text-gray-900 pb-4">:</div>
+                  <div className="text-sm font-medium text-gray-900 pb-3">:</div>
 
                   {/* Minute Selection */}
                   <div className="flex flex-col items-center">
@@ -399,11 +399,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(true)}
-                      className="h-6 w-6 p-0 mb-1"
+                      className="h-5 w-5 p-0 mb-1"
                     >
                       <ChevronUp className="h-3 w-3" />
                     </Button>
-                    <div className="bg-white rounded-md border px-3 py-2 min-w-[50px] text-center cursor-pointer" onClick={handleMinuteClick}>
+                    <div className="bg-white rounded border px-2 py-1 min-w-[40px] text-center cursor-pointer" onClick={handleMinuteClick}>
                       {isEditingMinute ? (
                         <Input
                           ref={minuteInputRef}
@@ -411,11 +411,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                           onChange={(e) => setMinuteInput(e.target.value)}
                           onBlur={handleMinuteInputBlur}
                           onKeyDown={handleMinuteInputKeyDown}
-                          className="text-lg font-semibold text-center border-0 p-0 h-auto bg-transparent"
+                          className="text-sm font-medium text-center border-0 p-0 h-auto bg-transparent"
                           maxLength={2}
                         />
                       ) : (
-                        <span className="text-lg font-semibold text-gray-900">
+                        <span className="text-sm font-medium text-gray-900">
                           {selectedMinute.toString().padStart(2, '0')}
                         </span>
                       )}
@@ -424,7 +424,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(false)}
-                      className="h-6 w-6 p-0 mt-1"
+                      className="h-5 w-5 p-0 mt-1"
                     >
                       <ChevronDown className="h-3 w-3" />
                     </Button>
@@ -432,11 +432,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                   </div>
 
                   {/* AM/PM Selection */}
-                  <div className="flex flex-col gap-1 ml-4">
+                  <div className="flex flex-col gap-1 ml-3">
                     <Badge
                       variant={isAM ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer px-3 py-1",
+                        "cursor-pointer px-2 py-0.5 text-xs",
                         isAM 
                           ? "bg-blue-500 hover:bg-blue-600 text-white" 
                           : "hover:bg-gray-100 text-gray-600"
@@ -448,7 +448,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                     <Badge
                       variant={!isAM ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer px-3 py-1",
+                        "cursor-pointer px-2 py-0.5 text-xs",
                         !isAM 
                           ? "bg-blue-500 hover:bg-blue-600 text-white" 
                           : "hover:bg-gray-100 text-gray-600"
