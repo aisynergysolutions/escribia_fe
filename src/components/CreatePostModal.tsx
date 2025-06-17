@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { mockTemplates } from '@/types';
+import { mockTemplates, mockClients } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface CreatePostModalProps {
@@ -21,6 +21,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [ideaText, setIdeaText] = useState('');
   const [selectedObjective, setSelectedObjective] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [selectedSubClient, setSelectedSubClient] = useState<string>('');
   const [voiceNotes, setVoiceNotes] = useState('');
   const [recordingLanguage, setRecordingLanguage] = useState('English');
   const [urlInput, setUrlInput] = useState('');
@@ -43,13 +44,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { toast } = useToast();
   const objectives = ['Thought Leadership', 'Product Launch', 'Event Promotion', 'Brand Awareness', 'Lead Generation', 'Customer Education', 'Community Building'];
 
+  // Get current client and sub-clients
+  const currentClient = mockClients.find(client => client.id === clientId);
+  const subClients = currentClient?.subClients || [];
+
   const handleCreateFromText = () => {
-    if (ideaText.trim() && clientId) {
+    if (ideaText.trim() && clientId && selectedSubClient) {
       const tempIdeaId = `temp-${Date.now()}`;
       const textData = {
         idea: ideaText.trim(),
         objective: selectedObjective,
-        template: selectedTemplate
+        template: selectedTemplate,
+        subClientId: selectedSubClient
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=text&data=${encodeURIComponent(JSON.stringify(textData))}`);
       setIsOpen(false);
@@ -58,13 +64,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleCreateFromVoice = () => {
-    if (clientId && hasRecording) {
+    if (clientId && hasRecording && selectedSubClient) {
       const tempIdeaId = `temp-${Date.now()}`;
       const voiceData = {
         language: recordingLanguage,
         notes: voiceNotes,
         objective: selectedObjective,
         template: selectedTemplate,
+        subClientId: selectedSubClient,
         hasRecording: true
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=voice&data=${encodeURIComponent(JSON.stringify(voiceData))}`);
@@ -74,13 +81,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleCreateFromUrl = () => {
-    if (urlInput.trim() && clientId) {
+    if (urlInput.trim() && clientId && selectedSubClient) {
       const tempIdeaId = `temp-${Date.now()}`;
       const urlData = {
         url: urlInput,
         remarks: urlRemarks,
         objective: selectedObjective,
-        template: selectedTemplate
+        template: selectedTemplate,
+        subClientId: selectedSubClient
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=url&data=${encodeURIComponent(JSON.stringify(urlData))}`);
       setIsOpen(false);
@@ -89,13 +97,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleCreateFromSuggestion = (suggestion: string) => {
-    if (clientId) {
+    if (clientId && selectedSubClient) {
       const tempIdeaId = `temp-${Date.now()}`;
-      // Send as initialIdea for population
       const suggestionData = {
-        initialIdea: suggestion, // This is the key expected by form!
+        initialIdea: suggestion,
         objective: selectedObjective,
-        template: selectedTemplate
+        template: selectedTemplate,
+        subClientId: selectedSubClient
       };
       navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=suggestion&data=${encodeURIComponent(JSON.stringify(suggestionData))}`);
       setIsOpen(false);
@@ -119,6 +127,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setIdeaText('');
     setSelectedObjective('');
     setSelectedTemplate('');
+    setSelectedSubClient('');
     setVoiceNotes('');
     setUrlInput('');
     setUrlRemarks('');
@@ -253,6 +262,30 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setSelectedMethod(methodId);
   };
 
+  const renderSubClientSelector = () => (
+    <div className="animate-fade-in">
+      <label className="block text-sm font-medium text-foreground mb-2">
+        Create post for <span className="text-destructive">*</span>
+      </label>
+      <Select value={selectedSubClient} onValueChange={setSelectedSubClient}>
+        <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
+          <SelectValue placeholder="Select who this post is for" />
+        </SelectTrigger>
+        <SelectContent>
+          {subClients.map(subClient => (
+            <SelectItem key={subClient.id} value={subClient.id}>
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>{subClient.name}</span>
+                <span className="text-xs text-muted-foreground">({subClient.role})</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   const renderObjectiveAndTemplate = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
       <div>
@@ -304,6 +337,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'text':
         return (
           <div className="space-y-6 animate-fade-in">
+            {renderSubClientSelector()}
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -320,7 +354,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button 
               onClick={handleCreateFromText} 
-              disabled={!ideaText.trim()} 
+              disabled={!ideaText.trim() || !selectedSubClient} 
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
               Generate post from text
@@ -331,6 +365,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'voice':
         return (
           <div className="space-y-6 animate-fade-in">
+            {renderSubClientSelector()}
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -424,7 +459,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             {hasRecording && (
               <Button 
                 onClick={handleCreateFromVoice} 
-                className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02]"
+                disabled={!selectedSubClient}
+                className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
               >
                 Generate post from voice
               </Button>
@@ -435,6 +471,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'url':
         return (
           <div className="space-y-6 animate-fade-in">
+            {renderSubClientSelector()}
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -463,7 +500,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button 
               onClick={handleCreateFromUrl} 
-              disabled={!urlInput.trim()} 
+              disabled={!urlInput.trim() || !selectedSubClient} 
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
               Generate posts from URL
@@ -474,7 +511,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'suggestions':
         return (
           <div className="h-full flex flex-col animate-fade-in">
-            <div className="relative h-full">
+            {renderSubClientSelector()}
+            
+            <div className="relative h-full mt-6">
               {/* Floating Refresh Button */}
               <button 
                 onClick={refreshSuggestions}
@@ -506,18 +545,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   postSuggestions.map((suggestion, index) => (
                     <div 
                       key={index} 
-                      className="relative p-5 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start min-h-[140px]"
+                      className={`relative p-5 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start min-h-[140px] ${!selectedSubClient ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{ 
                         animationDelay: `${index * 100}ms`,
                         height: '170px'
                       }}
-                      onMouseEnter={() => setHoveredSuggestion(suggestion)}
+                      onMouseEnter={() => selectedSubClient && setHoveredSuggestion(suggestion)}
                       onMouseLeave={() => setHoveredSuggestion(null)}
-                      onClick={() => handleCreateFromSuggestion(suggestion)}
+                      onClick={() => selectedSubClient && handleCreateFromSuggestion(suggestion)}
                       role="button"
-                      tabIndex={0}
+                      tabIndex={selectedSubClient ? 0 : -1}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (selectedSubClient && (e.key === 'Enter' || e.key === ' ')) {
                           e.preventDefault();
                           handleCreateFromSuggestion(suggestion);
                         }
@@ -539,6 +578,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   ))
                 )}
               </div>
+              
+              {!selectedSubClient && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Please select who this post is for first</p>
+                </div>
+              )}
             </div>
           </div>
         );
