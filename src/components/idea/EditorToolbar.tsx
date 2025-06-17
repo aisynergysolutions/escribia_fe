@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
+import { Bold, Italic, Underline, Strikethrough, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -62,6 +61,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         </Button>
         <Button variant="ghost" size="sm" onClick={() => onFormat('underline')} className="h-8 w-8 p-0">
           <Underline className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onFormat('strikeThrough')} className="h-8 w-8 p-0">
+          <Strikethrough className="h-4 w-4" />
         </Button>
         
         {/* Separator */}
