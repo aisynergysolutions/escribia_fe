@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -171,9 +172,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
   const adjustMinute = (increment: boolean) => {
     if (increment) {
-      setSelectedMinute(prev => prev === 45 ? 0 : prev + 15);
+      setSelectedMinute(prev => prev === 59 ? 0 : prev + 1);
     } else {
-      setSelectedMinute(prev => prev === 0 ? 45 : prev - 15);
+      setSelectedMinute(prev => prev === 0 ? 59 : prev - 1);
     }
   };
 
@@ -351,18 +352,18 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
               {/* Time Selection */}
               <div>
                 <label className="block text-sm font-medium mb-3">Enter Time</label>
-                <div className="flex items-center justify-center gap-2 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-center gap-2 p-2 bg-gray-50 rounded-lg">
                   {/* Hour Selection */}
                   <div className="flex flex-col items-center">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(true)}
-                      className="h-5 w-5 p-0 mb-1"
+                      className="h-4 w-4 p-0 mb-1"
                     >
                       <ChevronUp className="h-3 w-3" />
                     </Button>
-                    <div className="bg-white rounded border px-2 py-1 min-w-[40px] text-center cursor-pointer" onClick={handleHourClick}>
+                    <div className="bg-white rounded border px-2 py-1 min-w-[32px] text-center cursor-pointer" onClick={handleHourClick}>
                       {isEditingHour ? (
                         <Input
                           ref={hourInputRef}
@@ -370,11 +371,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                           onChange={(e) => setHourInput(e.target.value)}
                           onBlur={handleHourInputBlur}
                           onKeyDown={handleHourInputKeyDown}
-                          className="text-sm font-medium text-center border-0 p-0 h-auto bg-transparent"
+                          className="text-xs font-medium text-center border-0 p-0 h-auto bg-transparent"
                           maxLength={2}
                         />
                       ) : (
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-xs font-medium text-gray-900">
                           {selectedHour.toString().padStart(2, '0')}
                         </span>
                       )}
@@ -383,7 +384,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(false)}
-                      className="h-5 w-5 p-0 mt-1"
+                      className="h-4 w-4 p-0 mt-1"
                     >
                       <ChevronDown className="h-3 w-3" />
                     </Button>
@@ -391,7 +392,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                   </div>
 
                   {/* Colon Separator */}
-                  <div className="text-sm font-medium text-gray-900 pb-3">:</div>
+                  <div className="text-xs font-medium text-gray-900 pb-2">:</div>
 
                   {/* Minute Selection */}
                   <div className="flex flex-col items-center">
@@ -399,11 +400,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(true)}
-                      className="h-5 w-5 p-0 mb-1"
+                      className="h-4 w-4 p-0 mb-1"
                     >
                       <ChevronUp className="h-3 w-3" />
                     </Button>
-                    <div className="bg-white rounded border px-2 py-1 min-w-[40px] text-center cursor-pointer" onClick={handleMinuteClick}>
+                    <div className="bg-white rounded border px-2 py-1 min-w-[32px] text-center cursor-pointer" onClick={handleMinuteClick}>
                       {isEditingMinute ? (
                         <Input
                           ref={minuteInputRef}
@@ -411,11 +412,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                           onChange={(e) => setMinuteInput(e.target.value)}
                           onBlur={handleMinuteInputBlur}
                           onKeyDown={handleMinuteInputKeyDown}
-                          className="text-sm font-medium text-center border-0 p-0 h-auto bg-transparent"
+                          className="text-xs font-medium text-center border-0 p-0 h-auto bg-transparent"
                           maxLength={2}
                         />
                       ) : (
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-xs font-medium text-gray-900">
                           {selectedMinute.toString().padStart(2, '0')}
                         </span>
                       )}
@@ -424,7 +425,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(false)}
-                      className="h-5 w-5 p-0 mt-1"
+                      className="h-4 w-4 p-0 mt-1"
                     >
                       <ChevronDown className="h-3 w-3" />
                     </Button>
