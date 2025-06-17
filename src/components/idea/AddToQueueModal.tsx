@@ -80,8 +80,6 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
         <div className="space-y-6">
           {/* Suggested Posting Time */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">When would you like to post this?</h3>
-            
             {/* Main Suggested Time */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -144,11 +142,10 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
 
           <Separator />
 
-          {/* Status Selection */}
+          {/* Status Selection - Inline with title */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Update Status</h3>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">New status:</span>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Update Status</h3>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
@@ -169,7 +166,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500">
               The status will be automatically updated to "{selectedStatus}" when added to queue.
             </p>
           </div>
