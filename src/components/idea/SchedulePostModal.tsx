@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Clock, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,8 +47,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   onSchedule
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [selectedHour, setSelectedHour] = useState<string>('09');
-  const [selectedMinute, setSelectedMinute] = useState<string>('00');
+  const [selectedHour, setSelectedHour] = useState<number>(9);
+  const [selectedMinute, setSelectedMinute] = useState<number>(0);
+  const [isAM, setIsAM] = useState<boolean>(true);
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
@@ -127,19 +128,39 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const handleSchedule = () => {
     if (selectedDate) {
       const scheduledDate = new Date(selectedDate);
-      const hours = parseInt(selectedHour);
-      const minutes = parseInt(selectedMinute);
-      scheduledDate.setHours(hours, minutes);
-      onSchedule(scheduledDate, `${selectedHour}:${selectedMinute}`, selectedStatus);
+      let hours = selectedHour;
+      if (!isAM && hours !== 12) {
+        hours += 12;
+      } else if (isAM && hours === 12) {
+        hours = 0;
+      }
+      scheduledDate.setHours(hours, selectedMinute);
+      const timeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} ${isAM ? 'AM' : 'PM'}`;
+      onSchedule(scheduledDate, timeString, selectedStatus);
       onOpenChange(false);
     }
   };
 
-  const formatDisplayTime = (hour: string, minute: string) => {
-    const hourNum = parseInt(hour);
-    const ampm = hourNum >= 12 ? 'PM' : 'AM';
-    const displayHour = hourNum % 12 || 12;
-    return `${displayHour}:${minute} ${ampm}`;
+  const formatDisplayTime = () => {
+    const hourDisplay = selectedHour.toString().padStart(2, '0');
+    const minuteDisplay = selectedMinute.toString().padStart(2, '0');
+    return `${hourDisplay}:${minuteDisplay} ${isAM ? 'AM' : 'PM'}`;
+  };
+
+  const adjustHour = (increment: boolean) => {
+    if (increment) {
+      setSelectedHour(prev => prev === 12 ? 1 : prev + 1);
+    } else {
+      setSelectedHour(prev => prev === 1 ? 12 : prev - 1);
+    }
+  };
+
+  const adjustMinute = (increment: boolean) => {
+    if (increment) {
+      setSelectedMinute(prev => prev === 45 ? 0 : prev + 15);
+    } else {
+      setSelectedMinute(prev => prev === 0 ? 45 : prev - 15);
+    }
   };
 
   const handleSeeMore = () => {
@@ -174,7 +195,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                         <div className="font-semibold text-gray-900">Your Name</div>
                         <div className="text-sm text-gray-500">
                           {selectedDate 
-                            ? `Scheduled for ${format(selectedDate, 'MMM d, yyyy')} at ${formatDisplayTime(selectedHour, selectedMinute)}`
+                            ? `Scheduled for ${format(selectedDate, 'MMM d, yyyy')} at ${formatDisplayTime()}`
                             : 'Scheduling...'
                           }
                         </div>
@@ -273,48 +294,82 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
               {/* Time Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Select Time</label>
-                <div className="grid grid-cols-2 gap-4">
+                <label className="block text-sm font-medium mb-4">Enter Time</label>
+                <div className="flex items-center justify-center gap-4 p-6 bg-gray-50 rounded-lg">
                   {/* Hour Selection */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Hour</label>
-                    <ScrollArea className="h-32 w-full border rounded-md">
-                      <div className="p-1">
-                        {hours.map((hour) => (
-                          <Button
-                            key={hour}
-                            variant={selectedHour === hour ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setSelectedHour(hour)}
-                            className="w-full justify-start mb-1 text-sm"
-                          >
-                            {formatDisplayTime(hour, '00').split(':')[0]} {formatDisplayTime(hour, '00').split(' ')[1]}
-                          </Button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                  
-                  {/* Minute Selection */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Minute</label>
-                    <div className="space-y-1">
-                      {minutes.map((minute) => (
-                        <Button
-                          key={minute}
-                          variant={selectedMinute === minute ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedMinute(minute)}
-                          className="w-full text-sm"
-                        >
-                          :{minute}
-                        </Button>
-                      ))}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => adjustHour(true)}
+                      className="h-8 w-8 p-0 mb-2"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <div className="bg-gray-200 rounded-lg px-4 py-6 min-w-[80px] text-center">
+                      <span className="text-4xl font-bold text-gray-900">
+                        {selectedHour.toString().padStart(2, '0')}
+                      </span>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => adjustHour(false)}
+                      className="h-8 w-8 p-0 mt-2"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-gray-500 mt-2">Hour</span>
                   </div>
-                </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  Selected time: {formatDisplayTime(selectedHour, selectedMinute)}
+
+                  {/* Colon Separator */}
+                  <div className="text-4xl font-bold text-gray-900 pb-4">:</div>
+
+                  {/* Minute Selection */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => adjustMinute(true)}
+                      className="h-8 w-8 p-0 mb-2"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <div className="bg-gray-200 rounded-lg px-4 py-6 min-w-[80px] text-center">
+                      <span className="text-4xl font-bold text-gray-900">
+                        {selectedMinute.toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => adjustMinute(false)}
+                      className="h-8 w-8 p-0 mt-2"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-gray-500 mt-2">Minute</span>
+                  </div>
+
+                  {/* AM/PM Selection */}
+                  <div className="flex flex-col gap-2 ml-4">
+                    <Button
+                      variant={isAM ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setIsAM(true)}
+                      className="w-16 bg-purple-500 hover:bg-purple-600 text-white"
+                    >
+                      AM
+                    </Button>
+                    <Button
+                      variant={!isAM ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setIsAM(false)}
+                      className="w-16"
+                    >
+                      PM
+                    </Button>
+                  </div>
                 </div>
               </div>
 
