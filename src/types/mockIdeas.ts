@@ -1,4 +1,3 @@
-
 import { Idea } from './interfaces';
 
 export const mockIdeas: Idea[] = [
@@ -6,6 +5,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea1',
     clientId: 'client1',
+    subClientId: 'subclient1-company', // Company post
     title: 'The Future of AI in Marketing',
     initialIdeaPrompt: 'Explore how AI will transform marketing strategies in the next 5 years.',
     currentDraftText: "In the next five years, AI is poised to revolutionize marketing. From predictive analytics to personalized customer experiences, discover how AI will redefine marketing strategies and create unprecedented opportunities for businesses.",
@@ -48,6 +48,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea2',
     clientId: 'client1',
+    subClientId: 'subclient1-cto', // CTO post
     title: 'Enterprise Software ROI Metrics',
     initialIdeaPrompt: 'Discuss how to measure ROI on enterprise software investments.',
     currentDraftText: "Measuring ROI on enterprise software isn't just about cost savings. It's about transformation, efficiency, and competitive advantage. Here's how leading companies track real value from their tech investments.",
@@ -67,6 +68,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea3',
     clientId: 'client1',
+    subClientId: 'subclient1-ceo', // CEO post
     title: 'Digital Transformation Mistakes',
     initialIdeaPrompt: 'Common pitfalls companies face during digital transformation.',
     currentDraftText: "Digital transformation failures aren't about technology - they're about people, processes, and culture. Here are the 5 critical mistakes that derail transformation projects.",
@@ -92,6 +94,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea4',
     clientId: 'client1',
+    subClientId: 'subclient1-company', // Company post
     title: 'Cloud Security Best Practices',
     initialIdeaPrompt: 'Essential security practices for cloud enterprise environments.',
     currentDraftText: "Cloud security isn't an afterthought - it's the foundation of digital trust. Here's how enterprise leaders are building bulletproof cloud architectures.",
@@ -109,6 +112,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea5',
     clientId: 'client2',
+    subClientId: 'subclient2-company', // Company post
     title: 'The Impact of Remote Work on Company Culture',
     initialIdeaPrompt: 'Discuss the challenges and opportunities of maintaining company culture in a remote work environment.',
     currentDraftText: "Remote work has transformed the modern workplace, presenting both challenges and opportunities for maintaining a strong company culture. Discover strategies to foster connection, collaboration, and engagement among remote teams.",
@@ -151,6 +155,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea6',
     clientId: 'client2',
+    subClientId: 'subclient2-cmo', // CMO post
     title: 'Content Marketing Trends 2024',
     initialIdeaPrompt: 'Explore the latest content marketing trends for the upcoming year.',
     currentDraftText: "2024 is bringing revolutionary changes to content marketing. From AI-generated content to interactive experiences, here's what brands need to know to stay ahead.",
@@ -176,6 +181,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea7',
     clientId: 'client2',
+    subClientId: 'subclient2-company', // Company post
     title: 'Social Media Algorithm Changes',
     initialIdeaPrompt: 'How recent algorithm changes affect brand visibility.',
     currentDraftText: "Algorithm changes got you down? Here's how smart brands are adapting their social media strategy to thrive, not just survive, in the new landscape.",
@@ -194,6 +200,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea8',
     clientId: 'client2',
+    subClientId: 'subclient2-cmo', // CMO post
     title: 'Video Marketing ROI Guide',
     initialIdeaPrompt: 'Measuring the return on investment for video marketing campaigns.',
     currentDraftText: "Video marketing budgets are exploding, but are they worth it? Here's how to measure real ROI beyond vanity metrics and prove video's business impact.",
@@ -211,6 +218,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea9',
     clientId: 'client3',
+    subClientId: 'subclient3-company', // Company post
     title: 'Telemedicine Best Practices',
     initialIdeaPrompt: 'Guidelines for effective telemedicine consultations.',
     currentDraftText: "Telemedicine isn't just a pandemic response - it's the future of healthcare delivery. Here's how providers can create meaningful patient connections in virtual environments.",
@@ -236,6 +244,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea10',
     clientId: 'client3',
+    subClientId: 'subclient3-cto', // CTO post
     title: 'Patient Data Security in Digital Health',
     initialIdeaPrompt: 'Protecting patient privacy in the digital age.',
     currentDraftText: "Patient trust begins with data security. As healthcare goes digital, here's how medical organizations are building fortress-level protection around patient information.",
@@ -254,6 +263,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea11',
     clientId: 'client3',
+    subClientId: 'subclient3-company',
     title: 'Mental Health Technology Solutions',
     initialIdeaPrompt: 'How technology is improving mental health care access.',
     currentDraftText: "Mental health care is being revolutionized by technology. From AI-powered therapy apps to virtual reality treatments, discover how innovation is breaking down barriers to care.",
@@ -271,6 +281,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea12',
     clientId: 'client3',
+    subClientId: 'subclient3-company',
     title: 'Preventive Care in the Digital Age',
     initialIdeaPrompt: 'Using technology for proactive health monitoring.',
     currentDraftText: "Prevention is better than cure, and technology is making it easier than ever. Here's how digital health tools are helping people stay healthy before they get sick.",
@@ -289,6 +300,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea13',
     clientId: 'client4',
+    subClientId: 'subclient4-company',
     title: 'Carbon Neutral vs Carbon Negative',
     initialIdeaPrompt: 'Explaining the difference and why it matters for businesses.',
     currentDraftText: "Carbon neutral isn't enough anymore. Forward-thinking companies are going carbon negative, and here's why your business should too. The future belongs to regenerative enterprises.",
@@ -314,6 +326,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea14',
     clientId: 'client4',
+    subClientId: 'subclient4-ceo',
     title: 'Sustainable Supply Chain Management',
     initialIdeaPrompt: 'How companies can make their supply chains more environmentally friendly.',
     currentDraftText: "Your supply chain is your sustainability weak link. Here's how leading companies are transforming their entire value chain to reduce environmental impact.",
@@ -332,6 +345,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea15',
     clientId: 'client4',
+    subClientId: 'subclient4-cfo',
     title: 'Green Technology ROI Calculator',
     initialIdeaPrompt: 'Demonstrating the financial benefits of environmental investments.',
     currentDraftText: "Green technology pays for itself faster than you think. Here's how to calculate the real ROI of environmental investments and make the business case for sustainability.",
@@ -349,6 +363,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea16',
     clientId: 'client5',
+    subClientId: 'subclient5-ceo',
     title: 'Small Business Cash Flow Mistakes',
     initialIdeaPrompt: 'Common cash flow management errors that hurt small businesses.',
     currentDraftText: "Cash flow kills more businesses than bad products. Here are the 7 deadly cash flow mistakes small business owners make and how to avoid them.",
@@ -374,6 +389,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea17',
     clientId: 'client5',
+    subClientId: 'subclient5-cfo',
     title: 'Financial Planning for Entrepreneurs',
     initialIdeaPrompt: 'Essential financial planning strategies for business owners.',
     currentDraftText: "Entrepreneurs are terrible at personal finance (I should know, I was one). Here's the financial planning framework that actually works for business owners.",
@@ -392,6 +408,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea18',
     clientId: 'client5',
+    subClientId: 'subclient5-cmo',
     title: 'Tax Strategies for Growing Businesses',
     initialIdeaPrompt: 'Smart tax planning for scaling companies.',
     currentDraftText: "Growing businesses face complex tax challenges. Here's how smart entrepreneurs optimize their tax strategy as they scale from startup to established company.",
@@ -409,6 +426,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea19',
     clientId: 'client6',
+    subClientId: 'subclient6-ceo',
     title: 'Sustainable Building Materials Guide',
     initialIdeaPrompt: 'Overview of eco-friendly construction materials and their benefits.',
     currentDraftText: "Building green isn't just trendy - it's necessary. Here's our guide to sustainable materials that don't compromise on quality or durability.",
@@ -426,6 +444,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea20',
     clientId: 'client6',
+    subClientId: 'subclient6-cfo',
     title: 'Home Renovation Cost Planning',
     initialIdeaPrompt: 'How to budget effectively for home renovation projects.',
     currentDraftText: "Renovation budgets always go over. Here's how we help homeowners plan realistic budgets and avoid costly surprises during construction.",
@@ -444,6 +463,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea21',
     clientId: 'client6',
+    subClientId: 'subclient6-ceo',
     title: 'Energy Efficient Home Design',
     initialIdeaPrompt: 'Design principles for energy-efficient homes.',
     currentDraftText: "Energy efficiency starts with smart design. Here's how we're building homes that slash utility bills while maximizing comfort year-round.",
@@ -466,12 +486,10 @@ export const mockIdeas: Idea[] = [
       lastFetched: { seconds: 1672444800, nanoseconds: 0 }
     }
   },
-
-  // Additional posts to fill every day with 1, 2, or 4 posts
-  // January 1, 2025 - 3 more posts (total 4)
   {
     id: 'idea22',
     clientId: 'client1',
+    subClientId: 'subclient1-ceo',
     title: 'New Year Tech Predictions',
     initialIdeaPrompt: 'Share bold predictions for the technology industry in 2025.',
     currentDraftText: "2025 will be the year of quantum computing breakthroughs, AI governance, and sustainable tech. Here are our bold predictions for the tech industry.",
@@ -490,6 +508,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea23',
     clientId: 'client2',
+    subClientId: 'subclient2-cmo',
     title: 'New Year Marketing Goals',
     initialIdeaPrompt: 'Guide on setting effective marketing goals for the new year.',
     currentDraftText: "New year, new marketing strategy. Here's how to set realistic, achievable marketing goals that will drive real business growth in 2025.",
@@ -508,6 +527,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea24',
     clientId: 'client3',
+    subClientId: 'subclient3-ceo',
     title: 'Healthcare Resolutions That Work',
     initialIdeaPrompt: 'Help patients set sustainable health goals and resolutions.',
     currentDraftText: "Most health resolutions fail by February. Here's how healthcare providers can help patients set and achieve sustainable health goals.",
@@ -523,11 +543,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Sustainable health goals guide.', createdAt: { seconds: 1671753600, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 2, 2025 - 1 more post (total 2)
   {
     id: 'idea25',
     clientId: 'client4',
+    subClientId: 'subclient4-ceo',
     title: 'Sustainable New Year Habits',
     initialIdeaPrompt: 'Share eco-friendly habits that people can adopt for a sustainable new year.',
     currentDraftText: "Make 2025 your most sustainable year yet. Small eco-friendly habits that make a big environmental impact throughout the year.",
@@ -543,11 +562,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Sustainable habits guide.', createdAt: { seconds: 1671840000, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 3, 2025 - 3 more posts (total 4)
   {
     id: 'idea26',
     clientId: 'client2',
+    subClientId: 'subclient2-cmo',
     title: 'Q1 Content Planning Strategy',
     initialIdeaPrompt: 'Create a comprehensive guide for planning Q1 content strategy.',
     currentDraftText: "Q1 sets the tone for your entire content year. Here's how to plan a content calendar that drives engagement and conversions from day one.",
@@ -566,6 +584,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea27',
     clientId: 'client5',
+    subClientId: 'subclient5-cfo',
     title: 'January Financial Reset',
     initialIdeaPrompt: 'Guide businesses on resetting their finances for the new year.',
     currentDraftText: "New year, clean financial slate. Here's how to reset your business finances for a profitable 2025, from budgeting to tax preparation.",
@@ -584,6 +603,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea28',
     clientId: 'client6',
+    subClientId: 'subclient6-ceo',
     title: 'Winter Construction Tips',
     initialIdeaPrompt: 'Share professional tips for construction projects during winter.',
     currentDraftText: "Cold weather doesn't mean construction stops. Here are professional tips for safe, efficient winter building projects.",
@@ -599,11 +619,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Winter construction best practices.', createdAt: { seconds: 1672099200, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 4, 2025 - 1 more post (total 2)
   {
     id: 'idea29',
     clientId: 'client1',
+    subClientId: 'subclient1-cto',
     title: 'Enterprise Security Audit 2025',
     initialIdeaPrompt: 'Create a comprehensive security audit checklist for enterprises.',
     currentDraftText: "Start 2025 with a comprehensive security audit. Here's our checklist for identifying and fixing enterprise security vulnerabilities.",
@@ -619,11 +638,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Enterprise security audit guide.', createdAt: { seconds: 1672185600, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 5, 2025 - 3 more posts (total 4)
   {
     id: 'idea30',
     clientId: 'client3',
+    subClientId: 'subclient3-ceo',
     title: 'Digital Health Trends 2025',
     initialIdeaPrompt: 'Explore the top digital health trends transforming healthcare.',
     currentDraftText: "Healthcare is going digital faster than ever. Here are the top digital health trends that will transform patient care in 2025.",
@@ -642,6 +660,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea31',
     clientId: 'client4',
+    subClientId: 'subclient4-cfo',
     title: 'Corporate Sustainability Reporting',
     initialIdeaPrompt: 'Help companies prepare for mandatory sustainability reporting requirements.',
     currentDraftText: "Sustainability reporting is becoming mandatory. Here's how to prepare your company for new environmental disclosure requirements.",
@@ -660,6 +679,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea32',
     clientId: 'client6',
+    subClientId: 'subclient6-ceo',
     title: 'Smart Home Integration Planning',
     initialIdeaPrompt: 'Guide homeowners on planning smart home technology integration.',
     currentDraftText: "Planning a smart home renovation? Here's how to future-proof your home with integrated technology that adds real value.",
@@ -675,12 +695,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Smart home integration guide.', createdAt: { seconds: 1672444800, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // Continue adding posts for remaining days...
-  // January 6, 2025 - 1 more post (total 2)
   {
     id: 'idea33',
     clientId: 'client2',
+    subClientId: 'subclient2-ceo',
     title: 'Influencer Marketing Ethics',
     initialIdeaPrompt: 'Discuss ethical practices in influencer marketing partnerships.',
     currentDraftText: "Influencer marketing is under scrutiny. Here's how brands can build ethical, transparent partnerships that benefit everyone.",
@@ -696,11 +714,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Ethical influencer marketing guide.', createdAt: { seconds: 1672531200, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 7, 2025 - 3 more posts (total 4)
   {
     id: 'idea34',
     clientId: 'client1',
+    subClientId: 'subclient1-ceo',
     title: 'AI Ethics in Enterprise',
     initialIdeaPrompt: 'Explore responsible AI implementation practices for enterprises.',
     currentDraftText: "As AI becomes ubiquitous, ethical considerations are paramount. Here's how enterprises can implement responsible AI practices.",
@@ -719,6 +736,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea35',
     clientId: 'client5',
+    subClientId: 'subclient5-cfo',
     title: 'Investment Strategies for 2025',
     initialIdeaPrompt: 'Share proven investment strategies for uncertain market conditions.',
     currentDraftText: "Market volatility requires new investment approaches. Here are proven strategies for building wealth in uncertain times.",
@@ -737,6 +755,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea36',
     clientId: 'client3',
+    subClientId: 'subclient3-ceo',
     title: 'Healthcare Worker Burnout Solutions',
     initialIdeaPrompt: 'Address healthcare worker burnout with evidence-based solutions.',
     currentDraftText: "Healthcare worker burnout is at crisis levels. Here are evidence-based solutions to support healthcare teams and improve patient care.",
@@ -752,11 +771,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Healthcare burnout solutions.', createdAt: { seconds: 1672790400, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 8, 2025 - 1 more post (total 2)
   {
     id: 'idea37',
     clientId: 'client4',
+    subClientId: 'subclient4-ceo',
     title: 'Green Building Certification Guide',
     initialIdeaPrompt: 'Navigate the complex world of green building certifications.',
     currentDraftText: "LEED, BREEAM, WELL - navigating green building certifications can be complex. Here's our comprehensive guide to choosing the right certification.",
@@ -772,11 +790,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Green building certification comparison.', createdAt: { seconds: 1672876800, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 9, 2025 - 3 more posts (total 4)
   {
     id: 'idea38',
     clientId: 'client2',
+    subClientId: 'subclient2-cmo',
     title: 'Voice Search Optimization',
     initialIdeaPrompt: 'Optimize content for voice search and conversational queries.',
     currentDraftText: "Voice search is changing SEO forever. Here's how to optimize your content for voice queries and conversational search.",
@@ -795,6 +812,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea39',
     clientId: 'client1',
+    subClientId: 'subclient1-cto',
     title: 'Cloud Migration Security',
     initialIdeaPrompt: 'Address security challenges during cloud migration projects.',
     currentDraftText: "Cloud migration introduces new security challenges. Here's how to maintain security during and after your cloud transition.",
@@ -813,6 +831,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea40',
     clientId: 'client6',
+    subClientId: 'subclient6-ceo',
     title: 'Bathroom Renovation Trends 2025',
     initialIdeaPrompt: 'Showcase the latest bathroom renovation trends that add value.',
     currentDraftText: "Bathroom renovations offer the highest ROI. Here are 2025's top bathroom trends that combine style, functionality, and value.",
@@ -828,11 +847,10 @@ export const mockIdeas: Idea[] = [
       { version: 1, text: 'Bathroom renovation trends guide.', createdAt: { seconds: 1673136000, nanoseconds: 0 }, generatedByAI: true }
     ]
   },
-
-  // January 10, 2025 - 2 posts
   {
     id: 'idea41',
     clientId: 'client3',
+    subClientId: 'subclient3-ceo',
     title: 'Pediatric Telemedicine Best Practices',
     initialIdeaPrompt: 'Share best practices for effective pediatric telemedicine consultations.',
     currentDraftText: "Telemedicine with children requires special considerations. Here's how pediatric providers can deliver effective virtual care.",
@@ -851,6 +869,7 @@ export const mockIdeas: Idea[] = [
   {
     id: 'idea42',
     clientId: 'client5',
+    subClientId: 'subclient5-cfo',
     title: 'Small Business Tax Deadlines 2025',
     initialIdeaPrompt: 'Create a comprehensive tax deadline calendar for small businesses.',
     currentDraftText: "Don't miss critical tax deadlines that could cost your business thousands. Here's your complete 2025 tax calendar.",
