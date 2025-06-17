@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Plus, Monitor, Smartphone } from 'lucide-react';
+import { Bold, Italic, Underline, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -15,17 +15,11 @@ interface EditorToolbarProps {
   onCopy: () => void;
   onSchedule: () => void;
   onPostNow: () => void;
-  versionHistory: Array<{
-    id: string;
-    version: number;
-    text: string;
-    createdAt: Date;
-    generatedByAI: boolean;
-    notes: string;
-  }>;
-  currentVersionIndex: number;
-  onPreviousVersion: () => void;
-  onNextVersion: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  onShowVersionHistory: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   viewMode: 'mobile' | 'desktop';
   onViewModeToggle: () => void;
   showCommentsPanel?: boolean;
@@ -39,19 +33,17 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onCopy,
   onSchedule,
   onPostNow,
-  versionHistory,
-  currentVersionIndex,
-  onPreviousVersion,
-  onNextVersion,
+  onUndo,
+  onRedo,
+  onShowVersionHistory,
+  canUndo,
+  canRedo,
   viewMode,
   onViewModeToggle,
   showCommentsPanel = false
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
-
-  const canGoPrevious = currentVersionIndex > 0;
-  const canGoNext = currentVersionIndex < versionHistory.length - 1;
 
   const handleAddToQueue = () => {
     // Handle adding to queue functionality
@@ -104,22 +96,22 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       
       <TooltipProvider>
         <div className="flex gap-2">
-          {/* Version Navigation */}
+          {/* Undo/Redo Controls */}
           <div className="flex gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={onPreviousVersion}
-                  disabled={!canGoPrevious}
+                  onClick={onUndo}
+                  disabled={!canUndo}
                   className="h-8 w-8 p-0"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <Undo className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Previous Version</p>
+                <p>Undo (Ctrl+Z)</p>
               </TooltipContent>
             </Tooltip>
             
@@ -128,15 +120,31 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={onNextVersion}
-                  disabled={!canGoNext}
+                  onClick={onRedo}
+                  disabled={!canRedo}
                   className="h-8 w-8 p-0"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <Redo className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Next Version</p>
+                <p>Redo (Ctrl+Y)</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onShowVersionHistory}
+                  className="h-8 w-8 p-0"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Version History</p>
               </TooltipContent>
             </Tooltip>
           </div>

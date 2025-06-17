@@ -31,7 +31,9 @@ export const usePostEditor = ({ initialText = '' }: UsePostEditorProps) => {
   }, [generatedPost]);
 
   const handleRegenerateWithInstructions = useCallback(() => {
-    setGeneratedPost("Based on your instructions, here's an updated version that focuses more on practical implementation...");
+    const newContent = "Based on your instructions, here's an updated version that focuses more on practical implementation...";
+    setGeneratedPost(newContent);
+    setHasUnsavedChanges(true);
   }, []);
 
   return {

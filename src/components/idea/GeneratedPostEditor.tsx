@@ -9,7 +9,9 @@ import EditorToolbar from './EditorToolbar';
 import EditorContainer from './EditorContainer';
 import EditingInstructions from './EditingInstructions';
 import CommentPopover from './CommentPopover';
+import VersionHistoryModal from './VersionHistoryModal';
 import { CommentThread } from './CommentsPanel';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -67,9 +69,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [lineCount, setLineCount] = useState(1);
   const [showTruncation, setShowTruncation] = useState(false);
   const [cutoffLineTop, setCutoffLineTop] = useState(0);
-  const [currentVersionIndex, setCurrentVersionIndex] = useState(versionHistory.length - 1);
   const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('desktop');
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
+  const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const lastSelection = useRef<Range | null>(null);
@@ -77,7 +79,22 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   // NEW state for comment popover
   const [commentPopover, setCommentPopover] = useState({ visible: false, top: 0, left: 0 });
 
-  // Updated utility function to calculate content metrics with precise cutoff positioning
+  // Initialize undo/redo functionality
+  const {
+    versions,
+    currentContent,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    restoreVersion,
+    handleContentChange: handleUndoRedoContentChange
+  } = useUndoRedo({
+    initialContent: generatedPost,
+    onContentChange: onGeneratedPostChange,
+    pauseDelay: 3000 // 3 seconds pause to create new version
+  });
+
   const calculateContentMetrics = (content: string) => {
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
     const charCount = textContent.length;
@@ -208,7 +225,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     };
     setComments([...comments, newThread]);
 
-    onGeneratedPostChange(editorRef.current.innerHTML);
+    handleUndoRedoContentChange(editorRef.current.innerHTML);
     setCommentPopover({ visible: false, top: 0, left: 0 });
     lastSelection.current = null;
     selection.removeAllRanges();
@@ -241,7 +258,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     }
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML;
-      onGeneratedPostChange(newContent);
+      handleUndoRedoContentChange(newContent);
       checkForChanges(newContent);
     }
   };
@@ -249,7 +266,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const handleInput = () => {
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML;
-      onGeneratedPostChange(newContent);
+      handleUndoRedoContentChange(newContent);
       checkForChanges(newContent);
       
       // Update metrics
@@ -261,13 +278,28 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.ctrlKey && event.key === 'c') {
-      event.preventDefault();
-      handleCopyWithFormatting();
-    }
-    if (event.ctrlKey && event.key === 's') {
-      event.preventDefault();
-      handleSave();
+    // Handle Ctrl+Z and Ctrl+Y
+    if (event.ctrlKey || event.metaKey) {
+      if (event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+        return;
+      }
+      if (event.key === 'y' || (event.key === 'z' && event.shiftKey)) {
+        event.preventDefault();
+        redo();
+        return;
+      }
+      if (event.key === 'c') {
+        event.preventDefault();
+        handleCopyWithFormatting();
+        return;
+      }
+      if (event.key === 's') {
+        event.preventDefault();
+        handleSave();
+        return;
+      }
     }
   };
 
@@ -326,7 +358,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         editorRef.current.appendChild(document.createTextNode(emoji));
       }
       const newContent = editorRef.current.innerHTML;
-      onGeneratedPostChange(newContent);
+      handleUndoRedoContentChange(newContent);
       checkForChanges(newContent);
     }
   };
@@ -338,7 +370,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleSave = () => {
     onSave();
-    setOriginalPost(generatedPost);
+    setOriginalPost(currentContent);
     onUnsavedChangesChange(false);
     toast({
       title: "Saved",
@@ -377,44 +409,28 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
-  const handlePreviousVersion = () => {
-    if (currentVersionIndex > 0) {
-      const newIndex = currentVersionIndex - 1;
-      setCurrentVersionIndex(newIndex);
-      onRestoreVersion(versionHistory[newIndex].text);
-      toast({
-        title: "Version Restored",
-        description: `Switched to version ${versionHistory[newIndex].version}`
-      });
-    }
-  };
-
-  const handleNextVersion = () => {
-    if (currentVersionIndex < versionHistory.length - 1) {
-      const newIndex = currentVersionIndex + 1;
-      setCurrentVersionIndex(newIndex);
-      onRestoreVersion(versionHistory[newIndex].text);
-      toast({
-        title: "Version Restored",
-        description: `Switched to version ${versionHistory[newIndex].version}`
-      });
-    }
-  };
-
   const handleViewModeToggle = () => {
     setViewMode(prev => prev === 'desktop' ? 'mobile' : 'desktop');
   };
 
+  const handleRestoreVersion = (versionId: string) => {
+    restoreVersion(versionId);
+    toast({
+      title: "Version Restored",
+      description: "Version has been restored successfully."
+    });
+  };
+
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== generatedPost) {
-      editorRef.current.innerHTML = generatedPost;
+    if (editorRef.current && editorRef.current.innerHTML !== currentContent) {
+      editorRef.current.innerHTML = currentContent;
       // Update metrics when content changes
-      const metrics = calculateContentMetrics(generatedPost);
+      const metrics = calculateContentMetrics(currentContent);
       setCharCount(metrics.charCount);
       setLineCount(metrics.lineCount);
       setShowTruncation(metrics.charCount > 200 || metrics.lineCount > 3);
     }
-  }, [generatedPost, viewMode]); // Added viewMode dependency
+  }, [currentContent, viewMode]);
 
   useEffect(() => {
     setOriginalPost(generatedPost);
@@ -448,20 +464,27 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         }}
       />
       
-      <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={generatedPost} />
+      <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={currentContent} />
       
       <SchedulePostModal 
         open={showScheduleModal} 
         onOpenChange={setShowScheduleModal} 
-        postContent={generatedPost}
+        postContent={currentContent}
         onSchedule={handleSchedule}
       />
       
       <PostNowModal 
         open={showPostNowModal} 
         onOpenChange={setShowPostNowModal} 
-        postContent={generatedPost}
+        postContent={currentContent}
         onPost={handlePostNow}
+      />
+
+      <VersionHistoryModal
+        open={showVersionHistoryModal}
+        onOpenChange={setShowVersionHistoryModal}
+        versions={versions}
+        onRestore={handleRestoreVersion}
       />
       
       <div className="bg-white rounded-lg border">
@@ -473,10 +496,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onCopy={handleCopyWithFormatting}
           onSchedule={() => setShowScheduleModal(true)}
           onPostNow={() => setShowPostNowModal(true)}
-          versionHistory={versionHistory}
-          currentVersionIndex={currentVersionIndex}
-          onPreviousVersion={handlePreviousVersion}
-          onNextVersion={handleNextVersion}
+          onUndo={undo}
+          onRedo={redo}
+          onShowVersionHistory={() => setShowVersionHistoryModal(true)}
+          canUndo={canUndo}
+          canRedo={canRedo}
           viewMode={viewMode}
           onViewModeToggle={handleViewModeToggle}
           showCommentsPanel={showCommentsPanel}
@@ -484,7 +508,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         
         <EditorContainer
           editorRef={editorRef}
-          generatedPost={generatedPost}
+          generatedPost={currentContent}
           onInput={handleInput}
           onMouseUp={handleTextSelection}
           onKeyUp={handleTextSelection}
