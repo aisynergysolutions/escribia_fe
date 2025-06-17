@@ -11,6 +11,7 @@ interface FloatingToolbarProps {
   onAIEdit: () => void;
   onComment: () => void;
   visible: boolean;
+  activeFormats?: string[];
 }
 
 const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
@@ -18,9 +19,12 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   onFormat,
   onAIEdit,
   onComment,
-  visible
+  visible,
+  activeFormats = []
 }) => {
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
+  const isFormatActive = (format: string) => activeFormats.includes(format);
 
   const insertEmoji = (emoji: string) => {
     const selection = window.getSelection();
@@ -63,7 +67,11 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => onFormat('bold')}
-        className="h-8 w-8 p-0 hover:bg-gray-100"
+        className={`h-8 w-8 p-0 ${
+          isFormatActive('bold') 
+            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+            : 'hover:bg-gray-100'
+        }`}
       >
         <Bold className="h-4 w-4" />
       </Button>
@@ -71,7 +79,11 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => onFormat('italic')}
-        className="h-8 w-8 p-0 hover:bg-gray-100"
+        className={`h-8 w-8 p-0 ${
+          isFormatActive('italic') 
+            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+            : 'hover:bg-gray-100'
+        }`}
       >
         <Italic className="h-4 w-4" />
       </Button>
@@ -79,7 +91,11 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => onFormat('underline')}
-        className="h-8 w-8 p-0 hover:bg-gray-100"
+        className={`h-8 w-8 p-0 ${
+          isFormatActive('underline') 
+            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+            : 'hover:bg-gray-100'
+        }`}
       >
         <Underline className="h-4 w-4" />
       </Button>
@@ -87,7 +103,11 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => onFormat('strikeThrough')}
-        className="h-8 w-8 p-0 hover:bg-gray-100"
+        className={`h-8 w-8 p-0 ${
+          isFormatActive('strikeThrough') 
+            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+            : 'hover:bg-gray-100'
+        }`}
       >
         <Strikethrough className="h-4 w-4" />
       </Button>

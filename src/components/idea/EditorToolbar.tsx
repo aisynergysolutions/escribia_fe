@@ -22,6 +22,7 @@ interface EditorToolbarProps {
   viewMode: 'mobile' | 'desktop';
   onViewModeToggle: () => void;
   showCommentsPanel?: boolean;
+  activeFormats?: string[];
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -39,10 +40,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   canRedo,
   viewMode,
   onViewModeToggle,
-  showCommentsPanel = false
+  showCommentsPanel = false,
+  activeFormats = []
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
+
+  const isFormatActive = (format: string) => activeFormats.includes(format);
 
   const handleAddToQueue = () => {
     // Handle adding to queue functionality
@@ -53,16 +57,36 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     <div className="flex justify-between items-center p-4 border-b">
       {/* Text Editor Toolbar */}
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="sm" onClick={() => onFormat('bold')} className="h-8 w-8 p-0">
+        <Button 
+          variant={isFormatActive('bold') ? 'default' : 'ghost'} 
+          size="sm" 
+          onClick={() => onFormat('bold')} 
+          className={`h-8 w-8 p-0 ${isFormatActive('bold') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
+        >
           <Bold className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => onFormat('italic')} className="h-8 w-8 p-0">
+        <Button 
+          variant={isFormatActive('italic') ? 'default' : 'ghost'} 
+          size="sm" 
+          onClick={() => onFormat('italic')} 
+          className={`h-8 w-8 p-0 ${isFormatActive('italic') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
+        >
           <Italic className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => onFormat('underline')} className="h-8 w-8 p-0">
+        <Button 
+          variant={isFormatActive('underline') ? 'default' : 'ghost'} 
+          size="sm" 
+          onClick={() => onFormat('underline')} 
+          className={`h-8 w-8 p-0 ${isFormatActive('underline') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
+        >
           <Underline className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => onFormat('strikeThrough')} className="h-8 w-8 p-0">
+        <Button 
+          variant={isFormatActive('strikeThrough') ? 'default' : 'ghost'} 
+          size="sm" 
+          onClick={() => onFormat('strikeThrough')} 
+          className={`h-8 w-8 p-0 ${isFormatActive('strikeThrough') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
+        >
           <Strikethrough className="h-4 w-4" />
         </Button>
         
