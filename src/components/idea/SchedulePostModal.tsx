@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -46,23 +47,19 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   onSchedule
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedHour, setSelectedHour] = useState<string>('09');
+  const [selectedMinute, setSelectedMinute] = useState<string>('00');
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Recommended time slots
-  const recommendedTimes = [
-    { time: '09:00', label: '9:00 AM - Peak Engagement' },
-    { time: '13:00', label: '1:00 PM - Lunch Break' },
-    { time: '17:00', label: '5:00 PM - End of Workday' }
-  ];
-
-  const customTimes = [
-    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
-  ];
+  // Generate hours array (00-23)
+  const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+  
+  // Generate minutes array (00, 15, 30, 45)
+  const minutes = ['00', '15', '30', '45'];
 
   useEffect(() => {
     if (contentRef.current && open && postContent) {
@@ -128,21 +125,21 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   }, [postContent, open]);
 
   const handleSchedule = () => {
-    if (selectedDate && selectedTime) {
+    if (selectedDate) {
       const scheduledDate = new Date(selectedDate);
-      const [hours, minutes] = selectedTime.split(':');
-      scheduledDate.setHours(parseInt(hours), parseInt(minutes));
-      onSchedule(scheduledDate, selectedTime, selectedStatus);
+      const hours = parseInt(selectedHour);
+      const minutes = parseInt(selectedMinute);
+      scheduledDate.setHours(hours, minutes);
+      onSchedule(scheduledDate, `${selectedHour}:${selectedMinute}`, selectedStatus);
       onOpenChange(false);
     }
   };
 
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+  const formatDisplayTime = (hour: string, minute: string) => {
+    const hourNum = parseInt(hour);
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    const displayHour = hourNum % 12 || 12;
+    return `${displayHour}:${minute} ${ampm}`;
   };
 
   const handleSeeMore = () => {
@@ -176,8 +173,8 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       <div>
                         <div className="font-semibold text-gray-900">Your Name</div>
                         <div className="text-sm text-gray-500">
-                          {selectedDate && selectedTime 
-                            ? `Scheduled for ${format(selectedDate, 'MMM d, yyyy')} at ${formatTime(selectedTime)}`
+                          {selectedDate 
+                            ? `Scheduled for ${format(selectedDate, 'MMM d, yyyy')} at ${formatDisplayTime(selectedHour, selectedMinute)}`
                             : 'Scheduling...'
                           }
                         </div>
@@ -277,18 +274,47 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
               {/* Time Selection */}
               <div>
                 <label className="block text-sm font-medium mb-2">Select Time</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {customTimes.map((time) => (
-                    <Button
-                      key={time}
-                      variant={selectedTime === time ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedTime(time)}
-                      className="text-sm"
-                    >
-                      {formatTime(time)}
-                    </Button>
-                  ))}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Hour Selection */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Hour</label>
+                    <ScrollArea className="h-32 w-full border rounded-md">
+                      <div className="p-1">
+                        {hours.map((hour) => (
+                          <Button
+                            key={hour}
+                            variant={selectedHour === hour ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setSelectedHour(hour)}
+                            className="w-full justify-start mb-1 text-sm"
+                          >
+                            {formatDisplayTime(hour, '00').split(':')[0]} {formatDisplayTime(hour, '00').split(' ')[1]}
+                          </Button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                  
+                  {/* Minute Selection */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Minute</label>
+                    <div className="space-y-1">
+                      {minutes.map((minute) => (
+                        <Button
+                          key={minute}
+                          variant={selectedMinute === minute ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSelectedMinute(minute)}
+                          className="w-full text-sm"
+                        >
+                          :{minute}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  Selected time: {formatDisplayTime(selectedHour, selectedMinute)}
                 </div>
               </div>
 
@@ -333,7 +359,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           </Button>
           <Button 
             onClick={handleSchedule}
-            disabled={!selectedDate || !selectedTime}
+            disabled={!selectedDate}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             <Calendar className="w-4 h-4 mr-2" />
