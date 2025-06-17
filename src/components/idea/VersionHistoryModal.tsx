@@ -44,6 +44,9 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
             <Clock className="h-5 w-5" />
             Version History
           </DialogTitle>
+          <p className="text-sm text-gray-600 mt-2">
+            Versions are automatically saved when you pause editing for a moment
+          </p>
         </DialogHeader>
         <div className="space-y-4 mt-4">
           {versions.length === 0 ? (
