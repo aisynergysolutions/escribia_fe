@@ -504,6 +504,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           viewMode={viewMode}
           onViewModeToggle={handleViewModeToggle}
           showCommentsPanel={showCommentsPanel}
+          postContent={currentContent}
         />
         
         <EditorContainer
