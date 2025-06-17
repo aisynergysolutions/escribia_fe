@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -20,21 +19,24 @@ interface SchedulePostModalProps {
   onSchedule: (date: Date, time: string, status: string) => void;
 }
 
-const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
+const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Posted':
+  const normalizedStatus = status.toLowerCase();
+  switch (normalizedStatus) {
+    case 'posted':
       return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
-    case 'Scheduled':
+    case 'scheduled':
       return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
-    case 'AwaitingReview':
+    case 'waitingforapproval':
+    case 'waiting for approval':
       return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
-    case 'NeedsRevision':
-      return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
-    case 'Drafting':
+    case 'approved':
+      return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
+    case 'drafted':
       return 'bg-purple-100 text-purple-800 hover:bg-purple-100 hover:text-purple-800';
-    case 'NeedsVisual':
+    case 'needsvisual':
+    case 'needs visual':
       return 'bg-orange-100 text-orange-800 hover:bg-orange-100 hover:text-orange-800';
     default:
       return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
@@ -172,9 +174,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
   const adjustMinute = (increment: boolean) => {
     if (increment) {
-      setSelectedMinute(prev => prev === 59 ? 0 : prev + 1);
+      setSelectedMinute(prev => prev >= 59 ? 0 : prev + 1);
     } else {
-      setSelectedMinute(prev => prev === 0 ? 59 : prev - 1);
+      setSelectedMinute(prev => prev <= 0 ? 59 : prev - 1);
     }
   };
 
@@ -351,19 +353,19 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
               {/* Time Selection */}
               <div>
-                <label className="block text-sm font-medium mb-3">Enter Time</label>
-                <div className="flex items-center justify-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium mb-2">Enter Time</label>
+                <div className="flex items-center justify-center gap-1.5 p-1.5 bg-gray-50 rounded-lg">
                   {/* Hour Selection */}
                   <div className="flex flex-col items-center">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(true)}
-                      className="h-4 w-4 p-0 mb-1"
+                      className="h-3 w-3 p-0 mb-0.5"
                     >
-                      <ChevronUp className="h-3 w-3" />
+                      <ChevronUp className="h-2.5 w-2.5" />
                     </Button>
-                    <div className="bg-white rounded border px-2 py-1 min-w-[32px] text-center cursor-pointer" onClick={handleHourClick}>
+                    <div className="bg-white rounded border px-1.5 py-0.5 min-w-[28px] text-center cursor-pointer" onClick={handleHourClick}>
                       {isEditingHour ? (
                         <Input
                           ref={hourInputRef}
@@ -384,15 +386,15 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(false)}
-                      className="h-4 w-4 p-0 mt-1"
+                      className="h-3 w-3 p-0 mt-0.5"
                     >
-                      <ChevronDown className="h-3 w-3" />
+                      <ChevronDown className="h-2.5 w-2.5" />
                     </Button>
-                    <span className="text-xs text-gray-500 mt-1">Hour</span>
+                    <span className="text-xs text-gray-500 mt-0.5">Hour</span>
                   </div>
 
                   {/* Colon Separator */}
-                  <div className="text-xs font-medium text-gray-900 pb-2">:</div>
+                  <div className="text-xs font-medium text-gray-900 pb-1">:</div>
 
                   {/* Minute Selection */}
                   <div className="flex flex-col items-center">
@@ -400,11 +402,11 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(true)}
-                      className="h-4 w-4 p-0 mb-1"
+                      className="h-3 w-3 p-0 mb-0.5"
                     >
-                      <ChevronUp className="h-3 w-3" />
+                      <ChevronUp className="h-2.5 w-2.5" />
                     </Button>
-                    <div className="bg-white rounded border px-2 py-1 min-w-[32px] text-center cursor-pointer" onClick={handleMinuteClick}>
+                    <div className="bg-white rounded border px-1.5 py-0.5 min-w-[28px] text-center cursor-pointer" onClick={handleMinuteClick}>
                       {isEditingMinute ? (
                         <Input
                           ref={minuteInputRef}
@@ -425,19 +427,19 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(false)}
-                      className="h-4 w-4 p-0 mt-1"
+                      className="h-3 w-3 p-0 mt-0.5"
                     >
-                      <ChevronDown className="h-3 w-3" />
+                      <ChevronDown className="h-2.5 w-2.5" />
                     </Button>
-                    <span className="text-xs text-gray-500 mt-1">Minute</span>
+                    <span className="text-xs text-gray-500 mt-0.5">Minute</span>
                   </div>
 
                   {/* AM/PM Selection */}
-                  <div className="flex flex-col gap-1 ml-3">
+                  <div className="flex flex-col gap-0.5 ml-2">
                     <Badge
                       variant={isAM ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer px-2 py-0.5 text-xs",
+                        "cursor-pointer px-1.5 py-0.5 text-xs",
                         isAM 
                           ? "bg-blue-500 hover:bg-blue-600 text-white" 
                           : "hover:bg-gray-100 text-gray-600"
@@ -449,7 +451,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                     <Badge
                       variant={!isAM ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer px-2 py-0.5 text-xs",
+                        "cursor-pointer px-1.5 py-0.5 text-xs",
                         !isAM 
                           ? "bg-blue-500 hover:bg-blue-600 text-white" 
                           : "hover:bg-gray-100 text-gray-600"

@@ -34,13 +34,15 @@ const getStatusColor = (status: string, type: string = 'default') => {
         return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
       case 'scheduled':
         return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
-      case 'awaitingreview':
+      case 'waitingforapproval':
+      case 'waiting for approval':
         return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
-      case 'needsrevision':
-        return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
-      case 'drafting':
+      case 'approved':
+        return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
+      case 'drafted':
         return 'bg-purple-100 text-purple-800 hover:bg-purple-100 hover:text-purple-800';
       case 'needsvisual':
+      case 'needs visual':
         return 'bg-orange-100 text-orange-800 hover:bg-orange-100 hover:text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
