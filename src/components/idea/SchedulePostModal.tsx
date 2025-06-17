@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +54,13 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
+  const [isEditingHour, setIsEditingHour] = useState(false);
+  const [isEditingMinute, setIsEditingMinute] = useState(false);
+  const [hourInput, setHourInput] = useState('09');
+  const [minuteInput, setMinuteInput] = useState('00');
   const contentRef = useRef<HTMLDivElement>(null);
+  const hourInputRef = useRef<HTMLInputElement>(null);
+  const minuteInputRef = useRef<HTMLInputElement>(null);
 
   // Generate hours array (00-23)
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -125,6 +131,14 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     }
   }, [postContent, open]);
 
+  useEffect(() => {
+    setHourInput(selectedHour.toString().padStart(2, '0'));
+  }, [selectedHour]);
+
+  useEffect(() => {
+    setMinuteInput(selectedMinute.toString().padStart(2, '0'));
+  }, [selectedMinute]);
+
   const handleSchedule = () => {
     if (selectedDate) {
       const scheduledDate = new Date(selectedDate);
@@ -160,6 +174,48 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       setSelectedMinute(prev => prev === 45 ? 0 : prev + 15);
     } else {
       setSelectedMinute(prev => prev === 0 ? 45 : prev - 15);
+    }
+  };
+
+  const handleHourClick = () => {
+    setIsEditingHour(true);
+    setTimeout(() => hourInputRef.current?.focus(), 0);
+  };
+
+  const handleMinuteClick = () => {
+    setIsEditingMinute(true);
+    setTimeout(() => minuteInputRef.current?.focus(), 0);
+  };
+
+  const handleHourInputBlur = () => {
+    setIsEditingHour(false);
+    const value = parseInt(hourInput);
+    if (value >= 1 && value <= 12) {
+      setSelectedHour(value);
+    } else {
+      setHourInput(selectedHour.toString().padStart(2, '0'));
+    }
+  };
+
+  const handleMinuteInputBlur = () => {
+    setIsEditingMinute(false);
+    const value = parseInt(minuteInput);
+    if (value >= 0 && value <= 59) {
+      setSelectedMinute(value);
+    } else {
+      setMinuteInput(selectedMinute.toString().padStart(2, '0'));
+    }
+  };
+
+  const handleHourInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleHourInputBlur();
+    }
+  };
+
+  const handleMinuteInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleMinuteInputBlur();
     }
   };
 
@@ -295,35 +351,47 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
               {/* Time Selection */}
               <div>
                 <label className="block text-sm font-medium mb-4">Enter Time</label>
-                <div className="flex items-center justify-center gap-4 p-6 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-center gap-3 p-4 bg-gray-50 rounded-lg">
                   {/* Hour Selection */}
                   <div className="flex flex-col items-center">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(true)}
-                      className="h-8 w-8 p-0 mb-2"
+                      className="h-6 w-6 p-0 mb-1"
                     >
-                      <ChevronUp className="h-4 w-4" />
+                      <ChevronUp className="h-3 w-3" />
                     </Button>
-                    <div className="bg-gray-200 rounded-lg px-4 py-6 min-w-[80px] text-center">
-                      <span className="text-4xl font-bold text-gray-900">
-                        {selectedHour.toString().padStart(2, '0')}
-                      </span>
+                    <div className="bg-white rounded-md border px-3 py-2 min-w-[50px] text-center cursor-pointer" onClick={handleHourClick}>
+                      {isEditingHour ? (
+                        <Input
+                          ref={hourInputRef}
+                          value={hourInput}
+                          onChange={(e) => setHourInput(e.target.value)}
+                          onBlur={handleHourInputBlur}
+                          onKeyDown={handleHourInputKeyDown}
+                          className="text-lg font-semibold text-center border-0 p-0 h-auto bg-transparent"
+                          maxLength={2}
+                        />
+                      ) : (
+                        <span className="text-lg font-semibold text-gray-900">
+                          {selectedHour.toString().padStart(2, '0')}
+                        </span>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustHour(false)}
-                      className="h-8 w-8 p-0 mt-2"
+                      className="h-6 w-6 p-0 mt-1"
                     >
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-3 w-3" />
                     </Button>
-                    <span className="text-sm text-gray-500 mt-2">Hour</span>
+                    <span className="text-xs text-gray-500 mt-1">Hour</span>
                   </div>
 
                   {/* Colon Separator */}
-                  <div className="text-4xl font-bold text-gray-900 pb-4">:</div>
+                  <div className="text-lg font-semibold text-gray-900 pb-4">:</div>
 
                   {/* Minute Selection */}
                   <div className="flex flex-col items-center">
@@ -331,44 +399,64 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(true)}
-                      className="h-8 w-8 p-0 mb-2"
+                      className="h-6 w-6 p-0 mb-1"
                     >
-                      <ChevronUp className="h-4 w-4" />
+                      <ChevronUp className="h-3 w-3" />
                     </Button>
-                    <div className="bg-gray-200 rounded-lg px-4 py-6 min-w-[80px] text-center">
-                      <span className="text-4xl font-bold text-gray-900">
-                        {selectedMinute.toString().padStart(2, '0')}
-                      </span>
+                    <div className="bg-white rounded-md border px-3 py-2 min-w-[50px] text-center cursor-pointer" onClick={handleMinuteClick}>
+                      {isEditingMinute ? (
+                        <Input
+                          ref={minuteInputRef}
+                          value={minuteInput}
+                          onChange={(e) => setMinuteInput(e.target.value)}
+                          onBlur={handleMinuteInputBlur}
+                          onKeyDown={handleMinuteInputKeyDown}
+                          className="text-lg font-semibold text-center border-0 p-0 h-auto bg-transparent"
+                          maxLength={2}
+                        />
+                      ) : (
+                        <span className="text-lg font-semibold text-gray-900">
+                          {selectedMinute.toString().padStart(2, '0')}
+                        </span>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => adjustMinute(false)}
-                      className="h-8 w-8 p-0 mt-2"
+                      className="h-6 w-6 p-0 mt-1"
                     >
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-3 w-3" />
                     </Button>
-                    <span className="text-sm text-gray-500 mt-2">Minute</span>
+                    <span className="text-xs text-gray-500 mt-1">Minute</span>
                   </div>
 
                   {/* AM/PM Selection */}
-                  <div className="flex flex-col gap-2 ml-4">
-                    <Button
+                  <div className="flex flex-col gap-1 ml-4">
+                    <Badge
                       variant={isAM ? "default" : "outline"}
-                      size="sm"
+                      className={cn(
+                        "cursor-pointer px-3 py-1",
+                        isAM 
+                          ? "bg-blue-500 hover:bg-blue-600 text-white" 
+                          : "hover:bg-gray-100 text-gray-600"
+                      )}
                       onClick={() => setIsAM(true)}
-                      className="w-16 bg-purple-500 hover:bg-purple-600 text-white"
                     >
                       AM
-                    </Button>
-                    <Button
+                    </Badge>
+                    <Badge
                       variant={!isAM ? "default" : "outline"}
-                      size="sm"
+                      className={cn(
+                        "cursor-pointer px-3 py-1",
+                        !isAM 
+                          ? "bg-blue-500 hover:bg-blue-600 text-white" 
+                          : "hover:bg-gray-100 text-gray-600"
+                      )}
                       onClick={() => setIsAM(false)}
-                      className="w-16"
                     >
                       PM
-                    </Button>
+                    </Badge>
                   </div>
                 </div>
               </div>
