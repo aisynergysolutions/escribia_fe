@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Bold, Italic, Underline, Strikethrough, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useIsMobile } from '@/hooks/use-mobile';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
+import PostNowModal from './PostNowModal';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -51,6 +53,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showPostNowModal, setShowPostNowModal] = useState(false);
 
   const isFormatActive = (format: string) => activeFormats.includes(format);
 
@@ -67,10 +70,20 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     setShowScheduleModal(true);
   };
 
-  const handleScheduleConfirm = (date: Date, time: string) => {
-    console.log('Scheduling post:', { date, time });
+  const handleScheduleConfirm = (date: Date, time: string, status: string) => {
+    console.log('Scheduling post:', { date, time, status });
     setShowScheduleModal(false);
     // Here you would typically handle the scheduling logic
+  };
+
+  const handlePostNow = () => {
+    setShowPostNowModal(true);
+  };
+
+  const handlePostNowConfirm = (status: string) => {
+    console.log('Posting now with status:', status);
+    setShowPostNowModal(false);
+    // Here you would typically handle the posting logic
   };
 
   return (
@@ -283,11 +296,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 </div>
                 
                 <DropdownMenuContent align="end" className="w-32">
-                  <DropdownMenuItem onClick={onSchedule} className="flex items-center gap-2">
+                  <DropdownMenuItem onClick={handleOpenScheduleModal} className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Schedule
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onPostNow} className="flex items-center gap-2">
+                  <DropdownMenuItem onClick={handlePostNow} className="flex items-center gap-2">
                     <Send className="h-4 w-4" />
                     Post Now
                   </DropdownMenuItem>
@@ -311,6 +324,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onOpenChange={setShowScheduleModal}
         postContent={postContent}
         onSchedule={handleScheduleConfirm}
+      />
+
+      <PostNowModal
+        open={showPostNowModal}
+        onOpenChange={setShowPostNowModal}
+        postContent={postContent}
+        onPost={handlePostNowConfirm}
       />
     </>
   );

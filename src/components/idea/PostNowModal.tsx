@@ -1,8 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
@@ -10,8 +12,29 @@ interface PostNowModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   postContent: string;
-  onPost: () => void;
+  onPost: (status: string) => void;
 }
+
+const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Posted':
+      return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
+    case 'Scheduled':
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
+    case 'AwaitingReview':
+      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
+    case 'NeedsRevision':
+      return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
+    case 'Drafting':
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-100 hover:text-purple-800';
+    case 'NeedsVisual':
+      return 'bg-orange-100 text-orange-800 hover:bg-orange-100 hover:text-orange-800';
+    default:
+      return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
+  }
+};
 
 const PostNowModal: React.FC<PostNowModalProps> = ({
   open,
@@ -19,6 +42,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
   postContent,
   onPost
 }) => {
+  const [selectedStatus, setSelectedStatus] = useState('Posted');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
@@ -88,7 +112,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
   }, [postContent, open]);
 
   const handlePost = () => {
-    onPost();
+    onPost(selectedStatus);
     onOpenChange(false);
   };
 
@@ -110,8 +134,8 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 min-h-0 flex flex-col">
-          <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Post Preview</h3>
+        <div className="flex-1 min-h-0 flex flex-col space-y-6">
+          <h3 className="text-lg font-semibold flex-shrink-0">Post Preview</h3>
           <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
               <div className="pr-4 pb-4">
@@ -200,6 +224,38 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                 </div>
               </div>
             </ScrollArea>
+          </div>
+
+          {/* Status Selection */}
+          <div className="flex-shrink-0">
+            <Separator className="mb-4" />
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">Update Status</h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                      <Badge className={`${getStatusColor(selectedStatus)}`}>
+                        {selectedStatus}
+                      </Badge>
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    {predefinedStatuses.map(status => (
+                      <DropdownMenuItem key={status} onClick={() => setSelectedStatus(status)} className="p-2">
+                        <Badge className={`${getStatusColor(status)} cursor-pointer`}>
+                          {status}
+                        </Badge>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <p className="text-sm text-gray-500">
+                The status will be automatically updated to "{selectedStatus}" when posted.
+              </p>
+            </div>
           </div>
         </div>
 

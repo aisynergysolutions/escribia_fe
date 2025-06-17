@@ -1,10 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
@@ -14,8 +15,29 @@ interface SchedulePostModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   postContent: string;
-  onSchedule: (date: Date, time: string) => void;
+  onSchedule: (date: Date, time: string, status: string) => void;
 }
+
+const predefinedStatuses = ['Idea', 'Drafting', 'AwaitingReview', 'Approved', 'Scheduled', 'Posted', 'NeedsRevision', 'NeedsVisual'];
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Posted':
+      return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
+    case 'Scheduled':
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
+    case 'AwaitingReview':
+      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
+    case 'NeedsRevision':
+      return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
+    case 'Drafting':
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-100 hover:text-purple-800';
+    case 'NeedsVisual':
+      return 'bg-orange-100 text-orange-800 hover:bg-orange-100 hover:text-orange-800';
+    default:
+      return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
+  }
+};
 
 const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   open,
@@ -25,6 +47,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState('Scheduled');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
@@ -38,7 +61,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   ];
 
   const customTimes = [
-    '08:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '18:00', '19:00', '20:00'
+    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
   ];
 
   useEffect(() => {
@@ -109,7 +132,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       const scheduledDate = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(':');
       scheduledDate.setHours(parseInt(hours), parseInt(minutes));
-      onSchedule(scheduledDate, selectedTime);
+      onSchedule(scheduledDate, selectedTime, selectedStatus);
       onOpenChange(false);
     }
   };
@@ -251,32 +274,10 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                 </Popover>
               </div>
 
-              {/* Recommended Times */}
+              {/* Time Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Recommended Times</label>
-                <div className="grid gap-2">
-                  {recommendedTimes.map((timeSlot) => (
-                    <button
-                      key={timeSlot.time}
-                      onClick={() => setSelectedTime(timeSlot.time)}
-                      className={cn(
-                        "p-3 text-left rounded-lg border transition-colors",
-                        selectedTime === timeSlot.time
-                          ? "bg-indigo-50 border-indigo-300 text-indigo-700"
-                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                      )}
-                    >
-                      <div className="font-medium">{formatTime(timeSlot.time)}</div>
-                      <div className="text-sm text-gray-500">{timeSlot.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Times */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Other Times</label>
-                <div className="grid grid-cols-3 gap-2">
+                <label className="block text-sm font-medium mb-2">Select Time</label>
+                <div className="grid grid-cols-4 gap-2">
                   {customTimes.map((time) => (
                     <Button
                       key={time}
@@ -289,6 +290,37 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Status Selection */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold">Update Status</h3>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <Badge className={`${getStatusColor(selectedStatus)}`}>
+                          {selectedStatus}
+                        </Badge>
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56">
+                      {predefinedStatuses.map(status => (
+                        <DropdownMenuItem key={status} onClick={() => setSelectedStatus(status)} className="p-2">
+                          <Badge className={`${getStatusColor(status)} cursor-pointer`}>
+                            {status}
+                          </Badge>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <p className="text-sm text-gray-500">
+                  The status will be automatically updated to "{selectedStatus}" when scheduled.
+                </p>
               </div>
             </div>
           </div>
