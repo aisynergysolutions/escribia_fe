@@ -107,7 +107,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   // Get allowed statuses for filter tabs
   const getAllowedStatuses = () => {
-    return ['Drafting', 'Reviewed', 'Scheduled', 'Published'];
+    return ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
   };
 
   const filteredPosts = getFilteredAndSortedPosts();
@@ -125,7 +125,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     <div className="space-y-6">
       {/* Status Filter Tabs */}
       <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger 
             value="all" 
             className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
