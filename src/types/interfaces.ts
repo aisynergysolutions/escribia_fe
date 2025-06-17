@@ -1,7 +1,20 @@
+export interface SubClient {
+  id: string;
+  name: string;
+  role: string; // e.g., "Company", "CEO", "CTO", "COO"
+  profileImage?: string;
+  writingStyle?: string;
+  linkedinConnected: boolean;
+  linkedinAccountName?: string;
+  linkedinExpiryDate?: string;
+  customInstructions?: string;
+  createdAt: { seconds: number; nanoseconds: number };
+}
 
 export interface Idea {
   id: string;
   clientId: string;
+  subClientId?: string; // New field to link to specific sub-client
   title: string;
   initialIdeaPrompt: string;
   currentDraftText: string;
@@ -53,6 +66,7 @@ export interface Client {
   writingStyle?: string;
   createdAt: { seconds: number; nanoseconds: number };
   updatedAt: { seconds: number; nanoseconds: number };
+  subClients: SubClient[]; // New field for sub-clients
   brandProfile: {
     language: string;
     locationFocus: string;
