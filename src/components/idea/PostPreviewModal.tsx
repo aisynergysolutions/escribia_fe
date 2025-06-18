@@ -3,21 +3,27 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Eye, Smartphone, Monitor, Sun, Moon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { PollData } from './CreatePollModal';
+import { MediaFile } from './MediaUploadModal';
 
 interface PostPreviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   postContent: string;
+  pollData?: PollData | null;
+  mediaFiles?: MediaFile[];
 }
 
 const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
   open,
   onOpenChange,
-  postContent
+  postContent,
+  pollData,
+  mediaFiles = []
 }) => {
   const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Default to collapsed
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
@@ -67,12 +73,140 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
     }
   }, [postContent, deviceType]);
 
+  // Reset to collapsed when modal opens
+  useEffect(() => {
+    if (open) {
+      setIsExpanded(false);
+    }
+  }, [open]);
+
   const handleSeeMore = () => {
     setIsExpanded(true);
   };
 
   const handleSeeLess = () => {
     setIsExpanded(false);
+  };
+
+  const renderMediaPreview = () => {
+    if (!mediaFiles || mediaFiles.length === 0) return null;
+
+    const firstImage = mediaFiles[0];
+    const remainingImages = mediaFiles.slice(1, 4);
+    const extraCount = Math.max(0, mediaFiles.length - 4);
+    const isVerticalLayout = firstImage.isVertical;
+
+    return (
+      <div className="mb-4">
+        <div className="border rounded-lg overflow-hidden bg-gray-50">
+          {isVerticalLayout ? (
+            <div className="flex h-64">
+              <div className="flex-1">
+                <img
+                  src={firstImage.url}
+                  alt="Main image"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {remainingImages.length > 0 && (
+                <div className="w-32 flex flex-col">
+                  {remainingImages.map((image, index) => (
+                    <div 
+                      key={image.id} 
+                      className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-b border-white' : ''}`}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`Image ${index + 2}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {index === remainingImages.length - 1 && extraCount > 0 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-white font-semibold text-lg">
+                            +{extraCount}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-0">
+              <div className="h-48">
+                <img
+                  src={firstImage.url}
+                  alt="Main image"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {remainingImages.length > 0 && (
+                <div className="flex h-16">
+                  {remainingImages.map((image, index) => (
+                    <div 
+                      key={image.id} 
+                      className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-r border-white' : ''}`}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`Image ${index + 2}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {index === remainingImages.length - 1 && extraCount > 0 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            +{extraCount}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPollPreview = () => {
+    if (!pollData) return null;
+
+    return (
+      <div className="mb-4">
+        <div className={`border rounded-lg p-4 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
+          <div className="space-y-4">
+            <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              {pollData.question}
+            </div>
+            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              You can see how people vote. <span className="text-blue-600 cursor-pointer">Learn More</span>
+            </div>
+            
+            <div className="space-y-2">
+              {pollData.options.map((option, index) => (
+                <div 
+                  key={index} 
+                  className="border border-blue-500 rounded-full py-3 px-4 text-center text-blue-600 cursor-pointer hover:bg-blue-50 transition-colors"
+                >
+                  {option}
+                </div>
+              ))}
+            </div>
+            
+            <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              <span>0 votes</span>
+              <span>•</span>
+              <span>1w left</span>
+              <span>•</span>
+              <span className="text-blue-600 cursor-pointer">View results</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -201,6 +335,12 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                     )}
                   </div>
                 </div>
+                
+                {/* Media Preview - Always visible */}
+                {renderMediaPreview()}
+                
+                {/* Poll Preview - Always visible */}
+                {renderPollPreview()}
               </div>
               
               {/* LinkedIn Engagement Bar */}

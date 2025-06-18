@@ -536,7 +536,13 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         }}
       />
       
-      <PostPreviewModal open={showPreviewModal} onOpenChange={setShowPreviewModal} postContent={currentContent} />
+      <PostPreviewModal 
+        open={showPreviewModal} 
+        onOpenChange={setShowPreviewModal} 
+        postContent={currentContent}
+        pollData={pollData}
+        mediaFiles={mediaFiles}
+      />
       
       <SchedulePostModal 
         open={showScheduleModal} 
