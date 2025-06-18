@@ -262,30 +262,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setSelectedMethod(methodId);
   };
 
-  const renderSubClientSelector = () => (
-    <div className="animate-fade-in">
-      <label className="block text-sm font-medium text-foreground mb-2">
-        Create post for <span className="text-destructive">*</span>
-      </label>
-      <Select value={selectedSubClient} onValueChange={setSelectedSubClient}>
-        <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
-          <SelectValue placeholder="Select who this post is for" />
-        </SelectTrigger>
-        <SelectContent>
-          {subClients.map(subClient => (
-            <SelectItem key={subClient.id} value={subClient.id}>
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span>{subClient.name}</span>
-                <span className="text-xs text-muted-foreground">({subClient.role})</span>
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
   const renderObjectiveAndTemplate = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
       <div>
@@ -337,7 +313,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'text':
         return (
           <div className="space-y-6 animate-fade-in">
-            {renderSubClientSelector()}
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -365,7 +340,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'voice':
         return (
           <div className="space-y-6 animate-fade-in">
-            {renderSubClientSelector()}
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -471,7 +445,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'url':
         return (
           <div className="space-y-6 animate-fade-in">
-            {renderSubClientSelector()}
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -511,9 +484,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'suggestions':
         return (
           <div className="h-full flex flex-col animate-fade-in">
-            {renderSubClientSelector()}
-            
-            <div className="relative h-full mt-6">
+            <div className="relative h-full">
               {/* Floating Refresh Button */}
               <button 
                 onClick={refreshSuggestions}
@@ -604,29 +575,60 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </DialogHeader>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2 pb-6">
-          {/* Left side - Creation methods (1/3) */}
-          <div className="space-y-3">
-            {createMethods.map(method => (
-              <button 
-                key={method.id} 
-                onClick={() => handleMethodSelect(method.id)} 
-                className={`w-full p-4 rounded-lg text-left transition-all duration-200 transform hover:scale-[1.02] border ${
-                  selectedMethod === method.id 
-                    ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-lg' 
-                    : 'border-border bg-card hover:border-[#4F46E5]/50 hover:bg-[#4F46E5]/5'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg transition-all ${method.color}`}>
-                    <method.icon className="h-4 w-4" />
+          {/* Left side - Creation methods and sub-client selection */}
+          <div className="space-y-6">
+            {/* Creation Methods */}
+            <div className="space-y-3">
+              {createMethods.map(method => (
+                <button 
+                  key={method.id} 
+                  onClick={() => handleMethodSelect(method.id)} 
+                  className={`w-full p-4 rounded-lg text-left transition-all duration-200 transform hover:scale-[1.02] border ${
+                    selectedMethod === method.id 
+                      ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-lg' 
+                      : 'border-border bg-card hover:border-[#4F46E5]/50 hover:bg-[#4F46E5]/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg transition-all ${method.color}`}>
+                      <method.icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">{method.title}</div>
+                      <div className="text-sm text-muted-foreground">{method.description}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-medium text-foreground">{method.title}</div>
-                    <div className="text-sm text-muted-foreground">{method.description}</div>
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
+
+            {/* Sub-client Selection - Now prominently placed */}
+            <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg">
+              <label className="block text-sm font-semibold text-amber-800 mb-3">
+                Who is this post for? <span className="text-red-600">*</span>
+              </label>
+              <Select value={selectedSubClient} onValueChange={setSelectedSubClient}>
+                <SelectTrigger className="transition-all hover:border-amber-400 focus:border-amber-500 bg-white">
+                  <SelectValue placeholder="Select who this post is for" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subClients.map(subClient => (
+                    <SelectItem key={subClient.id} value={subClient.id}>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span>{subClient.name}</span>
+                        <span className="text-xs text-muted-foreground">({subClient.role})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!selectedSubClient && (
+                <p className="text-xs text-amber-700 mt-2">
+                  Please select who this post will be created for before proceeding.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Right side - Dynamic content based on selected method (2/3) */}
