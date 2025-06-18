@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Separator } from '@/components/ui/separator';
 import { mockTemplates, mockClients } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -575,14 +576,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       </DialogTrigger>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          {/* New Profile Selector Header */}
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-foreground">
+          {/* Updated Header with larger label and borderless selector */}
+          <div className="flex items-center gap-4 pb-4">
+            <label className="text-lg font-semibold text-foreground">
               Create Post as:
             </label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-input rounded-md cursor-pointer hover:border-[#4F46E5]/50 focus:outline-none focus:border-[#4F46E5] transition-all min-w-[280px]">
+                <button className="flex items-center gap-3 px-4 py-3 bg-transparent border-0 rounded-md cursor-pointer hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition-all min-w-[280px]">
                   {selectedSubClientData ? (
                     <>
                       <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
@@ -608,7 +609,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[280px] bg-white border shadow-lg" align="start">
+              <DropdownMenuContent className="w-[280px] bg-white border shadow-lg z-50" align="start">
                 {subClients.map(subClient => (
                   <DropdownMenuItem
                     key={subClient.id}
@@ -636,9 +637,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          {/* Header Divider */}
+          <Separator className="border-gray-200" />
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2 pb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 pb-6">
           {/* Left side - Creation methods */}
           <div className="space-y-6">
             {/* Creation Methods */}
