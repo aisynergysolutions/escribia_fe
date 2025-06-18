@@ -32,6 +32,7 @@ interface EditorToolbarProps {
   onAddPoll?: (pollData: PollData) => void;
   hasPoll?: boolean;
   hasMedia?: boolean;
+  onAddMedia?: () => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -54,7 +55,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   postContent = '',
   onAddPoll,
   hasPoll = false,
-  hasMedia = false
+  hasMedia = false,
+  onAddMedia
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
@@ -101,8 +103,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
   const handleSelectMedia = () => {
     setShowMediaPollSelector(false);
-    // Trigger media upload modal from parent
-    console.log('Media selected - parent will handle');
+    if (onAddMedia) {
+      onAddMedia();
+    }
   };
 
   const handleSelectPoll = () => {
