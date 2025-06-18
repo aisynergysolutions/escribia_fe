@@ -2,27 +2,41 @@
 import React from 'react';
 import { PollData } from './CreatePollModal';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Edit } from 'lucide-react';
 
 interface PollPreviewProps {
   pollData: PollData;
   onRemove: () => void;
+  onEdit: () => void;
+  viewMode: 'mobile' | 'desktop';
 }
 
-const PollPreview: React.FC<PollPreviewProps> = ({ pollData, onRemove }) => {
+const PollPreview: React.FC<PollPreviewProps> = ({ pollData, onRemove, onEdit, viewMode }) => {
+  const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
+
   return (
-    <div className="border rounded-lg p-4 bg-gray-50 relative mb-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRemove}
-        className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-gray-200"
-      >
-        <X className="h-4 w-4" />
-      </Button>
+    <div className={`mx-auto bg-white border rounded-lg p-4 relative mb-4 ${maxWidthClass}`}>
+      <div className="absolute top-2 right-2 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEdit}
+          className="h-6 w-6 p-0 hover:bg-gray-200"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          className="h-6 w-6 p-0 hover:bg-gray-200"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
       
       <div className="space-y-4">
-        <div className="font-medium text-gray-900 pr-8">
+        <div className="font-medium text-gray-900 pr-16">
           {pollData.question}
         </div>
         <div className="text-sm text-gray-600">
@@ -40,7 +54,7 @@ const PollPreview: React.FC<PollPreviewProps> = ({ pollData, onRemove }) => {
           ))}
         </div>
         
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>0 votes</span>
           <span>•</span>
           <span>1w left</span>

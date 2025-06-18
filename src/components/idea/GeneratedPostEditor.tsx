@@ -76,6 +76,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const [pollData, setPollData] = useState<PollData | null>(null);
   const [hasMedia, setHasMedia] = useState(false);
+  const [editingPoll, setEditingPoll] = useState<PollData | null>(null);
+  const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const lastSelection = useRef<Range | null>(null);
@@ -428,14 +430,23 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const handleAddPoll = (newPollData: PollData) => {
     setPollData(newPollData);
     setHasMedia(false); // Clear media when adding poll
+    setEditingPoll(null); // Clear editing state
     toast({
       title: "Poll Added",
       description: "Poll has been added to your post."
     });
   };
 
+  const handleEditPoll = () => {
+    if (pollData) {
+      setEditingPoll(pollData);
+      setShowCreatePollModal(true);
+    }
+  };
+
   const handleRemovePoll = () => {
     setPollData(null);
+    setEditingPoll(null);
     toast({
       title: "Poll Removed",
       description: "Poll has been removed from your post."
@@ -508,6 +519,18 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         onRestore={handleRestoreVersion}
       />
       
+      <CreatePollModal
+        open={showCreatePollModal}
+        onOpenChange={(open) => {
+          setShowCreatePollModal(open);
+          if (!open) {
+            setEditingPoll(null);
+          }
+        }}
+        onCreatePoll={handleCreatePoll}
+        editingPoll={editingPoll}
+      />
+      
       <div className="bg-white rounded-lg border">
         <EditorToolbar
           onFormat={handleFormat}
@@ -532,10 +555,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         />
         
         <div className="p-4 bg-gray-50">
-          {pollData && (
-            <PollPreview pollData={pollData} onRemove={handleRemovePoll} />
-          )}
-          
           <EditorContainer
             editorRef={editorRef}
             generatedPost={currentContent}
@@ -549,6 +568,15 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             cutoffLineTop={cutoffLineTop}
             viewMode={viewMode}
           />
+          
+          {pollData && (
+            <PollPreview 
+              pollData={pollData} 
+              onRemove={handleRemovePoll} 
+              onEdit={handleEditPoll}
+              viewMode={viewMode}
+            />
+          )}
         </div>
 
         <EditingInstructions
