@@ -6,7 +6,6 @@ import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import MediaDropZone from '../components/idea/MediaDropZone';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
-import SubClientCard from '../components/idea/SubClientCard';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
@@ -31,7 +30,6 @@ const IdeaDetails = () => {
   let initialIdeaText = '';
   let urlObjective = '';
   let urlTemplate = '';
-  let subClientId = '';
   
   if (isNewPost) {
     const dataParam = searchParams.get('data');
@@ -42,7 +40,6 @@ const IdeaDetails = () => {
         initialIdeaText = decoded.initialIdea || decoded.idea || '';
         urlObjective = decoded.objective || '';
         urlTemplate = decoded.template || '';
-        subClientId = decoded.subClientId || '';
       } catch (e) {
         initialIdeaText = '';
       }
@@ -52,11 +49,6 @@ const IdeaDetails = () => {
   // Find the idea and client
   const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
   const client = mockClients.find(c => c.id === clientId);
-
-  // Find the sub-client - either from URL data (new post) or from existing idea
-  const selectedSubClient = client?.subClients.find(sc => 
-    sc.id === (subClientId || idea?.subClientId)
-  );
 
   // Custom hooks - pass the extracted initial idea data
   const ideaForm = useIdeaForm({
@@ -284,37 +276,32 @@ const IdeaDetails = () => {
           {showCommentsPanel ? (
             <CommentsPanel comments={comments} onAddReply={handleAddReply} onResolve={handleResolve} />
           ) : (
-            <>
-              {selectedSubClient && (
-                <SubClientCard subClient={selectedSubClient} />
-              )}
-              <IdeaForm
-                formData={{
-                  initialIdea: ideaForm.formData.initialIdea,
-                  objective: ideaForm.formData.objective,
-                  template: ideaForm.formData.template,
-                  internalNotes: ideaForm.formData.internalNotes
-                }}
-                setters={{
-                  setInitialIdea: ideaForm.setters.setInitialIdea,
-                  setObjective: ideaForm.setters.setObjective,
-                  setTemplate: ideaForm.setters.setTemplate,
-                  setInternalNotes: ideaForm.setters.setInternalNotes
-                }}
-                options={{
-                  useAsTrainingData,
-                  onUseAsTrainingDataChange: setUseAsTrainingData
-                }}
-                isExpanded={isIdeaExpanded}
-                onExpandChange={setIsIdeaExpanded}
-                onSendToAI={handleSendToAI}
-                onAddCustomObjective={handleAddCustomObjective}
-                hooks={sampleHooks}
-                selectedHookIndex={selectedHookIndex}
-                onHookSelect={handleHookSelect}
-                onRegenerateHooks={handleRegenerateHooks}
-              />
-            </>
+            <IdeaForm
+              formData={{
+                initialIdea: ideaForm.formData.initialIdea,
+                objective: ideaForm.formData.objective,
+                template: ideaForm.formData.template,
+                internalNotes: ideaForm.formData.internalNotes
+              }}
+              setters={{
+                setInitialIdea: ideaForm.setters.setInitialIdea,
+                setObjective: ideaForm.setters.setObjective,
+                setTemplate: ideaForm.setters.setTemplate,
+                setInternalNotes: ideaForm.setters.setInternalNotes
+              }}
+              options={{
+                useAsTrainingData,
+                onUseAsTrainingDataChange: setUseAsTrainingData
+              }}
+              isExpanded={isIdeaExpanded}
+              onExpandChange={setIsIdeaExpanded}
+              onSendToAI={handleSendToAI}
+              onAddCustomObjective={handleAddCustomObjective}
+              hooks={sampleHooks}
+              selectedHookIndex={selectedHookIndex}
+              onHookSelect={handleHookSelect}
+              onRegenerateHooks={handleRegenerateHooks}
+            />
           )}
         </div>
       </div>
