@@ -26,10 +26,11 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
   // Determine layout based on first image orientation
   const isVerticalLayout = firstImage.isVertical;
   
-  const containerWidth = viewMode === 'mobile' ? 'w-80' : 'w-full max-w-lg';
+  // Use the same centering approach as EditorContainer
+  const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
 
   return (
-    <div className={`${containerWidth} mt-4`}>
+    <div className={`${maxWidthClass} mx-auto mt-4`}>
       {/* Header with controls */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-gray-600">
