@@ -9,6 +9,7 @@ import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
+import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
@@ -49,6 +50,13 @@ const IdeaDetails = () => {
   // Find the idea and client
   const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
   const client = mockClients.find(c => c.id === clientId);
+
+  // Mock sub-client data - hardcoded as requested
+  const mockSubClient = {
+    name: "Sarah Johnson",
+    role: "CEO",
+    profileImage: undefined // Will use fallback with icon
+  };
 
   // Custom hooks - pass the extracted initial idea data
   const ideaForm = useIdeaForm({
@@ -276,32 +284,35 @@ const IdeaDetails = () => {
           {showCommentsPanel ? (
             <CommentsPanel comments={comments} onAddReply={handleAddReply} onResolve={handleResolve} />
           ) : (
-            <IdeaForm
-              formData={{
-                initialIdea: ideaForm.formData.initialIdea,
-                objective: ideaForm.formData.objective,
-                template: ideaForm.formData.template,
-                internalNotes: ideaForm.formData.internalNotes
-              }}
-              setters={{
-                setInitialIdea: ideaForm.setters.setInitialIdea,
-                setObjective: ideaForm.setters.setObjective,
-                setTemplate: ideaForm.setters.setTemplate,
-                setInternalNotes: ideaForm.setters.setInternalNotes
-              }}
-              options={{
-                useAsTrainingData,
-                onUseAsTrainingDataChange: setUseAsTrainingData
-              }}
-              isExpanded={isIdeaExpanded}
-              onExpandChange={setIsIdeaExpanded}
-              onSendToAI={handleSendToAI}
-              onAddCustomObjective={handleAddCustomObjective}
-              hooks={sampleHooks}
-              selectedHookIndex={selectedHookIndex}
-              onHookSelect={handleHookSelect}
-              onRegenerateHooks={handleRegenerateHooks}
-            />
+            <>
+              <SubClientDisplayCard subClient={mockSubClient} />
+              <IdeaForm
+                formData={{
+                  initialIdea: ideaForm.formData.initialIdea,
+                  objective: ideaForm.formData.objective,
+                  template: ideaForm.formData.template,
+                  internalNotes: ideaForm.formData.internalNotes
+                }}
+                setters={{
+                  setInitialIdea: ideaForm.setters.setInitialIdea,
+                  setObjective: ideaForm.setters.setObjective,
+                  setTemplate: ideaForm.setters.setTemplate,
+                  setInternalNotes: ideaForm.setters.setInternalNotes
+                }}
+                options={{
+                  useAsTrainingData,
+                  onUseAsTrainingDataChange: setUseAsTrainingData
+                }}
+                isExpanded={isIdeaExpanded}
+                onExpandChange={setIsIdeaExpanded}
+                onSendToAI={handleSendToAI}
+                onAddCustomObjective={handleAddCustomObjective}
+                hooks={sampleHooks}
+                selectedHookIndex={selectedHookIndex}
+                onHookSelect={handleHookSelect}
+                onRegenerateHooks={handleRegenerateHooks}
+              />
+            </>
           )}
         </div>
       </div>
