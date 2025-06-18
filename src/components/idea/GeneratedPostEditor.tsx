@@ -11,6 +11,7 @@ import EditingInstructions from './EditingInstructions';
 import CommentPopover from './CommentPopover';
 import VersionHistoryModal from './VersionHistoryModal';
 import PollPreview from './PollPreview';
+import CreatePollModal from './CreatePollModal';
 import { CommentThread } from './CommentsPanel';
 import { PollData } from './CreatePollModal';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
@@ -527,7 +528,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             setEditingPoll(null);
           }
         }}
-        onCreatePoll={handleCreatePoll}
+        onCreatePoll={handleAddPoll}
         editingPoll={editingPoll}
       />
       
