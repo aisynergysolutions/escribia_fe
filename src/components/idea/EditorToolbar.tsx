@@ -101,8 +101,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
   const handleSelectMedia = () => {
     setShowMediaPollSelector(false);
-    // Handle media selection logic
-    console.log('Media selected');
+    // Trigger media upload modal from parent
+    console.log('Media selected - parent will handle');
   };
 
   const handleSelectPoll = () => {

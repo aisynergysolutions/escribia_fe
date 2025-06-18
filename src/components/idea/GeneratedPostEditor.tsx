@@ -15,6 +15,8 @@ import CreatePollModal from './CreatePollModal';
 import { CommentThread } from './CommentsPanel';
 import { PollData } from './CreatePollModal';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
+import MediaPreview from './MediaPreview';
+import MediaUploadModal, { MediaFile } from './MediaUploadModal';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -85,6 +87,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   // NEW state for comment popover
   const [commentPopover, setCommentPopover] = useState({ visible: false, top: 0, left: 0 });
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [editingMedia, setEditingMedia] = useState<MediaFile[] | null>(null);
+  const [showMediaUploadModal, setShowMediaUploadModal] = useState(false);
 
   // Initialize undo/redo functionality
   const {
@@ -454,6 +459,46 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
+  const handleSelectMedia = () => {
+    setShowMediaPollSelector(false);
+    setShowMediaUploadModal(true);
+  };
+
+  const handleSelectPoll = () => {
+    setShowMediaPollSelector(false);
+    setShowCreatePollModal(true);
+  };
+
+  const handleUploadMedia = (newMediaFiles: MediaFile[]) => {
+    setMediaFiles(newMediaFiles);
+    setPollData(null); // Clear poll when adding media
+    setEditingMedia(null); // Clear editing state
+    toast({
+      title: "Media Added",
+      description: `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} added to your post.`
+    });
+  };
+
+  const handleEditMedia = () => {
+    if (mediaFiles.length > 0) {
+      setEditingMedia(mediaFiles);
+      setShowMediaUploadModal(true);
+    }
+  };
+
+  const handleRemoveMedia = () => {
+    // Cleanup URLs
+    mediaFiles.forEach(file => {
+      URL.revokeObjectURL(file.url);
+    });
+    setMediaFiles([]);
+    setEditingMedia(null);
+    toast({
+      title: "Media Removed",
+      description: "Media has been removed from your post."
+    });
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== currentContent) {
       editorRef.current.innerHTML = currentContent;
@@ -480,6 +525,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setHasMedia(mediaFiles.length > 0);
+  }, [mediaFiles]);
 
   return (
     <div className="space-y-6">
@@ -532,6 +581,18 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         editingPoll={editingPoll}
       />
       
+      <MediaUploadModal
+        open={showMediaUploadModal}
+        onOpenChange={(open) => {
+          setShowMediaUploadModal(open);
+          if (!open) {
+            setEditingMedia(null);
+          }
+        }}
+        onUploadMedia={handleUploadMedia}
+        editingMedia={editingMedia || undefined}
+      />
+      
       <div className="bg-white rounded-lg border">
         <EditorToolbar
           onFormat={handleFormat}
@@ -569,6 +630,15 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             cutoffLineTop={cutoffLineTop}
             viewMode={viewMode}
           />
+          
+          {mediaFiles.length > 0 && (
+            <MediaPreview 
+              mediaFiles={mediaFiles}
+              onRemove={handleRemoveMedia}
+              onEdit={handleEditMedia}
+              viewMode={viewMode}
+            />
+          )}
           
           {pollData && (
             <PollPreview 
