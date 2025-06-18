@@ -459,16 +459,6 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
-  const handleSelectMedia = () => {
-    setShowMediaPollSelector(false);
-    setShowMediaUploadModal(true);
-  };
-
-  const handleSelectPoll = () => {
-    setShowMediaPollSelector(false);
-    setShowCreatePollModal(true);
-  };
-
   const handleUploadMedia = (newMediaFiles: MediaFile[]) => {
     setMediaFiles(newMediaFiles);
     setPollData(null); // Clear poll when adding media
@@ -614,6 +604,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onAddPoll={handleAddPoll}
           hasPoll={!!pollData}
           hasMedia={hasMedia}
+          onAddMedia={() => setShowMediaUploadModal(true)}
         />
         
         <div className="p-4 bg-gray-50">
