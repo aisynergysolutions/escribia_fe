@@ -1,3 +1,4 @@
+
 import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -94,6 +95,11 @@ function App() {
                     <IdeaDetails />
                   </Suspense>
                 } />
+                <Route path="clients/:clientId/profiles/:profileId" element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <ProfileDetailsPage />
+                  </Suspense>
+                } />
                 <Route path="calendar" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Calendar />
@@ -118,11 +124,6 @@ function App() {
                   <Suspense fallback={<PageSkeleton />}>
                     <Profile />
                   </Suspense>
-                } />
-                <Route path="/clients/:clientId/profiles/:profileId" element={
-                  <MainLayout>
-                    <ProfileDetailsPage />
-                  </MainLayout>
                 } />
               </Route>
               <Route path="*" element={

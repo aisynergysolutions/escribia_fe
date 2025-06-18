@@ -163,18 +163,18 @@ const ProfileDetails: React.FC = () => {
                   <EditableField
                     label="Name"
                     value={formData.name}
-                    onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                    onChange={(value) => setFormData(prev => ({ ...prev, name: value as string }))}
                   />
                   <EditableField
                     label="Role"
                     value={formData.role}
-                    onChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+                    onChange={(value) => setFormData(prev => ({ ...prev, role: value as string }))}
                   />
                   <div className="col-span-2">
                     <EditableField
                       label="Writing Style"
                       value={formData.writingStyle}
-                      onChange={(value) => setFormData(prev => ({ ...prev, writingStyle: value }))}
+                      onChange={(value) => setFormData(prev => ({ ...prev, writingStyle: value as string }))}
                       type="textarea"
                     />
                   </div>
@@ -233,7 +233,7 @@ const ProfileDetails: React.FC = () => {
               <EditableField
                 label=""
                 value={formData.customInstructions}
-                onChange={(value) => setFormData(prev => ({ ...prev, customInstructions: value }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, customInstructions: value as string }))}
                 type="textarea"
                 placeholder="Enter custom AI instructions for this profile..."
               />
