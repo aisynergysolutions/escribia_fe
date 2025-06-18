@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { mockTemplates, mockClients } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -47,6 +48,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   // Get current client and sub-clients
   const currentClient = mockClients.find(client => client.id === clientId);
   const subClients = currentClient?.subClients || [];
+
+  // Get selected sub-client for display
+  const selectedSubClientData = subClients.find(sc => sc.id === selectedSubClient);
 
   const handleCreateFromText = () => {
     if (ideaText.trim() && clientId && selectedSubClient) {
@@ -571,11 +575,71 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       </DialogTrigger>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Create New Post</DialogTitle>
+          {/* New Profile Selector Header */}
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-foreground">
+              Create Post as:
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-input rounded-md cursor-pointer hover:border-[#4F46E5]/50 focus:outline-none focus:border-[#4F46E5] transition-all min-w-[280px]">
+                  {selectedSubClientData ? (
+                    <>
+                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <div className="flex flex-col items-start flex-1 min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate w-full">
+                          {selectedSubClientData.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate w-full">
+                          {selectedSubClientData.role}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">Select who this post is for</span>
+                    </div>
+                  )}
+                  <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[280px] bg-white border shadow-lg" align="start">
+                {subClients.map(subClient => (
+                  <DropdownMenuItem
+                    key={subClient.id}
+                    onClick={() => setSelectedSubClient(subClient.id)}
+                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 ${
+                      selectedSubClient === subClient.id ? 'bg-gray-50' : ''
+                    }`}
+                  >
+                    <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-gray-600" />
+                    </div>
+                    <div className="flex flex-col items-start flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate w-full">
+                        {subClient.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate w-full">
+                        {subClient.role}
+                      </div>
+                    </div>
+                    {selectedSubClient === subClient.id && (
+                      <div className="w-2 h-2 bg-[#4F46E5] rounded-full flex-shrink-0" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </DialogHeader>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2 pb-6">
-          {/* Left side - Creation methods and sub-client selection */}
+          {/* Left side - Creation methods */}
           <div className="space-y-6">
             {/* Creation Methods */}
             <div className="space-y-3">
@@ -600,34 +664,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   </div>
                 </button>
               ))}
-            </div>
-
-            {/* Sub-client Selection - Now prominently placed */}
-            <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg">
-              <label className="block text-sm font-semibold text-amber-800 mb-3">
-                Who is this post for? <span className="text-red-600">*</span>
-              </label>
-              <Select value={selectedSubClient} onValueChange={setSelectedSubClient}>
-                <SelectTrigger className="transition-all hover:border-amber-400 focus:border-amber-500 bg-white">
-                  <SelectValue placeholder="Select who this post is for" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subClients.map(subClient => (
-                    <SelectItem key={subClient.id} value={subClient.id}>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        <span>{subClient.name}</span>
-                        <span className="text-xs text-muted-foreground">({subClient.role})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!selectedSubClient && (
-                <p className="text-xs text-amber-700 mt-2">
-                  Please select who this post will be created for before proceeding.
-                </p>
-              )}
             </div>
           </div>
 
