@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Bold, Italic, Underline, Strikethrough, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
+import MediaPollSelector from './MediaPollSelector';
+import CreatePollModal, { PollData } from './CreatePollModal';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -28,6 +29,9 @@ interface EditorToolbarProps {
   showCommentsPanel?: boolean;
   activeFormats?: string[];
   postContent?: string;
+  onAddPoll?: (pollData: PollData) => void;
+  hasPoll?: boolean;
+  hasMedia?: boolean;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -47,13 +51,18 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onViewModeToggle,
   showCommentsPanel = false,
   activeFormats = [],
-  postContent = ''
+  postContent = '',
+  onAddPoll,
+  hasPoll = false,
+  hasMedia = false
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
+  const [showMediaPollSelector, setShowMediaPollSelector] = useState(false);
+  const [showCreatePollModal, setShowCreatePollModal] = useState(false);
 
   const isFormatActive = (format: string) => activeFormats.includes(format);
 
@@ -84,6 +93,28 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     console.log('Posting now with status:', status);
     setShowPostNowModal(false);
     // Here you would typically handle the posting logic
+  };
+
+  const handlePlusClick = () => {
+    setShowMediaPollSelector(true);
+  };
+
+  const handleSelectMedia = () => {
+    setShowMediaPollSelector(false);
+    // Handle media selection logic
+    console.log('Media selected');
+  };
+
+  const handleSelectPoll = () => {
+    setShowMediaPollSelector(false);
+    setShowCreatePollModal(true);
+  };
+
+  const handleCreatePoll = (pollData: PollData) => {
+    if (onAddPoll) {
+      onAddPoll(pollData);
+    }
+    setShowCreatePollModal(false);
   };
 
   return (
@@ -181,6 +212,24 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Plus Button for Media/Poll */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handlePlusClick}
+                className="h-8 w-8 p-0"
+                disabled={hasPoll || hasMedia}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add media or poll</p>
+            </TooltipContent>
+          </Tooltip>
           
           {/* View Mode Toggle Button */}
           <Tooltip>
@@ -331,6 +380,19 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onOpenChange={setShowPostNowModal}
         postContent={postContent}
         onPost={handlePostNowConfirm}
+      />
+
+      <MediaPollSelector
+        open={showMediaPollSelector}
+        onOpenChange={setShowMediaPollSelector}
+        onSelectMedia={handleSelectMedia}
+        onSelectPoll={handleSelectPoll}
+      />
+
+      <CreatePollModal
+        open={showCreatePollModal}
+        onOpenChange={setShowCreatePollModal}
+        onCreatePoll={handleCreatePoll}
       />
     </>
   );
