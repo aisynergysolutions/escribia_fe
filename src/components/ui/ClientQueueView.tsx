@@ -15,6 +15,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 import { mockIdeas, mockClients } from '../../types';
 import { useNavigate } from 'react-router-dom';
+import ReschedulePostModal from './ReschedulePostModal';
 
 interface ClientQueueViewProps {
   clientId: string;
@@ -35,6 +36,10 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const navigate = useNavigate();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<QueueSlot | null>(null);
+  const [newScheduleDate, setNewScheduleDate] = useState<Date | null>(null);
 
   // Get scheduled posts for this client
   const queueSlots = useMemo(() => {
@@ -63,7 +68,12 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   }, [clientId]);
 
   const handleEditSlot = (slotId: string) => {
-    navigate(`/clients/${clientId}/ideas/${slotId}`);
+    const slot = queueSlots.find(s => s.id === slotId);
+    if (slot) {
+      setSelectedPostForReschedule(slot);
+      setNewScheduleDate(slot.datetime);
+      setRescheduleModalOpen(true);
+    }
   };
 
   const handleRemoveFromQueue = (slotId: string) => {
@@ -83,22 +93,55 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    setDragOverIndex(index);
+    const targetSlot = queueSlots[index];
+    if (targetSlot) {
+      setDragOverIndex(index);
+      setDragOverDate(targetSlot.datetime);
+    }
   };
 
   const handleDragEnd = () => {
     setDraggedItem(null);
     setDragOverIndex(null);
+    setDragOverDate(null);
   };
 
   const handleDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
+    
     if (draggedItem) {
-      console.log('Reorder queue:', draggedItem, 'to index:', targetIndex);
-      // Implementation would reorder the queue
+      const draggedSlot = queueSlots.find(slot => slot.id === draggedItem);
+      const targetSlot = queueSlots[targetIndex];
+      
+      if (draggedSlot && targetSlot) {
+        // Check if dropping on a different day
+        if (!isSameDay(draggedSlot.datetime, targetSlot.datetime)) {
+          setSelectedPostForReschedule(draggedSlot);
+          setNewScheduleDate(targetSlot.datetime);
+          setRescheduleModalOpen(true);
+        } else {
+          // Same day reordering
+          console.log('Reorder within same day:', draggedItem, 'to index:', targetIndex);
+        }
+      }
     }
+    
     setDraggedItem(null);
     setDragOverIndex(null);
+    setDragOverDate(null);
+  };
+
+  const handleReschedule = (time: string) => {
+    if (selectedPostForReschedule && newScheduleDate) {
+      console.log('Reschedule post:', selectedPostForReschedule.id, 'to:', format(newScheduleDate, 'yyyy-MM-dd'), 'at:', time);
+      // Implementation would update the post's scheduled time
+    }
+  };
+
+  const handleCloseRescheduleModal = () => {
+    setRescheduleModalOpen(false);
+    setSelectedPostForReschedule(null);
+    setNewScheduleDate(null);
   };
 
   if (queueSlots.length === 0) {
@@ -116,101 +159,111 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   }
 
   return (
-    <Card className="p-4">
-      <div className="space-y-0">
-        <TooltipProvider>
-          {queueSlots.map((slot, index) => {
-            const prevSlot = index > 0 ? queueSlots[index - 1] : null;
-            const showDateHeader = !prevSlot || !isSameDay(slot.datetime, prevSlot.datetime);
-            const isDragging = draggedItem === slot.id;
-            const showDropIndicator = dragOverIndex === index && draggedItem !== slot.id;
+    <>
+      <Card className="p-4">
+        <div className="space-y-0">
+          <TooltipProvider>
+            {queueSlots.map((slot, index) => {
+              const prevSlot = index > 0 ? queueSlots[index - 1] : null;
+              const showDateHeader = !prevSlot || !isSameDay(slot.datetime, prevSlot.datetime);
+              const isDragging = draggedItem === slot.id;
+              const showDropIndicator = dragOverIndex === index && draggedItem !== slot.id;
 
-            return (
-              <div key={slot.id}>
-                {showDateHeader && (
-                  <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 z-10">
-                    <h4 className="text-sm font-medium text-gray-900">
-                      📅 {format(slot.datetime, 'EEEE, MMM d')}
-                    </h4>
-                  </div>
-                )}
-                
-                {showDropIndicator && (
-                  <div className="h-0.5 bg-blue-500 mx-6" />
-                )}
-                
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, slot.id)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragEnd={handleDragEnd}
-                  onDrop={(e) => handleDrop(e, index)}
-                  className={`flex items-center gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-move transition-colors ${
-                    isDragging ? 'opacity-50' : ''
-                  }`}
-                >
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={slot.clientAvatar} alt={slot.clientName} />
-                    <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
-                      {slot.clientName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+              return (
+                <div key={slot.id}>
+                  {showDateHeader && (
+                    <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 z-10">
+                      <h4 className="text-sm font-medium text-gray-900">
+                        📅 {format(slot.datetime, 'EEEE, MMM d')}
+                      </h4>
+                    </div>
+                  )}
                   
-                  <div className="text-sm font-medium text-gray-500 min-w-[80px]">
-                    {format(slot.datetime, 'HH:mm')}
-                  </div>
+                  {showDropIndicator && (
+                    <div className="h-0.5 bg-blue-500 mx-6" />
+                  )}
                   
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-base font-semibold text-gray-900 truncate">
-                      {slot.title}
-                    </h4>
-                    <p className="text-sm text-gray-600 truncate">
-                      {slot.preview}
-                    </p>
-                  </div>
-                  
-                  <Badge variant="secondary" className="flex-shrink-0">
-                    {slot.status}
-                  </Badge>
-                  
-                  <div className="flex-shrink-0">
-                    <DropdownMenu>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="h-8 w-8 text-gray-400 hover:text-gray-600"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Actions</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditSlot(slot.id)}>
-                          Edit slot
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleRemoveFromQueue(slot.id)}>
-                          Remove from queue
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleMoveToTop(slot.id)}>
-                          Move to top
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <div
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, slot.id)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDrop={(e) => handleDrop(e, index)}
+                    className={`flex items-center gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-move transition-colors ${
+                      isDragging ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <Avatar className="h-10 w-10 flex-shrink-0">
+                      <AvatarImage src={slot.clientAvatar} alt={slot.clientName} />
+                      <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
+                        {slot.clientName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="text-sm font-medium text-gray-500 min-w-[80px]">
+                      {format(slot.datetime, 'HH:mm')}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base font-semibold text-gray-900 truncate">
+                        {slot.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 truncate">
+                        {slot.preview}
+                      </p>
+                    </div>
+                    
+                    <Badge variant="secondary" className="flex-shrink-0">
+                      {slot.status}
+                    </Badge>
+                    
+                    <div className="flex-shrink-0">
+                      <DropdownMenu>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8 text-gray-400 hover:text-gray-600"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Actions</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditSlot(slot.id)}>
+                            Edit slot
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRemoveFromQueue(slot.id)}>
+                            Remove from queue
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMoveToTop(slot.id)}>
+                            Move to top
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </TooltipProvider>
-      </div>
-    </Card>
+              );
+            })}
+          </TooltipProvider>
+        </div>
+      </Card>
+
+      <ReschedulePostModal
+        isOpen={rescheduleModalOpen}
+        onClose={handleCloseRescheduleModal}
+        onReschedule={handleReschedule}
+        selectedDate={newScheduleDate}
+        postTitle={selectedPostForReschedule?.title || ''}
+      />
+    </>
   );
 };
 
