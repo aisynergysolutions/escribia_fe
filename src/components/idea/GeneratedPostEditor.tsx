@@ -40,6 +40,7 @@ interface GeneratedPostEditorProps {
   onToggleCommentsPanel: () => void;
   comments: CommentThread[];
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
+  onPollStateChange?: (hasPoll: boolean) => void;
 }
 
 const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
@@ -56,7 +57,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   onRestoreVersion,
   onToggleCommentsPanel,
   comments,
-  setComments
+  setComments,
+  onPollStateChange
 }) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -437,6 +439,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     setPollData(newPollData);
     setHasMedia(false); // Clear media when adding poll
     setEditingPoll(null); // Clear editing state
+    // Notify parent about poll state change
+    if (onPollStateChange) {
+      onPollStateChange(true);
+    }
     toast({
       title: "Poll Added",
       description: "Poll has been added to your post."
@@ -453,6 +459,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const handleRemovePoll = () => {
     setPollData(null);
     setEditingPoll(null);
+    // Notify parent about poll state change
+    if (onPollStateChange) {
+      onPollStateChange(false);
+    }
     toast({
       title: "Poll Removed",
       description: "Poll has been removed from your post."
@@ -463,6 +473,10 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     setMediaFiles(newMediaFiles);
     setPollData(null); // Clear poll when adding media
     setEditingMedia(null); // Clear editing state
+    // Notify parent about poll state change when clearing poll
+    if (onPollStateChange) {
+      onPollStateChange(false);
+    }
     toast({
       title: "Media Added",
       description: `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} added to your post.`

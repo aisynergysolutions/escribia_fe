@@ -23,6 +23,7 @@ interface PostEditorProps {
   onToggleCommentsPanel: () => void;
   comments: CommentThread[];
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
+  onPollStateChange?: (hasPoll: boolean) => void;
 }
 
 const PostEditor: React.FC<PostEditorProps> = ({
@@ -33,6 +34,7 @@ const PostEditor: React.FC<PostEditorProps> = ({
   onToggleCommentsPanel,
   comments,
   setComments,
+  onPollStateChange,
 }) => {
   return (
     <GeneratedPostEditor
@@ -50,6 +52,7 @@ const PostEditor: React.FC<PostEditorProps> = ({
       onToggleCommentsPanel={onToggleCommentsPanel}
       comments={comments}
       setComments={setComments}
+      onPollStateChange={onPollStateChange}
     />
   );
 };

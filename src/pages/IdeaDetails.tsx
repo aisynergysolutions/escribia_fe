@@ -26,6 +26,7 @@ const IdeaDetails = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   const [comments, setComments] = useState<CommentThread[]>([]);
+  const [hasPoll, setHasPoll] = useState(false); // Track if there's an active poll
 
   // Extract initial idea data from URL params (for all creation methods)
   let initialIdeaText = '';
@@ -220,6 +221,10 @@ const IdeaDetails = () => {
     ));
   };
 
+  const handlePollStateChange = (pollActive: boolean) => {
+    setHasPoll(pollActive);
+  };
+
   return (
     <div className="space-y-6">
       <UnsavedChangesDialog
@@ -270,14 +275,18 @@ const IdeaDetails = () => {
             onToggleCommentsPanel={() => setShowCommentsPanel(p => !p)}
             comments={comments}
             setComments={setComments}
+            onPollStateChange={handlePollStateChange}
           />
-          <MediaDropZone
-            uploadedFiles={uploadedFiles}
-            onFileUpload={handleFileUpload}
-            onFileDrop={handleFileDrop}
-            onDragOver={handleDragOver}
-            onRemoveFile={removeFile}
-          />
+          {/* Only show MediaDropZone if there's no active poll */}
+          {!hasPoll && (
+            <MediaDropZone
+              uploadedFiles={uploadedFiles}
+              onFileUpload={handleFileUpload}
+              onFileDrop={handleFileDrop}
+              onDragOver={handleDragOver}
+              onRemoveFile={removeFile}
+            />
+          )}
         </div>
         
         <div className="space-y-6">

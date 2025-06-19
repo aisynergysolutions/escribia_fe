@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Bold, Italic, Underline, Strikethrough, Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Plus, Monitor, Smartphone, History } from 'lucide-react';
+import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -8,8 +9,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
-import MediaPollSelector from './MediaPollSelector';
 import CreatePollModal, { PollData } from './CreatePollModal';
+import MediaUploadModal, { MediaFile } from './MediaUploadModal';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -63,10 +64,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
-  const [showMediaPollSelector, setShowMediaPollSelector] = useState(false);
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
-
-  const isFormatActive = (format: string) => activeFormats.includes(format);
+  const [showMediaUploadModal, setShowMediaUploadModal] = useState(false);
 
   const handleAddToQueue = () => {
     setShowAddToQueueModal(true);
@@ -97,19 +96,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     // Here you would typically handle the posting logic
   };
 
-  const handlePlusClick = () => {
-    setShowMediaPollSelector(true);
-  };
-
-  const handleSelectMedia = () => {
-    setShowMediaPollSelector(false);
+  const handleAddMedia = () => {
     if (onAddMedia) {
       onAddMedia();
     }
   };
 
-  const handleSelectPoll = () => {
-    setShowMediaPollSelector(false);
+  const handleAddPoll = () => {
     setShowCreatePollModal(true);
   };
 
@@ -123,44 +116,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   return (
     <>
       <div className="flex justify-between items-center p-4 border-b">
-        {/* Text Editor Toolbar */}
+        {/* Left-Aligned Editing Zone */}
         <div className="flex items-center gap-1">
-          <Button 
-            variant={isFormatActive('bold') ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => onFormat('bold')} 
-            className={`h-8 w-8 p-0 ${isFormatActive('bold') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant={isFormatActive('italic') ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => onFormat('italic')} 
-            className={`h-8 w-8 p-0 ${isFormatActive('italic') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant={isFormatActive('underline') ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => onFormat('underline')} 
-            className={`h-8 w-8 p-0 ${isFormatActive('underline') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
-          >
-            <Underline className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant={isFormatActive('strikeThrough') ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => onFormat('strikeThrough')} 
-            className={`h-8 w-8 p-0 ${isFormatActive('strikeThrough') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}`}
-          >
-            <Strikethrough className="h-4 w-4" />
-          </Button>
-          
-          {/* Separator */}
-          <div className="w-px h-6 bg-gray-300 mx-1" />
-          
           {/* Undo/Redo Controls */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -199,6 +156,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           {/* Separator */}
           <div className="w-px h-6 bg-gray-300 mx-1" />
           
+          {/* Emoji */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -216,67 +174,77 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </PopoverContent>
           </Popover>
 
-          {/* Plus Button for Media/Poll */}
+          {/* Add Media Button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={handlePlusClick}
+                onClick={handleAddMedia}
                 className="h-8 w-8 p-0"
-                disabled={hasPoll || hasMedia}
+                disabled={hasPoll}
               >
-                <Plus className="h-4 w-4" />
+                <Image className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Add media or poll</p>
+              <p>{hasPoll ? 'Remove poll to add media' : 'Add media'}</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Add Poll Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleAddPoll}
+                className="h-8 w-8 p-0"
+                disabled={hasMedia}
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{hasMedia ? 'Remove media to add poll' : 'Add poll'}</p>
             </TooltipContent>
           </Tooltip>
           
-          {/* View Mode Toggle Button */}
+          {/* Separator */}
+          <div className="w-px h-6 bg-gray-300 mx-1" />
+          
+          {/* Version History Control */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onViewModeToggle} className="h-8 w-8 p-0">
-                {viewMode === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onShowVersionHistory}
+                className="h-8 w-8 p-0"
+              >
+                <History className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{viewMode === 'desktop' ? 'Switch to Mobile View' : 'Switch to Desktop View'}</p>
+              <p>Version History</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="sm" onClick={onCopy} className="h-8 w-8 p-0">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy</p>
             </TooltipContent>
           </Tooltip>
         </div>
         
         <TooltipProvider>
+          {/* Right-Aligned Finalize Zone */}
           <div className="flex gap-2">
-            {/* Version History Control */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onShowVersionHistory}
-                  className="h-8 w-8 p-0"
-                >
-                  <History className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Version History</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={onCopy} className="h-8 w-8 p-0">
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Copy</p>
-              </TooltipContent>
-            </Tooltip>
-            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -297,6 +265,18 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
               </TooltipContent>
             </Tooltip>
             
+            {/* View Mode Toggle Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={onViewModeToggle} className="h-8 w-8 p-0">
+                  {viewMode === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{viewMode === 'desktop' ? 'Switch to Mobile View' : 'Switch to Desktop View'}</p>
+              </TooltipContent>
+            </Tooltip>
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm" onClick={onPreview} className="h-8 w-8 p-0">
@@ -307,6 +287,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 <p>Preview</p>
               </TooltipContent>
             </Tooltip>
+            
+            {/* Separator */}
+            <div className="w-px h-6 bg-gray-300 mx-1" />
             
             {/* Add to Queue with Dropdown - Primary Styled Split Button */}
             <div className="flex">
@@ -385,17 +368,19 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onPost={handlePostNowConfirm}
       />
 
-      <MediaPollSelector
-        open={showMediaPollSelector}
-        onOpenChange={setShowMediaPollSelector}
-        onSelectMedia={handleSelectMedia}
-        onSelectPoll={handleSelectPoll}
-      />
-
       <CreatePollModal
         open={showCreatePollModal}
         onOpenChange={setShowCreatePollModal}
         onCreatePoll={handleCreatePoll}
+      />
+
+      <MediaUploadModal
+        open={showMediaUploadModal}
+        onOpenChange={setShowMediaUploadModal}
+        onUploadMedia={(mediaFiles: MediaFile[]) => {
+          // This will be handled by the parent component
+          setShowMediaUploadModal(false);
+        }}
       />
     </>
   );
