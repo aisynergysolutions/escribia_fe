@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { MoreVertical, Calendar as CalendarIcon } from 'lucide-react';
@@ -16,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tool
 import { mockIdeas, mockClients } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import ReschedulePostModal from './ReschedulePostModal';
-import ViewToggle from './ViewToggle';
+import QueueHeader from './QueueHeader';
 import EmptySlotCard from './EmptySlotCard';
 import DayCard from './DayCard';
 
@@ -252,39 +251,34 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
   if (queueSlots.length === 0 && hideEmptySlots) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <ViewToggle hideEmptySlots={hideEmptySlots} onToggle={setHideEmptySlots} />
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+        <QueueHeader hideEmptySlots={hideEmptySlots} onToggle={setHideEmptySlots} />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Your queue is empty</h3>
+          <p className="text-sm text-gray-500">
+            Define your posting times in Queue Settings.
+          </p>
         </div>
-        <Card className="p-4">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Your queue is empty</h3>
-            <p className="text-sm text-gray-500">
-              Define your posting times in Queue Settings.
-            </p>
-          </div>
-        </Card>
       </div>
     );
   }
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <ViewToggle hideEmptySlots={hideEmptySlots} onToggle={setHideEmptySlots} />
-        </div>
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+        <QueueHeader hideEmptySlots={hideEmptySlots} onToggle={setHideEmptySlots} />
 
-        <div className="space-y-0">
+        <div className="space-y-4">
           <TooltipProvider>
-            {Object.entries(dayGroups).map(([dateStr, slots]) => {
+            {Object.entries(dayGroups).map(([dateStr, slots], index, array) => {
               if (slots.length === 0) return null;
               
               const date = new Date(dateStr);
+              const isLastCard = index === array.length - 1;
               
               return (
-                <DayCard key={dateStr} date={date}>
+                <DayCard key={dateStr} date={date} className={!isLastCard ? 'mb-4' : ''}>
                   {slots.map((slot) => {
                     const isDragging = draggedItem === slot.id;
                     const isDragOver = dragOverSlot === slot.id;
