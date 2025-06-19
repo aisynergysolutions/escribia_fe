@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { MoreVertical, Calendar as CalendarIcon } from 'lucide-react';
@@ -40,6 +39,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<QueueSlot | null>(null);
   const [newScheduleDate, setNewScheduleDate] = useState<Date | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Force re-render after updates
 
   // Get scheduled posts for this client
   const queueSlots = useMemo(() => {
@@ -65,7 +65,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
       clientName: client?.clientName || 'Unknown Client',
       clientAvatar: client?.profileImage
     })).sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
-  }, [clientId]);
+  }, [clientId, refreshKey]); // Add refreshKey to dependencies
 
   const handleEditSlot = (slotId: string) => {
     const slot = queueSlots.find(s => s.id === slotId);
@@ -78,12 +78,30 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
   const handleRemoveFromQueue = (slotId: string) => {
     console.log('Remove from queue:', slotId);
-    // Implementation would update the post status
+    // Find and update the post status
+    const postIndex = mockIdeas.findIndex(idea => idea.id === slotId);
+    if (postIndex !== -1) {
+      mockIdeas[postIndex].status = 'Draft';
+      mockIdeas[postIndex].scheduledPostAt = undefined;
+      setRefreshKey(prev => prev + 1); // Force refresh
+    }
   };
 
   const handleMoveToTop = (slotId: string) => {
     console.log('Move to top:', slotId);
-    // Implementation would reorder the queue
+    // Find the earliest scheduled time and move this post 30 minutes before it
+    const earliestPost = queueSlots.filter(slot => slot.id !== slotId)[0];
+    if (earliestPost) {
+      const newTime = new Date(earliestPost.datetime.getTime() - 30 * 60 * 1000);
+      const postIndex = mockIdeas.findIndex(idea => idea.id === slotId);
+      if (postIndex !== -1) {
+        mockIdeas[postIndex].scheduledPostAt = {
+          seconds: Math.floor(newTime.getTime() / 1000),
+          nanoseconds: 0
+        };
+        setRefreshKey(prev => prev + 1); // Force refresh
+      }
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, slotId: string) => {
@@ -134,8 +152,20 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const handleReschedule = (newDateTime: Date, time: string) => {
     if (selectedPostForReschedule) {
       console.log('Reschedule post:', selectedPostForReschedule.id, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'), 'at:', time);
-      // Implementation would update the post's scheduled time with the new date and time
-      // This would typically involve calling an API to update the mockIdeas data
+      
+      // Find and update the post in mockIdeas
+      const postIndex = mockIdeas.findIndex(idea => idea.id === selectedPostForReschedule.id);
+      if (postIndex !== -1) {
+        // Update the scheduledPostAt with the new date and time
+        mockIdeas[postIndex].scheduledPostAt = {
+          seconds: Math.floor(newDateTime.getTime() / 1000),
+          nanoseconds: 0
+        };
+        
+        // Force a re-render to show the updated schedule
+        setRefreshKey(prev => prev + 1);
+        console.log('Post successfully rescheduled to:', newDateTime);
+      }
     }
   };
 
