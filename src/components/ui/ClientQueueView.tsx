@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { MoreVertical, Calendar as CalendarIcon } from 'lucide-react';
@@ -15,6 +16,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tool
 import { mockIdeas, mockClients } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import ReschedulePostModal from './ReschedulePostModal';
+import ViewToggle from './ViewToggle';
+import EmptySlotCard from './EmptySlotCard';
 
 interface ClientQueueViewProps {
   clientId: string;
@@ -29,6 +32,8 @@ interface QueueSlot {
   clientId: string;
   clientName: string;
   clientAvatar?: string;
+  authorName?: string;
+  authorAvatar?: string;
 }
 
 const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
@@ -39,7 +44,11 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<QueueSlot | null>(null);
   const [newScheduleDate, setNewScheduleDate] = useState<Date | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0); // Force re-render after updates
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [viewMode, setViewMode] = useState<'schedule' | 'calendar'>('schedule');
+
+  // Mock predefined time slots for this client (from client settings)
+  const predefinedTimeSlots = ['09:00', '13:00', '17:00'];
 
   // Get scheduled posts for this client
   const queueSlots = useMemo(() => {
@@ -63,9 +72,69 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
       status: post.status,
       clientId: post.clientId,
       clientName: client?.clientName || 'Unknown Client',
-      clientAvatar: client?.profileImage
+      clientAvatar: client?.profileImage,
+      authorName: 'Sarah Johnson', // Mock author data
+      authorAvatar: undefined // Will use fallback
     })).sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
-  }, [clientId, refreshKey]); // Add refreshKey to dependencies
+  }, [clientId, refreshKey]);
+
+  // Generate slots with empty placeholders for "schedule" view
+  const slotsWithPlaceholders = useMemo(() => {
+    if (viewMode === 'calendar') {
+      return queueSlots;
+    }
+
+    // Get unique dates that have scheduled posts
+    const scheduledDates = Array.from(new Set(
+      queueSlots.map(slot => format(slot.datetime, 'yyyy-MM-dd'))
+    ));
+
+    // For demo purposes, add next 7 days
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      if (!scheduledDates.includes(dateStr)) {
+        scheduledDates.push(dateStr);
+      }
+    }
+
+    const allSlots: (QueueSlot | { isEmpty: true; datetime: Date; time: string })[] = [];
+
+    scheduledDates.sort().forEach(dateStr => {
+      const date = new Date(dateStr);
+      const slotsForDay = queueSlots.filter(slot => 
+        format(slot.datetime, 'yyyy-MM-dd') === dateStr
+      );
+
+      predefinedTimeSlots.forEach(timeSlot => {
+        const existingSlot = slotsForDay.find(slot => 
+          format(slot.datetime, 'HH:mm') === timeSlot
+        );
+
+        if (existingSlot) {
+          allSlots.push(existingSlot);
+        } else {
+          const slotDateTime = new Date(date);
+          const [hours, minutes] = timeSlot.split(':').map(Number);
+          slotDateTime.setHours(hours, minutes, 0, 0);
+          
+          allSlots.push({
+            isEmpty: true,
+            datetime: slotDateTime,
+            time: timeSlot
+          });
+        }
+      });
+    });
+
+    return allSlots;
+  }, [queueSlots, viewMode, predefinedTimeSlots]);
+
+  const handlePostClick = (postId: string) => {
+    navigate(`/clients/${clientId}/ideas/${postId}`);
+  };
 
   const handleEditSlot = (slotId: string) => {
     const slot = queueSlots.find(s => s.id === slotId);
@@ -78,18 +147,16 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
   const handleRemoveFromQueue = (slotId: string) => {
     console.log('Remove from queue:', slotId);
-    // Find and update the post status
     const postIndex = mockIdeas.findIndex(idea => idea.id === slotId);
     if (postIndex !== -1) {
       mockIdeas[postIndex].status = 'Draft';
       mockIdeas[postIndex].scheduledPostAt = undefined;
-      setRefreshKey(prev => prev + 1); // Force refresh
+      setRefreshKey(prev => prev + 1);
     }
   };
 
   const handleMoveToTop = (slotId: string) => {
     console.log('Move to top:', slotId);
-    // Find the earliest scheduled time and move this post 30 minutes before it
     const earliestPost = queueSlots.filter(slot => slot.id !== slotId)[0];
     if (earliestPost) {
       const newTime = new Date(earliestPost.datetime.getTime() - 30 * 60 * 1000);
@@ -99,9 +166,14 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
           seconds: Math.floor(newTime.getTime() / 1000),
           nanoseconds: 0
         };
-        setRefreshKey(prev => prev + 1); // Force refresh
+        setRefreshKey(prev => prev + 1);
       }
     }
+  };
+
+  const handleSchedulePost = (date: Date, time: string) => {
+    console.log('Create new post for:', format(date, 'yyyy-MM-dd'), 'at', time);
+    navigate(`/clients/${clientId}/ideas/new?new=true`);
   };
 
   const handleDragStart = (e: React.DragEvent, slotId: string) => {
@@ -111,11 +183,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    const targetSlot = queueSlots[index];
-    if (targetSlot) {
-      setDragOverIndex(index);
-      setDragOverDate(targetSlot.datetime);
-    }
+    setDragOverIndex(index);
   };
 
   const handleDragEnd = () => {
@@ -129,40 +197,61 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     
     if (draggedItem) {
       const draggedSlot = queueSlots.find(slot => slot.id === draggedItem);
-      const targetSlot = queueSlots[targetIndex];
+      const targetSlot = slotsWithPlaceholders[targetIndex];
       
       if (draggedSlot && targetSlot) {
-        // Check if dropping on a different day
-        if (!isSameDay(draggedSlot.datetime, targetSlot.datetime)) {
-          setSelectedPostForReschedule(draggedSlot);
-          setNewScheduleDate(targetSlot.datetime);
-          setRescheduleModalOpen(true);
+        if (viewMode === 'schedule') {
+          // Fast snap-to-grid logic for schedule view
+          const postIndex = mockIdeas.findIndex(idea => idea.id === draggedItem);
+          if (postIndex !== -1) {
+            mockIdeas[postIndex].scheduledPostAt = {
+              seconds: Math.floor(targetSlot.datetime.getTime() / 1000),
+              nanoseconds: 0
+            };
+            setRefreshKey(prev => prev + 1);
+          }
         } else {
-          // Same day reordering
-          console.log('Reorder within same day:', draggedItem, 'to index:', targetIndex);
+          // Full calendar view - show reschedule modal
+          if (!isSameDay(draggedSlot.datetime, targetSlot.datetime)) {
+            setSelectedPostForReschedule(draggedSlot);
+            setNewScheduleDate(targetSlot.datetime);
+            setRescheduleModalOpen(true);
+          }
         }
       }
     }
     
-    setDraggedItem(null);
-    setDragOverIndex(null);
-    setDragOverDate(null);
+    handleDragEnd();
+  };
+
+  const handleEmptySlotDrop = (e: React.DragEvent, emptySlot: { datetime: Date; time: string }) => {
+    e.preventDefault();
+    
+    if (draggedItem) {
+      const postIndex = mockIdeas.findIndex(idea => idea.id === draggedItem);
+      if (postIndex !== -1) {
+        mockIdeas[postIndex].scheduledPostAt = {
+          seconds: Math.floor(emptySlot.datetime.getTime() / 1000),
+          nanoseconds: 0
+        };
+        setRefreshKey(prev => prev + 1);
+      }
+    }
+    
+    handleDragEnd();
   };
 
   const handleReschedule = (newDateTime: Date, time: string) => {
     if (selectedPostForReschedule) {
       console.log('Reschedule post:', selectedPostForReschedule.id, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'), 'at:', time);
       
-      // Find and update the post in mockIdeas
       const postIndex = mockIdeas.findIndex(idea => idea.id === selectedPostForReschedule.id);
       if (postIndex !== -1) {
-        // Update the scheduledPostAt with the new date and time
         mockIdeas[postIndex].scheduledPostAt = {
           seconds: Math.floor(newDateTime.getTime() / 1000),
           nanoseconds: 0
         };
         
-        // Force a re-render to show the updated schedule
         setRefreshKey(prev => prev + 1);
         console.log('Post successfully rescheduled to:', newDateTime);
       }
@@ -175,117 +264,163 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     setNewScheduleDate(null);
   };
 
-  if (queueSlots.length === 0) {
+  if (queueSlots.length === 0 && viewMode === 'calendar') {
     return (
-      <Card className="p-4">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Your queue is empty</h3>
-          <p className="text-sm text-gray-500">
-            Define your posting times in Queue Settings.
-          </p>
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <ViewToggle value={viewMode} onValueChange={setViewMode} />
         </div>
-      </Card>
+        <Card className="p-4">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Your queue is empty</h3>
+            <p className="text-sm text-gray-500">
+              Define your posting times in Queue Settings.
+            </p>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
     <>
-      <Card className="p-4">
-        <div className="space-y-0">
-          <TooltipProvider>
-            {queueSlots.map((slot, index) => {
-              const prevSlot = index > 0 ? queueSlots[index - 1] : null;
-              const showDateHeader = !prevSlot || !isSameDay(slot.datetime, prevSlot.datetime);
-              const isDragging = draggedItem === slot.id;
-              const showDropIndicator = dragOverIndex === index && draggedItem !== slot.id;
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <ViewToggle value={viewMode} onValueChange={setViewMode} />
+        </div>
 
-              return (
-                <div key={slot.id}>
-                  {showDateHeader && (
-                    <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 z-10">
-                      <h4 className="text-sm font-medium text-gray-900">
-                        📅 {format(slot.datetime, 'EEEE, MMM d')}
-                      </h4>
+        <Card className="p-4">
+          <div className="space-y-0">
+            <TooltipProvider>
+              {slotsWithPlaceholders.map((slot, index) => {
+                const prevSlot = index > 0 ? slotsWithPlaceholders[index - 1] : null;
+                const showDateHeader = !prevSlot || !isSameDay(slot.datetime, prevSlot.datetime);
+                const isDragging = 'id' in slot && draggedItem === slot.id;
+                const showDropIndicator = dragOverIndex === index && draggedItem !== ('id' in slot ? slot.id : undefined);
+
+                // Handle empty slots
+                if ('isEmpty' in slot) {
+                  return (
+                    <div key={`empty-${slot.datetime.toISOString()}`}>
+                      {showDateHeader && (
+                        <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 z-10">
+                          <h4 className="text-sm font-medium text-gray-900">
+                            📅 {format(slot.datetime, 'EEEE, MMM d')}
+                          </h4>
+                        </div>
+                      )}
+                      
+                      {showDropIndicator && (
+                        <div className="h-0.5 bg-blue-500 mx-6" />
+                      )}
+                      
+                      <EmptySlotCard
+                        time={slot.time}
+                        date={slot.datetime}
+                        onSchedulePost={handleSchedulePost}
+                        onDrop={(e) => handleEmptySlotDrop(e, slot)}
+                        onDragOver={(e) => e.preventDefault()}
+                      />
                     </div>
-                  )}
-                  
-                  {showDropIndicator && (
-                    <div className="h-0.5 bg-blue-500 mx-6" />
-                  )}
-                  
-                  <div
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, slot.id)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
-                    onDrop={(e) => handleDrop(e, index)}
-                    className={`flex items-center gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-move transition-colors ${
-                      isDragging ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={slot.clientAvatar} alt={slot.clientName} />
-                      <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
-                        {slot.clientName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
+                  );
+                }
+
+                // Handle regular post slots
+                return (
+                  <div key={slot.id}>
+                    {showDateHeader && (
+                      <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 z-10">
+                        <h4 className="text-sm font-medium text-gray-900">
+                          📅 {format(slot.datetime, 'EEEE, MMM d')}
+                        </h4>
+                      </div>
+                    )}
                     
-                    <div className="text-sm font-medium text-gray-500 min-w-[80px]">
-                      {format(slot.datetime, 'HH:mm')}
-                    </div>
+                    {showDropIndicator && (
+                      <div className="h-0.5 bg-blue-500 mx-6" />
+                    )}
                     
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-base font-semibold text-gray-900 truncate">
-                        {slot.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 truncate">
-                        {slot.preview}
-                      </p>
-                    </div>
-                    
-                    <Badge variant="secondary" className="flex-shrink-0">
-                      {slot.status}
-                    </Badge>
-                    
-                    <div className="flex-shrink-0">
-                      <DropdownMenu>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8 text-gray-400 hover:text-gray-600"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Actions</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditSlot(slot.id)}>
-                            Edit slot
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleRemoveFromQueue(slot.id)}>
-                            Remove from queue
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleMoveToTop(slot.id)}>
-                            Move to top
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, slot.id)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(e, index)}
+                      className={`flex items-center gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-move transition-colors ${
+                        isDragging ? 'opacity-50' : ''
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2 min-w-[80px]">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={slot.authorAvatar} alt={slot.authorName} />
+                          <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold text-xs">
+                            {slot.authorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'SJ'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="text-xs text-gray-500 text-center">
+                          {slot.authorName || 'Sarah Johnson'}
+                        </div>
+                        <div className="text-sm font-medium text-gray-500">
+                          {format(slot.datetime, 'HH:mm')}
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h4 
+                          className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                          onClick={() => handlePostClick(slot.id)}
+                        >
+                          {slot.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 truncate">
+                          {slot.preview}
+                        </p>
+                      </div>
+                      
+                      <Badge variant="secondary" className="flex-shrink-0">
+                        {slot.status}
+                      </Badge>
+                      
+                      <div className="flex-shrink-0">
+                        <DropdownMenu>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 text-gray-400 hover:text-gray-600"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Actions</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditSlot(slot.id)}>
+                              Edit slot
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRemoveFromQueue(slot.id)}>
+                              Remove from queue
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMoveToTop(slot.id)}>
+                              Move to top
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </TooltipProvider>
-        </div>
-      </Card>
+                );
+              })}
+            </TooltipProvider>
+          </div>
+        </Card>
+      </div>
 
       <ReschedulePostModal
         isOpen={rescheduleModalOpen}
