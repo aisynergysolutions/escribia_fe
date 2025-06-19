@@ -131,10 +131,11 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     setDragOverDate(null);
   };
 
-  const handleReschedule = (time: string) => {
-    if (selectedPostForReschedule && newScheduleDate) {
-      console.log('Reschedule post:', selectedPostForReschedule.id, 'to:', format(newScheduleDate, 'yyyy-MM-dd'), 'at:', time);
-      // Implementation would update the post's scheduled time
+  const handleReschedule = (newDateTime: Date, time: string) => {
+    if (selectedPostForReschedule) {
+      console.log('Reschedule post:', selectedPostForReschedule.id, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'), 'at:', time);
+      // Implementation would update the post's scheduled time with the new date and time
+      // This would typically involve calling an API to update the mockIdeas data
     }
   };
 

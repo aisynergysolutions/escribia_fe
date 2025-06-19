@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Clock } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,17 @@ import {
 import { Button } from './button';
 import { Input } from './input';
 import { Label } from './label';
+import { Calendar } from './calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './popover';
 
 interface ReschedulePostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onReschedule: (time: string) => void;
+  onReschedule: (date: Date, time: string) => void;
   selectedDate: Date | null;
   postTitle: string;
 }
@@ -27,9 +33,17 @@ const ReschedulePostModal: React.FC<ReschedulePostModalProps> = ({
   selectedDate,
   postTitle
 }) => {
+  const [newDate, setNewDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>('');
   const [useCustomTime, setUseCustomTime] = useState<boolean>(false);
+
+  // Update the date when selectedDate changes
+  useEffect(() => {
+    if (selectedDate) {
+      setNewDate(selectedDate);
+    }
+  }, [selectedDate]);
 
   // Generate suggested times
   const suggestedTimes = [
@@ -40,8 +54,13 @@ const ReschedulePostModal: React.FC<ReschedulePostModalProps> = ({
 
   const handleReschedule = () => {
     const timeToUse = useCustomTime ? customTime : selectedTime;
-    if (timeToUse) {
-      onReschedule(timeToUse);
+    if (timeToUse && newDate) {
+      // Create a new date with the selected time
+      const [hours, minutes] = timeToUse.split(':').map(Number);
+      const rescheduleDate = new Date(newDate);
+      rescheduleDate.setHours(hours, minutes, 0, 0);
+      
+      onReschedule(rescheduleDate, timeToUse);
       handleClose();
     }
   };
@@ -50,6 +69,7 @@ const ReschedulePostModal: React.FC<ReschedulePostModalProps> = ({
     setSelectedTime('');
     setCustomTime('');
     setUseCustomTime(false);
+    setNewDate(null);
     onClose();
   };
 
@@ -70,44 +90,66 @@ const ReschedulePostModal: React.FC<ReschedulePostModalProps> = ({
             <p className="text-sm text-gray-600 mb-2">
               <strong>Post:</strong> {postTitle}
             </p>
-            <p className="text-sm text-gray-600">
-              <strong>New Date:</strong> {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-            </p>
           </div>
 
           <div className="space-y-4">
-            <Label className="text-base font-medium">Select a time:</Label>
-            
-            <div className="grid grid-cols-3 gap-2">
-              {suggestedTimes.map((time) => (
-                <Button
-                  key={time}
-                  variant={selectedTime === time && !useCustomTime ? "default" : "outline"}
-                  className="h-12"
-                  onClick={() => {
-                    setSelectedTime(time);
-                    setUseCustomTime(false);
-                  }}
-                >
-                  {time}
-                </Button>
-              ))}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Select date:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newDate ? format(newDate, 'EEEE, MMMM d, yyyy') : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newDate || undefined}
+                    onSelect={(date) => setNewDate(date || null)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm text-gray-600">
-                Or specify a custom time:
-              </Label>
-              <Input
-                type="time"
-                value={customTime}
-                onChange={(e) => {
-                  setCustomTime(e.target.value);
-                  setUseCustomTime(true);
-                  setSelectedTime('');
-                }}
-                className="w-full"
-              />
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Select a time:</Label>
+              
+              <div className="grid grid-cols-3 gap-2">
+                {suggestedTimes.map((time) => (
+                  <Button
+                    key={time}
+                    variant={selectedTime === time && !useCustomTime ? "default" : "outline"}
+                    className="h-12"
+                    onClick={() => {
+                      setSelectedTime(time);
+                      setUseCustomTime(false);
+                    }}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm text-gray-600">
+                  Or specify a custom time:
+                </Label>
+                <Input
+                  type="time"
+                  value={customTime}
+                  onChange={(e) => {
+                    setCustomTime(e.target.value);
+                    setUseCustomTime(true);
+                    setSelectedTime('');
+                  }}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
 
@@ -117,7 +159,7 @@ const ReschedulePostModal: React.FC<ReschedulePostModalProps> = ({
             </Button>
             <Button 
               onClick={handleReschedule}
-              disabled={!selectedTime && !customTime}
+              disabled={!newDate || (!selectedTime && !customTime)}
             >
               Reschedule Post
             </Button>
