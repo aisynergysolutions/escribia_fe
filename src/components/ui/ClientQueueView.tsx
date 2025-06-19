@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { MoreVertical, Calendar as CalendarIcon } from 'lucide-react';
@@ -35,6 +36,15 @@ interface QueueSlot {
   authorName?: string;
   authorAvatar?: string;
 }
+
+interface EmptySlot {
+  isEmpty: true;
+  datetime: Date;
+  time: string;
+  id: string;
+}
+
+type DaySlot = QueueSlot | EmptySlot;
 
 const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const navigate = useNavigate();
@@ -95,7 +105,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
       }
     }
 
-    const groups: { [key: string]: (QueueSlot | { isEmpty: true; datetime: Date; time: string; id: string })[] } = {};
+    const groups: { [key: string]: DaySlot[] } = {};
 
     scheduledDates.sort().forEach(dateStr => {
       const date = new Date(dateStr);
@@ -189,7 +199,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     setDragOverSlot(null);
   };
 
-  const handleDrop = (e: React.DragEvent, targetSlot: QueueSlot | { isEmpty: true; datetime: Date; time: string; id: string }) => {
+  const handleDrop = (e: React.DragEvent, targetSlot: DaySlot) => {
     e.preventDefault();
     
     if (draggedItem) {
@@ -276,11 +286,11 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
               return (
                 <DayCard key={dateStr} date={date}>
                   {slots.map((slot) => {
-                    const isDragging = 'id' in slot && draggedItem === slot.id;
-                    const isDragOver = dragOverSlot === ('id' in slot ? slot.id : slot.id);
+                    const isDragging = draggedItem === slot.id;
+                    const isDragOver = dragOverSlot === slot.id;
 
                     // Handle empty slots
-                    if ('isEmpty' in slot) {
+                    if ('isEmpty' in slot && slot.isEmpty) {
                       return (
                         <EmptySlotCard
                           key={slot.id}
