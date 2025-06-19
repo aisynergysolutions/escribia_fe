@@ -304,48 +304,50 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
                       );
                     }
 
-                    // Handle regular post slots
+                    // Handle regular post slots - TypeScript now knows this is a QueueSlot
+                    const queueSlot = slot as QueueSlot;
+                    
                     return (
                       <div
-                        key={slot.id}
+                        key={queueSlot.id}
                         draggable
-                        onDragStart={(e) => handleDragStart(e, slot.id)}
-                        onDragOver={(e) => handleDragOver(e, slot.id)}
+                        onDragStart={(e) => handleDragStart(e, queueSlot.id)}
+                        onDragOver={(e) => handleDragOver(e, queueSlot.id)}
                         onDragEnd={handleDragEnd}
-                        onDrop={(e) => handleDrop(e, slot)}
+                        onDrop={(e) => handleDrop(e, queueSlot)}
                         className={`flex items-center gap-4 px-0 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${
                           isDragging ? 'opacity-50' : ''
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2 min-w-[80px]">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={slot.authorAvatar} alt={slot.authorName} />
+                            <AvatarImage src={queueSlot.authorAvatar} alt={queueSlot.authorName} />
                             <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold text-xs">
-                              {slot.authorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'SJ'}
+                              {queueSlot.authorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'SJ'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="text-xs text-gray-500 text-center">
-                            {slot.authorName || 'Sarah Johnson'}
+                            {queueSlot.authorName || 'Sarah Johnson'}
                           </div>
                           <div className="text-sm font-medium text-gray-500">
-                            {format(slot.datetime, 'HH:mm')}
+                            {format(queueSlot.datetime, 'HH:mm')}
                           </div>
                         </div>
                         
                         <div className="flex-1 min-w-0">
                           <h4 
                             className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:underline transition-all"
-                            onClick={() => handlePostClick(slot.id)}
+                            onClick={() => handlePostClick(queueSlot.id)}
                           >
-                            {slot.title}
+                            {queueSlot.title}
                           </h4>
                           <p className="text-sm text-gray-600 truncate">
-                            {slot.preview}
+                            {queueSlot.preview}
                           </p>
                         </div>
                         
                         <Badge variant="secondary" className="flex-shrink-0">
-                          {slot.status}
+                          {queueSlot.status}
                         </Badge>
                         
                         <div className="flex-shrink-0">
@@ -367,13 +369,13 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
                               </TooltipContent>
                             </Tooltip>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditSlot(slot.id)}>
+                              <DropdownMenuItem onClick={() => handleEditSlot(queueSlot.id)}>
                                 Edit slot
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleRemoveFromQueue(slot.id)}>
+                              <DropdownMenuItem onClick={() => handleRemoveFromQueue(queueSlot.id)}>
                                 Remove from queue
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleMoveToTop(slot.id)}>
+                              <DropdownMenuItem onClick={() => handleMoveToTop(queueSlot.id)}>
                                 Move to top
                               </DropdownMenuItem>
                             </DropdownMenuContent>
