@@ -10,6 +10,7 @@ interface EmptySlotCardProps {
   onSchedulePost: (date: Date, time: string) => void;
   onDrop?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
+  isDragOver?: boolean;
 }
 
 const EmptySlotCard: React.FC<EmptySlotCardProps> = ({
@@ -17,17 +18,27 @@ const EmptySlotCard: React.FC<EmptySlotCardProps> = ({
   date,
   onSchedulePost,
   onDrop,
-  onDragOver
+  onDragOver,
+  isDragOver = false
 }) => {
   const handleClick = () => {
     onSchedulePost(date, time);
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    onDragOver?.(e);
+  };
+
   return (
     <Card 
-      className="border-2 border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-100/50 transition-colors cursor-pointer"
+      className={`border-2 border-dashed transition-all cursor-pointer ${
+        isDragOver 
+          ? 'border-blue-500 bg-blue-50/50' 
+          : 'border-gray-300 bg-gray-50/50 hover:bg-gray-100/50'
+      }`}
       onDrop={onDrop}
-      onDragOver={onDragOver}
+      onDragOver={handleDragOver}
     >
       <div className="flex items-center gap-4 px-6 py-4">
         <div className="text-sm font-medium text-gray-400 min-w-[80px]">

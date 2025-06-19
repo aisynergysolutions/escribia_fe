@@ -1,27 +1,33 @@
 
 import React from 'react';
-import { ToggleGroup, ToggleGroupItem } from './toggle-group';
+import { Eye, EyeOff } from 'lucide-react';
+import { Button } from './button';
 
 interface ViewToggleProps {
-  value: 'schedule' | 'calendar';
-  onValueChange: (value: 'schedule' | 'calendar') => void;
+  hideEmptySlots: boolean;
+  onToggle: (hide: boolean) => void;
 }
 
-const ViewToggle: React.FC<ViewToggleProps> = ({ value, onValueChange }) => {
+const ViewToggle: React.FC<ViewToggleProps> = ({ hideEmptySlots, onToggle }) => {
   return (
-    <ToggleGroup 
-      type="single" 
-      value={value} 
-      onValueChange={(newValue) => newValue && onValueChange(newValue as 'schedule' | 'calendar')}
-      className="bg-white border rounded-lg"
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => onToggle(!hideEmptySlots)}
+      className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
     >
-      <ToggleGroupItem value="schedule" className="px-4 py-2 text-sm font-medium">
-        View Posting Schedule
-      </ToggleGroupItem>
-      <ToggleGroupItem value="calendar" className="px-4 py-2 text-sm font-medium">
-        View Full Calendar
-      </ToggleGroupItem>
-    </ToggleGroup>
+      {hideEmptySlots ? (
+        <>
+          <EyeOff className="h-4 w-4" />
+          Show empty slots
+        </>
+      ) : (
+        <>
+          <Eye className="h-4 w-4" />
+          Hide empty slots
+        </>
+      )}
+    </Button>
   );
 };
 
