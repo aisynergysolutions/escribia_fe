@@ -177,6 +177,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     }
   };
 
+  const handleEditPoll = () => {
+    // Open the poll creation modal with existing data for editing
+    console.log('Edit poll clicked');
+  };
+
   const handleAddMedia = () => {
     setShowMediaUploadModal(true);
   };
@@ -329,6 +334,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           <PollPreview
             pollData={pollData}
             onRemove={handleRemovePoll}
+            onEdit={handleEditPoll}
             viewMode={viewMode}
           />
         )}
@@ -337,11 +343,12 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         
         {/* Editing Instructions */}
         <EditingInstructions
+          showChatBox={showEditingInstructions}
+          onToggleChatBox={() => setShowEditingInstructions(!showEditingInstructions)}
           editingInstructions={editingInstructions}
           onEditingInstructionsChange={onEditingInstructionsChange}
+          onRegeneratePost={onRegenerateWithInstructions}
           onRegenerateWithInstructions={onRegenerateWithInstructions}
-          showEditingInstructions={showEditingInstructions}
-          onToggleEditingInstructions={() => setShowEditingInstructions(!showEditingInstructions)}
         />
       </CardContent>
 
@@ -349,8 +356,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       <VersionHistoryModal
         open={showVersionHistory}
         onOpenChange={setShowVersionHistory}
-        versionHistory={versionHistory}
-        onRestoreVersion={onRestoreVersion}
+        versions={versionHistory}
+        onRestore={onRestoreVersion}
       />
 
       <MediaUploadModal
