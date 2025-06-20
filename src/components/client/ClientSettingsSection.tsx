@@ -12,6 +12,7 @@ import { mockClients } from '../../types';
 import EditableField from './EditableField';
 import { SubClient } from '../../types/interfaces';
 import { useNavigate } from 'react-router-dom';
+import AddProfileModal from '../AddProfileModal';
 
 const MOCK_LINKEDIN_ACCOUNT = "Acme Corp";
 const MOCK_LINKEDIN_EXPIRY = "June 15, 2025";
@@ -372,10 +373,12 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Profiles</span>
-            <Button variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Profile
-            </Button>
+            <AddProfileModal>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Profile
+              </Button>
+            </AddProfileModal>
           </CardTitle>
         </CardHeader>
         <CardContent>
