@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import GeneratedPostEditor from './GeneratedPostEditor';
 import { CommentThread } from './CommentsPanel';
-import { MediaFile } from './MediaUploadModal';
 
 interface PostEditorProps {
   postData: {
@@ -37,16 +36,6 @@ const PostEditor: React.FC<PostEditorProps> = ({
   setComments,
   onPollStateChange,
 }) => {
-  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
-
-  const handleMediaUpload = (files: MediaFile[]) => {
-    setMediaFiles(files);
-  };
-
-  const handleMediaRemove = () => {
-    setMediaFiles([]);
-  };
-
   return (
     <GeneratedPostEditor
       generatedPost={postData.generatedPost}
@@ -64,9 +53,6 @@ const PostEditor: React.FC<PostEditorProps> = ({
       comments={comments}
       setComments={setComments}
       onPollStateChange={onPollStateChange}
-      mediaFiles={mediaFiles}
-      onMediaUpload={handleMediaUpload}
-      onMediaRemove={handleMediaRemove}
     />
   );
 };
