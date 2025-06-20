@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { CloudUpload, X, Edit2 } from 'lucide-react';
 import EditorToolbar from './EditorToolbar';
 import EditorContainer from './EditorContainer';
 import EditingInstructions from './EditingInstructions';
@@ -14,6 +15,7 @@ import MediaUploadModal, { MediaFile } from './MediaUploadModal';
 import { CommentThread } from './CommentsPanel';
 import { PollData } from './CreatePollModal';
 import PollPreview from './PollPreview';
+import EditorMetrics from './EditorMetrics';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -295,49 +297,131 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onAddMedia={handleAddMedia}
         />
         
-        <EditorContainer
-          editorRef={editorRef}
-          generatedPost={generatedPost}
-          onInput={handleInput}
-          onMouseUp={handleMouseUp}
-          onKeyUp={handleKeyUp}
-          onKeyDown={handleKeyDown}
-          charCount={charCount}
-          lineCount={lineCount}
-          showTruncation={showTruncation}
-          cutoffLineTop={cutoffLineTop}
-          viewMode={viewMode}
-        />
+        {/* Single unified editor container with consistent background */}
+        <div className="p-4 bg-gray-50">
+          <div 
+            className={`linkedin-safe mx-auto bg-white focus-within:outline focus-within:outline-1 focus-within:outline-indigo-600/25 rounded-lg transition-all duration-300 ${
+              viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]'
+            }`}
+          >
+            {/* Text Editor */}
+            <div className="relative" style={{ paddingTop: '24px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: mediaFiles.length > 0 || pollData ? '24px' : '45px' }}>
+              <div 
+                ref={editorRef} 
+                contentEditable 
+                onInput={handleInput} 
+                onMouseUp={handleMouseUp} 
+                onKeyUp={handleKeyUp} 
+                onKeyDown={handleKeyDown} 
+                className="min-h-[200px] w-full border-0 focus:outline-none resize-none linkedin-typography" 
+                style={{
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  color: '#000000',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word'
+                }}
+                suppressContentEditableWarning={true} 
+              />
+              
+              {!generatedPost && (
+                <div className="text-gray-400 pointer-events-none absolute top-6 left-6">
+                  AI generated content will appear here...
+                </div>
+              )}
+              
+              <EditorMetrics 
+                charCount={charCount}
+                lineCount={lineCount}
+                showTruncation={showTruncation}
+                cutoffLineTop={cutoffLineTop}
+              />
+            </div>
 
-        {/* Media Preview or Drop Zone - positioned inline below the editor */}
-        {mediaFiles.length > 0 ? (
-          <MediaPreview
-            mediaFiles={mediaFiles}
-            onRemove={onMediaRemove}
-            onEdit={handleEditMedia}
-            viewMode={viewMode}
-          />
-        ) : !pollData && (
-          <div className="px-4 pb-4">
-            <MediaDropZone
-              uploadedFiles={uploadedFiles}
-              onFileUpload={handleFileUpload}
-              onFileDrop={handleFileDrop}
-              onDragOver={handleDragOver}
-              onRemoveFile={removeFile}
-            />
+            {/* Media Preview or Drop Zone - positioned inline within the same container */}
+            {mediaFiles.length > 0 ? (
+              <div className="px-6 pb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">
+                    {mediaFiles.length} image{mediaFiles.length > 1 ? 's' : ''}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleEditMedia}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onMediaRemove}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Media Grid */}
+                <div className="border rounded-lg overflow-hidden bg-gray-50">
+                  {/* Determine layout based on first image orientation */}
+                  {mediaFiles.length > 0 && (
+                    <>
+                      {mediaFiles.length > 0 ? (
+                        <MediaPreview
+                          mediaFiles={mediaFiles}
+                          onRemove={onMediaRemove}
+                          onEdit={handleEditMedia}
+                          viewMode={viewMode}
+                        />
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : !pollData && (
+              <div 
+                className="mx-6 mb-6 p-4 bg-transparent border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer transition-colors hover:border-gray-400 hover:bg-gray-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onDrop={handleFileDrop}
+                onDragOver={handleDragOver}
+                onClick={() => document.getElementById('file-upload-inline')?.click()}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && document.getElementById('file-upload-inline')?.click()}
+                tabIndex={0}
+                role="button"
+                aria-label="Upload media"
+              >
+                <div className="flex flex-col items-center justify-center py-2">
+                  <CloudUpload className="h-6 w-6 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Add media to your post</p>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload-inline"
+                />
+              </div>
+            )}
+
+            {/* Poll Preview */}
+            {pollData && (
+              <div className="px-6 pb-6">
+                <PollPreview
+                  pollData={pollData}
+                  onRemove={handleRemovePoll}
+                  onEdit={handleEditPoll}
+                  viewMode={viewMode}
+                />
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Poll Preview */}
-        {pollData && (
-          <PollPreview
-            pollData={pollData}
-            onRemove={handleRemovePoll}
-            onEdit={handleEditPoll}
-            viewMode={viewMode}
-          />
-        )}
+        </div>
 
         <Separator />
         
