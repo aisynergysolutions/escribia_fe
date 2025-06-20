@@ -304,7 +304,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Profiles</span>
-            <Button variant="outline" size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-[ffffff] text-white">
+            <Button variant="outline" size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white hover:text-white">
               <Plus className="h-4 w-4 mr-2" />
               Add Profile
             </Button>
