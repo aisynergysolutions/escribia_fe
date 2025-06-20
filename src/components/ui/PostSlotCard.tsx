@@ -1,0 +1,131 @@
+
+import React from 'react';
+import { format } from 'date-fns';
+import { MoreVertical } from 'lucide-react';
+import { Button } from './button';
+import { Badge } from './badge';
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from './dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
+
+interface QueueSlot {
+  id: string;
+  datetime: Date;
+  title: string;
+  preview: string;
+  status: string;
+  clientId: string;
+  clientName: string;
+  clientAvatar?: string;
+  authorName?: string;
+  authorAvatar?: string;
+}
+
+interface PostSlotCardProps {
+  slot: QueueSlot;
+  isDragging: boolean;
+  onPostClick: (postId: string) => void;
+  onEditSlot: (slotId: string) => void;
+  onRemoveFromQueue: (slotId: string) => void;
+  onMoveToTop: (slotId: string) => void;
+  onDragStart: (e: React.DragEvent, slotId: string) => void;
+  onDragOver: (e: React.DragEvent, slotId: string) => void;
+  onDragEnd: () => void;
+  onDrop: (e: React.DragEvent, slot: QueueSlot) => void;
+}
+
+const PostSlotCard: React.FC<PostSlotCardProps> = ({
+  slot,
+  isDragging,
+  onPostClick,
+  onEditSlot,
+  onRemoveFromQueue,
+  onMoveToTop,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  onDrop
+}) => {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, slot.id)}
+      onDragOver={(e) => onDragOver(e, slot.id)}
+      onDragEnd={onDragEnd}
+      onDrop={(e) => onDrop(e, slot)}
+      className={`flex items-center gap-4 px-0 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${
+        isDragging ? 'opacity-50' : ''
+      }`}
+    >
+      <div className="flex flex-col items-center gap-2 min-w-[80px]">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={slot.authorAvatar} alt={slot.authorName} />
+          <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold text-xs">
+            {slot.authorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'SJ'}
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-xs text-gray-500 text-center">
+          {slot.authorName || 'Sarah Johnson'}
+        </div>
+        <div className="text-sm font-medium text-gray-500">
+          {format(slot.datetime, 'HH:mm')}
+        </div>
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <h4 
+          className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:underline transition-all"
+          onClick={() => onPostClick(slot.id)}
+        >
+          {slot.title}
+        </h4>
+        <p className="text-sm text-gray-600 truncate">
+          {slot.preview}
+        </p>
+      </div>
+      
+      <Badge variant="secondary" className="flex-shrink-0">
+        {slot.status}
+      </Badge>
+      
+      <div className="flex-shrink-0">
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8 text-gray-400 hover:text-gray-600"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Actions</p>
+            </TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEditSlot(slot.id)}>
+              Edit slot
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onRemoveFromQueue(slot.id)}>
+              Remove from queue
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onMoveToTop(slot.id)}>
+              Move to top
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+};
+
+export default PostSlotCard;
