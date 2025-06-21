@@ -13,57 +13,61 @@ import EditableField from './EditableField';
 import { SubClient } from '../../types/interfaces';
 import { useNavigate } from 'react-router-dom';
 import AddProfileModal from '../AddProfileModal';
-
 const MOCK_LINKEDIN_ACCOUNT = "Acme Corp";
 const MOCK_LINKEDIN_EXPIRY = "June 15, 2025";
-
 interface ClientSettingsSectionProps {
   clientId: string;
 }
-
-const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId }) => {
+const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
+  clientId
+}) => {
   const client = mockClients.find(c => c.id === clientId);
   const navigate = useNavigate();
   const [linkedinConnected, setLinkedinConnected] = React.useState(true);
-  
+
   // Mock profiles data
-  const [profiles] = useState<SubClient[]>([
-    {
-      id: 'company-1',
-      name: client?.clientName || 'Company',
-      role: 'Company Account',
-      profileImage: client?.profileImage,
-      writingStyle: 'Professional and informative corporate voice',
-      linkedinConnected: true,
-      linkedinAccountName: client?.clientName,
-      linkedinExpiryDate: 'June 15, 2025',
-      customInstructions: 'Focus on industry insights and company achievements',
-      createdAt: client?.createdAt || { seconds: Date.now() / 1000, nanoseconds: 0 }
-    },
-    {
-      id: 'ceo-1',
-      name: 'Sarah Johnson',
-      role: 'CEO',
-      profileImage: '',
-      writingStyle: 'Thought leadership, strategic insights',
-      linkedinConnected: true,
-      linkedinAccountName: 'Sarah Johnson',
-      linkedinExpiryDate: 'July 20, 2025',
-      customInstructions: 'Share vision, industry trends, and leadership perspectives',
-      createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
-    },
-    {
-      id: 'cto-1',
-      name: 'Michael Chen',
-      role: 'CTO',
-      profileImage: '',
-      writingStyle: 'Technical expertise, innovation-focused',
-      linkedinConnected: false,
-      customInstructions: 'Technical insights, product development, innovation',
-      createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
+  const [profiles] = useState<SubClient[]>([{
+    id: 'company-1',
+    name: client?.clientName || 'Company',
+    role: 'Company Account',
+    profileImage: client?.profileImage,
+    writingStyle: 'Professional and informative corporate voice',
+    linkedinConnected: true,
+    linkedinAccountName: client?.clientName,
+    linkedinExpiryDate: 'June 15, 2025',
+    customInstructions: 'Focus on industry insights and company achievements',
+    createdAt: client?.createdAt || {
+      seconds: Date.now() / 1000,
+      nanoseconds: 0
     }
-  ]);
-  
+  }, {
+    id: 'ceo-1',
+    name: 'Sarah Johnson',
+    role: 'CEO',
+    profileImage: '',
+    writingStyle: 'Thought leadership, strategic insights',
+    linkedinConnected: true,
+    linkedinAccountName: 'Sarah Johnson',
+    linkedinExpiryDate: 'July 20, 2025',
+    customInstructions: 'Share vision, industry trends, and leadership perspectives',
+    createdAt: {
+      seconds: Date.now() / 1000,
+      nanoseconds: 0
+    }
+  }, {
+    id: 'cto-1',
+    name: 'Michael Chen',
+    role: 'CTO',
+    profileImage: '',
+    writingStyle: 'Technical expertise, innovation-focused',
+    linkedinConnected: false,
+    customInstructions: 'Technical insights, product development, innovation',
+    createdAt: {
+      seconds: Date.now() / 1000,
+      nanoseconds: 0
+    }
+  }]);
+
   // Edit mode states
   const [editModes, setEditModes] = useState({
     clientInfo: false,
@@ -87,22 +91,21 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
     clientInfo: useRef<HTMLInputElement>(null),
     integrations: useRef<HTMLTextAreaElement>(null)
   };
-
   if (!client) return null;
-
   const handleProfileClick = (profileId: string) => {
     navigate(`/clients/${clientId}/profiles/${profileId}`);
   };
-
   const getProfileStatus = (profile: SubClient) => {
     if (profile.linkedinConnected) return 'active';
     return 'onboarding';
   };
-
   const handleEditToggle = (section: 'clientInfo' | 'integrations') => {
-    setEditModes(prev => ({ ...prev, [section]: !prev[section] }));
+    setEditModes(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
     setErrors({});
-    
+
     // Focus first input when entering edit mode
     setTimeout(() => {
       if (!editModes[section]) {
@@ -110,7 +113,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
       }
     }, 0);
   };
-
   const handleCancel = (section: 'clientInfo' | 'integrations') => {
     // Reset form data to original values
     setFormData({
@@ -121,58 +123,55 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
       customInstructionsAI: client.brandProfile.customInstructionsAI || ''
     });
     setErrors({});
-    setEditModes(prev => ({ ...prev, [section]: false }));
+    setEditModes(prev => ({
+      ...prev,
+      [section]: false
+    }));
   };
-
   const validateForm = (section: 'clientInfo' | 'integrations') => {
     const newErrors: Record<string, string> = {};
-
     if (section === 'clientInfo') {
       if (!formData.clientName.trim()) newErrors.clientName = 'Client name is required';
       if (!formData.status) newErrors.status = 'Status is required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSave = (section: 'clientInfo' | 'integrations') => {
     if (!validateForm(section)) return;
 
     // Here you would typically save to your backend
     console.log('Saving data for section:', section, formData);
-    
-    setEditModes(prev => ({ ...prev, [section]: false }));
+    setEditModes(prev => ({
+      ...prev,
+      [section]: false
+    }));
     setErrors({});
   };
-
   const handleKeyDown = (e: React.KeyboardEvent, section: 'clientInfo' | 'integrations') => {
     if (e.key === 'Escape') {
       handleCancel(section);
     }
   };
-
   const updateFormData = (field: string, value: string | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
-  return (
-    <div className="space-y-6" onKeyDown={(e) => {
-      if (editModes.clientInfo) handleKeyDown(e, 'clientInfo');
-      if (editModes.integrations) handleKeyDown(e, 'integrations');
-    }}>
+  return <div className="space-y-6" onKeyDown={e => {
+    if (editModes.clientInfo) handleKeyDown(e, 'clientInfo');
+    if (editModes.integrations) handleKeyDown(e, 'integrations');
+  }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Client Information Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Client Information</span>
-              {!editModes.clientInfo ? (
-                <Button variant="outline" size="sm" onClick={() => handleEditToggle('clientInfo')}>
+              {!editModes.clientInfo ? <Button variant="outline" size="sm" onClick={() => handleEditToggle('clientInfo')}>
                   <Edit3 className="h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="flex gap-2">
+                </Button> : <div className="flex gap-2">
                   <Button size="sm" onClick={() => handleSave('clientInfo')}>
                     <Save className="h-4 w-4 mr-2" />
                     Save
@@ -181,14 +180,12 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                </div>
-              )}
+                </div>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {!editModes.clientInfo ? (
-                <>
+              {!editModes.clientInfo ? <>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Client Name</h3>
                     <p className="mt-1">{client.clientName}</p>
@@ -215,46 +212,15 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                     <h3 className="text-sm font-medium text-gray-500">Brand Brief Summary</h3>
                     <p className="mt-1">{client.brandBriefSummary || "No summary available"}</p>
                   </div>
-                </>
-              ) : (
-                <>
-                  <EditableField
-                    label="Client Name"
-                    value={formData.clientName}
-                    onChange={(value) => updateFormData('clientName', value)}
-                    error={errors.clientName}
-                  />
-                  <EditableField
-                    label="Status"
-                    value={formData.status}
-                    onChange={(value) => updateFormData('status', value)}
-                    type="select"
-                    options={['active', 'onboarding', 'paused']}
-                    error={errors.status}
-                  />
-                  <EditableField
-                    label="Created At"
-                    value={formatDate(client.createdAt)}
-                    onChange={() => {}}
-                    readOnly
-                  />
-                  <EditableField
-                    label="Last Update"
-                    value={formatDate(client.updatedAt)}
-                    onChange={() => {}}
-                    readOnly
-                  />
+                </> : <>
+                  <EditableField label="Client Name" value={formData.clientName} onChange={value => updateFormData('clientName', value)} error={errors.clientName} />
+                  <EditableField label="Status" value={formData.status} onChange={value => updateFormData('status', value)} type="select" options={['active', 'onboarding', 'paused']} error={errors.status} />
+                  <EditableField label="Created At" value={formatDate(client.createdAt)} onChange={() => {}} readOnly />
+                  <EditableField label="Last Update" value={formatDate(client.updatedAt)} onChange={() => {}} readOnly />
                   <div className="col-span-2">
-                    <EditableField
-                      label="Brand Brief Summary"
-                      value={formData.brandBriefSummary}
-                      onChange={(value) => updateFormData('brandBriefSummary', value)}
-                      type="textarea"
-                      placeholder="Brief description of the client's business..."
-                    />
+                    <EditableField label="Brand Brief Summary" value={formData.brandBriefSummary} onChange={value => updateFormData('brandBriefSummary', value)} type="textarea" placeholder="Brief description of the client's business..." />
                   </div>
-                </>
-              )}
+                </>}
             </div>
           </CardContent>
         </Card>
@@ -264,12 +230,9 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Integrations</span>
-              {!editModes.integrations ? (
-                <Button variant="outline" size="sm" onClick={() => handleEditToggle('integrations')}>
+              {!editModes.integrations ? <Button variant="outline" size="sm" onClick={() => handleEditToggle('integrations')}>
                   <Edit3 className="h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="flex gap-2">
+                </Button> : <div className="flex gap-2">
                   <Button size="sm" onClick={() => handleSave('integrations')}>
                     <Save className="h-4 w-4 mr-2" />
                     Save
@@ -278,8 +241,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                </div>
-              )}
+                </div>}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -289,30 +251,16 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                 AI Training Status
               </h3>
               <StatusBadge status={client.aiTraining.status} type="ai" className="mb-1" />
-              {client.aiTraining.lastTrainedAt.seconds > 0 && (
-                <div className="text-sm mt-1 mb-4">
+              {client.aiTraining.lastTrainedAt.seconds > 0 && <div className="text-sm mt-1 mb-4">
                   Last trained: {formatDate(client.aiTraining.lastTrainedAt)}
-                </div>
-              )}
+                </div>}
               <div className="mt-1">
                 <div className="text-xs font-semibold text-gray-500 mb-1">
                   Custom AI Instructions
                 </div>
-                {!editModes.integrations ? (
-                  <div className="text-sm text-gray-700 leading-snug">
-                    {client.brandProfile.customInstructionsAI?.trim()
-                      ? client.brandProfile.customInstructionsAI
-                      : "No custom instructions provided for this client."}
-                  </div>
-                ) : (
-                  <EditableField
-                    label=""
-                    value={formData.customInstructionsAI}
-                    onChange={(value) => updateFormData('customInstructionsAI', value)}
-                    type="textarea"
-                    placeholder="Enter custom AI instructions..."
-                  />
-                )}
+                {!editModes.integrations ? <div className="text-sm text-gray-700 leading-snug">
+                    {client.brandProfile.customInstructionsAI?.trim() ? client.brandProfile.customInstructionsAI : "No custom instructions provided for this client."}
+                  </div> : <EditableField label="" value={formData.customInstructionsAI} onChange={value => updateFormData('customInstructionsAI', value)} type="textarea" placeholder="Enter custom AI instructions..." />}
               </div>
             </div>
 
@@ -325,24 +273,13 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
               <h3 className="text-sm font-medium text-gray-500">
                 LinkedIn Integration
               </h3>
-              <div
-                className={cn(
-                  "w-full min-w-0 rounded-lg bg-secondary py-3 px-4 flex transition-colors hover:bg-secondary/80",
-                  !linkedinConnected ? "justify-center items-center" : "items-center"
-                )}
-                style={{ overflowX: linkedinConnected ? 'auto' : undefined }}
-              >
-                {!linkedinConnected ? (
-                  <Button
-                    onClick={() => setLinkedinConnected(true)}
-                    type="button"
-                    variant="default"
-                  >
+              <div className={cn("w-full min-w-0 rounded-lg bg-secondary py-3 px-4 flex transition-colors hover:bg-secondary/80", !linkedinConnected ? "justify-center items-center" : "items-center")} style={{
+              overflowX: linkedinConnected ? 'auto' : undefined
+            }}>
+                {!linkedinConnected ? <Button onClick={() => setLinkedinConnected(true)} type="button" variant="default">
                     <Linkedin className="mr-2 h-4 w-4" />
                     Connect LinkedIn
-                  </Button>
-                ) : (
-                  <div className="flex flex-nowrap items-center gap-4 min-w-0 w-full">
+                  </Button> : <div className="flex flex-nowrap items-center gap-4 min-w-0 w-full">
                     <span className="pl-2 flex-shrink-0">
                       <Linkedin className="h-5 w-5 text-[#0A66C2]" />
                     </span>
@@ -353,15 +290,10 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                       Expires on {MOCK_LINKEDIN_EXPIRY}
                     </span>
                     <span className="flex-1 min-w-0"></span>
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto text-sm body-small pr-4"
-                      onClick={() => setLinkedinConnected(false)}
-                    >
+                    <Button variant="link" className="p-0 h-auto text-sm body-small pr-4" onClick={() => setLinkedinConnected(false)}>
                       Disconnect
                     </Button>
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
           </CardContent>
@@ -372,7 +304,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Profiles</span>
+            <span>Associated Profiles</span>
             <AddProfileModal>
               <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
@@ -383,12 +315,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {profiles.map((profile) => (
-              <Card 
-                key={profile.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleProfileClick(profile.id)}
-              >
+            {profiles.map(profile => <Card key={profile.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleProfileClick(profile.id)}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar className="h-12 w-12">
@@ -405,19 +332,12 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({ clientId 
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                     {profile.writingStyle}
                   </p>
-                  <StatusBadge 
-                    status={getProfileStatus(profile)} 
-                    type="client" 
-                    className="text-xs"
-                  />
+                  <StatusBadge status={getProfileStatus(profile)} type="client" className="text-xs" />
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default ClientSettingsSection;
