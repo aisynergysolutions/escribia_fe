@@ -12,6 +12,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Progress } from '@/components/ui/progress';
 import StatusBadge from '../common/StatusBadge';
 import { SubClient } from '../../types/interfaces';
 
@@ -35,40 +36,42 @@ const ProfileDetails: React.FC = () => {
     createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
   });
 
-  // Form data for different sections
+  // Form data for main company profile
   const [clientInfoData, setClientInfoData] = useState({
     businessName: 'TechCorp Solutions',
     websiteUrl: 'https://techcorp-solutions.com',
     linkedinUrl: 'https://linkedin.com/company/techcorp-solutions',
     companySize: '51-200',
-    hqLocation: 'San Francisco, CA',
-    postsPerWeek: 3,
-    timeSlots: ['Monday at 9:00 AM', 'Wednesday at 2:00 PM', 'Friday at 11:00 AM']
+    hqLocation: 'San Francisco, CA'
+  });
+
+  const [scheduleData, setScheduleData] = useState({
+    timeSlots: ['Monday at 9:00 AM', 'Wednesday at 2:00 PM', 'Friday at 11:00 AM'],
+    customInstructions: 'Focus on industry insights and company achievements. Highlight our innovative solutions and client success stories.'
   });
 
   const [brandStrategyData, setBrandStrategyData] = useState({
     oneLiner: 'Leading technology solutions provider specializing in enterprise software.',
     targetAudience: 'Mid-market to enterprise B2B companies looking to modernize their technology infrastructure.',
     contentGoals: {
-      generateLeads: [3],
-      buildAuthority: [4],
-      engageAudience: [3],
-      attractTalent: [2],
-      supportPersonalBrand: [1]
+      generateLeads: 3,
+      buildAuthority: 4,
+      engageAudience: 3,
+      attractTalent: 2,
+      supportPersonalBrand: 1
     },
     brandPersona: 'The Seasoned Expert',
     coreTone: 'Confident & Direct',
-    postLength: [2], // Medium
-    emojiUsage: [1] // Sparingly
+    postLength: 'Short (80–130 words)',
+    emojiUsage: 'Professional ⚫️'
   });
 
   const [aiInstructionsData, setAiInstructionsData] = useState({
     keyOfferings: 'Enterprise software solutions, cloud migration services, custom development',
     hookGuidelines: 'Start with industry challenges or insights. Use data points when possible.',
-    sampleCTA: 'Ready to transform your business? Book a consultation today.',
     uniquePOV: 'Technology adoption should be strategic, not reactive. Focus on business outcomes.',
-    topicsToAvoid: 'Competitor bashing, political content, controversial industry takes',
-    competitors: ['https://competitor1.com', 'https://competitor2.com']
+    competitors: ['https://competitor1.com', 'https://competitor2.com'],
+    topicsToAvoid: ['Competitor bashing', 'Political content', 'Controversial industry takes']
   });
 
   // Sub-profile specific data
@@ -112,10 +115,24 @@ const ProfileDetails: React.FC = () => {
     navigate(`/clients/${clientId}/settings`);
   };
 
+  const handleAddTimeSlot = () => {
+    setScheduleData(prev => ({
+      ...prev,
+      timeSlots: [...prev.timeSlots, 'Monday at 9:00 AM']
+    }));
+  };
+
+  const handleRemoveTimeSlot = (index: number) => {
+    setScheduleData(prev => ({
+      ...prev,
+      timeSlots: prev.timeSlots.filter((_, i) => i !== index)
+    }));
+  };
+
   const isMainProfile = profileId === 'company-1';
 
   if (isMainProfile) {
-    // Main profile layout (keep existing code for main profile)
+    // Main profile layout - completely redesigned
     return (
       <div className="space-y-6">
         {/* Header */}
@@ -162,112 +179,212 @@ const ProfileDetails: React.FC = () => {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Business Name</Label>
-                {editingSection === 'clientInfo' ? (
-                  <Input
-                    value={clientInfoData.businessName}
-                    onChange={(e) => setClientInfoData(prev => ({ ...prev, businessName: e.target.value }))}
-                  />
-                ) : (
-                  <p className="text-sm mt-1">{clientInfoData.businessName}</p>
-                )}
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Business Name
+                  </Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Input
+                      value={clientInfoData.businessName}
+                      onChange={(e) => setClientInfoData(prev => ({ ...prev, businessName: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm mt-1">{clientInfoData.businessName}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Website URL</Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Input
+                      type="url"
+                      value={clientInfoData.websiteUrl}
+                      onChange={(e) => setClientInfoData(prev => ({ ...prev, websiteUrl: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <a 
+                      href={clientInfoData.websiteUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                    >
+                      {clientInfoData.websiteUrl}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+                <div>
+                  <Label>LinkedIn URL</Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Input
+                      type="url"
+                      value={clientInfoData.linkedinUrl}
+                      onChange={(e) => setClientInfoData(prev => ({ ...prev, linkedinUrl: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <a 
+                      href={clientInfoData.linkedinUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                    >
+                      {clientInfoData.linkedinUrl}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
               </div>
-              <div>
-                <Label>Company Size</Label>
-                {editingSection === 'clientInfo' ? (
-                  <Select value={clientInfoData.companySize} onValueChange={(value) => setClientInfoData(prev => ({ ...prev, companySize: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1-10">1-10</SelectItem>
-                      <SelectItem value="11-50">11-50</SelectItem>
-                      <SelectItem value="51-200">51-200</SelectItem>
-                      <SelectItem value="201-500">201-500</SelectItem>
-                      <SelectItem value="500+">500+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-1">{clientInfoData.companySize}</p>
-                )}
+              <div className="space-y-4">
+                <div>
+                  <Label>Company Size</Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Select value={clientInfoData.companySize} onValueChange={(value) => setClientInfoData(prev => ({ ...prev, companySize: value }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-10">1-10</SelectItem>
+                        <SelectItem value="11-50">11-50</SelectItem>
+                        <SelectItem value="51-200">51-200</SelectItem>
+                        <SelectItem value="201-500">201-500</SelectItem>
+                        <SelectItem value="500+">500+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-sm mt-1">{clientInfoData.companySize}</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    HQ Location
+                  </Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Input
+                      value={clientInfoData.hqLocation}
+                      onChange={(e) => setClientInfoData(prev => ({ ...prev, hqLocation: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm mt-1">{clientInfoData.hqLocation}</p>
+                  )}
+                </div>
               </div>
-              <div>
-                <Label>Website URL</Label>
-                {editingSection === 'clientInfo' ? (
-                  <Input
-                    type="url"
-                    value={clientInfoData.websiteUrl}
-                    onChange={(e) => setClientInfoData(prev => ({ ...prev, websiteUrl: e.target.value }))}
-                  />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 2: Posting Schedule & Integrations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Posting Schedule & Integrations</span>
+              {editingSection !== 'schedule' ? (
+                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('schedule')}>
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleSectionSave('schedule')}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('schedule')}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <Label className="text-base font-medium">Preferred Time Slots</Label>
+              {editingSection === 'schedule' ? (
+                <div className="space-y-2 mt-2">
+                  {scheduleData.timeSlots.map((slot, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input value={slot} className="flex-1" readOnly />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleRemoveTimeSlot(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={handleAddTimeSlot}>
+                    + Add Time Slot
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-1 mt-2">
+                  {scheduleData.timeSlots.map((slot, index) => (
+                    <p key={index} className="text-sm p-2 bg-muted rounded-md">{slot}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label className="text-base font-medium">LinkedIn Integration</Label>
+              <div className="mt-3 p-4 bg-secondary rounded-lg">
+                {profile.linkedinConnected ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+                      <div>
+                        <p className="font-medium">Connected as {profile.linkedinAccountName || profile.name}</p>
+                        <p className="text-sm text-muted-foreground">Expires on {profile.linkedinExpiryDate}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Disconnect
+                    </Button>
+                  </div>
                 ) : (
-                  <p className="text-sm mt-1">{clientInfoData.websiteUrl}</p>
-                )}
-              </div>
-              <div>
-                <Label>HQ Location</Label>
-                {editingSection === 'clientInfo' ? (
-                  <Input
-                    value={clientInfoData.hqLocation}
-                    onChange={(e) => setClientInfoData(prev => ({ ...prev, hqLocation: e.target.value }))}
-                  />
-                ) : (
-                  <p className="text-sm mt-1">{clientInfoData.hqLocation}</p>
-                )}
-              </div>
-              <div>
-                <Label>LinkedIn URL</Label>
-                {editingSection === 'clientInfo' ? (
-                  <Input
-                    type="url"
-                    value={clientInfoData.linkedinUrl}
-                    onChange={(e) => setClientInfoData(prev => ({ ...prev, linkedinUrl: e.target.value }))}
-                  />
-                ) : (
-                  <p className="text-sm mt-1">{clientInfoData.linkedinUrl}</p>
-                )}
-              </div>
-              <div>
-                <Label>Posts Per Week</Label>
-                {editingSection === 'clientInfo' ? (
-                  <Input
-                    type="number"
-                    min="1"
-                    max="7"
-                    value={clientInfoData.postsPerWeek}
-                    onChange={(e) => setClientInfoData(prev => ({ ...prev, postsPerWeek: parseInt(e.target.value) }))}
-                  />
-                ) : (
-                  <p className="text-sm mt-1">{clientInfoData.postsPerWeek}</p>
+                  <div className="flex items-center justify-center">
+                    <Button>
+                      <Linkedin className="h-4 w-4 mr-2" />
+                      Connect LinkedIn
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
+
+            <Separator />
+
             <div>
-              <Label>Preferred Time Slots</Label>
-              {editingSection === 'clientInfo' ? (
-                <div className="space-y-2 mt-2">
-                  {clientInfoData.timeSlots.map((slot, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input value={slot} readOnly className="flex-1" />
-                      <Button variant="outline" size="sm">×</Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm">+ Add Time Slot</Button>
-                </div>
+              <Label className="text-base font-medium">Custom AI Instructions</Label>
+              {editingSection === 'schedule' ? (
+                <Textarea
+                  value={scheduleData.customInstructions}
+                  onChange={(e) => setScheduleData(prev => ({ ...prev, customInstructions: e.target.value }))}
+                  className="mt-2"
+                  rows={3}
+                  placeholder="Enter custom AI instructions..."
+                />
               ) : (
-                <div className="space-y-1 mt-1">
-                  {clientInfoData.timeSlots.map((slot, index) => (
-                    <p key={index} className="text-sm">{slot}</p>
-                  ))}
-                </div>
+                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                  {scheduleData.customInstructions}
+                </p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Card 2: Brand Strategy & Voice */}
+        {/* Card 3: Brand Strategy & Voice */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -291,180 +408,130 @@ const ProfileDetails: React.FC = () => {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label>One-Liner Summary</Label>
-              {editingSection === 'brandStrategy' ? (
-                <Textarea
-                  value={brandStrategyData.oneLiner}
-                  onChange={(e) => setBrandStrategyData(prev => ({ ...prev, oneLiner: e.target.value }))}
-                  className="mt-1"
-                />
-              ) : (
-                <p className="text-sm mt-1">{brandStrategyData.oneLiner}</p>
-              )}
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-medium">One-Liner Summary</Label>
+                  {editingSection === 'brandStrategy' ? (
+                    <Textarea
+                      value={brandStrategyData.oneLiner}
+                      onChange={(e) => setBrandStrategyData(prev => ({ ...prev, oneLiner: e.target.value }))}
+                      className="mt-2"
+                      rows={3}
+                    />
+                  ) : (
+                    <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                      {brandStrategyData.oneLiner}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-base font-medium">Brand Persona</Label>
+                  {editingSection === 'brandStrategy' ? (
+                    <Select value={brandStrategyData.brandPersona} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, brandPersona: value }))}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="The Seasoned Expert">🏆 The Seasoned Expert</SelectItem>
+                        <SelectItem value="The Helpful Guide">🤝 The Helpful Guide</SelectItem>
+                        <SelectItem value="The Bold Innovator">⚡ The Bold Innovator</SelectItem>
+                        <SelectItem value="The Trusted Peer">👥 The Trusted Peer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Badge variant="secondary" className="px-3 py-1">
+                        🏆 {brandStrategyData.brandPersona}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-base font-medium">Core Tone</Label>
+                  {editingSection === 'brandStrategy' ? (
+                    <Select value={brandStrategyData.coreTone} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, coreTone: value }))}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Confident & Direct">Confident & Direct</SelectItem>
+                        <SelectItem value="Friendly & Approachable">Friendly & Approachable</SelectItem>
+                        <SelectItem value="Witty & Humorous">Witty & Humorous</SelectItem>
+                        <SelectItem value="Formal & Professional">Formal & Professional</SelectItem>
+                        <SelectItem value="Casual & Conversational">Casual & Conversational</SelectItem>
+                        <SelectItem value="Inspirational & Visionary">Inspirational & Visionary</SelectItem>
+                        <SelectItem value="Technical & Precise">Technical & Precise</SelectItem>
+                        <SelectItem value="Passionate & Energetic">Passionate & Energetic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-2">
+                      <Badge variant="outline" className="px-3 py-1">
+                        {brandStrategyData.coreTone}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-medium">Content Goals</Label>
+                  <div className="space-y-3 mt-2">
+                    {[
+                      { key: 'generateLeads', label: 'Generate Leads', value: brandStrategyData.contentGoals.generateLeads },
+                      { key: 'buildAuthority', label: 'Build Brand Authority', value: brandStrategyData.contentGoals.buildAuthority },
+                      { key: 'engageAudience', label: 'Engage Audience', value: brandStrategyData.contentGoals.engageAudience },
+                      { key: 'attractTalent', label: 'Attract Talent', value: brandStrategyData.contentGoals.attractTalent },
+                      { key: 'supportPersonalBrand', label: 'Support a Personal Brand', value: brandStrategyData.contentGoals.supportPersonalBrand }
+                    ].map(({ key, label, value }) => (
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">{label}</span>
+                          <span className="text-sm text-muted-foreground">{value}/5</span>
+                        </div>
+                        <Progress value={(value / 5) * 100} className="h-2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-base font-medium">Average Post Length</Label>
+                  <p className="text-sm mt-2">{brandStrategyData.postLength}</p>
+                </div>
+                <div>
+                  <Label className="text-base font-medium">Emoji Usage</Label>
+                  <p className="text-sm mt-2">{brandStrategyData.emojiUsage}</p>
+                </div>
+              </div>
             </div>
-            
+
+            <Separator className="my-6" />
+
             <div>
-              <Label>Target Audience Persona</Label>
+              <Label className="text-base font-medium">Target Audience Persona</Label>
               {editingSection === 'brandStrategy' ? (
                 <Textarea
                   value={brandStrategyData.targetAudience}
                   onChange={(e) => setBrandStrategyData(prev => ({ ...prev, targetAudience: e.target.value }))}
-                  className="mt-1"
+                  className="mt-2"
+                  rows={3}
                 />
               ) : (
-                <p className="text-sm mt-1">{brandStrategyData.targetAudience}</p>
+                <blockquote className="mt-2 border-l-4 border-primary pl-4 py-2 bg-muted/50 rounded-r-md">
+                  <p className="text-sm italic">"{brandStrategyData.targetAudience}"</p>
+                </blockquote>
               )}
-            </div>
-
-            <div>
-              <Label>Content Goals (1-5 scale)</Label>
-              <div className="space-y-4 mt-3">
-                {[
-                  { key: 'generateLeads', label: 'Generate Leads' },
-                  { key: 'buildAuthority', label: 'Build Brand Authority' },
-                  { key: 'engageAudience', label: 'Engage Audience' },
-                  { key: 'attractTalent', label: 'Attract Talent' },
-                  { key: 'supportPersonalBrand', label: 'Support a Personal Brand' }
-                ].map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{label}</span>
-                    {editingSection === 'brandStrategy' ? (
-                      <div className="flex items-center gap-4 w-32">
-                        <Slider
-                          value={brandStrategyData.contentGoals[key as keyof typeof brandStrategyData.contentGoals]}
-                          onValueChange={(value) => setBrandStrategyData(prev => ({
-                            ...prev,
-                            contentGoals: { ...prev.contentGoals, [key]: value }
-                          }))}
-                          max={5}
-                          min={1}
-                          step={1}
-                          className="flex-1"
-                        />
-                        <span className="text-sm w-4">{brandStrategyData.contentGoals[key as keyof typeof brandStrategyData.contentGoals][0]}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm">{brandStrategyData.contentGoals[key as keyof typeof brandStrategyData.contentGoals][0]}/5</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Brand Persona</Label>
-                {editingSection === 'brandStrategy' ? (
-                  <Select value={brandStrategyData.brandPersona} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, brandPersona: value }))}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="The Seasoned Expert">The Seasoned Expert</SelectItem>
-                      <SelectItem value="The Helpful Guide">The Helpful Guide</SelectItem>
-                      <SelectItem value="The Bold Innovator">The Bold Innovator</SelectItem>
-                      <SelectItem value="The Trusted Peer">The Trusted Peer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-1">{brandStrategyData.brandPersona}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label>Core Tone</Label>
-                {editingSection === 'brandStrategy' ? (
-                  <Select value={brandStrategyData.coreTone} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, coreTone: value }))}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Confident & Direct">Confident & Direct</SelectItem>
-                      <SelectItem value="Friendly & Approachable">Friendly & Approachable</SelectItem>
-                      <SelectItem value="Witty & Humorous">Witty & Humorous</SelectItem>
-                      <SelectItem value="Formal & Professional">Formal & Professional</SelectItem>
-                      <SelectItem value="Casual & Conversational">Casual & Conversational</SelectItem>
-                      <SelectItem value="Inspirational & Visionary">Inspirational & Visionary</SelectItem>
-                      <SelectItem value="Technical & Precise">Technical & Precise</SelectItem>
-                      <SelectItem value="Passionate & Energetic">Passionate & Energetic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-1">{brandStrategyData.coreTone}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <Label>Average Post Length</Label>
-              <div className="flex items-center gap-4 mt-2">
-                {editingSection === 'brandStrategy' ? (
-                  <>
-                    <Slider
-                      value={brandStrategyData.postLength}
-                      onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, postLength: value }))}
-                      max={4}
-                      min={1}
-                      step={1}
-                      className="flex-1"
-                    />
-                    <span className="text-sm w-32">
-                      {brandStrategyData.postLength[0] === 1 && 'Super Short (50–90 words)'}
-                      {brandStrategyData.postLength[0] === 2 && 'Short (80–130 words)'}
-                      {brandStrategyData.postLength[0] === 3 && 'Medium (130–280 words)'}
-                      {brandStrategyData.postLength[0] === 4 && 'Long (280–450 words)'}
-                    </span>
-                  </>
-                ) : (
-                  <p className="text-sm">
-                    {brandStrategyData.postLength[0] === 1 && 'Super Short (50–90 words)'}
-                    {brandStrategyData.postLength[0] === 2 && 'Short (80–130 words)'}
-                    {brandStrategyData.postLength[0] === 3 && 'Medium (130–280 words)'}
-                    {brandStrategyData.postLength[0] === 4 && 'Long (280–450 words)'}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <Label>Emoji Usage</Label>
-              <div className="flex items-center gap-4 mt-2">
-                {editingSection === 'brandStrategy' ? (
-                  <>
-                    <Slider
-                      value={brandStrategyData.emojiUsage}
-                      onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, emojiUsage: value }))}
-                      max={4}
-                      min={1}
-                      step={1}
-                      className="flex-1"
-                    />
-                    <span className="text-sm w-32">
-                      {brandStrategyData.emojiUsage[0] === 1 && 'Professional ⚫️'}
-                      {brandStrategyData.emojiUsage[0] === 2 && 'Sparingly 👍'}
-                      {brandStrategyData.emojiUsage[0] === 3 && 'Moderately 😊'}
-                      {brandStrategyData.emojiUsage[0] === 4 && 'Frequently ✨'}
-                    </span>
-                  </>
-                ) : (
-                  <p className="text-sm">
-                    {brandStrategyData.emojiUsage[0] === 1 && 'Professional ⚫️'}
-                    {brandStrategyData.emojiUsage[0] === 2 && 'Sparingly 👍'}
-                    {brandStrategyData.emojiUsage[0] === 3 && 'Moderately 😊'}
-                    {brandStrategyData.emojiUsage[0] === 4 && 'Frequently ✨'}
-                  </p>
-                )}
-              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Card 4: Content Guidelines */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>AI Instructions & Guardrails</span>
+              <span>Content Guidelines</span>
               {editingSection !== 'aiInstructions' ? (
                 <Button variant="outline" size="sm" onClick={() => handleSectionEdit('aiInstructions')}>
                   <Edit3 className="h-4 w-4 mr-2" />
@@ -484,102 +551,90 @@ const ProfileDetails: React.FC = () => {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div>
-              <Label>Key Offerings to Promote</Label>
+              <Label className="text-base font-medium">Key Offerings to Promote</Label>
               {editingSection === 'aiInstructions' ? (
                 <Textarea
                   value={aiInstructionsData.keyOfferings}
                   onChange={(e) => setAiInstructionsData(prev => ({ ...prev, keyOfferings: e.target.value }))}
-                  className="mt-1"
+                  className="mt-2"
+                  rows={3}
                 />
               ) : (
-                <p className="text-sm mt-1">{aiInstructionsData.keyOfferings}</p>
+                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                  {aiInstructionsData.keyOfferings}
+                </p>
               )}
             </div>
 
+            <Separator />
+
             <div>
-              <Label>Hook Guidelines</Label>
+              <Label className="text-base font-medium">Hook Guidelines</Label>
               {editingSection === 'aiInstructions' ? (
                 <Textarea
                   value={aiInstructionsData.hookGuidelines}
                   onChange={(e) => setAiInstructionsData(prev => ({ ...prev, hookGuidelines: e.target.value }))}
-                  className="mt-1"
+                  className="mt-2"
+                  rows={3}
                 />
               ) : (
-                <p className="text-sm mt-1">{aiInstructionsData.hookGuidelines}</p>
+                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                  {aiInstructionsData.hookGuidelines}
+                </p>
               )}
             </div>
 
-            <div>
-              <Label>Sample Call-to-Action (CTA)</Label>
-              {editingSection === 'aiInstructions' ? (
-                <Textarea
-                  value={aiInstructionsData.sampleCTA}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, sampleCTA: e.target.value }))}
-                  className="mt-1"
-                />
-              ) : (
-                <p className="text-sm mt-1">{aiInstructionsData.sampleCTA}</p>
-              )}
-            </div>
+            <Separator />
 
             <div>
-              <Label>Unique POV / "Hot Takes"</Label>
+              <Label className="text-base font-medium">Unique POV / "Hot Takes"</Label>
               {editingSection === 'aiInstructions' ? (
                 <Textarea
                   value={aiInstructionsData.uniquePOV}
                   onChange={(e) => setAiInstructionsData(prev => ({ ...prev, uniquePOV: e.target.value }))}
-                  className="mt-1"
+                  className="mt-2"
+                  rows={3}
                 />
               ) : (
-                <p className="text-sm mt-1">{aiInstructionsData.uniquePOV}</p>
+                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                  {aiInstructionsData.uniquePOV}
+                </p>
               )}
             </div>
 
-            <div>
-              <Label>Topics to Avoid</Label>
-              {editingSection === 'aiInstructions' ? (
-                <Textarea
-                  value={aiInstructionsData.topicsToAvoid}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, topicsToAvoid: e.target.value }))}
-                  className="mt-1"
-                />
-              ) : (
-                <p className="text-sm mt-1">{aiInstructionsData.topicsToAvoid}</p>
-              )}
-            </div>
+            <Separator />
 
             <div>
-              <Label>Main Competitors</Label>
-              {editingSection === 'aiInstructions' ? (
-                <div className="space-y-2 mt-2">
-                  {aiInstructionsData.competitors.map((competitor, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        type="url"
-                        value={competitor}
-                        onChange={(e) => {
-                          const newCompetitors = [...aiInstructionsData.competitors];
-                          newCompetitors[index] = e.target.value;
-                          setAiInstructionsData(prev => ({ ...prev, competitors: newCompetitors }));
-                        }}
-                        className="flex-1"
-                      />
-                      <Button variant="outline" size="sm">×</Button>
-                    </div>
-                  ))}
-                  {aiInstructionsData.competitors.length < 3 && (
-                    <Button variant="outline" size="sm">+ Add Competitor</Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-1 mt-1">
-                  {aiInstructionsData.competitors.map((competitor, index) => (
-                    <p key={index} className="text-sm">{competitor}</p>
-                  ))}
-                </div>
-              )}
+              <Label className="text-base font-medium">Main Competitors</Label>
+              <div className="space-y-2 mt-2">
+                {aiInstructionsData.competitors.map((competitor, index) => (
+                  <a 
+                    key={index}
+                    href={competitor} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 p-2 bg-muted rounded-md"
+                  >
+                    {competitor}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label className="text-base font-medium">Topics to Avoid</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {aiInstructionsData.topicsToAvoid.map((topic, index) => (
+                  <Badge key={index} variant="destructive" className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200">
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -587,7 +642,7 @@ const ProfileDetails: React.FC = () => {
     );
   }
 
-  // Sub-profile layout
+  // Sub-profile layout (keep existing code for sub-profiles)
   return (
     <div className="space-y-6">
       {/* Header */}
