@@ -1,15 +1,87 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LogOut, Upload, Plus, MoreHorizontal, User, Mail, Phone } from 'lucide-react';
 import { mockAgency } from '../types';
 
 const Profile = () => {
+  const [agencyData, setAgencyData] = useState({
+    logo: '',
+    name: mockAgency.agencyName,
+    website: 'https://acme-media.com',
+    userName: 'John Smith',
+    email: mockAgency.primaryContactEmail,
+    phone: '+1 (555) 123-4567',
+    defaultLanguage: mockAgency.settings.defaultLanguage,
+    timezone: mockAgency.settings.timezone,
+    agencySize: '11-50'
+  });
+
+  const [teamMembers] = useState([
+    {
+      id: 1,
+      name: 'John Smith',
+      email: 'john@acme-media.com',
+      role: 'Admin',
+      status: 'Active',
+      avatar: ''
+    },
+    {
+      id: 2,
+      name: 'Sarah Johnson',
+      email: 'sarah@acme-media.com',
+      role: 'Member',
+      status: 'Active',
+      avatar: ''
+    },
+    {
+      id: 3,
+      name: 'Mike Wilson',
+      email: 'mike@acme-media.com',
+      role: 'Member',
+      status: 'Pending',
+      avatar: ''
+    }
+  ]);
+
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('Member');
+
   const handleLogout = () => {
     console.log('Logging out...');
     // Add logout functionality here
+  };
+
+  const handleSaveChanges = () => {
+    console.log('Saving agency changes...', agencyData);
+    // Add save functionality here
+  };
+
+  const handleInviteUser = () => {
+    console.log('Inviting user:', { email: inviteEmail, role: inviteRole });
+    setIsInviteModalOpen(false);
+    setInviteEmail('');
+    setInviteRole('Member');
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAgencyData(prev => ({ ...prev, logo: e.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -29,68 +101,290 @@ const Profile = () => {
       <Tabs defaultValue="agency" className="space-y-4">
         <TabsList>
           <TabsTrigger value="agency">Agency Info</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="referral">Referrals</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="agency" className="space-y-4">
+        <TabsContent value="agency" className="space-y-6">
+          {/* Agency Profile Section */}
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
-              <CardTitle>Agency Information</CardTitle>
+              <CardTitle>Agency Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Agency Name</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border rounded-md" 
-                  value={mockAgency.agencyName} 
-                  readOnly 
-                />
+              <div>
+                <Label htmlFor="logo" className="text-base font-medium">Agency Logo</Label>
+                <div className="mt-2 flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                    {agencyData.logo ? (
+                      <img src={agencyData.logo} alt="Agency Logo" className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => document.getElementById('logo')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Logo
+                    </Button>
+                    <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                  </div>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Primary Contact Email</label>
-                <input 
-                  type="email" 
-                  className="w-full p-2 border rounded-md" 
-                  value={mockAgency.primaryContactEmail}
-                  readOnly
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="agencyName" className="text-base font-medium">Agency Name</Label>
+                  <Input
+                    id="agencyName"
+                    value={agencyData.name}
+                    onChange={(e) => setAgencyData(prev => ({ ...prev, name: e.target.value }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="website" className="text-base font-medium">Agency Website</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={agencyData.website}
+                    onChange={(e) => setAgencyData(prev => ({ ...prev, website: e.target.value }))}
+                    className="mt-2"
+                    placeholder="https://your-agency.com"
+                  />
+                </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Default Language</label>
-                  <select className="w-full p-2 border rounded-md">
-                    <option value="en" selected={mockAgency.settings.defaultLanguage === "en"}>English</option>
-                    <option value="es" selected={mockAgency.settings.defaultLanguage === "es"}>Spanish</option>
-                    <option value="fr" selected={mockAgency.settings.defaultLanguage === "fr"}>French</option>
-                    <option value="de" selected={mockAgency.settings.defaultLanguage === "de"}>German</option>
-                  </select>
+            </CardContent>
+          </Card>
+
+          {/* Contact Information Section */}
+          <Card className="rounded-2xl shadow-md">
+            <CardHeader>
+              <CardTitle>Contact Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label htmlFor="userName" className="flex items-center gap-2 text-base font-medium">
+                    <User className="h-4 w-4" />
+                    Name
+                  </Label>
+                  <Input
+                    id="userName"
+                    value={agencyData.userName}
+                    onChange={(e) => setAgencyData(prev => ({ ...prev, userName: e.target.value }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email" className="flex items-center gap-2 text-base font-medium">
+                    <Mail className="h-4 w-4" />
+                    Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={agencyData.email}
+                    onChange={(e) => setAgencyData(prev => ({ ...prev, email: e.target.value }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone" className="flex items-center gap-2 text-base font-medium">
+                    <Phone className="h-4 w-4" />
+                    Phone Number
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={agencyData.phone}
+                    onChange={(e) => setAgencyData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="mt-2"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* General Settings Section */}
+          <Card className="rounded-2xl shadow-md">
+            <CardHeader>
+              <CardTitle>General Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label className="text-base font-medium">Default Language</Label>
+                  <Select value={agencyData.defaultLanguage} onValueChange={(value) => setAgencyData(prev => ({ ...prev, defaultLanguage: value }))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="de">German</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Timezone</label>
-                  <select className="w-full p-2 border rounded-md">
-                    <option value="Europe/Madrid" selected={mockAgency.settings.timezone === "Europe/Madrid"}>Europe/Madrid</option>
-                    <option value="America/New_York">America/New York</option>
-                    <option value="America/Los_Angeles">America/Los Angeles</option>
-                    <option value="Asia/Tokyo">Asia/Tokyo</option>
-                  </select>
+                <div>
+                  <Label className="text-base font-medium">Timezone</Label>
+                  <Select value={agencyData.timezone} onValueChange={(value) => setAgencyData(prev => ({ ...prev, timezone: value }))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Europe/Madrid">Europe/Madrid</SelectItem>
+                      <SelectItem value="America/New_York">America/New York</SelectItem>
+                      <SelectItem value="America/Los_Angeles">America/Los Angeles</SelectItem>
+                      <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-base font-medium">Agency Size (Number of Employees)</Label>
+                  <Select value={agencyData.agencySize} onValueChange={(value) => setAgencyData(prev => ({ ...prev, agencySize: value }))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1-10">1-10</SelectItem>
+                      <SelectItem value="11-50">11-50</SelectItem>
+                      <SelectItem value="51-200">51-200</SelectItem>
+                      <SelectItem value="201-500">201-500</SelectItem>
+                      <SelectItem value="500+">500+</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              
-              <div className="pt-4">
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
+
+              <div className="pt-6">
+                <Button onClick={handleSaveChanges} className="bg-indigo-600 hover:bg-indigo-700">
                   Save Changes
                 </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="team" className="space-y-4">
+          <Card className="rounded-2xl shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Team Members</span>
+                <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Invite Teammate
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invite Team Member</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <div>
+                        <Label htmlFor="inviteEmail">Email Address</Label>
+                        <Input
+                          id="inviteEmail"
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="teammate@company.com"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Role</Label>
+                        <Select value={inviteRole} onValueChange={setInviteRole}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                            <SelectItem value="Member">Member</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-2 pt-4">
+                        <Button onClick={handleInviteUser} className="flex-1">
+                          Send Invitation
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsInviteModalOpen(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {teamMembers.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback>
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{member.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-gray-600">{member.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={member.role === 'Admin' ? 'default' : 'secondary'}>
+                          {member.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>
+                          {member.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
         <TabsContent value="subscription" className="space-y-4">
+          
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
               <CardTitle>Subscription Details</CardTitle>
@@ -155,6 +449,7 @@ const Profile = () => {
         </TabsContent>
         
         <TabsContent value="referral" className="space-y-4">
+          
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
               <CardTitle>Referral Program</CardTitle>
