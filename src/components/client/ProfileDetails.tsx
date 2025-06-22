@@ -163,6 +163,27 @@ const ProfileDetails: React.FC = () => {
     }));
   };
 
+  const handleAddTopicToAvoid = () => {
+    setContentGuidelinesData(prev => ({
+      ...prev,
+      topicsToAvoid: [...prev.topicsToAvoid, 'New topic']
+    }));
+  };
+
+  const handleRemoveTopicToAvoid = (index: number) => {
+    setContentGuidelinesData(prev => ({
+      ...prev,
+      topicsToAvoid: prev.topicsToAvoid.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleTopicToAvoidChange = (index: number, value: string) => {
+    setContentGuidelinesData(prev => ({
+      ...prev,
+      topicsToAvoid: prev.topicsToAvoid.map((topic, i) => i === index ? value : topic)
+    }));
+  };
+
   // Helper functions for sliders
   const getPostLengthLabel = (value: number) => {
     const labels = ['Super Short (50–90 words)', 'Short (80–130 words)', 'Medium (130–280 words)', 'Long (280–450 words)'];
@@ -317,6 +338,21 @@ const ProfileDetails: React.FC = () => {
               </div>
               <div className="space-y-4">
                 <div>
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    HQ Location
+                  </Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Input
+                      value={clientInfoData.hqLocation}
+                      onChange={(e) => setClientInfoData(prev => ({ ...prev, hqLocation: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm mt-1">{clientInfoData.hqLocation}</p>
+                  )}
+                </div>
+                <div>
                   <Label>Company Size</Label>
                   {editingSection === 'clientInfo' ? (
                     <Select value={clientInfoData.companySize} onValueChange={(value) => setClientInfoData(prev => ({ ...prev, companySize: value }))}>
@@ -333,21 +369,6 @@ const ProfileDetails: React.FC = () => {
                     </Select>
                   ) : (
                     <p className="text-sm mt-1">{clientInfoData.companySize}</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    HQ Location
-                  </Label>
-                  {editingSection === 'clientInfo' ? (
-                    <Input
-                      value={clientInfoData.hqLocation}
-                      onChange={(e) => setClientInfoData(prev => ({ ...prev, hqLocation: e.target.value }))}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <p className="text-sm mt-1">{clientInfoData.hqLocation}</p>
                   )}
                 </div>
                 <div>
@@ -595,7 +616,8 @@ const ProfileDetails: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Sub-section 1: Content Goals */}
                 <div>
                   <Label className="text-base font-medium">Content Goals</Label>
                   <div className="space-y-3 mt-2">
@@ -611,51 +633,74 @@ const ProfileDetails: React.FC = () => {
                           <span className="text-sm font-medium">{label}</span>
                           <span className="text-sm text-muted-foreground">{value}/5</span>
                         </div>
-                        <Progress value={(value / 5) * 100} className="h-2" />
+                        {editingSection === 'brandStrategy' ? (
+                          <Slider
+                            value={[value]}
+                            onValueChange={(newValue) => setBrandStrategyData(prev => ({
+                              ...prev,
+                              contentGoals: {
+                                ...prev.contentGoals,
+                                [key]: newValue[0]
+                              }
+                            }))}
+                            max={5}
+                            step={1}
+                            className="w-full"
+                          />
+                        ) : (
+                          <Progress value={(value / 5) * 100} className="h-2" />
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <Label className="text-base font-medium">Average Post Length</Label>
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Super Short</span>
-                      <span className="text-sm font-medium">{getPostLengthLabel(brandStrategyData.postLengthValue)}</span>
-                      <span className="text-sm text-muted-foreground">Long</span>
+
+                {/* Divider */}
+                <Separator />
+
+                {/* Sub-section 2: Content Style */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-base font-medium">Average Post Length</Label>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Super Short</span>
+                        <span className="text-sm font-medium">{getPostLengthLabel(brandStrategyData.postLengthValue)}</span>
+                        <span className="text-sm text-muted-foreground">Long</span>
+                      </div>
+                      {editingSection === 'brandStrategy' ? (
+                        <Slider
+                          value={[brandStrategyData.postLengthValue]}
+                          onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, postLengthValue: value[0] }))}
+                          max={3}
+                          step={1}
+                          className="w-full"
+                        />
+                      ) : (
+                        <Progress value={((brandStrategyData.postLengthValue) / 3) * 100} className="h-2" />
+                      )}
                     </div>
-                    {editingSection === 'brandStrategy' ? (
-                      <Slider
-                        value={[brandStrategyData.postLengthValue]}
-                        onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, postLengthValue: value[0] }))}
-                        max={3}
-                        step={1}
-                        className="w-full"
-                      />
-                    ) : (
-                      <Progress value={((brandStrategyData.postLengthValue) / 3) * 100} className="h-2" />
-                    )}
                   </div>
-                </div>
-                <div>
-                  <Label className="text-base font-medium">Emoji Usage</Label>
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Professional</span>
-                      <span className="text-sm font-medium">{getEmojiUsageLabel(brandStrategyData.emojiUsageValue)}</span>
-                      <span className="text-sm text-muted-foreground">Frequently</span>
+                  <div>
+                    <Label className="text-base font-medium">Emoji Usage</Label>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Professional</span>
+                        <span className="text-sm font-medium">{getEmojiUsageLabel(brandStrategyData.emojiUsageValue)}</span>
+                        <span className="text-sm text-muted-foreground">Frequently</span>
+                      </div>
+                      {editingSection === 'brandStrategy' ? (
+                        <Slider
+                          value={[brandStrategyData.emojiUsageValue]}
+                          onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, emojiUsageValue: value[0] }))}
+                          max={3}
+                          step={1}
+                          className="w-full"
+                        />
+                      ) : (
+                        <Progress value={((brandStrategyData.emojiUsageValue) / 3) * 100} className="h-2" />
+                      )}
                     </div>
-                    {editingSection === 'brandStrategy' ? (
-                      <Slider
-                        value={[brandStrategyData.emojiUsageValue]}
-                        onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, emojiUsageValue: value[0] }))}
-                        max={3}
-                        step={1}
-                        className="w-full"
-                      />
-                    ) : (
-                      <Progress value={((brandStrategyData.emojiUsageValue) / 3) * 100} className="h-2" />
-                    )}
                   </div>
                 </div>
               </div>
@@ -790,13 +835,39 @@ const ProfileDetails: React.FC = () => {
 
             <div>
               <Label className="text-base font-medium">Topics to Avoid</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {contentGuidelinesData.topicsToAvoid.map((topic, index) => (
-                  <Badge key={index} variant="destructive" className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200">
-                    {topic}
-                  </Badge>
-                ))}
-              </div>
+              {editingSection === 'contentGuidelines' ? (
+                <div className="space-y-2 mt-2">
+                  {contentGuidelinesData.topicsToAvoid.map((topic, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        value={topic}
+                        onChange={(e) => handleTopicToAvoidChange(index, e.target.value)}
+                        className="flex-1"
+                        placeholder="Topic to avoid"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleRemoveTopicToAvoid(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={handleAddTopicToAvoid}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Topic to Avoid
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {contentGuidelinesData.topicsToAvoid.map((topic, index) => (
+                    <Badge key={index} variant="destructive" className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -807,7 +878,7 @@ const ProfileDetails: React.FC = () => {
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete Client Account
+                Delete Client
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
