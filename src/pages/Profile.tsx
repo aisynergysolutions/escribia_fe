@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, Upload, Plus, MoreHorizontal, User, Mail, Phone } from 'lucide-react';
+import { LogOut, Upload, Plus, MoreHorizontal, User, Mail, Phone, Edit, Check, X } from 'lucide-react';
 import { mockAgency } from '../types';
+
 const Profile = () => {
   const [agencyData, setAgencyData] = useState({
     logo: '',
@@ -23,6 +24,15 @@ const Profile = () => {
     timezone: mockAgency.settings.timezone,
     agencySize: '11-50'
   });
+
+  const [editStates, setEditStates] = useState({
+    profile: false,
+    contact: false,
+    settings: false
+  });
+
+  const [tempData, setTempData] = useState(agencyData);
+
   const [teamMembers] = useState([{
     id: 1,
     name: 'John Smith',
@@ -48,14 +58,28 @@ const Profile = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('Member');
+
+  const handleEdit = (section: 'profile' | 'contact' | 'settings') => {
+    setEditStates(prev => ({ ...prev, [section]: true }));
+    setTempData(agencyData);
+  };
+
+  const handleSave = (section: 'profile' | 'contact' | 'settings') => {
+    setAgencyData(tempData);
+    setEditStates(prev => ({ ...prev, [section]: false }));
+    console.log(`Saving ${section} changes...`, tempData);
+  };
+
+  const handleCancel = (section: 'profile' | 'contact' | 'settings') => {
+    setTempData(agencyData);
+    setEditStates(prev => ({ ...prev, [section]: false }));
+  };
+
   const handleLogout = () => {
     console.log('Logging out...');
     // Add logout functionality here
   };
-  const handleSaveChanges = () => {
-    console.log('Saving agency changes...', agencyData);
-    // Add save functionality here
-  };
+
   const handleInviteUser = () => {
     console.log('Inviting user:', {
       email: inviteEmail,
@@ -65,12 +89,13 @@ const Profile = () => {
     setInviteEmail('');
     setInviteRole('Member');
   };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = e => {
-        setAgencyData(prev => ({
+        setTempData(prev => ({
           ...prev,
           logo: e.target?.result as string
         }));
@@ -78,6 +103,7 @@ const Profile = () => {
       reader.readAsDataURL(file);
     }
   };
+
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Account Settings</h1>
@@ -99,40 +125,93 @@ const Profile = () => {
           {/* Agency Profile Section */}
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
-              <CardTitle>Agency Profile</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Agency Profile</CardTitle>
+                {!editStates.profile ? (
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit('profile')}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleCancel('profile')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={() => handleSave('profile')}>
+                      <Check className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="agencyName" className="text-base font-medium">Agency Name</Label>
+                  {editStates.profile ? (
+                    <Input 
+                      id="agencyName" 
+                      value={tempData.name} 
+                      onChange={e => setTempData(prev => ({
+                        ...prev,
+                        name: e.target.value
+                      }))} 
+                      className="mt-2" 
+                    />
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.name}</div>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="website" className="text-base font-medium">Agency Website</Label>
+                  {editStates.profile ? (
+                    <Input 
+                      id="website" 
+                      type="url" 
+                      value={tempData.website} 
+                      onChange={e => setTempData(prev => ({
+                        ...prev,
+                        website: e.target.value
+                      }))} 
+                      className="mt-2" 
+                      placeholder="https://your-agency.com" 
+                    />
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                      <a href={agencyData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        {agencyData.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="logo" className="text-base font-medium">Agency Logo</Label>
                 <div className="mt-2 flex items-center gap-4">
                   <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
-                    {agencyData.logo ? <img src={agencyData.logo} alt="Agency Logo" className="w-full h-full object-cover rounded-lg" /> : <Upload className="h-8 w-8 text-gray-400" />}
+                    {(editStates.profile ? tempData.logo : agencyData.logo) ? (
+                      <img 
+                        src={editStates.profile ? tempData.logo : agencyData.logo} 
+                        alt="Agency Logo" 
+                        className="w-full h-full object-cover rounded-lg" 
+                      />
+                    ) : (
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    )}
                   </div>
-                  <div>
-                    <input id="logo" type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                    <Button variant="outline" onClick={() => document.getElementById('logo')?.click()}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Logo
-                    </Button>
-                    <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 5MB</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="agencyName" className="text-base font-medium">Agency Name</Label>
-                  <Input id="agencyName" value={agencyData.name} onChange={e => setAgencyData(prev => ({
-                  ...prev,
-                  name: e.target.value
-                }))} className="mt-2" />
-                </div>
-                <div>
-                  <Label htmlFor="website" className="text-base font-medium">Agency Website</Label>
-                  <Input id="website" type="url" value={agencyData.website} onChange={e => setAgencyData(prev => ({
-                  ...prev,
-                  website: e.target.value
-                }))} className="mt-2" placeholder="https://your-agency.com" />
+                  {editStates.profile && (
+                    <div>
+                      <input id="logo" type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                      <Button variant="outline" onClick={() => document.getElementById('logo')?.click()}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Logo
+                      </Button>
+                      <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -141,7 +220,26 @@ const Profile = () => {
           {/* Contact Information Section */}
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
-              <CardTitle>User Information</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Contact Information</CardTitle>
+                {!editStates.contact ? (
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit('contact')}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleCancel('contact')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={() => handleSave('contact')}>
+                      <Check className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -150,30 +248,60 @@ const Profile = () => {
                     <User className="h-4 w-4" />
                     Name
                   </Label>
-                  <Input id="userName" value={agencyData.userName} onChange={e => setAgencyData(prev => ({
-                  ...prev,
-                  userName: e.target.value
-                }))} className="mt-2" />
+                  {editStates.contact ? (
+                    <Input 
+                      id="userName" 
+                      value={tempData.userName} 
+                      onChange={e => setTempData(prev => ({
+                        ...prev,
+                        userName: e.target.value
+                      }))} 
+                      className="mt-2" 
+                    />
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.userName}</div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="email" className="flex items-center gap-2 text-base font-medium">
                     <Mail className="h-4 w-4" />
                     Email Address
                   </Label>
-                  <Input id="email" type="email" value={agencyData.email} onChange={e => setAgencyData(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))} className="mt-2" />
+                  {editStates.contact ? (
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={tempData.email} 
+                      onChange={e => setTempData(prev => ({
+                        ...prev,
+                        email: e.target.value
+                      }))} 
+                      className="mt-2" 
+                    />
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.email}</div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="phone" className="flex items-center gap-2 text-base font-medium">
                     <Phone className="h-4 w-4" />
                     Phone Number
                   </Label>
-                  <Input id="phone" type="tel" value={agencyData.phone} onChange={e => setAgencyData(prev => ({
-                  ...prev,
-                  phone: e.target.value
-                }))} className="mt-2" placeholder="+1 (555) 123-4567" />
+                  {editStates.contact ? (
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      value={tempData.phone} 
+                      onChange={e => setTempData(prev => ({
+                        ...prev,
+                        phone: e.target.value
+                      }))} 
+                      className="mt-2" 
+                      placeholder="+1 (555) 123-4567" 
+                    />
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.phone}</div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -182,75 +310,105 @@ const Profile = () => {
           {/* General Settings Section */}
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>General Settings</CardTitle>
+                {!editStates.settings ? (
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit('settings')}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleCancel('settings')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={() => handleSave('settings')}>
+                      <Check className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label className="text-base font-medium">Default Language</Label>
-                  <Select value={agencyData.defaultLanguage} onValueChange={value => setAgencyData(prev => ({
-                  ...prev,
-                  defaultLanguage: value
-                }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                      <SelectItem value="de">German</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {editStates.settings ? (
+                    <Select value={tempData.defaultLanguage} onValueChange={value => setTempData(prev => ({
+                      ...prev,
+                      defaultLanguage: value
+                    }))}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="es">Spanish</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                        <SelectItem value="de">German</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                      {agencyData.defaultLanguage === 'en' ? 'English' : 
+                       agencyData.defaultLanguage === 'es' ? 'Spanish' :
+                       agencyData.defaultLanguage === 'fr' ? 'French' : 'German'}
+                    </div>
+                  )}
                 </div>
                 
                 <div>
                   <Label className="text-base font-medium">Timezone</Label>
-                  <Select value={agencyData.timezone} onValueChange={value => setAgencyData(prev => ({
-                  ...prev,
-                  timezone: value
-                }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Europe/Madrid">Europe/Madrid</SelectItem>
-                      <SelectItem value="America/New_York">America/New York</SelectItem>
-                      <SelectItem value="America/Los_Angeles">America/Los Angeles</SelectItem>
-                      <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {editStates.settings ? (
+                    <Select value={tempData.timezone} onValueChange={value => setTempData(prev => ({
+                      ...prev,
+                      timezone: value
+                    }))}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Europe/Madrid">Europe/Madrid</SelectItem>
+                        <SelectItem value="America/New_York">America/New York</SelectItem>
+                        <SelectItem value="America/Los_Angeles">America/Los Angeles</SelectItem>
+                        <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.timezone}</div>
+                  )}
                 </div>
 
                 <div>
                   <Label className="text-base font-medium">Agency Size (Number of Employees)</Label>
-                  <Select value={agencyData.agencySize} onValueChange={value => setAgencyData(prev => ({
-                  ...prev,
-                  agencySize: value
-                }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1-10">1-10</SelectItem>
-                      <SelectItem value="11-50">11-50</SelectItem>
-                      <SelectItem value="51-200">51-200</SelectItem>
-                      <SelectItem value="201-500">201-500</SelectItem>
-                      <SelectItem value="500+">500+</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {editStates.settings ? (
+                    <Select value={tempData.agencySize} onValueChange={value => setTempData(prev => ({
+                      ...prev,
+                      agencySize: value
+                    }))}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-10">1-10</SelectItem>
+                        <SelectItem value="11-50">11-50</SelectItem>
+                        <SelectItem value="51-200">51-200</SelectItem>
+                        <SelectItem value="201-500">201-500</SelectItem>
+                        <SelectItem value="500+">500+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.agencySize}</div>
+                  )}
                 </div>
-              </div>
-
-              <div className="pt-6">
-                <Button onClick={handleSaveChanges} className="bg-indigo-600 hover:bg-indigo-700">
-                  Save Changes
-                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        
         <TabsContent value="team" className="space-y-4">
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
@@ -345,7 +503,6 @@ const Profile = () => {
         </TabsContent>
         
         <TabsContent value="subscription" className="space-y-4">
-          
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
               <CardTitle>Subscription Details</CardTitle>
@@ -408,7 +565,6 @@ const Profile = () => {
         </TabsContent>
         
         <TabsContent value="referral" className="space-y-4">
-          
           <Card className="rounded-2xl shadow-md">
             <CardHeader>
               <CardTitle>Referral Program</CardTitle>
@@ -450,4 +606,5 @@ const Profile = () => {
       </Tabs>
     </div>;
 };
+
 export default Profile;
