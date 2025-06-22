@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit3, Save, X, Linkedin, User, Building2, Calendar, MapPin, ExternalLink, Trash2 } from 'lucide-react';
@@ -13,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import StatusBadge from '../common/StatusBadge';
 import { SubClient } from '../../types/interfaces';
 
@@ -81,13 +81,15 @@ const ProfileDetails: React.FC = () => {
     joinedDate: '2023-01-15',
     operatingLocation: 'San Francisco, CA',
     linkedinUrl: 'https://linkedin.com/in/sarah-johnson',
+    language: 'English',
     primaryGoal: 'Build Thought Leadership',
     audienceFocus: 'C-suite executives and technology leaders in mid-market companies',
     expertiseAreas: ['Strategic Planning', 'Digital Transformation', 'Team Leadership', 'Industry Innovation'],
     personalBrandPersona: 'The Visionary Leader',
     coreTones: ['Inspirational', 'Strategic', 'Confident'],
-    postLength: 'Medium (130–280 words)',
-    emojiUsage: 'Sparingly 👍',
+    coreTone: 'Inspirational & Visionary',
+    postLengthValue: 2, // 0-3 scale (Super Short, Short, Medium, Long)
+    emojiUsageValue: 1, // 0-3 scale (Professional, Sparingly, Moderately, Frequently)
     uniquePOV: 'The future of work is hybrid, and companies that don\'t adapt their culture will lose top talent.',
     personalStories: 'Started career as a software engineer, built first team of 50+ people, led three successful digital transformations',
     hookGuidelines: 'Start with bold predictions or contrarian takes about the industry',
@@ -127,6 +129,17 @@ const ProfileDetails: React.FC = () => {
       ...prev,
       timeSlots: prev.timeSlots.filter((_, i) => i !== index)
     }));
+  };
+
+  // Helper functions for sliders
+  const getPostLengthLabel = (value: number) => {
+    const labels = ['Super Short (50–90 words)', 'Short (80–130 words)', 'Medium (130–280 words)', 'Long (280–450 words)'];
+    return labels[value] || labels[0];
+  };
+
+  const getEmojiUsageLabel = (value: number) => {
+    const labels = ['Professional ⚫️', 'Sparingly 👍', 'Moderately 😊', 'Frequently ✨'];
+    return labels[value] || labels[0];
   };
 
   const isMainProfile = profileId === 'company-1';
@@ -642,7 +655,7 @@ const ProfileDetails: React.FC = () => {
     );
   }
 
-  // Sub-profile layout (keep existing code for sub-profiles)
+  // Sub-profile layout
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -697,7 +710,7 @@ const ProfileDetails: React.FC = () => {
                   <User className="h-4 w-4" />
                   Full Name
                 </Label>
-                {editingSection ===  'profileInfo' ? (
+                {editingSection === 'profileInfo' ? (
                   <Input
                     value={subProfileData.fullName}
                     onChange={(e) => setSubProfileData(prev => ({ ...prev, fullName: e.target.value }))}
@@ -773,7 +786,46 @@ const ProfileDetails: React.FC = () => {
                   </a>
                 )}
               </div>
+              <div>
+                <Label>Content Language</Label>
+                {editingSection === 'profileInfo' ? (
+                  <Select value={subProfileData.language} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, language: value }))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Dutch">Dutch</SelectItem>
+                      <SelectItem value="Spanish">Spanish</SelectItem>
+                      <SelectItem value="German">German</SelectItem>
+                      <SelectItem value="French">French</SelectItem>
+                      <SelectItem value="Italian">Italian</SelectItem>
+                      <SelectItem value="Portuguese">Portuguese</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm mt-1">{subProfileData.language}</p>
+                )}
+              </div>
             </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <Label className="text-base font-medium">Custom AI Instructions</Label>
+            {editingSection === 'profileInfo' ? (
+              <Textarea
+                value={profile.customInstructions || ''}
+                className="mt-2"
+                rows={3}
+                placeholder="Enter custom AI instructions for this profile..."
+              />
+            ) : (
+              <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                {profile.customInstructions || 'No custom instructions specified'}
+              </p>
+            )}
           </div>
 
           <Separator />
@@ -803,24 +855,6 @@ const ProfileDetails: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <Label className="text-base font-medium">Custom AI Instructions</Label>
-            {editingSection === 'profileInfo' ? (
-              <Textarea
-                value={profile.customInstructions || ''}
-                className="mt-2"
-                rows={3}
-                placeholder="Enter custom AI instructions for this profile..."
-              />
-            ) : (
-              <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                {profile.customInstructions || 'No custom instructions specified'}
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -946,10 +980,10 @@ const ProfileDetails: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="The Visionary Leader">🎯 The Visionary Leader</SelectItem>
                       <SelectItem value="The Seasoned Expert">🏆 The Seasoned Expert</SelectItem>
                       <SelectItem value="The Helpful Guide">🤝 The Helpful Guide</SelectItem>
                       <SelectItem value="The Bold Innovator">⚡ The Bold Innovator</SelectItem>
+                      <SelectItem value="The Trusted Peer">👥 The Trusted Peer</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
@@ -961,57 +995,74 @@ const ProfileDetails: React.FC = () => {
                 )}
               </div>
               <div>
-                <Label className="text-base font-medium">Core Tones</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {subProfileData.coreTones.map((tone, index) => (
-                    <Badge key={index} variant="outline" className="px-3 py-1">
-                      {tone}
+                <Label className="text-base font-medium">Core Tone</Label>
+                {editingSection === 'voice' ? (
+                  <Select value={subProfileData.coreTone} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, coreTone: value }))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Confident & Direct">Confident & Direct</SelectItem>
+                      <SelectItem value="Friendly & Approachable">Friendly & Approachable</SelectItem>
+                      <SelectItem value="Witty & Humorous">Witty & Humorous</SelectItem>
+                      <SelectItem value="Formal & Professional">Formal & Professional</SelectItem>
+                      <SelectItem value="Casual & Conversational">Casual & Conversational</SelectItem>
+                      <SelectItem value="Inspirational & Visionary">Inspirational & Visionary</SelectItem>
+                      <SelectItem value="Technical & Precise">Technical & Precise</SelectItem>
+                      <SelectItem value="Passionate & Energetic">Passionate & Energetic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="px-3 py-1">
+                      {subProfileData.coreTone}
                     </Badge>
-                  ))}
-                </div>
-                {editingSection === 'voice' && (
-                  <Button variant="outline" size="sm" className="mt-2">
-                    + Add Tone
-                  </Button>
+                  </div>
                 )}
               </div>
             </div>
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-medium">Average Post Length</Label>
-                {editingSection === 'voice' ? (
-                  <Select value={subProfileData.postLength} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, postLength: value }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Super Short (50–90 words)">Super Short (50–90 words)</SelectItem>
-                      <SelectItem value="Short (80–130 words)">Short (80–130 words)</SelectItem>
-                      <SelectItem value="Medium (130–280 words)">Medium (130–280 words)</SelectItem>
-                      <SelectItem value="Long (280–450 words)">Long (280–450 words)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-2">{subProfileData.postLength}</p>
-                )}
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Super Short</span>
+                    <span className="text-sm font-medium">{getPostLengthLabel(subProfileData.postLengthValue)}</span>
+                    <span className="text-sm text-muted-foreground">Long</span>
+                  </div>
+                  {editingSection === 'voice' ? (
+                    <Slider
+                      value={[subProfileData.postLengthValue]}
+                      onValueChange={(value) => setSubProfileData(prev => ({ ...prev, postLengthValue: value[0] }))}
+                      max={3}
+                      step={1}
+                      className="w-full"
+                    />
+                  ) : (
+                    <Progress value={((subProfileData.postLengthValue) / 3) * 100} className="h-2" />
+                  )}
+                </div>
               </div>
               <div>
                 <Label className="text-base font-medium">Emoji Usage</Label>
-                {editingSection === 'voice' ? (
-                  <Select value={subProfileData.emojiUsage} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, emojiUsage: value }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Professional ⚫️">Professional ⚫️</SelectItem>
-                      <SelectItem value="Sparingly 👍">Sparingly 👍</SelectItem>
-                      <SelectItem value="Moderately 😊">Moderately 😊</SelectItem>
-                      <SelectItem value="Frequently ✨">Frequently ✨</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-2">{subProfileData.emojiUsage}</p>
-                )}
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Professional</span>
+                    <span className="text-sm font-medium">{getEmojiUsageLabel(subProfileData.emojiUsageValue)}</span>
+                    <span className="text-sm text-muted-foreground">Frequently</span>
+                  </div>
+                  {editingSection === 'voice' ? (
+                    <Slider
+                      value={[subProfileData.emojiUsageValue]}
+                      onValueChange={(value) => setSubProfileData(prev => ({ ...prev, emojiUsageValue: value[0] }))}
+                      max={3}
+                      step={1}
+                      className="w-full"
+                    />
+                  ) : (
+                    <Progress value={((subProfileData.emojiUsageValue) / 3) * 100} className="h-2" />
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1133,48 +1184,35 @@ const ProfileDetails: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Danger Zone */}
-      <Card className="border-red-200 bg-red-50/50">
-        <CardHeader>
-          <CardTitle className="text-red-900">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-red-900">Delete Profile</h4>
-              <p className="text-sm text-red-700 mt-1">
-                Permanently delete this profile and all associated data. This action cannot be undone.
-              </p>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Profile
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You are about to permanently delete the profile for <strong>{profile.name}</strong>. 
-                    All associated data will be lost. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDeleteProfile}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Yes, delete this profile
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Delete Profile Button */}
+      <div className="flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Profile
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to permanently delete the profile for <strong>{profile.name}</strong>. 
+                All associated data will be lost. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteProfile}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Yes, delete this profile
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 };
