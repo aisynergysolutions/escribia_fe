@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit3, Save, X, Linkedin, User, Building2, Calendar, MapPin, ExternalLink, Trash2 } from 'lucide-react';
@@ -13,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import StatusBadge from '../common/StatusBadge';
 import { SubClient } from '../../types/interfaces';
 
@@ -81,13 +81,14 @@ const ProfileDetails: React.FC = () => {
     joinedDate: '2023-01-15',
     operatingLocation: 'San Francisco, CA',
     linkedinUrl: 'https://linkedin.com/in/sarah-johnson',
+    language: 'English',
     primaryGoal: 'Build Thought Leadership',
     audienceFocus: 'C-suite executives and technology leaders in mid-market companies',
     expertiseAreas: ['Strategic Planning', 'Digital Transformation', 'Team Leadership', 'Industry Innovation'],
     personalBrandPersona: 'The Visionary Leader',
     coreTones: ['Inspirational', 'Strategic', 'Confident'],
-    postLength: 'Medium (130–280 words)',
-    emojiUsage: 'Sparingly 👍',
+    postLength: 2, // 0: Super Short, 1: Short, 2: Medium, 3: Long
+    emojiUsage: 1, // 0: Professional, 1: Sparingly, 2: Moderately, 3: Frequently
     uniquePOV: 'The future of work is hybrid, and companies that don\'t adapt their culture will lose top talent.',
     personalStories: 'Started career as a software engineer, built first team of 50+ people, led three successful digital transformations',
     hookGuidelines: 'Start with bold predictions or contrarian takes about the industry',
@@ -131,518 +132,42 @@ const ProfileDetails: React.FC = () => {
 
   const isMainProfile = profileId === 'company-1';
 
-  if (isMainProfile) {
-    // Main profile layout - completely redesigned
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/clients/${clientId}/settings`)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Settings
-          </Button>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={profile.profileImage} />
-              <AvatarFallback>
-                <Building2 className="h-6 w-6" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl font-semibold">{profile.name}</h1>
-              <Badge variant="outline" className="mt-1">{profile.role}</Badge>
-            </div>
-          </div>
-        </div>
+  const languageOptions = [
+    'English',
+    'Dutch',
+    'Spanish',
+    'German',
+    'French',
+    'Italian',
+    'Portuguese',
+    'Russian',
+    'Japanese',
+    'Chinese'
+  ];
 
-        {/* Card 1: Client Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Client Information</span>
-              {editingSection !== 'clientInfo' ? (
-                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('clientInfo')}>
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSectionSave('clientInfo')}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('clientInfo')}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Business Name
-                  </Label>
-                  {editingSection === 'clientInfo' ? (
-                    <Input
-                      value={clientInfoData.businessName}
-                      onChange={(e) => setClientInfoData(prev => ({ ...prev, businessName: e.target.value }))}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <p className="text-sm mt-1">{clientInfoData.businessName}</p>
-                  )}
-                </div>
-                <div>
-                  <Label>Website URL</Label>
-                  {editingSection === 'clientInfo' ? (
-                    <Input
-                      type="url"
-                      value={clientInfoData.websiteUrl}
-                      onChange={(e) => setClientInfoData(prev => ({ ...prev, websiteUrl: e.target.value }))}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <a 
-                      href={clientInfoData.websiteUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
-                    >
-                      {clientInfoData.websiteUrl}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </div>
-                <div>
-                  <Label>LinkedIn URL</Label>
-                  {editingSection === 'clientInfo' ? (
-                    <Input
-                      type="url"
-                      value={clientInfoData.linkedinUrl}
-                      onChange={(e) => setClientInfoData(prev => ({ ...prev, linkedinUrl: e.target.value }))}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <a 
-                      href={clientInfoData.linkedinUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
-                    >
-                      {clientInfoData.linkedinUrl}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <Label>Company Size</Label>
-                  {editingSection === 'clientInfo' ? (
-                    <Select value={clientInfoData.companySize} onValueChange={(value) => setClientInfoData(prev => ({ ...prev, companySize: value }))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1-10">1-10</SelectItem>
-                        <SelectItem value="11-50">11-50</SelectItem>
-                        <SelectItem value="51-200">51-200</SelectItem>
-                        <SelectItem value="201-500">201-500</SelectItem>
-                        <SelectItem value="500+">500+</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm mt-1">{clientInfoData.companySize}</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    HQ Location
-                  </Label>
-                  {editingSection === 'clientInfo' ? (
-                    <Input
-                      value={clientInfoData.hqLocation}
-                      onChange={(e) => setClientInfoData(prev => ({ ...prev, hqLocation: e.target.value }))}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <p className="text-sm mt-1">{clientInfoData.hqLocation}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const brandPersonaOptions = [
+    { value: 'The Seasoned Expert', label: '🏆 The Seasoned Expert' },
+    { value: 'The Helpful Guide', label: '🤝 The Helpful Guide' },
+    { value: 'The Bold Innovator', label: '⚡ The Bold Innovator' },
+    { value: 'The Trusted Peer', label: '👥 The Trusted Peer' },
+    { value: 'The Visionary Leader', label: '🎯 The Visionary Leader' }
+  ];
 
-        {/* Card 2: Posting Schedule & Integrations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Posting Schedule & Integrations</span>
-              {editingSection !== 'schedule' ? (
-                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('schedule')}>
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSectionSave('schedule')}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('schedule')}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label className="text-base font-medium">Preferred Time Slots</Label>
-              {editingSection === 'schedule' ? (
-                <div className="space-y-2 mt-2">
-                  {scheduleData.timeSlots.map((slot, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input value={slot} className="flex-1" readOnly />
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleRemoveTimeSlot(index)}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" onClick={handleAddTimeSlot}>
-                    + Add Time Slot
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-1 mt-2">
-                  {scheduleData.timeSlots.map((slot, index) => (
-                    <p key={index} className="text-sm p-2 bg-muted rounded-md">{slot}</p>
-                  ))}
-                </div>
-              )}
-            </div>
+  const coreToneOptions = [
+    'Confident & Direct',
+    'Friendly & Approachable',
+    'Witty & Humorous',
+    'Formal & Professional',
+    'Casual & Conversational',
+    'Inspirational & Visionary',
+    'Technical & Precise',
+    'Passionate & Energetic'
+  ];
 
-            <Separator />
+  const postLengthLabels = ['Super Short (50–90 words)', 'Short (80–130 words)', 'Medium (130–280 words)', 'Long (280–450 words)'];
+  const emojiUsageLabels = ['Professional ⚫️', 'Sparingly 👍', 'Moderately 😊', 'Frequently ✨'];
 
-            <div>
-              <Label className="text-base font-medium">LinkedIn Integration</Label>
-              <div className="mt-3 p-4 bg-secondary rounded-lg">
-                {profile.linkedinConnected ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Linkedin className="h-5 w-5 text-[#0A66C2]" />
-                      <div>
-                        <p className="font-medium">Connected as {profile.linkedinAccountName || profile.name}</p>
-                        <p className="text-sm text-muted-foreground">Expires on {profile.linkedinExpiryDate}</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Disconnect
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <Button>
-                      <Linkedin className="h-4 w-4 mr-2" />
-                      Connect LinkedIn
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-base font-medium">Custom AI Instructions</Label>
-              {editingSection === 'schedule' ? (
-                <Textarea
-                  value={scheduleData.customInstructions}
-                  onChange={(e) => setScheduleData(prev => ({ ...prev, customInstructions: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                  placeholder="Enter custom AI instructions..."
-                />
-              ) : (
-                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {scheduleData.customInstructions}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Brand Strategy & Voice */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Brand Strategy & Voice</span>
-              {editingSection !== 'brandStrategy' ? (
-                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('brandStrategy')}>
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSectionSave('brandStrategy')}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('brandStrategy')}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">One-Liner Summary</Label>
-                  {editingSection === 'brandStrategy' ? (
-                    <Textarea
-                      value={brandStrategyData.oneLiner}
-                      onChange={(e) => setBrandStrategyData(prev => ({ ...prev, oneLiner: e.target.value }))}
-                      className="mt-2"
-                      rows={3}
-                    />
-                  ) : (
-                    <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                      {brandStrategyData.oneLiner}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-base font-medium">Brand Persona</Label>
-                  {editingSection === 'brandStrategy' ? (
-                    <Select value={brandStrategyData.brandPersona} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, brandPersona: value }))}>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="The Seasoned Expert">🏆 The Seasoned Expert</SelectItem>
-                        <SelectItem value="The Helpful Guide">🤝 The Helpful Guide</SelectItem>
-                        <SelectItem value="The Bold Innovator">⚡ The Bold Innovator</SelectItem>
-                        <SelectItem value="The Trusted Peer">👥 The Trusted Peer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="mt-2 flex items-center gap-2">
-                      <Badge variant="secondary" className="px-3 py-1">
-                        🏆 {brandStrategyData.brandPersona}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-base font-medium">Core Tone</Label>
-                  {editingSection === 'brandStrategy' ? (
-                    <Select value={brandStrategyData.coreTone} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, coreTone: value }))}>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Confident & Direct">Confident & Direct</SelectItem>
-                        <SelectItem value="Friendly & Approachable">Friendly & Approachable</SelectItem>
-                        <SelectItem value="Witty & Humorous">Witty & Humorous</SelectItem>
-                        <SelectItem value="Formal & Professional">Formal & Professional</SelectItem>
-                        <SelectItem value="Casual & Conversational">Casual & Conversational</SelectItem>
-                        <SelectItem value="Inspirational & Visionary">Inspirational & Visionary</SelectItem>
-                        <SelectItem value="Technical & Precise">Technical & Precise</SelectItem>
-                        <SelectItem value="Passionate & Energetic">Passionate & Energetic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="mt-2">
-                      <Badge variant="outline" className="px-3 py-1">
-                        {brandStrategyData.coreTone}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">Content Goals</Label>
-                  <div className="space-y-3 mt-2">
-                    {[
-                      { key: 'generateLeads', label: 'Generate Leads', value: brandStrategyData.contentGoals.generateLeads },
-                      { key: 'buildAuthority', label: 'Build Brand Authority', value: brandStrategyData.contentGoals.buildAuthority },
-                      { key: 'engageAudience', label: 'Engage Audience', value: brandStrategyData.contentGoals.engageAudience },
-                      { key: 'attractTalent', label: 'Attract Talent', value: brandStrategyData.contentGoals.attractTalent },
-                      { key: 'supportPersonalBrand', label: 'Support a Personal Brand', value: brandStrategyData.contentGoals.supportPersonalBrand }
-                    ].map(({ key, label, value }) => (
-                      <div key={key}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">{label}</span>
-                          <span className="text-sm text-muted-foreground">{value}/5</span>
-                        </div>
-                        <Progress value={(value / 5) * 100} className="h-2" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-base font-medium">Average Post Length</Label>
-                  <p className="text-sm mt-2">{brandStrategyData.postLength}</p>
-                </div>
-                <div>
-                  <Label className="text-base font-medium">Emoji Usage</Label>
-                  <p className="text-sm mt-2">{brandStrategyData.emojiUsage}</p>
-                </div>
-              </div>
-            </div>
-
-            <Separator className="my-6" />
-
-            <div>
-              <Label className="text-base font-medium">Target Audience Persona</Label>
-              {editingSection === 'brandStrategy' ? (
-                <Textarea
-                  value={brandStrategyData.targetAudience}
-                  onChange={(e) => setBrandStrategyData(prev => ({ ...prev, targetAudience: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                />
-              ) : (
-                <blockquote className="mt-2 border-l-4 border-primary pl-4 py-2 bg-muted/50 rounded-r-md">
-                  <p className="text-sm italic">"{brandStrategyData.targetAudience}"</p>
-                </blockquote>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 4: Content Guidelines */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Content Guidelines</span>
-              {editingSection !== 'aiInstructions' ? (
-                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('aiInstructions')}>
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSectionSave('aiInstructions')}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('aiInstructions')}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label className="text-base font-medium">Key Offerings to Promote</Label>
-              {editingSection === 'aiInstructions' ? (
-                <Textarea
-                  value={aiInstructionsData.keyOfferings}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, keyOfferings: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {aiInstructionsData.keyOfferings}
-                </p>
-              )}
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-base font-medium">Hook Guidelines</Label>
-              {editingSection === 'aiInstructions' ? (
-                <Textarea
-                  value={aiInstructionsData.hookGuidelines}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, hookGuidelines: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {aiInstructionsData.hookGuidelines}
-                </p>
-              )}
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-base font-medium">Unique POV / "Hot Takes"</Label>
-              {editingSection === 'aiInstructions' ? (
-                <Textarea
-                  value={aiInstructionsData.uniquePOV}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, uniquePOV: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {aiInstructionsData.uniquePOV}
-                </p>
-              )}
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-base font-medium">Main Competitors</Label>
-              <div className="space-y-2 mt-2">
-                {aiInstructionsData.competitors.map((competitor, index) => (
-                  <a 
-                    key={index}
-                    href={competitor} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 p-2 bg-muted rounded-md"
-                  >
-                    {competitor}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-base font-medium">Topics to Avoid</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {aiInstructionsData.topicsToAvoid.map((topic, index) => (
-                  <Badge key={index} variant="destructive" className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200">
-                    {topic}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Sub-profile layout (keep existing code for sub-profiles)
+  // Sub-profile layout
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -773,7 +298,42 @@ const ProfileDetails: React.FC = () => {
                   </a>
                 )}
               </div>
+              <div>
+                <Label>Content Language</Label>
+                {editingSection === 'profileInfo' ? (
+                  <Select value={subProfileData.language} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, language: value }))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languageOptions.map((lang) => (
+                        <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm mt-1">{subProfileData.language}</p>
+                )}
+              </div>
             </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <Label className="text-base font-medium">Custom AI Instructions</Label>
+            {editingSection === 'profileInfo' ? (
+              <Textarea
+                value={profile.customInstructions || ''}
+                className="mt-2"
+                rows={3}
+                placeholder="Enter custom AI instructions for this profile..."
+              />
+            ) : (
+              <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                {profile.customInstructions || 'No custom instructions specified'}
+              </p>
+            )}
           </div>
 
           <Separator />
@@ -803,24 +363,6 @@ const ProfileDetails: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <Label className="text-base font-medium">Custom AI Instructions</Label>
-            {editingSection === 'profileInfo' ? (
-              <Textarea
-                value={profile.customInstructions || ''}
-                className="mt-2"
-                rows={3}
-                placeholder="Enter custom AI instructions for this profile..."
-              />
-            ) : (
-              <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                {profile.customInstructions || 'No custom instructions specified'}
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -946,72 +488,89 @@ const ProfileDetails: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="The Visionary Leader">🎯 The Visionary Leader</SelectItem>
-                      <SelectItem value="The Seasoned Expert">🏆 The Seasoned Expert</SelectItem>
-                      <SelectItem value="The Helpful Guide">🤝 The Helpful Guide</SelectItem>
-                      <SelectItem value="The Bold Innovator">⚡ The Bold Innovator</SelectItem>
+                      {brandPersonaOptions.map((persona) => (
+                        <SelectItem key={persona.value} value={persona.value}>{persona.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 ) : (
                   <div className="mt-2 flex items-center gap-2">
                     <Badge variant="secondary" className="px-3 py-1">
-                      🎯 {subProfileData.personalBrandPersona}
+                      {brandPersonaOptions.find(p => p.value === subProfileData.personalBrandPersona)?.label || subProfileData.personalBrandPersona}
                     </Badge>
                   </div>
                 )}
               </div>
               <div>
-                <Label className="text-base font-medium">Core Tones</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {subProfileData.coreTones.map((tone, index) => (
-                    <Badge key={index} variant="outline" className="px-3 py-1">
-                      {tone}
+                <Label className="text-base font-medium">Core Tone</Label>
+                {editingSection === 'voice' ? (
+                  <Select value={subProfileData.coreTones[0]} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, coreTones: [value] }))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coreToneOptions.map((tone) => (
+                        <SelectItem key={tone} value={tone}>{tone}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="px-3 py-1">
+                      {subProfileData.coreTones[0]}
                     </Badge>
-                  ))}
-                </div>
-                {editingSection === 'voice' && (
-                  <Button variant="outline" size="sm" className="mt-2">
-                    + Add Tone
-                  </Button>
+                  </div>
                 )}
               </div>
             </div>
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-medium">Average Post Length</Label>
-                {editingSection === 'voice' ? (
-                  <Select value={subProfileData.postLength} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, postLength: value }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Super Short (50–90 words)">Super Short (50–90 words)</SelectItem>
-                      <SelectItem value="Short (80–130 words)">Short (80–130 words)</SelectItem>
-                      <SelectItem value="Medium (130–280 words)">Medium (130–280 words)</SelectItem>
-                      <SelectItem value="Long (280–450 words)">Long (280–450 words)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-2">{subProfileData.postLength}</p>
-                )}
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{postLengthLabels[subProfileData.postLength]}</span>
+                  </div>
+                  {editingSection === 'voice' ? (
+                    <Slider
+                      value={[subProfileData.postLength]}
+                      onValueChange={(value) => setSubProfileData(prev => ({ ...prev, postLength: value[0] }))}
+                      max={3}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                  ) : (
+                    <Progress value={(subProfileData.postLength / 3) * 100} className="h-2" />
+                  )}
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Super Short</span>
+                    <span>Long</span>
+                  </div>
+                </div>
               </div>
               <div>
                 <Label className="text-base font-medium">Emoji Usage</Label>
-                {editingSection === 'voice' ? (
-                  <Select value={subProfileData.emojiUsage} onValueChange={(value) => setSubProfileData(prev => ({ ...prev, emojiUsage: value }))}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Professional ⚫️">Professional ⚫️</SelectItem>
-                      <SelectItem value="Sparingly 👍">Sparingly 👍</SelectItem>
-                      <SelectItem value="Moderately 😊">Moderately 😊</SelectItem>
-                      <SelectItem value="Frequently ✨">Frequently ✨</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm mt-2">{subProfileData.emojiUsage}</p>
-                )}
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{emojiUsageLabels[subProfileData.emojiUsage]}</span>
+                  </div>
+                  {editingSection === 'voice' ? (
+                    <Slider
+                      value={[subProfileData.emojiUsage]}
+                      onValueChange={(value) => setSubProfileData(prev => ({ ...prev, emojiUsage: value[0] }))}
+                      max={3}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                  ) : (
+                    <Progress value={(subProfileData.emojiUsage / 3) * 100} className="h-2" />
+                  )}
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Professional</span>
+                    <span>Frequently</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1133,48 +692,35 @@ const ProfileDetails: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Danger Zone */}
-      <Card className="border-red-200 bg-red-50/50">
-        <CardHeader>
-          <CardTitle className="text-red-900">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-red-900">Delete Profile</h4>
-              <p className="text-sm text-red-700 mt-1">
-                Permanently delete this profile and all associated data. This action cannot be undone.
-              </p>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Profile
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You are about to permanently delete the profile for <strong>{profile.name}</strong>. 
-                    All associated data will be lost. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDeleteProfile}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Yes, delete this profile
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Delete Profile Button */}
+      <div className="flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Profile
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to permanently delete the profile for <strong>{profile.name}</strong>. 
+                All associated data will be lost. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteProfile}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Yes, delete this profile
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 };
