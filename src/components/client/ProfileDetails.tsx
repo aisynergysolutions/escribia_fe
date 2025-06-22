@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3, Save, X, Linkedin, User, Building2, Calendar, MapPin, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit3, Save, X, Linkedin, User, Building2, Calendar, MapPin, ExternalLink, Trash2, Plus, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,13 +43,15 @@ const ProfileDetails: React.FC = () => {
     websiteUrl: 'https://techcorp-solutions.com',
     linkedinUrl: 'https://linkedin.com/company/techcorp-solutions',
     companySize: '51-200',
-    hqLocation: 'San Francisco, CA'
+    hqLocation: 'San Francisco, CA',
+    language: 'English'
   });
 
-  const [scheduleData, setScheduleData] = useState({
-    timeSlots: ['Monday at 9:00 AM', 'Wednesday at 2:00 PM', 'Friday at 11:00 AM'],
-    customInstructions: 'Focus on industry insights and company achievements. Highlight our innovative solutions and client success stories.'
-  });
+  const [timeSlots, setTimeSlots] = useState([
+    { day: 'Monday', time: '09:00' },
+    { day: 'Wednesday', time: '14:00' },
+    { day: 'Friday', time: '11:00' }
+  ]);
 
   const [brandStrategyData, setBrandStrategyData] = useState({
     oneLiner: 'Leading technology solutions provider specializing in enterprise software.',
@@ -62,11 +65,11 @@ const ProfileDetails: React.FC = () => {
     },
     brandPersona: 'The Seasoned Expert',
     coreTone: 'Confident & Direct',
-    postLength: 'Short (80–130 words)',
-    emojiUsage: 'Professional ⚫️'
+    postLengthValue: 1, // 0-3 scale
+    emojiUsageValue: 0 // 0-3 scale
   });
 
-  const [aiInstructionsData, setAiInstructionsData] = useState({
+  const [contentGuidelinesData, setContentGuidelinesData] = useState({
     keyOfferings: 'Enterprise software solutions, cloud migration services, custom development',
     hookGuidelines: 'Start with industry challenges or insights. Use data points when possible.',
     uniquePOV: 'Technology adoption should be strategic, not reactive. Focus on business outcomes.',
@@ -117,17 +120,46 @@ const ProfileDetails: React.FC = () => {
     navigate(`/clients/${clientId}/settings`);
   };
 
+  const handleDeleteClient = () => {
+    // In real app, this would make API call to delete entire client
+    console.log('Client deleted');
+    navigate('/clients');
+  };
+
   const handleAddTimeSlot = () => {
-    setScheduleData(prev => ({
-      ...prev,
-      timeSlots: [...prev.timeSlots, 'Monday at 9:00 AM']
-    }));
+    setTimeSlots(prev => [...prev, { day: 'Monday', time: '09:00' }]);
   };
 
   const handleRemoveTimeSlot = (index: number) => {
-    setScheduleData(prev => ({
+    setTimeSlots(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTimeSlotChange = (index: number, field: 'day' | 'time', value: string) => {
+    setTimeSlots(prev => prev.map((slot, i) => 
+      i === index ? { ...slot, [field]: value } : slot
+    ));
+  };
+
+  const handleAddCompetitor = () => {
+    if (contentGuidelinesData.competitors.length < 3) {
+      setContentGuidelinesData(prev => ({
+        ...prev,
+        competitors: [...prev.competitors, 'https://']
+      }));
+    }
+  };
+
+  const handleRemoveCompetitor = (index: number) => {
+    setContentGuidelinesData(prev => ({
       ...prev,
-      timeSlots: prev.timeSlots.filter((_, i) => i !== index)
+      competitors: prev.competitors.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleCompetitorChange = (index: number, value: string) => {
+    setContentGuidelinesData(prev => ({
+      ...prev,
+      competitors: prev.competitors.map((comp, i) => i === index ? value : comp)
     }));
   };
 
@@ -142,10 +174,40 @@ const ProfileDetails: React.FC = () => {
     return labels[value] || labels[0];
   };
 
+  // Helper function to get flag emoji
+  const getFlagEmoji = (language: string) => {
+    const flags: { [key: string]: string } = {
+      'English': '🇺🇸',
+      'Dutch': '🇳🇱',
+      'Spanish': '🇪🇸',
+      'German': '🇩🇪',
+      'French': '🇫🇷',
+      'Italian': '🇮🇹',
+      'Portuguese': '🇵🇹'
+    };
+    return flags[language] || '🇺🇸';
+  };
+
+  // Helper function to group time slots by day
+  const groupTimeSlotsByDay = () => {
+    const grouped: { [key: string]: string[] } = {};
+    timeSlots.forEach(slot => {
+      if (!grouped[slot.day]) {
+        grouped[slot.day] = [];
+      }
+      const time = new Date(`2000-01-01T${slot.time}`).toLocaleTimeString([], { 
+        hour: 'numeric', 
+        minute: '2-digit' 
+      });
+      grouped[slot.day].push(time);
+    });
+    return grouped;
+  };
+
   const isMainProfile = profileId === 'company-1';
 
   if (isMainProfile) {
-    // Main profile layout - completely redesigned
+    // Main profile layout - updated design
     return (
       <div className="space-y-6">
         {/* Header */}
@@ -192,7 +254,7 @@ const ProfileDetails: React.FC = () => {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
@@ -288,91 +350,29 @@ const ProfileDetails: React.FC = () => {
                     <p className="text-sm mt-1">{clientInfoData.hqLocation}</p>
                   )}
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Posting Schedule & Integrations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Posting Schedule & Integrations</span>
-              {editingSection !== 'schedule' ? (
-                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('schedule')}>
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSectionSave('schedule')}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('schedule')}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
+                <div>
+                  <Label>Content Language</Label>
+                  {editingSection === 'clientInfo' ? (
+                    <Select value={clientInfoData.language} onValueChange={(value) => setClientInfoData(prev => ({ ...prev, language: value }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="English">🇺🇸 English</SelectItem>
+                        <SelectItem value="Dutch">🇳🇱 Dutch</SelectItem>
+                        <SelectItem value="Spanish">🇪🇸 Spanish</SelectItem>
+                        <SelectItem value="German">🇩🇪 German</SelectItem>
+                        <SelectItem value="French">🇫🇷 French</SelectItem>
+                        <SelectItem value="Italian">🇮🇹 Italian</SelectItem>
+                        <SelectItem value="Portuguese">🇵🇹 Portuguese</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-sm mt-1 flex items-center gap-2">
+                      {getFlagEmoji(clientInfoData.language)} {clientInfoData.language}
+                    </p>
+                  )}
                 </div>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label className="text-base font-medium">Preferred Time Slots</Label>
-              {editingSection === 'schedule' ? (
-                <div className="space-y-2 mt-2">
-                  {scheduleData.timeSlots.map((slot, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input value={slot} className="flex-1" readOnly />
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleRemoveTimeSlot(index)}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" onClick={handleAddTimeSlot}>
-                    + Add Time Slot
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-1 mt-2">
-                  {scheduleData.timeSlots.map((slot, index) => (
-                    <p key={index} className="text-sm p-2 bg-muted rounded-md">{slot}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-base font-medium">LinkedIn Integration</Label>
-              <div className="mt-3 p-4 bg-secondary rounded-lg">
-                {profile.linkedinConnected ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Linkedin className="h-5 w-5 text-[#0A66C2]" />
-                      <div>
-                        <p className="font-medium">Connected as {profile.linkedinAccountName || profile.name}</p>
-                        <p className="text-sm text-muted-foreground">Expires on {profile.linkedinExpiryDate}</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Disconnect
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <Button>
-                      <Linkedin className="h-4 w-4 mr-2" />
-                      Connect LinkedIn
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -380,24 +380,116 @@ const ProfileDetails: React.FC = () => {
 
             <div>
               <Label className="text-base font-medium">Custom AI Instructions</Label>
-              {editingSection === 'schedule' ? (
+              {editingSection === 'clientInfo' ? (
                 <Textarea
-                  value={scheduleData.customInstructions}
-                  onChange={(e) => setScheduleData(prev => ({ ...prev, customInstructions: e.target.value }))}
+                  value={profile.customInstructions || ''}
                   className="mt-2"
                   rows={3}
                   placeholder="Enter custom AI instructions..."
                 />
               ) : (
                 <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {scheduleData.customInstructions}
+                  {profile.customInstructions}
                 </p>
               )}
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <Label className="text-base font-medium">LinkedIn Integration</Label>
+                <div className="mt-3 p-4 bg-secondary rounded-lg">
+                  {profile.linkedinConnected ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+                        <div>
+                          <p className="font-medium">Connected as {profile.linkedinAccountName || profile.name}</p>
+                          <p className="text-sm text-muted-foreground">Expires on {profile.linkedinExpiryDate}</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      <Button>
+                        <Linkedin className="h-4 w-4 mr-2" />
+                        Connect LinkedIn
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Preferred Time Slots
+                </Label>
+                {editingSection === 'clientInfo' ? (
+                  <div className="space-y-2 mt-3">
+                    {timeSlots.map((slot, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
+                        <Select 
+                          value={slot.day} 
+                          onValueChange={(value) => handleTimeSlotChange(index, 'day', value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Monday">Monday</SelectItem>
+                            <SelectItem value="Tuesday">Tuesday</SelectItem>
+                            <SelectItem value="Wednesday">Wednesday</SelectItem>
+                            <SelectItem value="Thursday">Thursday</SelectItem>
+                            <SelectItem value="Friday">Friday</SelectItem>
+                            <SelectItem value="Saturday">Saturday</SelectItem>
+                            <SelectItem value="Sunday">Sunday</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="time"
+                          value={slot.time}
+                          onChange={(e) => handleTimeSlotChange(index, 'time', e.target.value)}
+                          className="w-28"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleRemoveTimeSlot(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="outline" size="sm" onClick={handleAddTimeSlot}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Time Slot
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 mt-3">
+                    {Object.entries(groupTimeSlotsByDay()).map(([day, times]) => (
+                      <div key={day} className="p-3 bg-muted rounded-md">
+                        <p className="font-medium text-sm">{day}</p>
+                        {times.map((time, index) => (
+                          <p key={index} className="text-sm text-muted-foreground ml-2">
+                            {time}
+                          </p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Card 3: Brand Strategy & Voice */}
+        {/* Card 2: Brand Strategy & Voice */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -487,6 +579,21 @@ const ProfileDetails: React.FC = () => {
                     </div>
                   )}
                 </div>
+                <div>
+                  <Label className="text-base font-medium">Target Audience Persona</Label>
+                  {editingSection === 'brandStrategy' ? (
+                    <Textarea
+                      value={brandStrategyData.targetAudience}
+                      onChange={(e) => setBrandStrategyData(prev => ({ ...prev, targetAudience: e.target.value }))}
+                      className="mt-2"
+                      rows={3}
+                    />
+                  ) : (
+                    <blockquote className="mt-2 border-l-4 border-primary pl-4 py-2 bg-muted/50 rounded-r-md">
+                      <p className="text-sm italic">"{brandStrategyData.targetAudience}"</p>
+                    </blockquote>
+                  )}
+                </div>
               </div>
               <div className="space-y-4">
                 <div>
@@ -511,52 +618,68 @@ const ProfileDetails: React.FC = () => {
                 </div>
                 <div>
                   <Label className="text-base font-medium">Average Post Length</Label>
-                  <p className="text-sm mt-2">{brandStrategyData.postLength}</p>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Super Short</span>
+                      <span className="text-sm font-medium">{getPostLengthLabel(brandStrategyData.postLengthValue)}</span>
+                      <span className="text-sm text-muted-foreground">Long</span>
+                    </div>
+                    {editingSection === 'brandStrategy' ? (
+                      <Slider
+                        value={[brandStrategyData.postLengthValue]}
+                        onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, postLengthValue: value[0] }))}
+                        max={3}
+                        step={1}
+                        className="w-full"
+                      />
+                    ) : (
+                      <Progress value={((brandStrategyData.postLengthValue) / 3) * 100} className="h-2" />
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-base font-medium">Emoji Usage</Label>
-                  <p className="text-sm mt-2">{brandStrategyData.emojiUsage}</p>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Professional</span>
+                      <span className="text-sm font-medium">{getEmojiUsageLabel(brandStrategyData.emojiUsageValue)}</span>
+                      <span className="text-sm text-muted-foreground">Frequently</span>
+                    </div>
+                    {editingSection === 'brandStrategy' ? (
+                      <Slider
+                        value={[brandStrategyData.emojiUsageValue]}
+                        onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, emojiUsageValue: value[0] }))}
+                        max={3}
+                        step={1}
+                        className="w-full"
+                      />
+                    ) : (
+                      <Progress value={((brandStrategyData.emojiUsageValue) / 3) * 100} className="h-2" />
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <Separator className="my-6" />
-
-            <div>
-              <Label className="text-base font-medium">Target Audience Persona</Label>
-              {editingSection === 'brandStrategy' ? (
-                <Textarea
-                  value={brandStrategyData.targetAudience}
-                  onChange={(e) => setBrandStrategyData(prev => ({ ...prev, targetAudience: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                />
-              ) : (
-                <blockquote className="mt-2 border-l-4 border-primary pl-4 py-2 bg-muted/50 rounded-r-md">
-                  <p className="text-sm italic">"{brandStrategyData.targetAudience}"</p>
-                </blockquote>
-              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Card 4: Content Guidelines */}
+        {/* Card 3: Content Guidelines */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Content Guidelines</span>
-              {editingSection !== 'aiInstructions' ? (
-                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('aiInstructions')}>
+              {editingSection !== 'contentGuidelines' ? (
+                <Button variant="outline" size="sm" onClick={() => handleSectionEdit('contentGuidelines')}>
                   <Edit3 className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleSectionSave('aiInstructions')}>
+                  <Button size="sm" onClick={() => handleSectionSave('contentGuidelines')}>
                     <Save className="h-4 w-4 mr-2" />
                     Save
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('aiInstructions')}>
+                  <Button variant="outline" size="sm" onClick={() => handleSectionCancel('contentGuidelines')}>
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
@@ -567,16 +690,16 @@ const ProfileDetails: React.FC = () => {
           <CardContent className="space-y-6">
             <div>
               <Label className="text-base font-medium">Key Offerings to Promote</Label>
-              {editingSection === 'aiInstructions' ? (
+              {editingSection === 'contentGuidelines' ? (
                 <Textarea
-                  value={aiInstructionsData.keyOfferings}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, keyOfferings: e.target.value }))}
+                  value={contentGuidelinesData.keyOfferings}
+                  onChange={(e) => setContentGuidelinesData(prev => ({ ...prev, keyOfferings: e.target.value }))}
                   className="mt-2"
                   rows={3}
                 />
               ) : (
                 <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {aiInstructionsData.keyOfferings}
+                  {contentGuidelinesData.keyOfferings}
                 </p>
               )}
             </div>
@@ -585,16 +708,16 @@ const ProfileDetails: React.FC = () => {
 
             <div>
               <Label className="text-base font-medium">Hook Guidelines</Label>
-              {editingSection === 'aiInstructions' ? (
+              {editingSection === 'contentGuidelines' ? (
                 <Textarea
-                  value={aiInstructionsData.hookGuidelines}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, hookGuidelines: e.target.value }))}
+                  value={contentGuidelinesData.hookGuidelines}
+                  onChange={(e) => setContentGuidelinesData(prev => ({ ...prev, hookGuidelines: e.target.value }))}
                   className="mt-2"
                   rows={3}
                 />
               ) : (
                 <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {aiInstructionsData.hookGuidelines}
+                  {contentGuidelinesData.hookGuidelines}
                 </p>
               )}
             </div>
@@ -603,16 +726,16 @@ const ProfileDetails: React.FC = () => {
 
             <div>
               <Label className="text-base font-medium">Unique POV / "Hot Takes"</Label>
-              {editingSection === 'aiInstructions' ? (
+              {editingSection === 'contentGuidelines' ? (
                 <Textarea
-                  value={aiInstructionsData.uniquePOV}
-                  onChange={(e) => setAiInstructionsData(prev => ({ ...prev, uniquePOV: e.target.value }))}
+                  value={contentGuidelinesData.uniquePOV}
+                  onChange={(e) => setContentGuidelinesData(prev => ({ ...prev, uniquePOV: e.target.value }))}
                   className="mt-2"
                   rows={3}
                 />
               ) : (
                 <p className="text-sm mt-2 p-3 bg-muted rounded-md">
-                  {aiInstructionsData.uniquePOV}
+                  {contentGuidelinesData.uniquePOV}
                 </p>
               )}
             </div>
@@ -620,20 +743,46 @@ const ProfileDetails: React.FC = () => {
             <Separator />
 
             <div>
-              <Label className="text-base font-medium">Main Competitors</Label>
+              <Label className="text-base font-medium">Main Competitors (Max 3)</Label>
               <div className="space-y-2 mt-2">
-                {aiInstructionsData.competitors.map((competitor, index) => (
-                  <a 
-                    key={index}
-                    href={competitor} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 p-2 bg-muted rounded-md"
-                  >
-                    {competitor}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                {contentGuidelinesData.competitors.map((competitor, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    {editingSection === 'contentGuidelines' ? (
+                      <>
+                        <Input
+                          type="url"
+                          value={competitor}
+                          onChange={(e) => handleCompetitorChange(index, e.target.value)}
+                          className="flex-1"
+                          placeholder="https://competitor.com"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleRemoveCompetitor(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <a 
+                        href={competitor} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-sm text-blue-600 hover:underline flex items-center gap-1 p-2 bg-muted rounded-md flex-1"
+                      >
+                        {competitor}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
                 ))}
+                {editingSection === 'contentGuidelines' && contentGuidelinesData.competitors.length < 3 && (
+                  <Button variant="outline" size="sm" onClick={handleAddCompetitor}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Competitor
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -642,7 +791,7 @@ const ProfileDetails: React.FC = () => {
             <div>
               <Label className="text-base font-medium">Topics to Avoid</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {aiInstructionsData.topicsToAvoid.map((topic, index) => (
+                {contentGuidelinesData.topicsToAvoid.map((topic, index) => (
                   <Badge key={index} variant="destructive" className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200">
                     {topic}
                   </Badge>
@@ -651,6 +800,37 @@ const ProfileDetails: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Client Button */}
+        <div className="flex justify-end">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Client Account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You are about to permanently delete the entire client account for <strong>{profile.name}</strong>. 
+                  This will delete all profiles, posts, settings, and data associated with this client. 
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteClient}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Yes, delete entire client account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     );
   }
@@ -794,17 +974,19 @@ const ProfileDetails: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Dutch">Dutch</SelectItem>
-                      <SelectItem value="Spanish">Spanish</SelectItem>
-                      <SelectItem value="German">German</SelectItem>
-                      <SelectItem value="French">French</SelectItem>
-                      <SelectItem value="Italian">Italian</SelectItem>
-                      <SelectItem value="Portuguese">Portuguese</SelectItem>
+                      <SelectItem value="English">🇺🇸 English</SelectItem>
+                      <SelectItem value="Dutch">🇳🇱 Dutch</SelectItem>
+                      <SelectItem value="Spanish">🇪🇸 Spanish</SelectItem>
+                      <SelectItem value="German">🇩🇪 German</SelectItem>
+                      <SelectItem value="French">🇫🇷 French</SelectItem>
+                      <SelectItem value="Italian">🇮🇹 Italian</SelectItem>
+                      <SelectItem value="Portuguese">🇵🇹 Portuguese</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-sm mt-1">{subProfileData.language}</p>
+                  <p className="text-sm mt-1 flex items-center gap-2">
+                    {getFlagEmoji(subProfileData.language)} {subProfileData.language}
+                  </p>
                 )}
               </div>
             </div>
@@ -989,7 +1171,7 @@ const ProfileDetails: React.FC = () => {
                 ) : (
                   <div className="mt-2 flex items-center gap-2">
                     <Badge variant="secondary" className="px-3 py-1">
-                      🎯 {subProfileData.personalBrandPersona}
+                      🏆 {subProfileData.personalBrandPersona}
                     </Badge>
                   </div>
                 )}
