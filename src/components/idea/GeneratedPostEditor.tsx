@@ -17,6 +17,7 @@ import { PollData } from './CreatePollModal';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import MediaPreview from './MediaPreview';
 import MediaUploadModal, { MediaFile } from './MediaUploadModal';
+import MediaDropZone from './MediaDropZone';
 
 interface GeneratedPostEditorProps {
   generatedPost: string;
@@ -469,6 +470,96 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
+  // NEW: Direct media upload handlers for the dropzone
+  const handleDirectFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+    
+    newFiles.forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Only image files are allowed.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const isVertical = img.height > img.width;
+        const mediaFile: MediaFile = {
+          id: `media-${Date.now()}-${Math.random()}`,
+          file,
+          url,
+          isVertical
+        };
+        
+        setMediaFiles(prev => [...prev, mediaFile]);
+        setPollData(null); // Clear poll when adding media
+        if (onPollStateChange) {
+          onPollStateChange(false);
+        }
+      };
+      img.src = url;
+    });
+
+    toast({
+      title: "Media Added",
+      description: `${newFiles.length} image${newFiles.length > 1 ? 's' : ''} added to your post.`
+    });
+  };
+
+  const handleDirectFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+    
+    newFiles.forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Only image files are allowed.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const isVertical = img.height > img.width;
+        const mediaFile: MediaFile = {
+          id: `media-${Date.now()}-${Math.random()}`,
+          file,
+          url,
+          isVertical
+        };
+        
+        setMediaFiles(prev => [...prev, mediaFile]);
+        setPollData(null); // Clear poll when adding media
+        if (onPollStateChange) {
+          onPollStateChange(false);
+        }
+      };
+      img.src = url;
+    });
+
+    toast({
+      title: "Media Added",
+      description: `${newFiles.length} image${newFiles.length > 1 ? 's' : ''} added to your post.`
+    });
+  };
+
+  const handleDirectDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
   const handleUploadMedia = (newMediaFiles: MediaFile[]) => {
     setMediaFiles(newMediaFiles);
     setPollData(null); // Clear poll when adding media
@@ -641,6 +732,37 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             cutoffLineTop={cutoffLineTop}
             viewMode={viewMode}
           />
+          
+          {/* NEW: Integrated Media Upload/Preview Area */}
+          {mediaFiles.length === 0 && !pollData && (
+            <div className="mt-4">
+              <div
+                className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer transition-colors hover:bg-gray-100 hover:border-gray-400"
+                onDrop={handleDirectFileDrop}
+                onDragOver={handleDirectDragOver}
+                onClick={() => document.getElementById('direct-file-upload')?.click()}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && document.getElementById('direct-file-upload')?.click()}
+                tabIndex={0}
+                role="button"
+                aria-label="Upload media"
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <svg className="h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm text-gray-600">Add media to your post</p>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleDirectFileUpload}
+                  className="hidden"
+                  id="direct-file-upload"
+                />
+              </div>
+            </div>
+          )}
           
           {mediaFiles.length > 0 && (
             <MediaPreview 

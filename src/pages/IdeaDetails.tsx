@@ -4,7 +4,6 @@ import { mockIdeas, mockClients } from '../types';
 import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
-import MediaDropZone from '../components/idea/MediaDropZone';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
@@ -19,7 +18,6 @@ const IdeaDetails = () => {
   const isNewPost = searchParams.get('new') === 'true';
   
   const [selectedHookIndex, setSelectedHookIndex] = useState(-1);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [useAsTrainingData, setUseAsTrainingData] = useState(false);
   const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -163,29 +161,6 @@ const IdeaDetails = () => {
     console.log('Regenerating hooks...');
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
-    }
-  };
-
-  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const files = event.dataTransfer.files;
-    if (files) {
-      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
-    }
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
   const handleUnsavedDialogSave = () => {
     postEditor.handleSave();
     setShowUnsavedDialog(false);
@@ -277,16 +252,6 @@ const IdeaDetails = () => {
             setComments={setComments}
             onPollStateChange={handlePollStateChange}
           />
-          {/* Only show MediaDropZone if there's no active poll */}
-          {!hasPoll && (
-            <MediaDropZone
-              uploadedFiles={uploadedFiles}
-              onFileUpload={handleFileUpload}
-              onFileDrop={handleFileDrop}
-              onDragOver={handleDragOver}
-              onRemoveFile={removeFile}
-            />
-          )}
         </div>
         
         <div className="space-y-6">
