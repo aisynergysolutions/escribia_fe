@@ -5,6 +5,7 @@ import StatCard from '../components/ui/StatCard';
 import IdeaCard from '../components/ui/IdeaCard';
 import PostCalendar from '../components/ui/PostCalendar';
 import { mockAgency, mockIdeas } from '../types';
+
 const Dashboard = () => {
   // Memoize recent ideas calculation for better performance
   const recentIdeas = useMemo(() => {
@@ -19,10 +20,13 @@ const Dashboard = () => {
     planId: mockAgency.subscription.planId,
     planExpiry: new Date(mockAgency.subscription.currentPeriodEnd.seconds * 1000).toLocaleDateString()
   }), []);
+
   const memoizedIdeaCards = useMemo(() => {
     return recentIdeas.map(idea => <IdeaCard key={idea.id} idea={idea} />);
   }, [recentIdeas]);
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="font-bold text-gray-900 text-xl">
           Welcome back, {mockAgency.agencyName}—here's your content overview.
@@ -36,8 +40,10 @@ const Dashboard = () => {
         <StatCard title="Current Plan" value={stats.planId} description={`Expires: ${stats.planExpiry}`} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PostCalendar />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="self-start">
+          <PostCalendar />
+        </div>
         
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Recent Activity</h2>
@@ -46,6 +52,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Dashboard;
