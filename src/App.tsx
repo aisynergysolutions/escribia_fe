@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProfileDetailsPage from './pages/ProfileDetails';
+import Landing from './pages/Landing';
 
 // Lazy load components for code splitting
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -44,6 +44,11 @@ function App() {
         <Router>
           <div className="min-h-screen bg-gray-50">
             <Routes>
+              <Route path="/landing" element={
+                <Suspense fallback={<PageSkeleton />}>
+                  <Landing />
+                </Suspense>
+              } />
               <Route path="/" element={<MainLayout />}>
                 <Route index element={
                   <Suspense fallback={<PageSkeleton />}>
