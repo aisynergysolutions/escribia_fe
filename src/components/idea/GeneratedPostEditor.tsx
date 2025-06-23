@@ -594,6 +594,11 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     });
   };
 
+  const handleOpenMediaModal = () => {
+    setEditingMedia(mediaFiles.length > 0 ? mediaFiles : null);
+    setShowMediaUploadModal(true);
+  };
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== currentContent) {
       editorRef.current.innerHTML = currentContent;
@@ -624,6 +629,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   useEffect(() => {
     setHasMedia(mediaFiles.length > 0);
   }, [mediaFiles]);
+
+  // Get the dynamic width class based on view mode (matching EditorContainer)
+  const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
 
   return (
     <div className="space-y-6">
@@ -715,7 +723,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onAddPoll={handleAddPoll}
           hasPoll={!!pollData}
           hasMedia={hasMedia}
-          onAddMedia={() => setShowMediaUploadModal(true)}
+          onAddMedia={handleOpenMediaModal}
         />
         
         <div className="p-4 bg-gray-50">
@@ -733,9 +741,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             viewMode={viewMode}
           />
           
-          {/* NEW: Integrated Media Upload/Preview Area */}
+          {/* Fixed: Media/Poll area with correct width matching text editor */}
           {mediaFiles.length === 0 && !pollData && (
-            <div className="mt-4">
+            <div className={`${maxWidthClass} mx-auto mt-4`}>
               <div
                 className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer transition-colors hover:bg-gray-100 hover:border-gray-400"
                 onDrop={handleDirectFileDrop}

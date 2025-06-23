@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
 import CreatePollModal, { PollData } from './CreatePollModal';
-import MediaUploadModal, { MediaFile } from './MediaUploadModal';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -65,7 +63,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
-  const [showMediaUploadModal, setShowMediaUploadModal] = useState(false);
 
   const handleAddToQueue = () => {
     setShowAddToQueueModal(true);
@@ -73,7 +70,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
   const handleAddToQueueConfirm = (selectedTime: string, status: string) => {
     console.log('Adding to queue:', { selectedTime, status });
-    // Here you would typically update the post status and add to queue
   };
 
   const handleOpenScheduleModal = () => {
@@ -83,7 +79,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const handleScheduleConfirm = (date: Date, time: string, status: string) => {
     console.log('Scheduling post:', { date, time, status });
     setShowScheduleModal(false);
-    // Here you would typically handle the scheduling logic
   };
 
   const handlePostNow = () => {
@@ -93,7 +88,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const handlePostNowConfirm = (status: string) => {
     console.log('Posting now with status:', status);
     setShowPostNowModal(false);
-    // Here you would typically handle the posting logic
   };
 
   const handleAddMedia = () => {
@@ -174,7 +168,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </PopoverContent>
           </Popover>
 
-          {/* Add Media Button */}
+          {/* Fixed: Add Media Button - disabled when media present */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -184,11 +178,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 className="h-8 w-8 p-0"
                 disabled={hasPoll}
               >
-                <Image className="h-4 w-4" />
+                <Image className={`h-4 w-4 ${hasMedia ? 'text-blue-600' : ''}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{hasPoll ? 'Remove poll to add media' : 'Add media'}</p>
+              <p>{hasPoll ? 'Remove poll to add media' : hasMedia ? 'Edit media' : 'Add media'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -372,15 +366,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         open={showCreatePollModal}
         onOpenChange={setShowCreatePollModal}
         onCreatePoll={handleCreatePoll}
-      />
-
-      <MediaUploadModal
-        open={showMediaUploadModal}
-        onOpenChange={setShowMediaUploadModal}
-        onUploadMedia={(mediaFiles: MediaFile[]) => {
-          // This will be handled by the parent component
-          setShowMediaUploadModal(false);
-        }}
       />
     </>
   );
