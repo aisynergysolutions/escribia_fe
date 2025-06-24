@@ -34,7 +34,7 @@ const Landing = () => {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-2">
               <LineChart className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">ContentFlow</span>
+              <span className="text-xl font-bold text-gray-900">Escribia</span>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost">Features</Button>
