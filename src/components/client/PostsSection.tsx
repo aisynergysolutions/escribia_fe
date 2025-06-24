@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle, Check } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import IdeaCard from '../ui/IdeaCard';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
-import { mockIdeas, Idea } from '../../types';
+import { mockIdeas, mockClients, Idea } from '../../types';
+import { formatDate } from '../../utils/dateUtils';
 
 interface PostsSectionProps {
   clientId: string;
@@ -61,6 +62,11 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   // Find ideas for this client
   const clientIdeas = mockIdeas.filter(idea => idea.clientId === clientId);
 
+  // Get client information
+  const getClientInfo = (clientId: string) => {
+    return mockClients.find(client => client.id === clientId);
+  };
+
   // Filter and sort posts
   const getFilteredAndSortedPosts = (): Idea[] => {
     let filtered = clientIdeas;
@@ -112,6 +118,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   const filteredPosts = getFilteredAndSortedPosts();
   const allowedStatuses = getAllowedStatuses();
+  const clientInfo = getClientInfo(clientId);
 
   const handleSortFieldChange = (field: SortField) => {
     setSortField(field);
@@ -233,14 +240,50 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         </div>
       </div>
       
-      {/* Posts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPosts.map(idea => (
-          <IdeaCard key={idea.id} idea={idea} />
-        ))}
-        
-        {filteredPosts.length === 0 && (
-          <div className="col-span-3 text-center py-12">
+      {/* Posts Table */}
+      <div className="bg-white rounded-xl shadow-sm border">
+        {filteredPosts.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Client</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPosts.map(idea => (
+                <TableRow 
+                  key={idea.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => window.location.href = `/clients/${idea.clientId}/ideas/${idea.id}`}
+                >
+                  <TableCell className="font-medium">
+                    <div className="max-w-md">
+                      <div className="font-medium text-gray-900 truncate" title={idea.title}>
+                        {idea.title}
+                      </div>
+                      <div className="text-sm text-gray-500 line-clamp-2 mt-1">
+                        {idea.currentDraftText}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {formatDate(idea.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={idea.status} type="idea" />
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {clientInfo?.clientName || 'Unknown Client'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="text-center py-12">
             <p className="text-gray-500">
               {searchTerm || statusFilter !== 'all' 
                 ? "No posts match your filters." 
