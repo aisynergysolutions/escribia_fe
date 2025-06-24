@@ -167,7 +167,7 @@ const Landing = () => {
               <div className="text-gray-600">Posts Created</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">99.9%</div>
+              <div className="text-4xl font-bold text-blue-600">90.9%</div>
               <div className="text-gray-600">Uptime</div>
             </div>
           </div>
