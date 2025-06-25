@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle, Check, MoreHorizontal, Copy, Trash2 } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,18 +16,20 @@ interface PostsSectionProps {
   clientId: string;
 }
 
-type SortField = 'updated' | 'created' | 'title' | 'status';
-type SortDirection = 'asc' | 'desc';
+type SortField = 'updated' | 'created' | 'title' | 'status' | 'profile' | 'scheduled';
+type SortDirection = 'asc' | 'desc' | 'none';
 
 const SORT_STORAGE_KEY = 'posts-sort-preferences';
 
 const getSortFieldLabel = (field: SortField): string => {
   switch (field) {
-    case 'updated': return 'Last Updated';
+    case 'updated': return 'LAST UPDATED';
     case 'created': return 'Date Created';
-    case 'title': return 'Title';
-    case 'status': return 'Status';
-    default: return 'Last Updated';
+    case 'title': return 'POST';
+    case 'status': return 'STATUS';
+    case 'profile': return 'PROFILE';
+    case 'scheduled': return 'SCHEDULED FOR';
+    default: return 'LAST UPDATED';
   }
 };
 
@@ -87,48 +89,81 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     }
 
     // Sort posts
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortField) {
-        case 'updated':
-          comparison = a.updatedAt.seconds - b.updatedAt.seconds;
-          break;
-        case 'created':
-          comparison = a.createdAt.seconds - b.createdAt.seconds;
-          break;
-        case 'title':
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case 'status':
-          comparison = a.status.localeCompare(b.status);
-          break;
-        default:
-          comparison = a.updatedAt.seconds - b.updatedAt.seconds;
-      }
-      
-      return sortDirection === 'desc' ? -comparison : comparison;
-    });
+    if (sortDirection !== 'none') {
+      filtered.sort((a, b) => {
+        let comparison = 0;
+        
+        switch (sortField) {
+          case 'updated':
+            comparison = a.updatedAt.seconds - b.updatedAt.seconds;
+            break;
+          case 'created':
+            comparison = a.createdAt.seconds - b.createdAt.seconds;
+            break;
+          case 'scheduled':
+            // For scheduled posts, use createdAt as a proxy for scheduled date
+            comparison = a.createdAt.seconds - b.createdAt.seconds;
+            break;
+          case 'title':
+            comparison = a.title.localeCompare(b.title);
+            break;
+          case 'status':
+            comparison = a.status.localeCompare(b.status);
+            break;
+          case 'profile':
+            const clientA = getClientInfo(a.clientId)?.clientName || '';
+            const clientB = getClientInfo(b.clientId)?.clientName || '';
+            comparison = clientA.localeCompare(clientB);
+            break;
+          default:
+            comparison = a.updatedAt.seconds - b.updatedAt.seconds;
+        }
+        
+        return sortDirection === 'desc' ? -comparison : comparison;
+      });
+    }
     
     return filtered;
   };
 
   // Get allowed statuses for filter tabs
   const getAllowedStatuses = () => {
-    return ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
+    return ['Drafted', 'Needs Visual', 'Waiting Approval', 'Approved', 'Scheduled', 'Posted'];
   };
 
   const filteredPosts = getFilteredAndSortedPosts();
   const allowedStatuses = getAllowedStatuses();
   const clientInfo = getClientInfo(clientId);
 
-  const handleSortFieldChange = (field: SortField) => {
-    setSortField(field);
+  const handleColumnSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cycle through sort directions: asc -> desc -> none
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection('none');
+        setSortField('updated'); // Reset to default
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortField(field);
+      // For date columns, start with desc (newest first)
+      if (field === 'updated' || field === 'created' || field === 'scheduled') {
+        setSortDirection('desc');
+      } else {
+        // For text columns, start with asc (A-Z)
+        setSortDirection('asc');
+      }
+    }
   };
 
-  const toggleSortDirection = () => {
-    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-  }
+  const getSortIcon = (field: SortField) => {
+    if (sortField === field && sortDirection !== 'none') {
+      return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+    }
+    return null;
+  };
 
   const handleDuplicate = (postId: string) => {
     console.log('Duplicating post:', postId);
@@ -147,77 +182,47 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Search and Sort Controls - Moved to top */}
+      {/* Unified Control Bar */}
       <div className="bg-white p-6 rounded-xl shadow-sm border">
-        <div className="flex items-center gap-6 h-10">
-          {/* Extended Search Input */}
+        <div className="flex items-center justify-between gap-6">
+          {/* Left Side: Status Filter Tabs */}
           <div className="flex-1">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+              <TabsList className="grid grid-cols-7 w-full">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+                >
+                  All ({clientIdeas.length})
+                </TabsTrigger>
+                {allowedStatuses.map(status => {
+                  const count = clientIdeas.filter(idea => idea.status === status).length;
+                  const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
+                  return (
+                    <TabsTrigger 
+                      key={status} 
+                      value={status} 
+                      className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+                    >
+                      {displayStatus} ({count})
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          {/* Right Side: Search & Primary Action */}
+          <div className="flex items-center gap-4">
+            {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input 
                 placeholder="Search posts..." 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9 h-10" 
+                className="pl-9 h-10 w-64" 
               />
-            </div>
-          </div>
-          
-          {/* Sort Control */}
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <div className="flex items-center h-10 border border-input bg-background rounded-lg overflow-hidden">
-                <button
-                  onClick={toggleSortDirection}
-                  className="flex items-center justify-center w-10 h-full hover:bg-accent transition-colors border-r border-input"
-                  aria-label="Toggle sort direction"
-                  title={`Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}`}
-                >
-                  {sortDirection === 'asc' ? 
-                    <ArrowUp className="h-4 w-4" /> : 
-                    <ArrowDown className="h-4 w-4" />
-                  }
-                </button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center justify-between px-3 h-full min-w-[120px] hover:bg-accent transition-colors">
-                      <span className="text-sm">{getSortFieldLabel(sortField)}</span>
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[160px]">
-                    <DropdownMenuItem 
-                      onClick={() => handleSortFieldChange('updated')}
-                      className="flex items-center justify-between"
-                    >
-                      Last Updated
-                      {sortField === 'updated' && <Check className="h-4 w-4" />}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleSortFieldChange('created')}
-                      className="flex items-center justify-between"
-                    >
-                      Date Created
-                      {sortField === 'created' && <Check className="h-4 w-4" />}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleSortFieldChange('title')}
-                      className="flex items-center justify-between"
-                    >
-                      Title
-                      {sortField === 'title' && <Check className="h-4 w-4" />}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleSortFieldChange('status')}
-                      className="flex items-center justify-between"
-                    >
-                      Status
-                      {sortField === 'status' && <Check className="h-4 w-4" />}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </div>
             
             {/* New Post Button */}
@@ -230,30 +235,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
           </div>
         </div>
       </div>
-
-      {/* Status Filter Tabs - Moved below search */}
-      <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
-          <TabsTrigger 
-            value="all" 
-            className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-          >
-            All ({clientIdeas.length})
-          </TabsTrigger>
-          {allowedStatuses.map(status => {
-            const count = clientIdeas.filter(idea => idea.status === status).length;
-            return (
-              <TabsTrigger 
-                key={status} 
-                value={status} 
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-              >
-                {status} ({count})
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
       
       {/* Posts Table */}
       <div className="bg-white rounded-xl shadow-sm border">
@@ -262,11 +243,51 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50 border-b">
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">POST</TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">PROFILE</TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">STATUS</TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">LAST UPDATED</TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">SCHEDULED FOR</TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                    <button
+                      onClick={() => handleColumnSort('title')}
+                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                    >
+                      POST
+                      {getSortIcon('title')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                    <button
+                      onClick={() => handleColumnSort('profile')}
+                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                    >
+                      PROFILE
+                      {getSortIcon('profile')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                    <button
+                      onClick={() => handleColumnSort('status')}
+                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                    >
+                      STATUS
+                      {getSortIcon('status')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                    <button
+                      onClick={() => handleColumnSort('updated')}
+                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                    >
+                      LAST UPDATED
+                      {getSortIcon('updated')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                    <button
+                      onClick={() => handleColumnSort('scheduled')}
+                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                    >
+                      SCHEDULED FOR
+                      {getSortIcon('scheduled')}
+                    </button>
+                  </TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
