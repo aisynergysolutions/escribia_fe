@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle, Check } from 'lucide-react';
+import { Search, ChevronDown, ArrowUp, ArrowDown, PlusCircle, Check, MoreHorizontal, Copy, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
 import { mockIdeas, mockClients, Idea } from '../../types';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate, formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
 
 interface PostsSectionProps {
   clientId: string;
@@ -126,35 +128,26 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   const toggleSortDirection = () => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  }
+
+  const handleDuplicate = (postId: string) => {
+    console.log('Duplicating post:', postId);
+  };
+
+  const handleDelete = (postId: string) => {
+    console.log('Deleting post:', postId);
+  };
+
+  const getScheduledDate = (idea: Idea) => {
+    if (idea.status === 'Scheduled' || idea.status === 'Posted') {
+      return formatDate(idea.createdAt);
+    }
+    return '—';
   };
 
   return (
     <div className="space-y-6">
-      {/* Status Filter Tabs */}
-      <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
-          <TabsTrigger 
-            value="all" 
-            className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-          >
-            All ({clientIdeas.length})
-          </TabsTrigger>
-          {allowedStatuses.map(status => {
-            const count = clientIdeas.filter(idea => idea.status === status).length;
-            return (
-              <TabsTrigger 
-                key={status} 
-                value={status} 
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-              >
-                {status} ({count})
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
-
-      {/* Search and Sort Controls */}
+      {/* Search and Sort Controls - Moved to top */}
       <div className="bg-white p-6 rounded-xl shadow-sm border">
         <div className="flex items-center gap-6 h-10">
           {/* Extended Search Input */}
@@ -170,11 +163,10 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             </div>
           </div>
           
-          {/* Sort Control - Single Container with Split Interactivity */}
+          {/* Sort Control */}
           <div className="flex items-center gap-6">
             <div className="relative">
               <div className="flex items-center h-10 border border-input bg-background rounded-lg overflow-hidden">
-                {/* Arrow Icon (Left) - Toggles Direction */}
                 <button
                   onClick={toggleSortDirection}
                   className="flex items-center justify-center w-10 h-full hover:bg-accent transition-colors border-r border-input"
@@ -187,7 +179,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                   }
                 </button>
 
-                {/* Dropdown Trigger (Rest of Container) */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center justify-between px-3 h-full min-w-[120px] hover:bg-accent transition-colors">
@@ -239,49 +230,116 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
           </div>
         </div>
       </div>
+
+      {/* Status Filter Tabs - Moved below search */}
+      <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+        <TabsList className="grid grid-cols-7 w-full">
+          <TabsTrigger 
+            value="all" 
+            className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+          >
+            All ({clientIdeas.length})
+          </TabsTrigger>
+          {allowedStatuses.map(status => {
+            const count = clientIdeas.filter(idea => idea.status === status).length;
+            return (
+              <TabsTrigger 
+                key={status} 
+                value={status} 
+                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+              >
+                {status} ({count})
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
       
       {/* Posts Table */}
       <div className="bg-white rounded-xl shadow-sm border">
         {filteredPosts.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Client</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPosts.map(idea => (
-                <TableRow 
-                  key={idea.id} 
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => window.location.href = `/clients/${idea.clientId}/ideas/${idea.id}`}
-                >
-                  <TableCell className="font-medium">
-                    <div className="max-w-md">
-                      <div className="font-medium text-gray-900 truncate" title={idea.title}>
+          <TooltipProvider>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 border-b">
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">POST</TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">PROFILE</TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">STATUS</TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">LAST UPDATED</TableHead>
+                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">SCHEDULED FOR</TableHead>
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPosts.map(idea => (
+                  <TableRow 
+                    key={idea.id} 
+                    className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
+                    onClick={() => window.location.href = `/clients/${idea.clientId}/ideas/${idea.id}`}
+                  >
+                    <TableCell className="py-4">
+                      <div className="font-semibold text-gray-900">
                         {idea.title}
                       </div>
-                      <div className="text-sm text-gray-500 line-clamp-2 mt-1">
-                        {idea.currentDraftText}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {formatDate(idea.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={idea.status} type="idea" />
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {clientInfo?.clientName || 'Unknown Client'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell className="py-4 text-gray-600">
+                      {clientInfo?.clientName || 'Unknown Client'}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <StatusBadge status={idea.status} type="idea" />
+                    </TableCell>
+                    <TableCell className="py-4 text-gray-600">
+                      <Tooltip>
+                        <TooltipTrigger>
+                          {formatRelativeTime(idea.updatedAt)}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {formatDateTime(idea.updatedAt)}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell className="py-4 text-gray-600">
+                      {getScheduledDate(idea)}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 hover:bg-gray-100"
+                            data-testid="post-actions-btn"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicate(idea.id);
+                          }}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(idea.id);
+                            }}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TooltipProvider>
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500">
