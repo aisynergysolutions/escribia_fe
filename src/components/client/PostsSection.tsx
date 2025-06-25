@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2 } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Plus, MoreHorizontal, Copy, Trash2, X } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,21 +21,9 @@ type SortDirection = 'asc' | 'desc' | 'none';
 
 const SORT_STORAGE_KEY = 'posts-sort-preferences';
 
-const getSortFieldLabel = (field: SortField): string => {
-  switch (field) {
-    case 'updated': return 'LAST UPDATED';
-    case 'created': return 'Date Created';
-    case 'title': return 'POST';
-    case 'status': return 'STATUS';
-    case 'profile': return 'PROFILE';
-    case 'scheduled': return 'SCHEDULED FOR';
-    default: return 'LAST UPDATED';
-  }
-};
-
 const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   
   // Load sort preferences from localStorage
   const loadSortPreferences = () => {
@@ -83,8 +71,8 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
       );
     }
 
-    // Filter by status
-    if (statusFilter !== 'all') {
+    // Filter by status (only if statusFilter is not empty)
+    if (statusFilter) {
       filtered = filtered.filter(idea => idea.status === statusFilter);
     }
 
@@ -101,8 +89,18 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             comparison = a.createdAt.seconds - b.createdAt.seconds;
             break;
           case 'scheduled':
-            // For scheduled posts, use createdAt as a proxy for scheduled date
-            comparison = a.createdAt.seconds - b.createdAt.seconds;
+            // For scheduled posts, compare the actual scheduled dates
+            const aScheduled = getScheduledTimestamp(a);
+            const bScheduled = getScheduledTimestamp(b);
+            if (aScheduled && bScheduled) {
+              comparison = aScheduled - bScheduled;
+            } else if (aScheduled) {
+              comparison = -1; // a has scheduled date, b doesn't
+            } else if (bScheduled) {
+              comparison = 1; // b has scheduled date, a doesn't
+            } else {
+              comparison = 0; // neither has scheduled date
+            }
             break;
           case 'title':
             comparison = a.title.localeCompare(b.title);
@@ -173,11 +171,28 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     console.log('Deleting post:', postId);
   };
 
-  const getScheduledDate = (idea: Idea) => {
+  const getScheduledTimestamp = (idea: Idea) => {
     if (idea.status === 'Scheduled' || idea.status === 'Posted') {
-      return formatDate(idea.createdAt);
+      return idea.createdAt.seconds;
+    }
+    return null;
+  };
+
+  const getScheduledDate = (idea: Idea) => {
+    const timestamp = getScheduledTimestamp(idea);
+    if (timestamp) {
+      return formatRelativeTime({ seconds: timestamp });
     }
     return '—';
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    if (value === statusFilter) {
+      // Clicking on active tab - deselect it
+      setStatusFilter('');
+    } else {
+      setStatusFilter(value);
+    }
   };
 
   return (
@@ -186,34 +201,41 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
       <div className="bg-white p-6 rounded-xl shadow-sm border">
         <div className="flex items-center justify-between gap-6">
           {/* Left Side: Status Filter Tabs */}
-          <div className="flex-1">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <TabsList className="grid grid-cols-7 w-full">
-                <TabsTrigger 
-                  value="all" 
-                  className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-                >
-                  All ({clientIdeas.length})
-                </TabsTrigger>
-                {allowedStatuses.map(status => {
-                  const count = clientIdeas.filter(idea => idea.status === status).length;
-                  const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
-                  return (
-                    <TabsTrigger 
-                      key={status} 
-                      value={status} 
-                      className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-                    >
-                      {displayStatus} ({count})
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </Tabs>
+          <div className="flex-1 min-w-0">
+            <div className="relative">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                <div className="flex gap-2 min-w-max">
+                  {allowedStatuses.map(status => {
+                    const count = clientIdeas.filter(idea => idea.status === status).length;
+                    const isActive = statusFilter === status;
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => handleStatusFilterChange(status)}
+                        className={`
+                          relative group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
+                          ${isActive 
+                            ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }
+                        `}
+                      >
+                        <span>{status} ({count})</span>
+                        {isActive && (
+                          <X className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Gradient fade for overflow indication */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           </div>
           
           {/* Right Side: Search & Primary Action */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -221,16 +243,22 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 placeholder="Search posts..." 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9 h-10 w-64" 
+                className="pl-9 h-10 w-48" 
               />
             </div>
             
             {/* New Post Button */}
             <CreatePostModal>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 h-10">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Post
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  New Post
+                </TooltipContent>
+              </Tooltip>
             </CreatePostModal>
           </div>
         </div>
@@ -320,7 +348,18 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                       </Tooltip>
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
-                      {getScheduledDate(idea)}
+                      {getScheduledTimestamp(idea) ? (
+                        <Tooltip>
+                          <TooltipTrigger>
+                            {getScheduledDate(idea)}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {formatDateTime({ seconds: getScheduledTimestamp(idea)! })}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        '—'
+                      )}
                     </TableCell>
                     <TableCell className="py-4">
                       <DropdownMenu>
@@ -364,17 +403,17 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500">
-              {searchTerm || statusFilter !== 'all' 
+              {searchTerm || statusFilter 
                 ? "No posts match your filters." 
                 : "No posts found for this client yet."
               }
             </p>
-            {(searchTerm || statusFilter !== 'all') && (
+            {(searchTerm || statusFilter) && (
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchTerm('');
-                  setStatusFilter('all');
+                  setStatusFilter('');
                 }} 
                 className="mt-2"
               >
