@@ -79,3 +79,27 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Show scrollbar when needed */
+.scrollbar-show {
+  -ms-overflow-style: auto;  /* IE and Edge */
+  scrollbar-width: thin;  /* Firefox */
+}
+
+.scrollbar-show::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollbar-show::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.scrollbar-show::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.scrollbar-show::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

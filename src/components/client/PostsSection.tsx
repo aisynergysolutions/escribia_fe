@@ -203,8 +203,8 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
           {/* Left Side: Status Filter Tabs */}
           <div className="flex-1 min-w-0">
             <div className="relative group">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                <div className="flex gap-2">
+              <div className="flex overflow-x-auto scrollbar-show pb-1">
+                <div className="flex gap-1 min-w-max">
                   {allowedStatuses.map(status => {
                     const count = clientIdeas.filter(idea => idea.status === status).length;
                     const isActive = statusFilter === status;
@@ -213,16 +213,16 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                         key={status}
                         onClick={() => handleStatusFilterChange(status)}
                         className={`
-                          relative group/tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0
+                          relative group/tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-1 min-w-0
                           ${isActive 
                             ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }
                         `}
                       >
-                        <span>{status} ({count})</span>
+                        <span className="truncate">{status} ({count})</span>
                         {isActive && (
-                          <X className="h-3 w-3 opacity-0 group-hover/tab:opacity-100 transition-opacity" />
+                          <X className="h-3 w-3 opacity-0 group-hover/tab:opacity-100 transition-opacity flex-shrink-0" />
                         )}
                       </button>
                     );
@@ -243,7 +243,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 placeholder="Search posts..." 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9 h-10 w-40" 
+                className="pl-9 h-10 w-40 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600" 
               />
             </div>
             
@@ -252,15 +252,13 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
-                      <div className="relative">
-                        <Plus className="h-4 w-4" />
-                        <div className="absolute -inset-1 border border-current rounded-full opacity-60" />
-                      </div>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium gap-2">
+                      <Plus className="h-4 w-4" />
+                      New Post
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    New Post
+                    Create New Post
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
