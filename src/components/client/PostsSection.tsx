@@ -126,7 +126,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   // Get allowed statuses for filter tabs
   const getAllowedStatuses = () => {
-    return ['Drafted', 'Needs Visual', 'Waiting Approval', 'Approved', 'Scheduled', 'Posted'];
+    return ['Drafted', 'Needs Visual', 'Waiting Approval', 'Approved', 'Scheduled', 'Published'];
   };
 
   const filteredPosts = getFilteredAndSortedPosts();
@@ -172,7 +172,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   };
 
   const getScheduledTimestamp = (idea: Idea) => {
-    if (idea.status === 'Scheduled' || idea.status === 'Posted') {
+    if (idea.status === 'Scheduled' || idea.status === 'Published') {
       return idea.createdAt.seconds;
     }
     return null;
@@ -202,9 +202,9 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         <div className="flex items-center justify-between gap-6">
           {/* Left Side: Status Filter Tabs */}
           <div className="flex-1 min-w-0">
-            <div className="relative">
+            <div className="relative group">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                <div className="flex gap-2 min-w-max">
+                <div className="flex gap-2">
                   {allowedStatuses.map(status => {
                     const count = clientIdeas.filter(idea => idea.status === status).length;
                     const isActive = statusFilter === status;
@@ -213,7 +213,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                         key={status}
                         onClick={() => handleStatusFilterChange(status)}
                         className={`
-                          relative group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
+                          relative group/tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0
                           ${isActive 
                             ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -222,7 +222,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                       >
                         <span>{status} ({count})</span>
                         {isActive && (
-                          <X className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <X className="h-3 w-3 opacity-0 group-hover/tab:opacity-100 transition-opacity" />
                         )}
                       </button>
                     );
@@ -230,7 +230,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 </div>
               </div>
               {/* Gradient fade for overflow indication */}
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
             </div>
           </div>
           
@@ -243,22 +243,27 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 placeholder="Search posts..." 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9 h-10 w-48" 
+                className="pl-9 h-10 w-40" 
               />
             </div>
             
             {/* New Post Button */}
             <CreatePostModal>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  New Post
-                </TooltipContent>
-              </Tooltip>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
+                      <div className="relative">
+                        <Plus className="h-4 w-4" />
+                        <div className="absolute -inset-1 border border-current rounded-full opacity-60" />
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    New Post
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </CreatePostModal>
           </div>
         </div>
