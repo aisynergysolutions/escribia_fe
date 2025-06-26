@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -35,7 +34,7 @@ const getSortFieldLabel = (field: SortField): string => {
 
 const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   
   // Load sort preferences from localStorage
   const loadSortPreferences = () => {
@@ -83,9 +82,9 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
       );
     }
 
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(idea => idea.status === statusFilter);
+    // Filter by selected status
+    if (selectedStatus) {
+      filtered = filtered.filter(idea => idea.status === selectedStatus);
     }
 
     // Sort posts
@@ -101,7 +100,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             comparison = a.createdAt.seconds - b.createdAt.seconds;
             break;
           case 'scheduled':
-            // For scheduled posts, use createdAt as a proxy for scheduled date
             comparison = a.createdAt.seconds - b.createdAt.seconds;
             break;
           case 'title':
@@ -175,9 +173,19 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   const getScheduledDate = (idea: Idea) => {
     if (idea.status === 'Scheduled' || idea.status === 'Posted') {
-      return formatDate(idea.createdAt);
+      return formatRelativeTime(idea.createdAt);
     }
     return '—';
+  };
+
+  const handleStatusSelect = (status: string) => {
+    if (selectedStatus === status) {
+      // Deselect if clicking the same status
+      setSelectedStatus(null);
+    } else {
+      // Select the new status
+      setSelectedStatus(status);
+    }
   };
 
   return (
@@ -187,29 +195,34 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         <div className="flex items-center justify-between gap-6">
           {/* Left Side: Status Filter Tabs */}
           <div className="flex-1">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <TabsList className="grid grid-cols-7 w-full">
-                <TabsTrigger 
-                  value="all" 
-                  className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-                >
-                  All ({clientIdeas.length})
-                </TabsTrigger>
-                {allowedStatuses.map(status => {
-                  const count = clientIdeas.filter(idea => idea.status === status).length;
-                  const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
-                  return (
-                    <TabsTrigger 
-                      key={status} 
-                      value={status} 
-                      className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-                    >
+            <div className="flex w-full">
+              {allowedStatuses.map(status => {
+                const count = clientIdeas.filter(idea => idea.status === status).length;
+                const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
+                const isSelected = selectedStatus === status;
+                
+                return (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusSelect(status)}
+                    className={`
+                      flex-1 relative group px-3 py-2 text-sm font-medium rounded-md transition-all duration-200
+                      ${isSelected 
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                    `}
+                  >
+                    <span className="truncate">
                       {displayStatus} ({count})
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </Tabs>
+                    </span>
+                    {isSelected && (
+                      <X className="absolute top-1 right-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           
           {/* Right Side: Search & Primary Action */}
@@ -364,17 +377,17 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500">
-              {searchTerm || statusFilter !== 'all' 
+              {searchTerm || selectedStatus 
                 ? "No posts match your filters." 
                 : "No posts found for this client yet."
               }
             </p>
-            {(searchTerm || statusFilter !== 'all') && (
+            {(searchTerm || selectedStatus) && (
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchTerm('');
-                  setStatusFilter('all');
+                  setSelectedStatus(null);
                 }} 
                 className="mt-2"
               >
