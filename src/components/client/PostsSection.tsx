@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -192,57 +191,60 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     <div className="space-y-6">
       {/* Unified Control Bar */}
       <div className="bg-white p-6 rounded-xl shadow-sm border">
-        <div className="flex items-center justify-between gap-6">
-          {/* Left Side: Status Filter Tabs */}
-          <div className="flex-1">
-            <div className="flex w-full">
-              {allowedStatuses.map(status => {
-                const count = clientIdeas.filter(idea => idea.status === status).length;
-                const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
-                const isSelected = selectedStatus === status;
-                
-                return (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusSelect(status)}
-                    className={`
-                      flex-1 relative group px-3 py-2 text-sm font-medium rounded-md transition-all duration-200
-                      ${isSelected 
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }
-                    `}
-                  >
-                    <span className="truncate">
-                      {displayStatus} ({count})
-                    </span>
-                    {isSelected && (
-                      <X className="absolute top-1 right-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
-                  </button>
-                );
-              })}
+        <div className="flex items-center gap-6">
+          {/* Left Side: Status Filter Tabs - Now Scrollable */}
+          <div className="flex-1 relative">
+            <div className="overflow-x-auto scrollbar-hide status-tabs-container">
+              <div className="flex w-max min-w-full">
+                {allowedStatuses.map(status => {
+                  const count = clientIdeas.filter(idea => idea.status === status).length;
+                  const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
+                  const isSelected = selectedStatus === status;
+                  
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusSelect(status)}
+                      className={`
+                        flex-1 relative group px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap
+                        ${isSelected 
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }
+                      `}
+                    >
+                      <span>
+                        {displayStatus} ({count})
+                      </span>
+                      {isSelected && (
+                        <X className="absolute top-1 right-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+            {/* Gradient fade for overflow indication */}
+            <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white to-transparent pointer-events-none opacity-0 status-gradient"></div>
           </div>
           
-          {/* Right Side: Search & Primary Action */}
-          <div className="flex items-center gap-4">
-            {/* Search Input */}
+          {/* Right Side: Search & Primary Action - Fixed */}
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Search Input - Made narrower */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input 
                 placeholder="Search posts..." 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9 h-10 w-64" 
+                className="pl-9 h-10 w-48 focus:border-indigo-600 focus:ring-indigo-600" 
               />
             </div>
             
-            {/* New Post Button */}
+            {/* New Post Button - Icon Only */}
             <CreatePostModal>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 h-10">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Post
+              <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
+                <PlusCircle className="h-4 w-4" />
               </Button>
             </CreatePostModal>
           </div>
