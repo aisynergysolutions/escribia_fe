@@ -5,6 +5,7 @@ import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
+import TimeslotDefinitionModal from '../components/ui/TimeslotDefinitionModal';
 import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
@@ -24,7 +25,10 @@ const IdeaDetails = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   const [comments, setComments] = useState<CommentThread[]>([]);
-  const [hasPoll, setHasPoll] = useState(false); // Track if there's an active poll
+  const [hasPoll, setHasPoll] = useState(false);
+  const [showTimeslotModal, setShowTimeslotModal] = useState(false);
+  const [predefinedTimeSlots, setPredefinedTimeSlots] = useState<string[]>([]);
+  const [activeDays, setActiveDays] = useState<string[]>([]);
 
   // Extract initial idea data from URL params (for all creation methods)
   let initialIdeaText = '';
@@ -140,6 +144,8 @@ const IdeaDetails = () => {
     );
   }
 
+  const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
+
   // Event handlers
   const handleSendToAI = () => {
     postEditor.handlePostChange("In today's rapidly evolving business landscape, staying ahead of industry trends is more critical than ever...");
@@ -200,6 +206,20 @@ const IdeaDetails = () => {
     setHasPoll(pollActive);
   };
 
+  const handleAddToQueue = () => {
+    if (!hasTimeslotsConfigured) {
+      setShowTimeslotModal(true);
+    } else {
+      // Proceed with normal add to queue functionality
+      console.log('Adding to queue with existing timeslots');
+    }
+  };
+
+  const handleSaveTimeslots = (timeslots: string[], days: string[]) => {
+    setPredefinedTimeSlots(timeslots);
+    setActiveDays(days);
+  };
+
   return (
     <div className="space-y-6">
       <UnsavedChangesDialog
@@ -219,6 +239,7 @@ const IdeaDetails = () => {
         status={ideaForm.formData.status}
         onStatusChange={ideaForm.setters.setStatus}
         onAddCustomStatus={handleAddCustomStatus}
+        onAddToQueue={handleAddToQueue}
       />
       
       {isNewPost && (
@@ -290,6 +311,14 @@ const IdeaDetails = () => {
           )}
         </div>
       </div>
+
+      <TimeslotDefinitionModal
+        isOpen={showTimeslotModal}
+        onClose={() => setShowTimeslotModal(false)}
+        onSave={handleSaveTimeslots}
+        initialTimeslots={predefinedTimeSlots}
+        initialDays={activeDays}
+      />
     </div>
   );
 };

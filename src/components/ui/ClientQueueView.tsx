@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { TooltipProvider } from './tooltip';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import ReschedulePostModal from './ReschedulePostModal';
 import TimeslotDefinitionModal from './TimeslotDefinitionModal';
 import QueueHeader from './QueueHeader';
@@ -32,7 +33,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     hasTimeslotsConfigured, 
     predefinedTimeSlots, 
     activeDays, 
-    updateTimeslots 
+    updateTimeslots,
+    loadMoreDays
   } = useQueueData(clientId, hideEmptySlots);
   
   const { handleRemoveFromQueue, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
@@ -210,6 +212,18 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
               );
             })}
           </TooltipProvider>
+        </div>
+
+        {/* Load More Days Button */}
+        <div className="flex justify-center mt-8">
+          <Button
+            onClick={loadMoreDays}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Load more days
+          </Button>
         </div>
       </div>
 

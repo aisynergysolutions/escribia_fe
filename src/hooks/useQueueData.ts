@@ -29,6 +29,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [predefinedTimeSlots, setPredefinedTimeSlots] = useState<string[]>([]);
   const [activeDays, setActiveDays] = useState<string[]>([]);
+  const [weeksToShow, setWeeksToShow] = useState(3);
   
   const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
 
@@ -69,9 +70,11 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
       queueSlots.map(slot => format(slot.datetime, 'yyyy-MM-dd'))
     ));
 
-    // For demo purposes, add next 7 days that match active days
+    // Add dates for the specified number of weeks that match active days
     const today = new Date();
-    for (let i = 0; i < 14; i++) {
+    const daysToShow = weeksToShow * 7;
+    
+    for (let i = 0; i < daysToShow; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const dayName = format(date, 'EEEE');
@@ -122,7 +125,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     });
 
     return groups;
-  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured]);
+  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, weeksToShow]);
 
   const refreshQueue = () => {
     setRefreshKey(prev => prev + 1);
@@ -134,6 +137,10 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     refreshQueue();
   };
 
+  const loadMoreDays = () => {
+    setWeeksToShow(prev => prev + 3);
+  };
+
   return {
     queueSlots,
     dayGroups,
@@ -141,6 +148,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     hasTimeslotsConfigured,
     predefinedTimeSlots,
     activeDays,
-    updateTimeslots
+    updateTimeslots,
+    loadMoreDays
   };
 };
