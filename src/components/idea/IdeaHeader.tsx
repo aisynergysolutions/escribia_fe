@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Send } from 'lucide-react';
@@ -75,8 +76,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
           <div className="flex-1 min-w-0">
             <EditableTitle
               title={title}
-              onTitleChange={onTitleChange}
-              placeholder={isNewPost ? "Enter idea title..." : "Untitled Idea"}
+              onSave={onTitleChange}
               className="text-2xl font-bold"
             />
           </div>
@@ -122,6 +122,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
       <SchedulePostModal
         open={showScheduleModal}
         onOpenChange={setShowScheduleModal}
+        postContent="Sample post content for preview"
         onSchedule={(date, time) => {
           console.log('Scheduled for:', date, time);
           setShowScheduleModal(false);
