@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { TooltipProvider } from './tooltip';
 import { useNavigate } from 'react-router-dom';
 import ReschedulePostModal from './ReschedulePostModal';
+import TimeslotDefinitionModal from './TimeslotDefinitionModal';
 import QueueHeader from './QueueHeader';
 import EmptySlotCard from './EmptySlotCard';
 import DayCard from './DayCard';
@@ -19,13 +20,30 @@ interface ClientQueueViewProps {
 const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const navigate = useNavigate();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [timeslotModalOpen, setTimeslotModalOpen] = useState(false);
   const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<any>(null);
   const [newScheduleDate, setNewScheduleDate] = useState<Date | null>(null);
   const [hideEmptySlots, setHideEmptySlots] = useState(false);
 
-  const { queueSlots, dayGroups, refreshQueue } = useQueueData(clientId, hideEmptySlots);
+  const { 
+    queueSlots, 
+    dayGroups, 
+    refreshQueue, 
+    hasTimeslotsConfigured, 
+    predefinedTimeSlots, 
+    activeDays, 
+    updateTimeslots 
+  } = useQueueData(clientId, hideEmptySlots);
+  
   const { handleRemoveFromQueue, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
   
+  // Show timeslot modal automatically if no timeslots are configured
+  React.useEffect(() => {
+    if (!hasTimeslotsConfigured) {
+      setTimeslotModalOpen(true);
+    }
+  }, [hasTimeslotsConfigured]);
+
   const showRescheduleModal = (draggedSlot: any, targetSlot: DaySlot) => {
     const slot = queueSlots.find(s => s.id === draggedSlot.id);
     if (slot) {
@@ -68,25 +86,77 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     setNewScheduleDate(null);
   };
 
+  const handleSaveTimeslots = (timeslots: string[], days: string[]) => {
+    updateTimeslots(timeslots, days);
+  };
+
+  // Show greyed out state if no timeslots configured
+  if (!hasTimeslotsConfigured) {
+    return (
+      <>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 opacity-50 pointer-events-none">
+          <QueueHeader 
+            hideEmptySlots={hideEmptySlots} 
+            onToggle={setHideEmptySlots}
+            onEditTimeslots={() => setTimeslotModalOpen(true)}
+          />
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Configure your posting schedule</h3>
+            <p className="text-sm text-gray-500">
+              Define at least 2 timeslots on at least 2 days to get started.
+            </p>
+          </div>
+        </div>
+
+        <TimeslotDefinitionModal
+          isOpen={timeslotModalOpen}
+          onClose={() => setTimeslotModalOpen(false)}
+          onSave={handleSaveTimeslots}
+          initialTimeslots={predefinedTimeSlots}
+          initialDays={activeDays}
+        />
+      </>
+    );
+  }
+
   if (queueSlots.length === 0 && hideEmptySlots) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-        <QueueHeader hideEmptySlots={hideEmptySlots} onToggle={setHideEmptySlots} />
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Your queue is empty</h3>
-          <p className="text-sm text-gray-500">
-            Define your posting times in Queue Settings.
-          </p>
+      <>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+          <QueueHeader 
+            hideEmptySlots={hideEmptySlots} 
+            onToggle={setHideEmptySlots}
+            onEditTimeslots={() => setTimeslotModalOpen(true)}
+          />
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <CalendarIcon className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Your queue is empty</h3>
+            <p className="text-sm text-gray-500">
+              Create posts to fill your posting schedule.
+            </p>
+          </div>
         </div>
-      </div>
+
+        <TimeslotDefinitionModal
+          isOpen={timeslotModalOpen}
+          onClose={() => setTimeslotModalOpen(false)}
+          onSave={handleSaveTimeslots}
+          initialTimeslots={predefinedTimeSlots}
+          initialDays={activeDays}
+        />
+      </>
     );
   }
 
   return (
     <>
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-        <QueueHeader hideEmptySlots={hideEmptySlots} onToggle={setHideEmptySlots} />
+        <QueueHeader 
+          hideEmptySlots={hideEmptySlots} 
+          onToggle={setHideEmptySlots}
+          onEditTimeslots={() => setTimeslotModalOpen(true)}
+        />
 
         <div className="space-y-4">
           <TooltipProvider>
@@ -149,6 +219,14 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
         onReschedule={handleRescheduleFromModal}
         selectedDate={newScheduleDate}
         postTitle={selectedPostForReschedule?.title || ''}
+      />
+
+      <TimeslotDefinitionModal
+        isOpen={timeslotModalOpen}
+        onClose={() => setTimeslotModalOpen(false)}
+        onSave={handleSaveTimeslots}
+        initialTimeslots={predefinedTimeSlots}
+        initialDays={activeDays}
       />
     </>
   );
