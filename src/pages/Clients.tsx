@@ -38,15 +38,23 @@ const Clients = () => {
     setClients(prev => [...prev, newClient]);
   }, []);
 
+  const handleDeleteClient = useCallback((clientId: string) => {
+    setClients(prev => prev.filter(client => client.id !== clientId));
+  }, []);
+
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, [setSearchQuery]);
 
   const memoizedClientCards = useMemo(() => {
     return filteredClients.map((client) => (
-      <ClientCard key={client.id} client={client} />
+      <ClientCard 
+        key={client.id} 
+        client={client} 
+        onDeleteClient={handleDeleteClient}
+      />
     ));
-  }, [filteredClients]);
+  }, [filteredClients, handleDeleteClient]);
 
   if (isLoading) {
     return (

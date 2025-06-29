@@ -62,12 +62,43 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     const newClient: Client = {
       id: `client-${Date.now()}`,
       clientName: clientName.trim(),
-      status: 'Onboarding',
+      status: 'onboarding',
       industry: 'TBD',
       contactName: 'TBD',
       contactEmail: 'TBD',
       brandBriefSummary: 'Awaiting onboarding completion',
-      updatedAt: { seconds: Math.floor(Date.now() / 1000) }
+      updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+      profileImage: undefined,
+      writingStyle: undefined,
+      createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+      subClients: [],
+      brandProfile: {
+        language: '',
+        locationFocus: '',
+        businessSize: '',
+        sellsWhat: '',
+        sellsToWhom: '',
+        brandPersonality: [],
+        brandTone: '',
+        emotionsToEvoke: [],
+        emojiUsage: '',
+        desiredPostLength: '',
+        coreValues: '',
+        brandStory: '',
+        uniqueSellingProposition: '',
+        hotTakesOrOpinions: '',
+        missionStatement: '',
+        inspirationSources: '',
+        recentCompanyEvents: '',
+        linkedinProfileUrl: '',
+        trainingDataUrls: [],
+        customInstructionsAI: ''
+      },
+      aiTraining: {
+        status: 'pending_data',
+        lastTrainedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+        modelVersion: undefined
+      }
     };
 
     onAddClient(newClient);
