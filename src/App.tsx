@@ -8,6 +8,7 @@ import MainLayout from "./components/layout/MainLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProfileDetailsPage from './pages/ProfileDetails';
 import Landing from './pages/Landing';
+import { AgencyProfileProvider } from '@/context/AgencyProfileContext';
 
 // Lazy load components for code splitting
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -37,110 +38,112 @@ const PageSkeleton = () => (
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
-              <Route path="/landing" element={
-                <Suspense fallback={<PageSkeleton />}>
-                  <Landing />
-                </Suspense>
-              } />
-              <Route path="/" element={<MainLayout />}>
-                <Route index element={
+    <AgencyProfileProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Router>
+            <div className="min-h-screen bg-gray-50">
+              <Routes>
+                <Route path="/landing" element={
                   <Suspense fallback={<PageSkeleton />}>
-                    <Dashboard />
+                    <Landing />
                   </Suspense>
                 } />
-                <Route path="clients" element={
+                <Route path="/" element={<MainLayout />}>
+                  <Route index element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Dashboard />
+                    </Suspense>
+                  } />
+                  <Route path="clients" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Clients />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/posts" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/comments" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/calendar" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/resources" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/analytics" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/settings" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ClientDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/ideas/:ideaId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <IdeaDetails />
+                    </Suspense>
+                  } />
+                  <Route path="clients/:clientId/profiles/:profileId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ProfileDetailsPage />
+                    </Suspense>
+                  } />
+                  <Route path="calendar" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Calendar />
+                    </Suspense>
+                  } />
+                  <Route path="templates" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Templates />
+                    </Suspense>
+                  } />
+                  <Route path="templates/:templateId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <TemplateDetails />
+                    </Suspense>
+                  } />
+                  <Route path="analytics" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Analytics />
+                    </Suspense>
+                  } />
+                  <Route path="profile" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Profile />
+                    </Suspense>
+                  } />
+                </Route>
+                <Route path="*" element={
                   <Suspense fallback={<PageSkeleton />}>
-                    <Clients />
+                    <NotFound />
                   </Suspense>
                 } />
-                <Route path="clients/:clientId" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/posts" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/comments" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/calendar" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/resources" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/analytics" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/settings" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ClientDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/ideas/:ideaId" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <IdeaDetails />
-                  </Suspense>
-                } />
-                <Route path="clients/:clientId/profiles/:profileId" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <ProfileDetailsPage />
-                  </Suspense>
-                } />
-                <Route path="calendar" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <Calendar />
-                  </Suspense>
-                } />
-                <Route path="templates" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <Templates />
-                  </Suspense>
-                } />
-                <Route path="templates/:templateId" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <TemplateDetails />
-                  </Suspense>
-                } />
-                <Route path="analytics" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <Analytics />
-                  </Suspense>
-                } />
-                <Route path="profile" element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <Profile />
-                  </Suspense>
-                } />
-              </Route>
-              <Route path="*" element={
-                <Suspense fallback={<PageSkeleton />}>
-                  <NotFound />
-                </Suspense>
-              } />
-            </Routes>
-          </div>
-        </Router>
-      </TooltipProvider>
-    </QueryClientProvider>
+              </Routes>
+            </div>
+          </Router>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AgencyProfileProvider>
   );
 }
 
