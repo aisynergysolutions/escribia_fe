@@ -1,15 +1,14 @@
 
 import React, { useState } from 'react';
-import { Plus, User } from 'lucide-react';
+import { Plus, User, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockClients } from '../../types';
 import { SubClient } from '../../types/interfaces';
 import { useNavigate } from 'react-router-dom';
 import AddProfileModal from '../AddProfileModal';
-import MainProfileCard from './MainProfileCard';
 
 interface ClientSettingsSectionProps {
   clientId: string;
@@ -59,20 +58,39 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
     navigate(`/clients/${clientId}/profiles/${profileId}`);
   };
 
-  const getLinkedInStatus = (profile: SubClient) => {
-    return profile.linkedinConnected ? 'Connected' : 'Not Connected';
-  };
-
-  const getLinkedInStatusColor = (profile: SubClient) => {
-    return profile.linkedinConnected 
+  const getLinkedInStatusColor = (connected: boolean) => {
+    return connected 
       ? 'bg-green-100 text-green-800' 
       : 'bg-red-100 text-red-800';
   };
 
+  // Create company profile object
+  const companyProfile = {
+    id: 'company-1',
+    name: client.clientName,
+    role: 'Company Account',
+    profileImage: client.profileImage,
+    linkedinConnected: true, // Mock data
+    isCompany: true
+  };
+
+  // Combine company profile with other profiles
+  const allProfiles = [companyProfile, ...profiles];
+
   return (
     <div className="space-y-8">
-      {/* Main Profile Section */}
-      <MainProfileCard client={client} clientId={clientId} />
+      {/* Client Header Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">{client.clientName}</h1>
+          <Badge className="bg-green-100 text-green-800">
+            {client.status === 'active' ? 'Active' : client.status}
+          </Badge>
+        </div>
+        <p className="text-gray-600">
+          {client.brandBriefSummary || 'No summary available'}
+        </p>
+      </div>
 
       {/* Associated Profiles Section */}
       <div>
@@ -87,7 +105,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profiles.map(profile => (
+          {allProfiles.map(profile => (
             <Card 
               key={profile.id} 
               className="cursor-pointer hover:shadow-md transition-shadow border hover:border-blue-200"
@@ -98,7 +116,11 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={profile.profileImage} />
                     <AvatarFallback>
-                      <User className="h-6 w-6" />
+                      {profile.isCompany ? (
+                        <Building2 className="h-6 w-6" />
+                      ) : (
+                        <User className="h-6 w-6" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
@@ -107,16 +129,10 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 mb-2">
-                  {profile.linkedinConnected ? (
-                    <Badge className={`text-xs ${getLinkedInStatusColor(profile)}`}>
-                      ✓ Connected
-                    </Badge>
-                  ) : (
-                    <Badge className={`text-xs ${getLinkedInStatusColor(profile)}`}>
-                      ❗ Not Connected
-                    </Badge>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Badge className={`text-xs ${getLinkedInStatusColor(profile.linkedinConnected)}`}>
+                    {profile.linkedinConnected ? '✓ Connected' : '❗ Not Connected'}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
