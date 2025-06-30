@@ -35,7 +35,7 @@ const ClientCard: React.FC<ClientCardProps> = React.memo(({ client, onDeleteClie
         </div>
       );
     }
-    
+
     return (
       <Link to={`/clients/${client.id}`} className="block h-full">
         {children}
@@ -70,8 +70,8 @@ const ClientCard: React.FC<ClientCardProps> = React.memo(({ client, onDeleteClie
         open={showOnboardingModal}
         onOpenChange={setShowOnboardingModal}
         clientName={client.clientName}
-        onboardingLink={client.onboarding_link} // <-- Pass the link here
-        onDeleteClient={handleDeleteClient}
+        onboardingLink={client.onboarding_link}
+        clientId={client.id}
       />
     </>
   );

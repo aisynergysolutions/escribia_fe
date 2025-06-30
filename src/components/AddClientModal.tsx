@@ -1,11 +1,12 @@
-
 import React, { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid'; // <-- Add this import
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Copy, Check, ExternalLink } from 'lucide-react';
+import { Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '../types';
+import { useClients } from '../context/ClientsContext';
 
 interface AddClientModalProps {
   onAddClient: (client: Client) => void;
@@ -19,10 +20,13 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [clientName, setClientName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [clientId, setClientId] = useState<string>(''); // <-- Add this state
+  const [isSubmitting, setIsSubmitting] = useState(false); // Add this state
   const { toast } = useToast();
+  const { addClient } = useClients();
 
-  // Mock Tally.so URL - in production this would be dynamic per agency
-  const tallyUrl = "https://tally.so/r/wkXKad?agency=your-agency-id";
+  // Build Tally.so URL dynamically
+  const tallyUrl = `https://tally.so/r/wkXKad?agency=agency_1&client=${clientId || 'client_1'}`;
 
   const handleCopyLink = async () => {
     try {
@@ -48,69 +52,39 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     window.open(tallyUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleAddClient = () => {
+  const handleAddClient = async () => {
     if (!clientName.trim()) {
       toast({
-        title: "Client Name Required",
-        description: "Please enter a client name before proceeding.",
+        title: "Missing Name",
+        description: "Please enter a client name.",
         variant: "destructive"
       });
       return;
     }
 
-    // Create new client with onboarding status
-    const newClient: Client = {
-      id: `client-${Date.now()}`,
-      clientName: clientName.trim(),
-      status: 'onboarding',
-      industry: 'TBD',
-      contactName: 'TBD',
-      contactEmail: 'TBD',
-      brandBriefSummary: 'Awaiting onboarding completion',
-      updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
-      profileImage: undefined,
-      writingStyle: undefined,
-      createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
-      subClients: [],
-      brandProfile: {
-        language: '',
-        locationFocus: '',
-        businessSize: '',
-        sellsWhat: '',
-        sellsToWhom: '',
-        brandPersonality: [],
-        brandTone: '',
-        emotionsToEvoke: [],
-        emojiUsage: '',
-        desiredPostLength: '',
-        coreValues: '',
-        brandStory: '',
-        uniqueSellingProposition: '',
-        hotTakesOrOpinions: '',
-        missionStatement: '',
-        inspirationSources: '',
-        recentCompanyEvents: '',
-        linkedinProfileUrl: '',
-        trainingDataUrls: [],
-        customInstructionsAI: ''
-      },
-      aiTraining: {
-        status: 'pending_data',
-        lastTrainedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
-        modelVersion: undefined
-      }
-    };
+    setIsSubmitting(true); // Start spinner
+    try {
+      await addClient({
+        id: clientId,
+        businessName: clientName.trim(),
+        onboarding_link: tallyUrl,
+      });
+      toast({
+        title: "Client Added Successfully!",
+        description: `${clientName} has been added with onboarding status. Share the link to complete setup.`
+      });
 
-    onAddClient(newClient);
-    
-    toast({
-      title: "Client Added Successfully!",
-      description: `${clientName} has been added with onboarding status. Share the link to complete setup.`
-    });
-
-    // Reset form and close modal
-    setClientName('');
-    setIsOpen(false);
+      setClientName('');
+      setIsOpen(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to add client.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false); // Stop spinner
+    }
   };
 
   const handleCancel = () => {
@@ -118,8 +92,19 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     setIsOpen(false);
   };
 
+  // Generate a new UUID when modal opens
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      setClientId(uuidv4());
+    } else {
+      setClientId('');
+      setClientName('');
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -199,15 +184,22 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={handleCancel}>
+            <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button 
               onClick={handleAddClient}
               className="bg-indigo-600 hover:bg-indigo-700"
-              disabled={!clientName.trim()}
+              disabled={!clientName.trim() || isSubmitting}
             >
-              Add New Client
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add New Client"
+              )}
             </Button>
           </div>
         </div>

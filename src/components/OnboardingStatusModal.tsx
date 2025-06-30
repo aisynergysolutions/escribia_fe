@@ -3,14 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Copy, Check, Trash2 } from 'lucide-react';
+import { Copy, Check, Trash2, Loader2 } from 'lucide-react'; // <-- import spinner
 import { useToast } from '@/hooks/use-toast';
+import { useClients } from '../context/ClientsContext'; // Add this import
 
 interface OnboardingStatusModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientName: string;
-  onboardingLink?: string; // <-- Add this
+  onboardingLink?: string;
+  clientId: string; // <-- Add this
 }
 
 const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
@@ -18,10 +20,12 @@ const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
   onOpenChange,
   clientName,
   onboardingLink, // <-- Add this
-  onDeleteClient
+  clientId // <-- Pass this prop from ClientCard
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false); // <-- add state
   const { toast } = useToast();
+  const { deleteClient } = useClients(); // Use the context
 
   // Mock Tally.so URL - in production this would be dynamic per client
   const tallyUrl = onboardingLink || "https://tally.so/r/wkXKad?agency=your-agency-id";
@@ -46,13 +50,24 @@ const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
     }
   };
 
-  const handleDeleteConfirm = () => {
-    onDeleteClient();
-    onOpenChange(false);
-    toast({
-      title: "Client Deleted",
-      description: `${clientName} has been removed and onboarding access canceled.`
-    });
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true); // start spinner
+    try {
+      await deleteClient(clientId);
+      onOpenChange(false);
+      toast({
+        title: "Client Deleted",
+        description: `${clientName} has been removed and onboarding access canceled.`
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete client.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false); // stop spinner
+    }
   };
 
   return (
@@ -61,13 +76,13 @@ const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Onboarding Pending</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Status Message */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800 leading-relaxed">
-              <strong>{clientName}</strong> hasn't completed their onboarding form yet. 
-              As soon as we receive their responses, you'll be able to start generating 
+              <strong>{clientName}</strong> hasn't completed their onboarding form yet.
+              As soon as we receive their responses, you'll be able to start generating
               personalized content for them.
             </p>
           </div>
@@ -81,16 +96,16 @@ const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
               Share this link with your client to complete their onboarding
             </p>
             <div className="relative">
-              <Input 
-                value={tallyUrl} 
-                readOnly 
-                className="pr-32 bg-gray-50 border-gray-200 text-gray-700 cursor-default" 
+              <Input
+                value={tallyUrl}
+                readOnly
+                className="pr-32 bg-gray-50 border-gray-200 text-gray-700 cursor-default"
               />
-              <Button 
-                type="button" 
-                variant="secondary" 
-                size="sm" 
-                onClick={handleCopyLink} 
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleCopyLink}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 px-3"
               >
                 {copied ? (
@@ -112,9 +127,16 @@ const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
           <div className="flex justify-between pt-4 border-t">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" disabled={isDeleting}>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Client
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Client"
+                  )}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -125,15 +147,26 @@ const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-                    Delete Client
+                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteConfirm}
+                    className="bg-red-600 hover:bg-red-700"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete Client"
+                    )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
 
-            <Button onClick={() => onOpenChange(false)}>
+            <Button onClick={() => onOpenChange(false)} disabled={isDeleting}>
               Ok
             </Button>
           </div>

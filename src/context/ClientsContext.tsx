@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { collection, getDocs, setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export type ClientCard = {
@@ -21,6 +21,7 @@ type ClientsContextType = {
         businessName: string;
         onboarding_link: string;
     }) => Promise<void>;
+    deleteClient: (id: string) => Promise<void>; // <-- Add this
 };
 
 const ClientsContext = createContext<ClientsContextType>({
@@ -29,6 +30,7 @@ const ClientsContext = createContext<ClientsContextType>({
     error: null,
     fetchClients: async () => { },
     addClient: async () => { },
+    deleteClient: async () => { }, // <-- Add this
 });
 
 export const useClients = () => useContext(ClientsContext);
@@ -38,29 +40,19 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const allowedStatuses = ['onboarding', 'active', 'paused', 'archived'] as const;
-    type StatusType = typeof allowedStatuses[number];
-
     const fetchClients = async () => {
-        // console.log('[ClientsContext] Starting fetchClients...');
         setLoading(true);
         setError(null);
         try {
             const clientsCol = collection(db, 'agencies', 'agency_1', 'clients');
             const snapshot = await getDocs(clientsCol);
-            // console.log('[ClientsContext] Snapshot size:', snapshot.size);
-            if (snapshot.empty) {
-                console.warn('[ClientsContext] No client documents found in Firestore.');
-            }
-            // console.log('[ClientsContext] Fetched client docs:', snapshot.docs.map(d => d.id));
             const clientsList: ClientCard[] = snapshot.docs.map(doc => {
                 const data = doc.data();
-                // console.log('[ClientsContext] Client doc data:', data);
                 return {
                     id: doc.id,
                     name: data.businessName || '',
                     oneLiner: data.oneLiner || '',
-                    status: allowedStatuses.includes(data.status) ? data.status as StatusType : 'active',
+                    status: data.status || '',
                     lastUpdated: typeof data.lastUpdated === 'number'
                         ? data.lastUpdated
                         : (data.lastUpdated?.seconds ? data.lastUpdated.seconds : 0),
@@ -68,14 +60,11 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
                 };
             });
             setClients(clientsList);
-            // console.log('[ClientsContext] Clients list after mapping:', clientsList);
         } catch (err: any) {
-            console.error('[ClientsContext] Error fetching clients:', err);
             setError(err.message || 'Failed to fetch clients');
             setClients([]);
         }
         setLoading(false);
-        // console.log('[ClientsContext] fetchClients finished.');
     };
 
     const addClient = async ({
@@ -102,12 +91,23 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const deleteClient = async (id: string) => {
+        try {
+            const clientDocRef = doc(db, 'agencies', 'agency_1', 'clients', id);
+            await deleteDoc(clientDocRef);
+            // Remove the client from local state without refetching
+            setClients(prev => prev.filter(client => client.id !== id));
+        } catch (err) {
+            console.error('[ClientsContext] Error deleting client:', err);
+        }
+    };
+
     useEffect(() => {
         fetchClients();
     }, []);
 
     return (
-        <ClientsContext.Provider value={{ clients, loading, error, fetchClients, addClient }}>
+        <ClientsContext.Provider value={{ clients, loading, error, fetchClients, addClient, deleteClient }}>
             {children}
         </ClientsContext.Provider>
     );

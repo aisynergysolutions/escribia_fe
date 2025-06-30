@@ -57,6 +57,7 @@ export interface Idea {
 export interface Client {
   id: string;
   clientName: string;
+  onboarding_link?: string; // Optional field for onboarding link
   industry: string;
   contactName: string;
   contactEmail: string;

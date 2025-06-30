@@ -4,6 +4,7 @@ import { Client } from './interfaces';
 export const mockClients: Client[] = [
   {
     id: 'client1',
+    onboarding_link: 'https://tally.so/r/mg1X3N',
     clientName: 'Tech Solutions Inc.',
     industry: 'Technology',
     contactName: 'John Doe',
