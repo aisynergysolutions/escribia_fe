@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatusBadge from '../common/StatusBadge';
@@ -71,6 +70,7 @@ const ClientCard: React.FC<ClientCardProps> = React.memo(({ client, onDeleteClie
         open={showOnboardingModal}
         onOpenChange={setShowOnboardingModal}
         clientName={client.clientName}
+        onboardingLink={client.onboarding_link} // <-- Pass the link here
         onDeleteClient={handleDeleteClient}
       />
     </>

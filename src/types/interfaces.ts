@@ -60,7 +60,7 @@ export interface Client {
   industry: string;
   contactName: string;
   contactEmail: string;
-  status: 'active' | 'onboarding' | 'paused' | 'archived';
+  status: string;
   profileImage?: string;
   brandBriefSummary?: string;
   writingStyle?: string;

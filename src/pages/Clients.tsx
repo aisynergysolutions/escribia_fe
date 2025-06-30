@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +6,11 @@ import ClientCard from '../components/ui/ClientCard';
 import LoadingGrid from '../components/common/LoadingGrid';
 import AddClientModal from '../components/AddClientModal';
 import { useSearchAndFilter } from '../hooks/useSearchAndFilter';
-import { mockClients } from '../types';
-import { Client } from '../types';
+import { useClients } from '../context/ClientsContext';
+import { ClientCard as ClientCardType } from '../context/ClientsContext';
 
 const Clients = () => {
-  const [clients, setClients] = useState<Client[]>(mockClients);
-  const [isLoading, setIsLoading] = useState(false);
+  const { clients: clientCards, loading: isLoading } = useClients();
 
   const {
     searchQuery,
@@ -20,48 +18,53 @@ const Clients = () => {
     filteredItems: filteredClients,
     hasResults
   } = useSearchAndFilter({
-    items: clients,
-    searchFields: ['clientName', 'industry', 'contactName', 'contactEmail', 'status'],
-    filterFn: useCallback((client: Client, query: string) => {
+    items: clientCards,
+    searchFields: ['name', 'oneLiner', 'status'],
+    filterFn: useCallback((client: ClientCardType, query: string) => {
       return (
-        client.clientName.toLowerCase().includes(query) ||
-        client.industry.toLowerCase().includes(query) ||
-        client.contactName.toLowerCase().includes(query) ||
-        client.contactEmail.toLowerCase().includes(query) ||
+        client.name.toLowerCase().includes(query) ||
+        client.oneLiner?.toLowerCase().includes(query) ||
         client.status.toLowerCase().includes(query)
       );
     }, [])
   });
 
-  const handleAddClient = useCallback((newClient: Client) => {
-    console.log('Adding new client:', newClient);
-    setClients(prev => [...prev, newClient]);
-  }, []);
+  // Onboarding modal state
+  const [onboardingModalClient, setOnboardingModalClient] = useState<ClientCardType | null>(null);
 
-  const handleDeleteClient = useCallback((clientId: string) => {
-    setClients(prev => prev.filter(client => client.id !== clientId));
-  }, []);
-
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  }, [setSearchQuery]);
+  const handleCardClick = (client: ClientCardType) => {
+    if (client.status === 'onboarding') {
+      setOnboardingModalClient(client);
+    }
+  };
 
   const memoizedClientCards = useMemo(() => {
-    return filteredClients.map((client) => (
-      <ClientCard 
-        key={client.id} 
-        client={client} 
-        onDeleteClient={handleDeleteClient}
-      />
-    ));
-  }, [filteredClients, handleDeleteClient]);
+    return filteredClients.map((client) => {
+        console.log("Rendering client card:", client); // Debug: client card props
+        return (
+            <div key={client.id} onClick={() => handleCardClick(client)}>
+                <ClientCard 
+                    client={{
+                        id: client.id,
+                        clientName: client.name,
+                        brandBriefSummary: client.oneLiner,
+                        status: client.status,
+                        updatedAt: { seconds: client.lastUpdated, nanoseconds: 0 },
+                        onboarding_link: client.onboarding_link,
+                        // ...add other placeholder fields if your ClientCard component requires them
+                    }}
+                />
+            </div>
+        );
+    });
+  }, [filteredClients]);
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
-          <AddClientModal onAddClient={handleAddClient}>
+          <AddClientModal onAddClient={() => {}}>
             <Button className="bg-indigo-600 hover:bg-indigo-700">
               <PlusCircle className="h-4 w-4 mr-2" />
               Add New Client
@@ -77,7 +80,7 @@ const Clients = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Clients</h1>
-        <AddClientModal onAddClient={handleAddClient}>
+        <AddClientModal onAddClient={() => {}}>
           <Button className="bg-indigo-600 hover:bg-indigo-700">
             <PlusCircle className="h-4 w-4 mr-2" />
             Add New Client
@@ -88,9 +91,9 @@ const Clients = () => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="Search clients by name, industry, contact, or status..."
+          placeholder="Search clients by name, summary, or status..."
           value={searchQuery}
-          onChange={handleSearchChange}
+          onChange={e => setSearchQuery(e.target.value)}
           className="pl-10"
         />
       </div>

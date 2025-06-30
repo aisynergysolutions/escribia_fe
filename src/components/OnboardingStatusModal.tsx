@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,20 +10,21 @@ interface OnboardingStatusModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientName: string;
-  onDeleteClient: () => void;
+  onboardingLink?: string; // <-- Add this
 }
 
 const OnboardingStatusModal: React.FC<OnboardingStatusModalProps> = ({
   open,
   onOpenChange,
   clientName,
+  onboardingLink, // <-- Add this
   onDeleteClient
 }) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   // Mock Tally.so URL - in production this would be dynamic per client
-  const tallyUrl = "https://tally.so/r/wkXKad?agency=your-agency-id";
+  const tallyUrl = onboardingLink || "https://tally.so/r/wkXKad?agency=your-agency-id";
 
   const handleCopyLink = async () => {
     try {

@@ -10,7 +10,8 @@ import {
   BarChart3,
   Settings,
   MessageCircle,
-  PlusCircle
+  PlusCircle,
+  Users
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,9 +58,9 @@ const clientNavItems = [
     group: 'management'
   },
   { 
-    title: 'Settings', 
+    title: 'Profiles', 
     path: '/settings', 
-    icon: Settings,
+    icon: Users,
     group: 'management'
   }
 ];

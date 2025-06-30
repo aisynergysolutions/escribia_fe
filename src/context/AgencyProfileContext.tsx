@@ -54,12 +54,12 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async (agencyId: string) => {
-    console.log('[AgencyProfileContext] fetchProfile called with agencyId:', agencyId);
+    // console.log('[AgencyProfileContext] fetchProfile called with agencyId:', agencyId);
     setLoading(true);
     setError(null);
     try {
       const docRef = doc(db, 'agencies', agencyId);
-      console.log('[AgencyProfileContext] Fetching document from Firestore:', docRef.path);
+      // console.log('[AgencyProfileContext] Fetching document from Firestore:', docRef.path);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
         console.warn('[AgencyProfileContext] Agency not found:', agencyId);
@@ -68,12 +68,12 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
         setLoading(false);
         return;
       }
-      console.log('[AgencyProfileContext] Fetched agency profile document:', docSnap.id);
+      // console.log('[AgencyProfileContext] Fetched agency profile document:', docSnap.id);
       const data = docSnap.data();
       let photoUrl = data.photoUrl || '';
       if (photoUrl && !photoUrl.startsWith('http')) {
         try {
-          console.log('[AgencyProfileContext] Resolving photoUrl from storage:', photoUrl);
+          // console.log('[AgencyProfileContext] Resolving photoUrl from storage:', photoUrl);
           photoUrl = await getDownloadURL(ref(storage, photoUrl));
         } catch (e) {
           console.warn('[AgencyProfileContext] Failed to get download URL for photoUrl:', photoUrl, e);
@@ -105,7 +105,7 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
             : [],
         },
       };
-      console.log('[AgencyProfileContext] Fetched agency profile:', fetchedProfile);
+      // console.log('[AgencyProfileContext] Fetched agency profile:', fetchedProfile);
       setProfile(fetchedProfile);
     } catch (err: any) {
       console.error('[AgencyProfileContext] Error fetching agency profile:', err);
@@ -168,7 +168,7 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
   };
 
   useEffect(() => {
-    console.log('[AgencyProfileContext] Provider mounted, calling fetchProfile');
+    // console.log('[AgencyProfileContext] Provider mounted, calling fetchProfile');
     fetchProfile('agency_1');
   }, []);
 
