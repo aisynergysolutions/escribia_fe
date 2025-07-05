@@ -8,7 +8,6 @@ import ResourcesSection from '../components/client/ResourcesSection';
 import AnalyticsSection from '../components/client/AnalyticsSection';
 import ClientSettingsSection from '../components/client/ClientSettingsSection';
 import { useClients } from '../context/ClientsContext';
-import ClientSidebar from '../components/layout/ClientSidebar'; // <-- Add this import
 
 const ClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -89,13 +88,8 @@ const ClientDetails = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <ClientSidebar />
-      <main className="flex-1 p-6">
-        <div className="space-y-6">
-          {renderContent()}
-        </div>
-      </main>
+    <div className="space-y-6">
+      {renderContent()}
     </div>
   );
 };

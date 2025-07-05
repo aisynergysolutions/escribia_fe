@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -8,7 +7,6 @@ import {
   Calendar,
   FolderOpen,
   BarChart3,
-  Settings,
   MessageCircle,
   PlusCircle,
   Users
@@ -17,60 +15,24 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockClients } from '../../types';
 import CreatePostModal from '../CreatePostModal';
+import { useClients } from '../../context/ClientsContext';
 
 const clientNavItems = [
-  { 
-    title: 'Overview', 
-    path: '', 
-    icon: LayoutDashboard,
-    group: 'main'
-  },
-  { 
-    title: 'Posts', 
-    path: '/posts', 
-    icon: FileText,
-    group: 'content'
-  },
-  { 
-    title: 'Comments', 
-    path: '/comments', 
-    icon: MessageCircle,
-    group: 'content'
-  },
-  { 
-    title: 'Calendar', 
-    path: '/calendar', 
-    icon: Calendar,
-    group: 'content'
-  },
-  { 
-    title: 'Resources', 
-    path: '/resources', 
-    icon: FolderOpen,
-    group: 'management'
-  },
-  { 
-    title: 'Analytics', 
-    path: '/analytics', 
-    icon: BarChart3,
-    group: 'management'
-  },
-  { 
-    title: 'Profiles', 
-    path: '/settings', 
-    icon: Users,
-    group: 'management'
-  }
+  { title: 'Overview', path: '', icon: LayoutDashboard, group: 'main' },
+  { title: 'Posts', path: '/posts', icon: FileText, group: 'content' },
+  { title: 'Comments', path: '/comments', icon: MessageCircle, group: 'content' },
+  { title: 'Calendar', path: '/calendar', icon: Calendar, group: 'content' },
+  { title: 'Resources', path: '/resources', icon: FolderOpen, group: 'management' },
+  { title: 'Analytics', path: '/analytics', icon: BarChart3, group: 'management' },
+  { title: 'Profiles', path: '/settings', icon: Users, group: 'management' }
 ];
 
 const ClientSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string }>();
-  
-  const client = mockClients.find(c => c.id === clientId);
+  const { clientDetails, clientDetailsLoading } = useClients();
 
   const handleBackToClients = () => {
     navigate('/clients');
@@ -80,8 +42,20 @@ const ClientSidebar = () => {
     navigate(`/clients/${clientId}`);
   };
 
-  if (!client) {
-    return null;
+  if (clientDetailsLoading) {
+    return (
+      <div className="w-56 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col justify-center items-center">
+        <span className="text-slate-500 text-sm">Loading client...</span>
+      </div>
+    );
+  }
+
+  if (!clientDetails) {
+    return (
+      <div className="w-56 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col justify-center items-center">
+        <span className="text-slate-500 text-sm">Client not found</span>
+      </div>
+    );
   }
 
   const mainItems = clientNavItems.filter(item => item.group === 'main');
@@ -130,13 +104,14 @@ const ClientSidebar = () => {
         >
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={client.profileImage} alt={client.clientName} />
+              {/* You can add a profileImage field to your Firestore client if needed */}
+              <AvatarImage src={clientDetails.profileImage || ''} alt={clientDetails.clientName} />
               <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
-                {client.clientName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                {clientDetails.clientName?.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h1 className="text-base font-semibold text-slate-900 truncate">{client.clientName}</h1>
+              <h1 className="text-base font-semibold text-slate-900 truncate">{clientDetails.clientName}</h1>
             </div>
           </div>
         </button>
@@ -192,12 +167,12 @@ const ClientSidebar = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Status</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
-              client.status === 'active' ? 'bg-green-100 text-green-700' :
-              client.status === 'onboarding' ? 'bg-blue-100 text-blue-700' :
-              client.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
+              clientDetails.status === 'active' ? 'bg-green-100 text-green-700' :
+              clientDetails.status === 'onboarding' ? 'bg-blue-100 text-blue-700' :
+              clientDetails.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
               'bg-gray-100 text-gray-700'
             }`}>
-              {client.status}
+              {clientDetails.status}
             </span>
           </div>
         </div>
