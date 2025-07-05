@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import ClientOverview from '../components/ui/ClientOverview';
 import PostsSection from '../components/client/PostsSection';
@@ -8,14 +7,34 @@ import CalendarSection from '../components/client/CalendarSection';
 import ResourcesSection from '../components/client/ResourcesSection';
 import AnalyticsSection from '../components/client/AnalyticsSection';
 import ClientSettingsSection from '../components/client/ClientSettingsSection';
-import { mockClients } from '../types';
+import { useClients } from '../context/ClientsContext';
+import ClientSidebar from '../components/layout/ClientSidebar'; // <-- Add this import
 
 const ClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const location = useLocation();
+  const {
+    getClientDetails,
+    clientDetails,
+    clientDetailsLoading,
+    clientDetailsError,
+  } = useClients();
 
-  // Find client data
-  const client = mockClients.find(c => c.id === clientId);
+  useEffect(() => {
+    console.log('[ClientDetails] clientId from params:', clientId);
+    if (clientId) {
+      getClientDetails(clientId).then((details) => {
+        console.log('[ClientDetails] getClientDetails result:', details);
+      });
+    }
+    // eslint-disable-next-line
+  }, [clientId]);
+
+  useEffect(() => {
+    console.log('[ClientDetails] clientDetails:', clientDetails);
+    console.log('[ClientDetails] clientDetailsLoading:', clientDetailsLoading);
+    console.log('[ClientDetails] clientDetailsError:', clientDetailsError);
+  }, [clientDetails, clientDetailsLoading, clientDetailsError]);
 
   // Determine current section based on path
   const getCurrentSection = () => {
@@ -31,7 +50,15 @@ const ClientDetails = () => {
 
   const currentSection = getCurrentSection();
 
-  if (!client) {
+  if (clientDetailsLoading) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-semibold">Loading client...</h2>
+      </div>
+    );
+  }
+
+  if (clientDetailsError || !clientDetails) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-semibold">Client not found</h2>
@@ -62,8 +89,13 @@ const ClientDetails = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {renderContent()}
+    <div className="flex min-h-screen">
+      <ClientSidebar />
+      <main className="flex-1 p-6">
+        <div className="space-y-6">
+          {renderContent()}
+        </div>
+      </main>
     </div>
   );
 };

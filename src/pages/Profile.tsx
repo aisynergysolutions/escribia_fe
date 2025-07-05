@@ -14,7 +14,7 @@ import { useAgencyProfile } from '@/context/AgencyProfileContext';
 
 const Profile = () => {
   const { profile, loading, error, updateProfile } = useAgencyProfile();
-  const agencyId = 'agency_1'; // Or get dynamically if needed
+  const agencyId = 'agency1'; // Or get dynamically if needed
 
   // Debug: log when Profile mounts
   useEffect(() => {

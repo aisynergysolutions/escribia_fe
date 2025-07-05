@@ -10,7 +10,7 @@ export const mockTemplates: Template[] = [
     funnelStage: 'TOFU',
     contentType: 'text',
     scope: 'agency_specific',
-    agencyId: 'agency_1',
+    agencyId: 'agency1',
     createdAt: { seconds: 1714416000, nanoseconds: 0 },
     usageCount: 12,
     examplePlaceholders: { industry: 'manufacturing', insight: 'automation improves efficiency by 40%', opinion: 'human oversight remains critical' },
@@ -24,7 +24,7 @@ export const mockTemplates: Template[] = [
     funnelStage: 'MOFU',
     contentType: 'text',
     scope: 'agency_specific',
-    agencyId: 'agency_1',
+    agencyId: 'agency1',
     createdAt: { seconds: 1714329600, nanoseconds: 0 },
     usageCount: 8,
     examplePlaceholders: { 
@@ -45,7 +45,7 @@ export const mockTemplates: Template[] = [
     funnelStage: 'TOFU',
     contentType: 'text',
     scope: 'agency_specific',
-    agencyId: 'agency_1',
+    agencyId: 'agency1',
     createdAt: { seconds: 1714243200, nanoseconds: 0 },
     usageCount: 5,
     examplePlaceholders: {

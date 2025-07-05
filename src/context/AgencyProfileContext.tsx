@@ -169,7 +169,7 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
 
   useEffect(() => {
     // console.log('[AgencyProfileContext] Provider mounted, calling fetchProfile');
-    fetchProfile('agency_1');
+    fetchProfile('agency1');
   }, []);
 
   return (

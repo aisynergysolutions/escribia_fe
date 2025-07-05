@@ -26,7 +26,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   const { addClient } = useClients();
 
   // Build Tally.so URL dynamically
-  const tallyUrl = `https://tally.so/r/wkXKad?agency=agency_1&client=${clientId || 'client_1'}`;
+  const tallyUrl = `https://tally.so/r/wkXKad?agency=agency1&client=${clientId || 'client_1'}`;
 
   const handleCopyLink = async () => {
     try {
@@ -66,7 +66,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     try {
       await addClient({
         id: clientId,
-        businessName: clientName.trim(),
+        clientName: clientName.trim(),
         onboarding_link: tallyUrl,
       });
       toast({

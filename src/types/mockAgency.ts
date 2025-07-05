@@ -2,7 +2,7 @@
 import { Agency } from './interfaces';
 
 export const mockAgency: Agency = {
-  id: 'agency_1',
+  id: 'agency1',
   agencyName: 'Acme Media Agency',
   primaryContactEmail: 'hello@acme.com',
   subscription: {

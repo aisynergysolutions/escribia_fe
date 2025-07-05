@@ -39,7 +39,7 @@ const ProfileDetails: React.FC = () => {
 
   // Form data for main company profile
   const [clientInfoData, setClientInfoData] = useState({
-    businessName: 'TechCorp Solutions',
+    clientName: 'TechCorp Solutions',
     websiteUrl: 'https://techcorp-solutions.com',
     linkedinUrl: 'https://linkedin.com/company/techcorp-solutions',
     companySize: '51-200',

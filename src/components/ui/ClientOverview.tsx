@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,13 +12,13 @@ import { format, addMonths, subMonths } from 'date-fns';
 import StatCard from './StatCard';
 import PostCalendar from './PostCalendar';
 import IdeaCard from './IdeaCard';
-import { mockClients, mockIdeas } from '../../types';
+import { useClients } from '../../context/ClientsContext';
 
 interface ClientOverviewProps {
   clientId: string;
 }
 
-// Mock recent comments data
+// Mock recent comments data (keep for now)
 const mockRecentComments = [
   {
     id: '1',
@@ -62,18 +61,25 @@ const mockRecentComments = [
 const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
   const [calendarMonth, setCalendarMonth] = useState(new Date());
-  
-  const client = mockClients.find(c => c.id === clientId);
-  const clientIdeas = mockIdeas.filter(idea => idea.clientId === clientId);
 
-  if (!client) {
+  // Get client details from context
+  const { clientDetails, clientDetailsLoading } = useClients();
+
+  // TODO: Replace with Firestore ideas fetch in the future
+  const clientIdeas: any[] = []; // Placeholder for ideas, implement fetching if needed
+
+  if (clientDetailsLoading) {
+    return <div className="text-center py-12">Loading client...</div>;
+  }
+
+  if (!clientDetails) {
     return <div>Client not found</div>;
   }
 
   // Calculate statistics - removed totalPosts
   const publishedPosts = clientIdeas.filter(idea => idea.status === 'Published').length;
   const scheduledPosts = clientIdeas.filter(idea => idea.status === 'Scheduled').length;
-  
+
   // Mock engagement data - in real app this would come from LinkedIn API
   const avgViews = 1250;
   const avgEngagement = 85;
@@ -150,7 +156,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
-                <h2 className="text-xl font-semibold">Content Calendar for {client.clientName}</h2>
+                <h2 className="text-xl font-semibold">Content Calendar for {clientDetails.clientName}</h2>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
