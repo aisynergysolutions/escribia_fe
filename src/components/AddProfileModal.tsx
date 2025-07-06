@@ -24,16 +24,16 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [profileId, setProfileId] = useState('');
   const [profileName, setProfileName] = useState('');
-  const [roleType, setRoleType] = useState<'Company Account' | 'Person' | ''>('');
+  const [profileType, setprofileType] = useState<'Company Account' | 'Person' | ''>('');
   const [personRole, setPersonRole] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   // Generate Tally URL based on role, including the "role" parameter
   const tallyUrl =
-    roleType === 'Company Account'
+    profileType === 'Company Account'
       ? `https://tally.so/r/wM2YQg?agency=agency1&client=${clientId}&profile=${profileId}&role=company`
-      : roleType === 'Person'
+      : profileType === 'Person'
         ? `https://tally.so/r/w8VjDO?agency=agency1&client=${clientId}&profile=${profileId}&role=person`
         : '';
 
@@ -66,8 +66,8 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
       await addProfile(clientId, {
         id: profileId,
         profileName,
-        role: roleType === 'Person' ? personRole : 'Company Account', // <-- always "Company Account" for company
-        roleType: roleType === 'Person' ? 'Person' : 'Company',       // <-- always "Company" for company
+        role: profileType === 'Person' ? personRole : 'Company Account', // <-- always "Company Account" for company
+        profileType: profileType === 'Person' ? 'Person' : 'Company',       // <-- always "Company" for company
         status: 'Onboarding',
         onboardingLink: tallyUrl,
         createdAt: new Date(),
@@ -87,17 +87,17 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
     if (open) {
       setProfileId(uuidv4());
       setProfileName('');
-      setRoleType('');
+      setprofileType('');
       setPersonRole('');
     }
   };
 
   const allFieldsFilled =
     profileName.trim() &&
-    roleType &&
+    profileType &&
     profileId &&
     clientId &&
-    (roleType !== 'Person' || personRole.trim());
+    (profileType !== 'Person' || personRole.trim());
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -132,7 +132,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
             <label className="text-sm font-medium text-gray-700">
               Role *
             </label>
-            <Select value={roleType} onValueChange={v => setRoleType(v as 'Company Account' | 'Person')}>
+            <Select value={profileType} onValueChange={v => setprofileType(v as 'Company Account' | 'Person')}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select role type" />
               </SelectTrigger>
@@ -143,7 +143,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
             </Select>
           </div>
           {/* Person Role Input */}
-          {roleType === 'Person' && (
+          {profileType === 'Person' && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Person Role
@@ -157,7 +157,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
             </div>
           )}
           {/* Link Sharing Component */}
-          {roleType && (
+          {profileType && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Profile Onboarding Link

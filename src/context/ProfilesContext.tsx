@@ -7,7 +7,7 @@ export type ProfileCard = {
   profileName: string;
   status?: string;
   role?: string;
-  roleType?: string; // Optional, if you want to include roleType
+  profileType?: string; // Optional, if you want to include profileType
   onboardingLink?: string;
   createdAt?: Date;
 };
@@ -23,7 +23,7 @@ interface ProfilesContextType {
       id: string;
       profileName: string;
       role: string;
-      roleType?: string; // Optional, if you want to include roleType
+      profileType?: string; // Optional, if you want to include profileType
       status: string;
       onboardingLink: string;
       createdAt: Date;
@@ -78,7 +78,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
         profileName: doc.data().profileName || '',
         status: doc.data().status || '',
         role: doc.data().role || '',
-        roleType: doc.data().roleType || '', // Optional, if you want to include roleType
+        profileType: doc.data().profileType || '', // Optional, if you want to include profileType
         onboardingLink: doc.data().onboardingLink || '',
         createdAt: doc.data().createdAt
           ? new Date(
@@ -109,7 +109,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
       id: string;
       profileName: string;
       role: string;
-      roleType?: string; // Optional, if you want to include roleType
+      profileType?: string; // Optional, if you want to include profileType
       status: string;
       onboardingLink: string;
       createdAt: Date;
@@ -129,7 +129,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(profileRef, {
         profileName: profile.profileName,
         role: profile.role,
-        roleType: profile.roleType,
+        profileType: profile.profileType,
         status: profile.status,
         onboardingLink: profile.onboardingLink,
         createdAt: profile.createdAt,
