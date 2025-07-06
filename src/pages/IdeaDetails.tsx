@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { mockIdeas, mockClients } from '../types';
+// Remove mockIdeas import, keep mockClients for now
+import { mockClients } from '../types';
 import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
@@ -10,14 +11,27 @@ import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
+import { usePosts } from '@/context/PostsContext'; // <-- Import PostsContext
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   const isNewPost = searchParams.get('new') === 'true';
-  
+
+  // NEW: Use PostsContext for post details
+  const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
+  const { getPostDetails, postDetails, postDetailsLoading, postDetailsError } = usePosts();
+
+  // Fetch post details when ideaId/clientId/agencyId changes and not a new post
+  useEffect(() => {
+    if (!isNewPost && agencyId && clientId && ideaId) {
+      getPostDetails(agencyId, clientId, ideaId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agencyId, clientId, ideaId, isNewPost]);
+
   const [selectedHookIndex, setSelectedHookIndex] = useState(-1);
   const [useAsTrainingData, setUseAsTrainingData] = useState(false);
   const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
@@ -50,10 +64,6 @@ const IdeaDetails = () => {
     }
   }
 
-  // Find the idea and client
-  const idea = !isNewPost ? mockIdeas.find(i => i.id === ideaId) : null;
-  const client = mockClients.find(c => c.id === clientId);
-
   // Mock sub-client data - hardcoded as requested
   const mockSubClient = {
     name: "Sarah Johnson",
@@ -62,51 +72,33 @@ const IdeaDetails = () => {
   };
 
   // Custom hooks - pass the extracted initial idea data
+  // For new posts, use URL params; for existing, use postDetails
   const ideaForm = useIdeaForm({
-    idea: idea,
+    idea: isNewPost ? undefined : postDetails,
     isNewPost,
-    initialIdeaFromUrl: initialIdeaText,
-    objectiveFromUrl: urlObjective,
-    templateFromUrl: urlTemplate
+    initialIdeaFromUrl: '', // You can extract from URL if needed
+    objectiveFromUrl: '',
+    templateFromUrl: ''
   });
 
-  const postEditor = usePostEditor({ initialText: idea?.currentDraftText });
+  const postEditor = usePostEditor({ initialText: postDetails?.currentDraftText });
 
-  // Mock version history data
-  const [versionHistory] = useState([{
-    id: 'v1',
-    version: 1,
-    text: 'Initial AI-generated content about the future of AI in marketing. This content explores how artificial intelligence is transforming the marketing landscape and what businesses need to know.',
-    createdAt: new Date('2023-12-15T10:30:00'),
-    generatedByAI: true,
-    notes: 'First generation from initial prompt'
-  }, {
-    id: 'v2',
-    version: 2,
-    text: 'Revised content with more focus on practical applications and case studies. This version includes real-world examples of companies successfully implementing AI in their marketing strategies.',
-    createdAt: new Date('2023-12-15T11:15:00'),
-    generatedByAI: true,
-    notes: 'Regenerated with editing instructions to add more examples'
-  }, {
-    id: 'v3',
-    version: 3,
-    text: 'Latest version with improved structure and actionable insights. This comprehensive guide provides step-by-step recommendations for businesses looking to leverage AI in their marketing efforts.',
-    createdAt: new Date('2023-12-15T14:20:00'),
-    generatedByAI: true,
-    notes: 'Latest version with improved structure'
-  }]);
+  // Version history: use postDetails.drafts if available
+  const versionHistory = !isNewPost && postDetails?.drafts
+    ? postDetails.drafts.map((draft, idx) => ({
+        id: `v${draft.version}`,
+        version: draft.version,
+        text: draft.text,
+        createdAt: new Date(draft.createdAt.seconds * 1000),
+        generatedByAI: draft.generatedByAI,
+        notes: draft.notes
+      }))
+    : [];
 
-  // Sample hooks to demonstrate functionality
-  const sampleHooks = [
-    {
-      text: "Cloud migration security gaps putting your data at risk.\nHow to bridge them effectively.",
-      angle: "Security Risk",
-    },
-    {
-      text: "Is your cloud transition secure? Common pitfalls to avoid.",
-      angle: "Fear-based",
-    },
-  ];
+  // Hooks: use postDetails.generatedHooks if available
+  const sampleHooks = !isNewPost && postDetails?.generatedHooks
+    ? postDetails.generatedHooks
+    : [];
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -133,18 +125,45 @@ const IdeaDetails = () => {
     return () => window.removeEventListener('popstate', handleNavigation);
   }, [postEditor.hasUnsavedChanges]);
 
-  if (!client) {
+  if (!isNewPost && postDetailsLoading) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold">Client not found</h2>
-        <Link to="/clients" className="text-indigo-600 hover:underline mt-4 inline-block">
-          Return to clients list
+        <h2 className="text-2xl font-semibold">Loading post details...</h2>
+      </div>
+    );
+  }
+
+  if (!isNewPost && postDetailsError) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-semibold">Failed to load post details</h2>
+        <p className="text-red-500">{postDetailsError}</p>
+      </div>
+    );
+  }
+
+  if (!isNewPost && !postDetails) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-semibold">Post not found</h2>
+        <Link to={`/clients/${clientId}/posts`} className="text-indigo-600 hover:underline mt-4 inline-block">
+          Return to posts list
         </Link>
       </div>
     );
   }
 
-  const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
+  // Sample hooks to demonstrate functionality
+  // const sampleHooks = [
+  //   {
+  //     text: "Cloud migration security gaps putting your data at risk.\nHow to bridge them effectively.",
+  //     angle: "Security Risk",
+  //   },
+  //   {
+  //     text: "Is your cloud transition secure? Common pitfalls to avoid.",
+  //     angle: "Fear-based",
+  //   },
+  // ];
 
   // Event handlers
   const handleSendToAI = () => {
@@ -220,8 +239,10 @@ const IdeaDetails = () => {
     setActiveDays(days);
   };
 
+  const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <UnsavedChangesDialog
         open={showUnsavedDialog}
         onOpenChange={setShowUnsavedDialog}
@@ -231,12 +252,12 @@ const IdeaDetails = () => {
 
       <IdeaHeader
         clientId={clientId!}
-        title={ideaForm.formData.title}
+        title={isNewPost ? ideaForm.formData.title : postDetails?.title || ''}
         onTitleChange={ideaForm.setters.setTitle}
         isNewPost={isNewPost}
         hasUnsavedChanges={ideaForm.hasUnsavedChanges}
         onSave={ideaForm.handleSave}
-        status={ideaForm.formData.status}
+        status={isNewPost ? ideaForm.formData.status : postDetails?.status || ''}
         onStatusChange={ideaForm.setters.setStatus}
         onAddCustomStatus={handleAddCustomStatus}
         onAddToQueue={handleAddToQueue}
@@ -283,10 +304,10 @@ const IdeaDetails = () => {
               <SubClientDisplayCard subClient={mockSubClient} />
               <IdeaForm
                 formData={{
-                  initialIdea: ideaForm.formData.initialIdea,
-                  objective: ideaForm.formData.objective,
-                  template: ideaForm.formData.template,
-                  internalNotes: ideaForm.formData.internalNotes
+                  initialIdea: isNewPost ? ideaForm.formData.initialIdea : postDetails?.initialIdeaPrompt || '',
+                  objective: isNewPost ? ideaForm.formData.objective : postDetails?.objective || '',
+                  template: isNewPost ? ideaForm.formData.template : postDetails?.templateUsedId || '',
+                  internalNotes: isNewPost ? ideaForm.formData.internalNotes : postDetails?.internalNotes || ''
                 }}
                 setters={{
                   setInitialIdea: ideaForm.setters.setInitialIdea,

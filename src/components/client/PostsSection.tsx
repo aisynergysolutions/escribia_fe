@@ -9,6 +9,8 @@ import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
 import { mockIdeas, mockClients, Idea } from '../../types';
 import { formatDate, formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
+import { usePosts } from '@/context/PostsContext'; // <-- Add this import
+import { useNavigate } from 'react-router-dom';
 
 interface PostsSectionProps {
   clientId: string;
@@ -34,7 +36,22 @@ const getSortFieldLabel = (field: SortField): string => {
 const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  
+
+  // NEW: Use PostsContext
+  const { posts, loading, error, fetchPosts } = usePosts();
+  const navigate = useNavigate();
+
+  // TODO: Replace with real agencyId logic as needed
+  const agencyId = 'agency1';
+
+  // Fetch posts when clientId or agencyId changes
+  useEffect(() => {
+    if (agencyId && clientId) {
+      fetchPosts(agencyId, clientId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agencyId, clientId]);
+
   // Load sort preferences from localStorage
   const loadSortPreferences = () => {
     try {
@@ -61,8 +78,8 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     }
   }, [sortField, sortDirection]);
 
-  // Find ideas for this client
-  const clientIdeas = mockIdeas.filter(idea => idea.clientId === clientId);
+  // Replace mockIdeas with posts from context
+  const clientIdeas = posts;
 
   // Get client information
   const getClientInfo = (clientId: string) => {
@@ -70,14 +87,13 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   };
 
   // Filter and sort posts
-  const getFilteredAndSortedPosts = (): Idea[] => {
+  const getFilteredAndSortedPosts = (): typeof posts => {
     let filtered = clientIdeas;
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(idea => 
-        idea.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        idea.currentDraftText.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(idea =>
+        idea.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -88,18 +104,19 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
     // Sort posts
     if (sortDirection !== 'none') {
-      filtered.sort((a, b) => {
+      filtered = [...filtered].sort((a, b) => {
         let comparison = 0;
-        
+
         switch (sortField) {
           case 'updated':
-            comparison = a.updatedAt.seconds - b.updatedAt.seconds;
+            comparison = a.lastUpdated.seconds - b.lastUpdated.seconds;
             break;
           case 'created':
-            comparison = a.createdAt.seconds - b.createdAt.seconds;
+            // If you add createdAt to PostCard, use it here
+            comparison = 0;
             break;
           case 'scheduled':
-            comparison = a.createdAt.seconds - b.createdAt.seconds;
+            comparison = a.scheduledPostAt.seconds - b.scheduledPostAt.seconds;
             break;
           case 'title':
             comparison = a.title.localeCompare(b.title);
@@ -108,18 +125,16 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             comparison = a.status.localeCompare(b.status);
             break;
           case 'profile':
-            const clientA = getClientInfo(a.clientId)?.clientName || '';
-            const clientB = getClientInfo(b.clientId)?.clientName || '';
-            comparison = clientA.localeCompare(clientB);
+            comparison = a.profile.localeCompare(b.profile);
             break;
           default:
-            comparison = a.updatedAt.seconds - b.updatedAt.seconds;
+            comparison = a.lastUpdated.seconds - b.lastUpdated.seconds;
         }
-        
+
         return sortDirection === 'desc' ? -comparison : comparison;
       });
     }
-    
+
     return filtered;
   };
 
@@ -253,7 +268,11 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
       
       {/* Posts Table */}
       <div className="bg-white rounded-xl shadow-sm border">
-        {filteredPosts.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading posts...</div>
+        ) : error ? (
+          <div className="text-center py-12 text-red-500">{error}</div>
+        ) : filteredPosts.length > 0 ? (
           <TooltipProvider>
             <Table>
               <TableHeader>
@@ -307,35 +326,37 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPosts.map(idea => (
-                  <TableRow 
-                    key={idea.id} 
+                {filteredPosts.map(post => (
+                  <TableRow
+                    key={post.postId}
                     className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
-                    onClick={() => window.location.href = `/clients/${idea.clientId}/ideas/${idea.id}`}
+                    onClick={() => navigate(`/clients/${clientId}/ideas/${post.postId}`)}
                   >
                     <TableCell className="py-4">
                       <div className="font-semibold text-gray-900">
-                        {idea.title}
+                        {post.title}
                       </div>
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
-                      {clientInfo?.clientName || 'Unknown Client'}
+                      {post.profile}
                     </TableCell>
                     <TableCell className="py-4">
-                      <StatusBadge status={idea.status} type="idea" />
+                      <StatusBadge status={post.status} type="idea" />
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
                       <Tooltip>
                         <TooltipTrigger>
-                          {formatRelativeTime(idea.updatedAt)}
+                          {formatRelativeTime(post.lastUpdated)}
                         </TooltipTrigger>
                         <TooltipContent>
-                          {formatDateTime(idea.updatedAt)}
+                          {formatDateTime(post.lastUpdated)}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
-                      {getScheduledDate(idea)}
+                      {post.scheduledPostAt.seconds > 0
+                        ? formatRelativeTime(post.scheduledPostAt)
+                        : '—'}
                     </TableCell>
                     <TableCell className="py-4">
                       <DropdownMenu>
@@ -353,7 +374,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={(e) => {
                             e.stopPropagation();
-                            handleDuplicate(idea.id);
+                            handleDuplicate(post.postId);
                           }}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
@@ -361,7 +382,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                           <DropdownMenuItem 
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(idea.id);
+                              handleDelete(post.postId);
                             }}
                             className="text-red-600"
                           >
@@ -379,18 +400,18 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500">
-              {searchTerm || selectedStatus 
-                ? "No posts match your filters." 
+              {searchTerm || selectedStatus
+                ? "No posts match your filters."
                 : "No posts found for this client yet."
               }
             </p>
             {(searchTerm || selectedStatus) && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setSearchTerm('');
                   setSelectedStatus(null);
-                }} 
+                }}
                 className="mt-2"
               >
                 Clear Filters

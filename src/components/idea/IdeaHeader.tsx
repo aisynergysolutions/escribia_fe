@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Send } from 'lucide-react';
@@ -38,7 +37,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const handleBack = () => {
-    navigate(`/clients/${clientId}`);
+    navigate(`/clients/${clientId}/posts`);
   };
 
   const handleAddToQueueClick = () => {
@@ -61,53 +60,27 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          
-          <div className="flex-1 min-w-0">
-            <EditableTitle
-              title={title}
-              onSave={onTitleChange}
-              className="text-2xl font-bold"
-            />
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="flex items-center gap-1 py-0 px-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBack}
+          className="flex items-center justify-center rounded-full h-8 w-8 bg-transparent shadow-none border border-gray-100"
+          aria-label="Back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center min-w-0 gap-4">
+          <EditableTitle
+            title={title}
+            onSave={onTitleChange}
+            className="text-2xl font-bold"
+          />
           <StatusCard
             status={status}
             onStatusChange={onStatusChange}
             onAddCustomStatus={onAddCustomStatus}
           />
-          
-          <Button
-            onClick={onSave}
-            disabled={!hasUnsavedChanges}
-            variant={hasUnsavedChanges ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Save
-          </Button>
-          
-          <Button
-            onClick={handleAddToQueueClick}
-            className="flex items-center gap-2 bg-[#4E46DD] hover:bg-[#453fca]"
-            size="sm"
-          >
-            <Send className="h-4 w-4" />
-            Add to Queue
-          </Button>
         </div>
       </div>
 
