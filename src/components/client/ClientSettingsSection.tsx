@@ -1,14 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Plus, User, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockClients } from '../../types';
-import { SubClient } from '../../types/interfaces';
 import { useNavigate } from 'react-router-dom';
 import AddProfileModal from '../AddProfileModal';
+import { useClients } from '../../context/ClientsContext';
+import { useProfiles } from '../../context/ProfilesContext';
 
 interface ClientSettingsSectionProps {
   clientId: string;
@@ -17,78 +16,90 @@ interface ClientSettingsSectionProps {
 const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
   clientId
 }) => {
-  const client = mockClients.find(c => c.id === clientId);
+  const { clientDetails } = useClients();
   const navigate = useNavigate();
 
-  // Mock profiles data (excluding the main company profile)
-  const [profiles] = useState<SubClient[]>([
-    {
-      id: 'ceo-1',
-      name: 'Sarah Johnson',
-      role: 'CEO',
-      profileImage: '',
-      writingStyle: 'Thought leadership, strategic insights',
-      linkedinConnected: true,
-      linkedinAccountName: 'Sarah Johnson',
-      linkedinExpiryDate: 'July 20, 2025',
-      customInstructions: 'Share vision, industry trends, and leadership perspectives',
-      createdAt: {
-        seconds: Date.now() / 1000,
-        nanoseconds: 0
-      }
-    },
-    {
-      id: 'cto-1',
-      name: 'Michael Chen',
-      role: 'CTO',
-      profileImage: '',
-      writingStyle: 'Technical expertise, innovation-focused',
-      linkedinConnected: false,
-      customInstructions: 'Technical insights, product development, innovation',
-      createdAt: {
-        seconds: Date.now() / 1000,
-        nanoseconds: 0
-      }
-    }
-  ]);
+  // Use ProfilesContext
+  const { profiles, loading, error, fetchProfiles } = useProfiles();
 
-  if (!client) return null;
+  // Fetch profiles when component mounts or clientId changes
+  useEffect(() => {
+    if (clientId) {
+      fetchProfiles(clientId).then(() => {
+        console.log('[ClientSettingsSection] Fetched profiles:', profiles);
+      });
+    }
+    // eslint-disable-next-line
+  }, [clientId]);
+
+  useEffect(() => {
+    // Log profiles whenever they change
+    console.log('[ClientSettingsSection] Profiles:', profiles);
+  }, [profiles]);
+
+  if (!clientDetails) return null;
+
+  // Company profile card
+  // const companyProfile = {
+  //   id: 'company-1',
+  //   name: clientDetails.clientName,
+  //   role: 'Company Account',
+  //   profileImage: clientDetails.profileImageUrl,
+  //   linkedinConnected: true, // Placeholder
+  //   isCompany: true
+  // };
+
+  // Map Firestore profiles to card format
+  const profileCards = profiles.map(profile => ({
+    id: profile.id,
+    name: profile.profileName,
+    role: profile.role,
+    profileImageUrl: '', // Add if you store images
+    linkedinConnected: profile.status === 'connected', // Example logic
+    isCompany: false,
+    status: profile.status || 'Not connected', // Default to 'Not connected' if no status
+  }));
+
+  // Combine company profile with sub-profiles
+  const allProfiles = [...profileCards];
 
   const handleProfileClick = (profileId: string) => {
     navigate(`/clients/${clientId}/profiles/${profileId}`);
   };
 
-  const getLinkedInStatusColor = (connected: boolean) => {
-    return connected 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-red-100 text-red-800';
+  const getStatusColor = (status: "Connected" | "Not connected" | "Onboarding") => {
+    switch (status) {
+      case "Connected":
+        return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
+      case "Not connected":
+        return 'bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800';
+      case "Onboarding":
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
+      default:
+        return "bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800";
+    }
   };
 
-  // Create company profile object
-  const companyProfile = {
-    id: 'company-1',
-    name: client.clientName,
-    role: 'Company Account',
-    profileImage: client.profileImage,
-    linkedinConnected: true, // Mock data
-    isCompany: true
+  const normalizeStatus = (status: string | undefined) => {
+    if (!status) return "Not connected";
+    const s = status.toLowerCase();
+    if (s === "onboarding") return "Onboarding";
+    if (s === "connected") return "Connected";
+    return "Not connected";
   };
-
-  // Combine company profile with other profiles
-  const allProfiles = [companyProfile, ...profiles];
 
   return (
     <div className="space-y-8">
       {/* Client Header Section */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">{client.clientName}</h1>
+          <h1 className="text-2xl font-bold">{clientDetails.clientName}</h1>
           <Badge className="bg-green-100 text-green-800">
-            {client.status === 'active' ? 'Active' : client.status}
+            {clientDetails.status === 'active' ? 'Active' : clientDetails.status}
           </Badge>
         </div>
         <p className="text-gray-600">
-          {client.brandBriefSummary || 'No summary available'}
+          {clientDetails.oneLiner || 'No summary available'}
         </p>
       </div>
 
@@ -104,40 +115,46 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
           </AddProfileModal>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allProfiles.map(profile => (
-            <Card 
-              key={profile.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow border hover:border-blue-200"
-              onClick={() => handleProfileClick(profile.id)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={profile.profileImage} />
-                    <AvatarFallback>
-                      {profile.isCompany ? (
-                        <Building2 className="h-6 w-6" />
-                      ) : (
-                        <User className="h-6 w-6" />
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{profile.name}</h3>
-                    <p className="text-sm text-gray-500 truncate">{profile.role}</p>
+        {loading ? (
+          <div>Loading profiles...</div>
+        ) : error ? (
+          <div className="text-red-600">Error: {error}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allProfiles.map(profile => (
+              <Card 
+                key={profile.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow border hover:border-blue-200"
+                onClick={() => handleProfileClick(profile.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={profile.profileImageUrl} />
+                      <AvatarFallback>
+                        {profile.isCompany ? (
+                          <Building2 className="h-6 w-6" />
+                        ) : (
+                          <User className="h-6 w-6" />
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{profile.name}</h3>
+                      <p className="text-sm text-gray-500 truncate">{profile.role}</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Badge className={`text-xs ${getLinkedInStatusColor(profile.linkedinConnected)}`}>
-                    {profile.linkedinConnected ? '✓ Connected' : '❗ Not Connected'}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Badge className={`text-xs ${getStatusColor(normalizeStatus(profile.status))}`}>
+                      {normalizeStatus(profile.status)}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

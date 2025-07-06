@@ -14,6 +14,7 @@ export type ClientCard = {
 export type ClientDetails = {
   id: string;
   agencyId: string;
+  profileImageUrl?: string;
   clientName: string;
   createdAt: string;
   updatedAt: string;

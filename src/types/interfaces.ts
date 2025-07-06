@@ -57,6 +57,7 @@ export interface Idea {
 export interface Client {
   id: string;
   clientName: string;
+  agencyId: string;
   onboarding_link?: string; // Optional field for onboarding link
   industry: string;
   contactName: string;
@@ -68,28 +69,7 @@ export interface Client {
   createdAt: { seconds: number; nanoseconds: number };
   updatedAt: { seconds: number; nanoseconds: number };
   subClients: SubClient[]; // New field for sub-clients
-  brandProfile: {
-    language: string;
-    locationFocus: string;
-    businessSize: string;
-    sellsWhat: string;
-    sellsToWhom: string;
-    brandPersonality: string[];
-    brandTone: string;
-    emotionsToEvoke: string[];
-    emojiUsage: string;
-    desiredPostLength: string;
-    coreValues: string;
-    brandStory: string;
-    uniqueSellingProposition: string;
-    hotTakesOrOpinions: string;
-    missionStatement: string;
-    inspirationSources: string;
-    recentCompanyEvents: string;
-    linkedinProfileUrl: string;
-    trainingDataUrls: string[];
-    customInstructionsAI: string;
-  };
+  hard_facts?: {}; // Optional field for hard facts
   aiTraining: {
     status: 'pending_data' | 'training_queued' | 'completed' | 'failed';
     lastTrainedAt: { seconds: number; nanoseconds: number };

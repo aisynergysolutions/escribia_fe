@@ -285,12 +285,12 @@ const ProfileDetails: React.FC = () => {
                   </Label>
                   {editingSection === 'clientInfo' ? (
                     <Input
-                      value={clientInfoData.businessName}
-                      onChange={(e) => setClientInfoData(prev => ({ ...prev, businessName: e.target.value }))}
+                      value={clientInfoData.clientName}
+                      onChange={(e) => setClientInfoData(prev => ({ ...prev, clientName: e.target.value }))}
                       className="mt-1"
                     />
                   ) : (
-                    <p className="text-sm mt-1">{clientInfoData.businessName}</p>
+                    <p className="text-sm mt-1">{clientInfoData.clientName}</p>
                   )}
                 </div>
                 <div>

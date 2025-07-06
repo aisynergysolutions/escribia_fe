@@ -105,7 +105,7 @@ const ClientSidebar = () => {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               {/* You can add a profileImage field to your Firestore client if needed */}
-              <AvatarImage src={clientDetails.profileImage || ''} alt={clientDetails.clientName} />
+              <AvatarImage src={clientDetails.profileImageUrl || ''} alt={clientDetails.clientName} />
               <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
                 {clientDetails.clientName?.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </AvatarFallback>

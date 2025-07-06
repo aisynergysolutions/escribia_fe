@@ -51,7 +51,12 @@ const Clients = () => {
                         status: client.status,
                         updatedAt: { seconds: client.lastUpdated, nanoseconds: 0 },
                         onboarding_link: client.onboarding_link,
-                        // ...add other placeholder fields if your ClientCard component requires them
+                        industry: '', // placeholder
+                        contactName: '', // placeholder
+                        contactEmail: '', // placeholder
+                        createdAt: { seconds: 0, nanoseconds: 0 }, // placeholder
+                        agencyId: '', // placeholder
+                        hard_facts: {}, // placeholder
                     }}
                 />
             </div>
