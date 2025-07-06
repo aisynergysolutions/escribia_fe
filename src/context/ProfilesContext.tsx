@@ -1,34 +1,37 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-// Type for a profile card (subClient)
 export type ProfileCard = {
   id: string;
   profileName: string;
   status?: string;
   role?: string;
-  onboardingLink?: string; // Optional field for onboarding link
-  createdAt?: Date; // Optional field for creation date
+  roleType?: string; // Optional, if you want to include roleType
+  onboardingLink?: string;
+  createdAt?: Date;
 };
 
 interface ProfilesContextType {
   profiles: ProfileCard[];
   loading: boolean;
   error: string | null;
-  fetchProfiles: (clientId: string) => Promise<void>;
+  fetchProfiles: (clientId: string, force?: boolean) => Promise<void>;
   addProfile: (
     clientId: string,
     profile: {
       id: string;
       profileName: string;
       role: string;
+      roleType?: string; // Optional, if you want to include roleType
       status: string;
       onboardingLink: string;
       createdAt: Date;
       clientId: string;
     }
   ) => Promise<void>;
+  deleteProfile: (clientId: string, profileId: string) => Promise<void>;
+  setActiveClientId: (clientId: string) => void;
 }
 
 const ProfilesContext = createContext<ProfilesContextType>({
@@ -37,16 +40,27 @@ const ProfilesContext = createContext<ProfilesContextType>({
   error: null,
   fetchProfiles: async () => {},
   addProfile: async () => {},
+  deleteProfile: async () => {},
+  setActiveClientId: () => {},
 });
 
 export const useProfiles = () => useContext(ProfilesContext);
 
 export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
-  const [profiles, setProfiles] = useState<ProfileCard[]>([]);
+  // Store profiles by clientId
+  const [profilesByClient, setProfilesByClient] = useState<Record<string, ProfileCard[]>>({});
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfiles = async (clientId: string) => {
+  // Expose only the profiles for the active client
+  const profiles = activeClientId ? profilesByClient[activeClientId] || [] : [];
+
+  // Fetch only if not cached, unless force is true
+  const fetchProfiles = async (clientId: string, force = false) => {
+    if (!force && profilesByClient[clientId]) {
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -64,11 +78,26 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
         profileName: doc.data().profileName || '',
         status: doc.data().status || '',
         role: doc.data().role || '',
+        roleType: doc.data().roleType || '', // Optional, if you want to include roleType
+        onboardingLink: doc.data().onboardingLink || '',
+        createdAt: doc.data().createdAt
+          ? new Date(
+              doc.data().createdAt.seconds
+                ? doc.data().createdAt.seconds * 1000
+                : doc.data().createdAt
+            )
+          : undefined,
       }));
-      setProfiles(fetchedProfiles);
+      setProfilesByClient(prev => ({
+        ...prev,
+        [clientId]: fetchedProfiles,
+      }));
     } catch (err: any) {
       setError(err.message || 'Failed to fetch profiles');
-      setProfiles([]);
+      setProfilesByClient(prev => ({
+        ...prev,
+        [clientId]: [],
+      }));
     } finally {
       setLoading(false);
     }
@@ -80,6 +109,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
       id: string;
       profileName: string;
       role: string;
+      roleType?: string; // Optional, if you want to include roleType
       status: string;
       onboardingLink: string;
       createdAt: Date;
@@ -99,19 +129,53 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(profileRef, {
         profileName: profile.profileName,
         role: profile.role,
+        roleType: profile.roleType,
         status: profile.status,
         onboardingLink: profile.onboardingLink,
         createdAt: profile.createdAt,
         clientId: profile.clientId,
       });
-      await fetchProfiles(clientId);
+      // After adding, force refresh for this client
+      await fetchProfiles(clientId, true);
     } catch (err) {
       console.error('[ProfilesContext] Error adding profile:', err);
     }
   };
 
+  const deleteProfile = async (clientId: string, profileId: string) => {
+    try {
+      const profileRef = doc(
+        db,
+        'agencies',
+        'agency1',
+        'clients',
+        clientId,
+        'subClients',
+        profileId
+      );
+      await deleteDoc(profileRef);
+      // Remove from cache
+      setProfilesByClient(prev => ({
+        ...prev,
+        [clientId]: (prev[clientId] || []).filter(profile => profile.id !== profileId),
+      }));
+    } catch (err) {
+      console.error('[ProfilesContext] Error deleting profile:', err);
+    }
+  };
+
   return (
-    <ProfilesContext.Provider value={{ profiles, loading, error, fetchProfiles, addProfile }}>
+    <ProfilesContext.Provider
+      value={{
+        profiles,
+        loading,
+        error,
+        fetchProfiles,
+        addProfile,
+        setActiveClientId,
+        deleteProfile,
+      }}
+    >
       {children}
     </ProfilesContext.Provider>
   );

@@ -8,6 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import AddProfileModal from '../AddProfileModal';
 import { useClients } from '../../context/ClientsContext';
 import { useProfiles } from '../../context/ProfilesContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Copy } from 'lucide-react';
+import OnboardingProfileModal from '../OnboardingProfileModal';
 
 interface ClientSettingsSectionProps {
   clientId: string;
@@ -20,15 +23,12 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
   const navigate = useNavigate();
 
   // Use ProfilesContext
-  const { profiles, loading, error, fetchProfiles } = useProfiles();
+  const { profiles, loading, error, fetchProfiles, setActiveClientId } = useProfiles();
 
   // Fetch profiles when component mounts or clientId changes
   useEffect(() => {
-    if (clientId) {
-      fetchProfiles(clientId).then(() => {
-        console.log('[ClientSettingsSection] Fetched profiles:', profiles);
-      });
-    }
+    setActiveClientId(clientId);
+    fetchProfiles(clientId); // Will only fetch if not cached
     // eslint-disable-next-line
   }, [clientId]);
 
@@ -54,17 +54,25 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
     id: profile.id,
     name: profile.profileName,
     role: profile.role,
+    roleType: profile.roleType || '', // Optional, if you want to include roleType
     profileImageUrl: '', // Add if you store images
-    linkedinConnected: profile.status === 'connected', // Example logic
+    linkedinConnected: profile.status === 'connected',
     isCompany: false,
-    status: profile.status || 'Not connected', // Default to 'Not connected' if no status
+    status: profile.status || 'Not connected',
+    onboardingLink: profile.onboardingLink || '',
   }));
 
   // Combine company profile with sub-profiles
   const allProfiles = [...profileCards];
 
   const handleProfileClick = (profileId: string) => {
-    navigate(`/clients/${clientId}/profiles/${profileId}`);
+    const profile = allProfiles.find(p => p.id === profileId);
+    if (profile?.status === 'Onboarding') {
+      setSelectedProfile(profile);
+      setOnboardingDialogOpen(true);
+    } else {
+      navigate(`/clients/${clientId}/profiles/${profileId}`);
+    }
   };
 
   const getStatusColor = (status: "Connected" | "Not connected" | "Onboarding") => {
@@ -86,6 +94,15 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
     if (s === "onboarding") return "Onboarding";
     if (s === "connected") return "Connected";
     return "Not connected";
+  };
+
+  const [onboardingDialogOpen, setOnboardingDialogOpen] = React.useState(false);
+  const [selectedProfile, setSelectedProfile] = React.useState<any>(null);
+
+  const handleDeleteProfile = async () => {
+    // Implement Firestore delete logic for subClient here
+    // Example:
+    // await deleteProfile(clientId, selectedProfile.id);
   };
 
   return (
@@ -119,11 +136,17 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
           <div>Loading profiles...</div>
         ) : error ? (
           <div className="text-red-600">Error: {error}</div>
+        ) : allProfiles.length === 0 ? (
+          <div className="text-center text-gray-500 py-12">
+            <User className="h-10 w-10 mx-auto mb-2" />
+            <div className="font-semibold mb-1">No Profiles added yet</div>
+            <div className="text-sm">Add a profile to start posting for this client.</div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {allProfiles.map(profile => (
-              <Card 
-                key={profile.id} 
+              <Card
+                key={profile.id}
                 className="cursor-pointer hover:shadow-md transition-shadow border hover:border-blue-200"
                 onClick={() => handleProfileClick(profile.id)}
               >
@@ -132,7 +155,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={profile.profileImageUrl} />
                       <AvatarFallback>
-                        {profile.isCompany ? (
+                        {profile.role?.toLowerCase().includes("company") ? (
                           <Building2 className="h-6 w-6" />
                         ) : (
                           <User className="h-6 w-6" />
@@ -144,18 +167,27 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
                       <p className="text-sm text-gray-500 truncate">{profile.role}</p>
                     </div>
                   </div>
-                  
                   <div className="flex items-center gap-2">
                     <Badge className={`text-xs ${getStatusColor(normalizeStatus(profile.status))}`}>
                       {normalizeStatus(profile.status)}
                     </Badge>
                   </div>
+
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      {/* Onboarding Dialog */}
+      <OnboardingProfileModal
+        open={onboardingDialogOpen}
+        onOpenChange={setOnboardingDialogOpen}
+        profileName={selectedProfile?.name || ''}
+        onboardingLink={selectedProfile?.onboardingLink}
+        onDeleteProfile={handleDeleteProfile}
+      />
     </div>
   );
 };

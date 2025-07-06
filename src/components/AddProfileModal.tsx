@@ -66,9 +66,10 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
       await addProfile(clientId, {
         id: profileId,
         profileName,
-        role: roleType === 'Person' ? personRole : 'Company Account',
+        role: roleType === 'Person' ? personRole : 'Company Account', // <-- always "Company Account" for company
+        roleType: roleType === 'Person' ? 'Person' : 'Company',       // <-- always "Company" for company
         status: 'Onboarding',
-        onboardingLink: tallyUrl, // <-- use onboardingLink
+        onboardingLink: tallyUrl,
         createdAt: new Date(),
         clientId,
       });
@@ -108,6 +109,12 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
           <DialogTitle className="text-xl font-semibold">Add New Profile</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800 leading-relaxed">
+              <strong>How it works:</strong> Create a profile and then connect it to a LinkedIn account to start posting on their behalf. Send your client the link below to help us understand their personality and preferences before onboarding, whether it is a Company profile or an Individual.
+            </p>
+          </div>
           {/* Profile Name Input */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
