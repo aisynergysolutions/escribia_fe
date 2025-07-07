@@ -38,6 +38,7 @@ export type ClientDetails = {
     size?: string;
     targetAudience?: string;
   };
+
 };
 
 type ClientsContextType = {
@@ -146,8 +147,7 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
         setClientDetailsLoading(true);
         setClientDetailsError(null);
         try {
-            const clientDocPath = `age
-            ncies/agency1/clients/${clientId}`;
+            const clientDocPath = `agencies/agency1/clients/${clientId}`;
             console.log('[ClientsContext] Fetching client details from Firestore path:', clientDocPath);
             const clientDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId);
             const clientSnap = await getDoc(clientDocRef);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { TooltipProvider } from './tooltip';
@@ -34,7 +33,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     predefinedTimeSlots, 
     activeDays, 
     updateTimeslots,
-    loadMoreDays
+    loadMoreDays,
+    loadingTimeslotData
   } = useQueueData(clientId, hideEmptySlots);
   
   const { handleRemoveFromQueue, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
@@ -89,7 +89,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   };
 
   const handleSaveTimeslots = (timeslots: string[], days: string[]) => {
-    updateTimeslots(timeslots, days);
+    updateTimeslots(clientId, timeslots, days); // Pass clientId to updateTimeslots
   };
 
   // Show greyed out state if no timeslots configured
@@ -148,6 +148,14 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
           initialDays={activeDays}
         />
       </>
+    );
+  }
+
+  if (loadingTimeslotData) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Loading timeslot data...</p>
+      </div>
     );
   }
 

@@ -3,10 +3,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Template } from '../../types';
+import { TemplateCard as TemplateCardType } from '@/context/TemplatesContext';
 
 interface TemplateCardProps {
-  template: Template;
+  template: TemplateCardType;
 }
 
 const getFunnelStageColor = (stage: string) => {
@@ -30,7 +30,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
   };
 
   return (
-    <Card 
+    <Card
       className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       onClick={handleClick}
     >
@@ -43,8 +43,11 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-gray-700 line-clamp-3">
-          {template.templateContent}
+        <p className="text-sm text-gray-600 mb-2">
+          {template.objective}
+        </p>
+        <p className="text-xs text-gray-500 mb-2">
+          {template.contentType} • {template.scope}
         </p>
         <div className="flex flex-wrap gap-1 mt-2">
           {template.tags.map((tag, index) => (

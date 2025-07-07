@@ -23,7 +23,7 @@ const ProfileDetailsRouter: React.FC = () => {
   if (loading) return <div>Loading...</div>;
   if (!profileType) return <div>Profile not found.</div>;
 
-  if (profileType === 'company') {
+  if (profileType === 'company' || profileType === 'Company') {
     return <ProfileDetailsCompany />;
   }
   // Default to person if not company

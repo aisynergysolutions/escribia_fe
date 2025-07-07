@@ -20,10 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreateTemplateData } from '@/context/TemplatesContext';
 
 interface CreateTemplateModalProps {
   children: React.ReactNode;
-  onSave: (templateData: any) => void;
+  onSave: (templateData: CreateTemplateData) => void;
 }
 
 const contentTypeOptions = [
@@ -40,21 +41,37 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     templateName: '',
-    templateGuidelines: '',
-    contentObjective: '',
-    funnelStage: '',
-    contentTypes: [] as string[]
+    templateContent: '',
+    objective: '',
+    funnelStage: '' as '' | 'TOFU' | 'MOFU' | 'BOFU',
+    contentType: '',
+    scope: '',
+    tags: [] as string[],
+    examplePlaceholders: {} as Record<string, string>
   });
 
   const handleSave = () => {
-    if (formData.templateName && formData.templateGuidelines && formData.contentObjective && formData.funnelStage && formData.contentTypes.length > 0) {
-      onSave(formData);
+    if (formData.templateName && formData.templateContent && formData.objective && formData.funnelStage && formData.contentType && formData.scope && formData.tags.length > 0) {
+      const templateData: CreateTemplateData = {
+        templateName: formData.templateName,
+        templateContent: formData.templateContent,
+        objective: formData.objective,
+        funnelStage: formData.funnelStage,
+        contentType: formData.contentType,
+        scope: formData.scope,
+        tags: formData.tags,
+        examplePlaceholders: formData.examplePlaceholders
+      };
+      onSave(templateData);
       setFormData({
         templateName: '',
-        templateGuidelines: '',
-        contentObjective: '',
+        templateContent: '',
+        objective: '',
         funnelStage: '',
-        contentTypes: []
+        contentType: '',
+        scope: '',
+        tags: [],
+        examplePlaceholders: {}
       });
       setIsOpen(false);
     }
@@ -63,13 +80,13 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
   const handleContentTypeChange = (contentType: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      contentTypes: checked 
-        ? [...prev.contentTypes, contentType]
-        : prev.contentTypes.filter(type => type !== contentType)
+      tags: checked
+        ? [...prev.tags, contentType]
+        : prev.tags.filter(type => type !== contentType)
     }));
   };
 
-  const isFormValid = formData.templateName && formData.templateGuidelines && formData.contentObjective && formData.funnelStage && formData.contentTypes.length > 0;
+  const isFormValid = formData.templateName && formData.templateContent && formData.objective && formData.funnelStage && formData.contentType && formData.scope && formData.tags.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -80,7 +97,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
         <DialogHeader>
           <DialogTitle>Create New Template</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Template Name */}
           <div className="space-y-2">
@@ -100,13 +117,13 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
 
           {/* Template Guidelines */}
           <div className="space-y-2">
-            <Label htmlFor="templateGuidelines" className="text-sm font-medium">
+            <Label htmlFor="templateContent" className="text-sm font-medium">
               Template Guidelines <span className="text-red-500">*</span>
             </Label>
             <Textarea
-              id="templateGuidelines"
-              value={formData.templateGuidelines}
-              onChange={(e) => setFormData(prev => ({ ...prev, templateGuidelines: e.target.value }))}
+              id="templateContent"
+              value={formData.templateContent}
+              onChange={(e) => setFormData(prev => ({ ...prev, templateContent: e.target.value }))}
               placeholder="Outline the structure your AI should follow..."
               className="min-h-[100px]"
             />
@@ -121,16 +138,17 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
               Content Objective <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={formData.contentObjective}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, contentObjective: value }))}
+              value={formData.objective}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, objective: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select content objective" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal-post">Personal Post</SelectItem>
-                <SelectItem value="brand-awareness">Brand Awareness/Community Engagement</SelectItem>
-                <SelectItem value="conversions">Conversions/Lead Generation</SelectItem>
+                <SelectItem value="Personal Post">Personal Post</SelectItem>
+                <SelectItem value="Brand Awareness">Brand Awareness/Community Engagement</SelectItem>
+                <SelectItem value="Conversions">Conversions/Lead Generation</SelectItem>
+                <SelectItem value="Event Promotion">Event Promotion</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-600">
@@ -145,7 +163,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
             </Label>
             <Select
               value={formData.funnelStage}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, funnelStage: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, funnelStage: value as 'TOFU' | 'MOFU' | 'BOFU' }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select funnel stage" />
@@ -166,12 +184,49 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ children, onS
             <Label className="text-sm font-medium">
               Content Type <span className="text-red-500">*</span>
             </Label>
+            <Input
+              value={formData.contentType}
+              onChange={(e) => setFormData(prev => ({ ...prev, contentType: e.target.value }))}
+              placeholder="e.g., text, image, video"
+            />
+            <p className="text-xs text-gray-600">
+              Specify the type of content this template is designed for.
+            </p>
+          </div>
+
+          {/* Scope */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Scope <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.scope}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, scope: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="global">Global</SelectItem>
+                <SelectItem value="client-specific">Client Specific</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-600">
+              Choose whether this template can be used for all clients or is specific to one.
+            </p>
+          </div>
+
+          {/* Content Type Tags */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Content Type Tags <span className="text-red-500">*</span>
+            </Label>
             <div className="grid grid-cols-2 gap-3">
               {contentTypeOptions.map((type) => (
                 <div key={type} className="flex items-center space-x-2">
                   <Checkbox
                     id={type}
-                    checked={formData.contentTypes.includes(type)}
+                    checked={formData.tags.includes(type)}
                     onCheckedChange={(checked) => handleContentTypeChange(type, checked as boolean)}
                   />
                   <Label htmlFor={type} className="text-sm cursor-pointer">

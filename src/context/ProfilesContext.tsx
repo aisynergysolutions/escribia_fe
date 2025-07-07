@@ -28,6 +28,7 @@ export type ContentProfile = {
   personalStories: string;
   postLength: string;
   favPosts: string[];
+  addHashtags: boolean;
 };
 
 export type Profile = {
@@ -127,7 +128,7 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
     location: data.location || '',
     profileName: data.profileName || '',
     joinedDate: data.joinedDate || '',
-    onboardingLink: data.onboardingLink || '',
+    onboardingLink: data.onboardingLink || '', // Make sure this is included
     id: snap.id,
     linkedin: {
       profileImage: data.linkedin?.profileImage || '',
@@ -138,8 +139,8 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
       linkedinToken: data.linkedin?.linkedinToken || '',
     },
     role: data.role || '',
-    createdAt: data.createdAt || '',
-    status: data.status || '',
+    createdAt: data.createdAt || '', // Make sure this is included
+    status: data.status || '', // Make sure this is included
     clientId: data.clientId || '',
     contentProfile: {
       customInstructions: data.contentProfile?.customInstructions || '',
@@ -156,9 +157,10 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
       contentLanguage: data.contentProfile?.contentLanguage || '',
       personalStories: data.contentProfile?.personalStories || '',
       postLength: data.contentProfile?.postLength || '',
-      favPosts: data.contentProfile?.favPosts || [],
+      favPosts: data.contentProfile?.favPosts || [], // Make sure this is included
+      addHashtags: !!data.contentProfile?.addHashtags, // Make sure this is included
     },
-    contactEmail: data.contactEmail || '',
+    contactEmail: data.contactEmail || '', // Make sure this is included
   };
 };
 
@@ -211,6 +213,7 @@ export const getCompanyProfile = async (clientId: string, profileId: string): Pr
       postLength: data.contentProfile?.postLength || '',
       contentPersona: data.contentProfile?.contentPersona || '',
       topicsToAvoid: data.contentProfile?.topicsToAvoid || [],
+      addHashtags: !!data.contentProfile?.addHashtags, // Add this field
     },
     location: data.location || '',
   };

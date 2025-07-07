@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockTemplates } from '../types';
+import { useTemplates } from '@/context/TemplatesContext';
 import { useToast } from '@/hooks/use-toast';
 
 const contentTypeOptions = [
@@ -32,19 +32,70 @@ const TemplateDetails = () => {
   const { templateId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const template = mockTemplates.find(t => t.id === templateId);
+  const {
+    templateDetails,
+    templateDetailsLoading,
+    templateDetailsError,
+    getTemplateDetails,
+    updateTemplate
+  } = useTemplates();
+
   const [isEditing, setIsEditing] = useState(false);
-  
   const [formData, setFormData] = useState({
-    templateName: template?.templateName || '',
-    templateContent: template?.templateContent || '',
-    objective: template?.objective || '',
-    funnelStage: template?.funnelStage || '',
-    contentTypes: template?.tags || []
+    templateName: '',
+    templateContent: '',
+    objective: '',
+    funnelStage: '',
+    contentTypes: [] as string[],
+    scope: '',
+    contentType: '',
+    examplePlaceholders: {} as Record<string, string>
   });
 
-  if (!template) {
+  useEffect(() => {
+    if (templateId) {
+      getTemplateDetails(templateId);
+    }
+  }, [templateId, getTemplateDetails]);
+
+  useEffect(() => {
+    if (templateDetails) {
+      setFormData({
+        templateName: templateDetails.templateName || '',
+        templateContent: templateDetails.templateContent || '',
+        objective: templateDetails.objective || '',
+        funnelStage: templateDetails.funnelStage || '',
+        contentTypes: templateDetails.tags || [],
+        scope: templateDetails.scope || '',
+        contentType: templateDetails.contentType || '',
+        examplePlaceholders: templateDetails.examplePlaceholders || {}
+      });
+    }
+  }, [templateDetails]);
+
+  if (templateDetailsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <p className="text-gray-600 mt-4">Loading template details...</p>
+      </div>
+    );
+  }
+
+  if (templateDetailsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Error loading template</h2>
+        <p className="text-gray-600 mb-4">{templateDetailsError}</p>
+        <Button onClick={() => navigate('/templates')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Templates
+        </Button>
+      </div>
+    );
+  }
+
+  if (!templateDetails) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Template not found</h2>
@@ -57,30 +108,56 @@ const TemplateDetails = () => {
     );
   }
 
-  const handleSave = () => {
-    console.log('Saving template:', formData);
-    toast({
-      title: "Template Updated",
-      description: `Template "${formData.templateName}" has been updated successfully.`,
-    });
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!templateDetails) return;
+
+    try {
+      await updateTemplate({
+        id: templateDetails.id,
+        templateName: formData.templateName,
+        templateContent: formData.templateContent,
+        objective: formData.objective,
+        funnelStage: formData.funnelStage as 'TOFU' | 'MOFU' | 'BOFU',
+        tags: formData.contentTypes,
+        scope: formData.scope,
+        contentType: formData.contentType,
+        examplePlaceholders: formData.examplePlaceholders
+      });
+
+      toast({
+        title: "Template Updated",
+        description: `Template "${formData.templateName}" has been updated successfully.`,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update template. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancel = () => {
-    setFormData({
-      templateName: template.templateName,
-      templateContent: template.templateContent,
-      objective: template.objective,
-      funnelStage: template.funnelStage,
-      contentTypes: template.tags
-    });
+    if (templateDetails) {
+      setFormData({
+        templateName: templateDetails.templateName,
+        templateContent: templateDetails.templateContent,
+        objective: templateDetails.objective,
+        funnelStage: templateDetails.funnelStage,
+        contentTypes: templateDetails.tags,
+        scope: templateDetails.scope,
+        contentType: templateDetails.contentType,
+        examplePlaceholders: templateDetails.examplePlaceholders
+      });
+    }
     setIsEditing(false);
   };
 
   const handleContentTypeChange = (contentType: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      contentTypes: checked 
+      contentTypes: checked
         ? [...prev.contentTypes, contentType]
         : prev.contentTypes.filter(type => type !== contentType)
     }));
@@ -104,8 +181,8 @@ const TemplateDetails = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate('/templates')}
             className="p-2"
           >
@@ -113,19 +190,19 @@ const TemplateDetails = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">
-              {isEditing ? 'Edit Template' : template.templateName}
+              {isEditing ? 'Edit Template' : templateDetails.templateName}
             </h1>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge className={getFunnelStageColor(template.funnelStage)}>
-                {template.funnelStage}
+              <Badge className={getFunnelStageColor(templateDetails.funnelStage)}>
+                {templateDetails.funnelStage}
               </Badge>
               <span className="text-sm text-gray-500">
-                Used {template.usageCount} times
+                Used {templateDetails.usageCount} times
               </span>
             </div>
           </div>
         </div>
-        
+
         <div className="flex space-x-2">
           {isEditing ? (
             <>
@@ -221,10 +298,41 @@ const TemplateDetails = () => {
               </Select>
             </div>
 
+            {/* Scope */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Scope <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.scope}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, scope: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select scope" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global</SelectItem>
+                  <SelectItem value="client-specific">Client Specific</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Content Type */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Content Type <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={formData.contentType}
+                onChange={(e) => setFormData(prev => ({ ...prev, contentType: e.target.value }))}
+                placeholder="e.g., text, image, video"
+              />
+            </div>
+
+            {/* Content Type Tags */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Content Type Tags <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 {contentTypeOptions.map((type) => (
@@ -250,7 +358,7 @@ const TemplateDetails = () => {
                 <h3 className="text-lg font-semibold mb-2">Template Guidelines</h3>
                 <div className="bg-gray-50 p-4 rounded-md">
                   <pre className="whitespace-pre-wrap text-sm text-gray-700">
-                    {template.templateContent}
+                    {templateDetails.templateContent}
                   </pre>
                 </div>
               </div>
@@ -258,21 +366,31 @@ const TemplateDetails = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-1">Content Objective</h4>
-                  <p className="text-gray-600">{template.objective}</p>
+                  <p className="text-gray-600">{templateDetails.objective}</p>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium text-gray-900 mb-1">Funnel Stage</h4>
-                  <Badge className={getFunnelStageColor(template.funnelStage)}>
-                    {template.funnelStage}
+                  <Badge className={getFunnelStageColor(templateDetails.funnelStage)}>
+                    {templateDetails.funnelStage}
                   </Badge>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-1">Scope</h4>
+                  <p className="text-gray-600">{templateDetails.scope}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-1">Content Type</h4>
+                  <p className="text-gray-600">{templateDetails.contentType}</p>
                 </div>
               </div>
 
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">Content Types</h4>
                 <div className="flex flex-wrap gap-2">
-                  {template.tags.map((tag, index) => (
+                  {templateDetails.tags.map((tag, index) => (
                     <Badge key={index} variant="outline">
                       {tag}
                     </Badge>

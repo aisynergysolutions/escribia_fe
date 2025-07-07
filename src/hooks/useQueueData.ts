@@ -1,6 +1,6 @@
-
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
+import { useEvents } from '../context/EventsContext';
 import { mockIdeas, mockClients } from '../types';
 
 interface QueueSlot {
@@ -26,11 +26,17 @@ interface EmptySlot {
 export type DaySlot = QueueSlot | EmptySlot;
 
 export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
+  const { timeslotData, loadingTimeslotData, fetchTimeslotData, updateTimeslots } = useEvents(); // Include updateTimeslots
   const [refreshKey, setRefreshKey] = useState(0);
-  const [predefinedTimeSlots, setPredefinedTimeSlots] = useState<string[]>([]);
-  const [activeDays, setActiveDays] = useState<string[]>([]);
   const [weeksToShow, setWeeksToShow] = useState(3);
-  
+
+  // Fetch timeslot data when the clientId changes
+  useEffect(() => {
+    fetchTimeslotData(clientId);
+  }, [clientId, fetchTimeslotData]);
+
+  const predefinedTimeSlots = timeslotData?.predefinedTimeSlots || [];
+  const activeDays = timeslotData?.activeDays || [];
   const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
 
   // Get scheduled posts for this client
@@ -131,12 +137,6 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     setRefreshKey(prev => prev + 1);
   };
 
-  const updateTimeslots = (timeslots: string[], days: string[]) => {
-    setPredefinedTimeSlots(timeslots);
-    setActiveDays(days);
-    refreshQueue();
-  };
-
   const loadMoreDays = () => {
     setWeeksToShow(prev => prev + 3);
   };
@@ -148,7 +148,8 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     hasTimeslotsConfigured,
     predefinedTimeSlots,
     activeDays,
-    updateTimeslots,
-    loadMoreDays
+    loadMoreDays,
+    loadingTimeslotData,
+    updateTimeslots, // Expose the function
   };
 };

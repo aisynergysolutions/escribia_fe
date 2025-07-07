@@ -18,7 +18,7 @@ const DayCard: React.FC<DayCardProps> = ({ date, children, className }) => {
           📅 {format(date, 'EEEE, MMM d')}
         </h4>
       </div>
-      <div className="space-y-0">
+      <div className="space-y-1">
         {children}
       </div>
     </Card>

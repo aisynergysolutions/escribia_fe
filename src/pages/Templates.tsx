@@ -12,30 +12,39 @@ import {
 } from "@/components/ui/select";
 import TemplateCard from '../components/ui/TemplateCard';
 import CreateTemplateModal from '../components/CreateTemplateModal';
-import { mockTemplates } from '../types';
+import { useTemplates } from '@/context/TemplatesContext';
 import { useToast } from '@/hooks/use-toast';
 
 const Templates = () => {
   const { toast } = useToast();
+  const { templates, loading, error, addTemplate } = useTemplates();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
 
-  const handleCreateTemplate = useCallback((templateData: any) => {
+  const handleCreateTemplate = useCallback(async (templateData: any) => {
     console.log('Creating template:', templateData);
-    toast({
-      title: "Template Created",
-      description: `Template "${templateData.templateName}" has been created successfully.`,
-    });
-  }, [toast]);
+    const templateId = await addTemplate(templateData);
+    if (templateId) {
+      toast({
+        title: "Template Created",
+        description: `Template "${templateData.templateName}" has been created successfully.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to create template. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [addTemplate, toast]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   }, []);
 
   const filteredAndSortedTemplates = useMemo(() => {
-    let filtered = mockTemplates.filter(template =>
+    let filtered = templates.filter(template =>
       template.templateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      template.templateContent.toLowerCase().includes(searchTerm.toLowerCase()) ||
       template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
@@ -55,7 +64,7 @@ const Templates = () => {
     }
 
     return filtered;
-  }, [searchTerm, sortBy]);
+  }, [templates, searchTerm, sortBy]);
 
   const memoizedTemplateCards = useMemo(() => {
     return filteredAndSortedTemplates.map((template) => (
@@ -74,6 +83,13 @@ const Templates = () => {
           </Button>
         </CreateTemplateModal>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
 
       {/* Search and Sort Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -99,21 +115,37 @@ const Templates = () => {
         </Select>
       </div>
 
-      {/* Results count */}
-      <div className="text-sm text-gray-600">
-        Showing {filteredAndSortedTemplates.length} of {mockTemplates.length} templates
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {memoizedTemplateCards}
-      </div>
-
-      {/* No results message */}
-      {filteredAndSortedTemplates.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No templates found matching your search.</p>
-          <p className="text-gray-400 text-sm mt-2">Try adjusting your search terms or create a new template.</p>
+      {/* Loading State */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-lg border p-6 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="h-2 bg-gray-200 rounded w-full mb-2"></div>
+              <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          ))}
         </div>
+      ) : (
+        <>
+          {/* Results count */}
+          <div className="text-sm text-gray-600">
+            Showing {filteredAndSortedTemplates.length} of {templates.length} templates
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {memoizedTemplateCards}
+          </div>
+
+          {/* No results message */}
+          {filteredAndSortedTemplates.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No templates found matching your search.</p>
+              <p className="text-gray-400 text-sm mt-2">Try adjusting your search terms or create a new template.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
