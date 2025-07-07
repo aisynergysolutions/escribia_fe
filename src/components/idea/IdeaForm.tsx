@@ -66,12 +66,6 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         onRegenerateHooks={onRegenerateHooks}
       />
       
-      <OptionsCard
-        useAsTrainingData={options.useAsTrainingData}
-        onUseAsTrainingDataChange={options.onUseAsTrainingDataChange}
-        internalNotes={formData.internalNotes}
-        onInternalNotesChange={setters.setInternalNotes}
-      />
     </div>
   );
 };

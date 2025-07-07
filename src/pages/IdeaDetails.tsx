@@ -12,6 +12,7 @@ import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
 import { usePosts } from '@/context/PostsContext'; // <-- Import PostsContext
+import OptionsCard from '@/components/idea/OptionsCard';
 
 const IdeaDetails = () => {
   const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
@@ -43,12 +44,13 @@ const IdeaDetails = () => {
   const [showTimeslotModal, setShowTimeslotModal] = useState(false);
   const [predefinedTimeSlots, setPredefinedTimeSlots] = useState<string[]>([]);
   const [activeDays, setActiveDays] = useState<string[]>([]);
+  const [internalNotes, setInternalNotes] = useState(postDetails?.internalNotes || '');
 
   // Extract initial idea data from URL params (for all creation methods)
   let initialIdeaText = '';
   let urlObjective = '';
   let urlTemplate = '';
-  
+
   if (isNewPost) {
     const dataParam = searchParams.get('data');
     if (dataParam) {
@@ -63,13 +65,6 @@ const IdeaDetails = () => {
       }
     }
   }
-
-  // Mock sub-client data - hardcoded as requested
-  const mockSubClient = {
-    name: "Sarah Johnson",
-    role: "CEO",
-    profileImage: undefined // Will use fallback with icon
-  };
 
   // Custom hooks - pass the extracted initial idea data
   // For new posts, use URL params; for existing, use postDetails
@@ -86,13 +81,13 @@ const IdeaDetails = () => {
   // Version history: use postDetails.drafts if available
   const versionHistory = !isNewPost && postDetails?.drafts
     ? postDetails.drafts.map((draft, idx) => ({
-        id: `v${draft.version}`,
-        version: draft.version,
-        text: draft.text,
-        createdAt: new Date(draft.createdAt.seconds * 1000),
-        generatedByAI: draft.generatedByAI,
-        notes: draft.notes
-      }))
+      id: `v${draft.version}`,
+      version: draft.version,
+      text: draft.text,
+      createdAt: new Date(draft.createdAt.seconds * 1000),
+      generatedByAI: draft.generatedByAI,
+      notes: draft.notes
+    }))
     : [];
 
   // Hooks: use postDetails.generatedHooks if available
@@ -124,6 +119,10 @@ const IdeaDetails = () => {
     window.addEventListener('popstate', handleNavigation);
     return () => window.removeEventListener('popstate', handleNavigation);
   }, [postEditor.hasUnsavedChanges]);
+
+  useEffect(() => {
+    setInternalNotes(postDetails?.internalNotes || '');
+  }, [postDetails?.internalNotes]);
 
   if (!isNewPost && postDetailsLoading) {
     return (
@@ -216,7 +215,7 @@ const IdeaDetails = () => {
   };
 
   const handleResolve = (threadId: string) => {
-    setComments(prev => prev.map(thread => 
+    setComments(prev => prev.map(thread =>
       thread.id === threadId ? { ...thread, resolved: true } : thread
     ));
   };
@@ -262,7 +261,7 @@ const IdeaDetails = () => {
         onAddCustomStatus={handleAddCustomStatus}
         onAddToQueue={handleAddToQueue}
       />
-      
+
       {isNewPost && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-blue-800">
@@ -270,7 +269,7 @@ const IdeaDetails = () => {
           </p>
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <PostEditor
@@ -285,7 +284,7 @@ const IdeaDetails = () => {
               onCopyText: postEditor.handleCopyText,
               onRegenerateWithInstructions: postEditor.handleRegenerateWithInstructions,
               onSave: postEditor.handleSave,
-              onUnsavedChangesChange: () => {}
+              onUnsavedChangesChange: () => { }
             }}
             versionHistory={versionHistory}
             onRestoreVersion={postEditor.handlePostChange}
@@ -295,13 +294,19 @@ const IdeaDetails = () => {
             onPollStateChange={handlePollStateChange}
           />
         </div>
-        
+
         <div className="space-y-6">
           {showCommentsPanel ? (
             <CommentsPanel comments={comments} onAddReply={handleAddReply} onResolve={handleResolve} />
           ) : (
             <>
-              <SubClientDisplayCard subClient={mockSubClient} />
+              <SubClientDisplayCard
+                subClient={{
+                  name: postDetails?.profile || '',
+                  role: postDetails?.profileRole || '',
+                  profileImage: undefined // If you add a profile image field, use it here
+                }}
+              />
               <IdeaForm
                 formData={{
                   initialIdea: isNewPost ? ideaForm.formData.initialIdea : postDetails?.initialIdeaPrompt || '',
@@ -327,6 +332,12 @@ const IdeaDetails = () => {
                 selectedHookIndex={selectedHookIndex}
                 onHookSelect={handleHookSelect}
                 onRegenerateHooks={handleRegenerateHooks}
+              />
+              <OptionsCard
+                useAsTrainingData={useAsTrainingData}
+                onUseAsTrainingDataChange={setUseAsTrainingData}
+                internalNotes={internalNotes}
+                onInternalNotesChange={setInternalNotes}
               />
             </>
           )}

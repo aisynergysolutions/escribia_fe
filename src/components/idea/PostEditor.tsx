@@ -1,4 +1,3 @@
-
 import React from 'react';
 import GeneratedPostEditor from './GeneratedPostEditor';
 import { CommentThread } from './CommentsPanel';

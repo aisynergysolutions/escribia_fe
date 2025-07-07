@@ -1,6 +1,50 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+
+// --- Types for Person Profile ---
+export type LinkedInInfo = {
+  profileImage: string;
+  linkedinAccountName: string;
+  linkedinName: string;
+  linkedinConnected: boolean;
+  linkedinExpiryDate: string | null;
+  linkedinToken: string;
+};
+
+export type ContentProfile = {
+  customInstructions: string;
+  hookGuidelines: string;
+  hotTakes: string;
+  primaryGoal: string;
+  coreTones: string;
+  audienceFocus: string;
+  contentPersona: string;
+  topicsToAvoid: string[];
+  emojiUsage: string;
+  sampleCTA: string;
+  expertise: string;
+  contentLanguage: string;
+  personalStories: string;
+  postLength: string;
+  favPosts: string[];
+};
+
+export type Profile = {
+  profileType: string;
+  location: string;
+  profileName: string;
+  joinedDate: string;
+  onboardingLink: string;
+  id: string;
+  linkedin: LinkedInInfo;
+  role: string;
+  createdAt: string;
+  status: string;
+  clientId: string;
+  contentProfile: ContentProfile;
+  contactEmail: string;
+};
 
 export type ProfileCard = {
   id: string;
@@ -10,6 +54,23 @@ export type ProfileCard = {
   profileType?: string; // Optional, if you want to include profileType
   onboardingLink?: string;
   createdAt?: Date;
+};
+
+export type CompanyProfile = {
+  onboardingLink: string;
+  id: string;
+  status: string;
+  clientId: string;
+  foundationDate: string | null;
+  contactEmail: string;
+  profileType: string;
+  updatedAt: string;
+  linkedin: LinkedInInfo;
+  role: string;
+  createdAt: string;
+  profileName: string;
+  contentProfile: ContentProfile;
+  location: string;
 };
 
 interface ProfilesContextType {
@@ -38,13 +99,122 @@ const ProfilesContext = createContext<ProfilesContextType>({
   profiles: [],
   loading: false,
   error: null,
-  fetchProfiles: async () => {},
-  addProfile: async () => {},
-  deleteProfile: async () => {},
-  setActiveClientId: () => {},
+  fetchProfiles: async () => { },
+  addProfile: async () => { },
+  deleteProfile: async () => { },
+  setActiveClientId: () => { },
 });
 
 export const useProfiles = () => useContext(ProfilesContext);
+
+// Move this function outside ProfilesProvider if needed, or just export it here:
+export const getPersonProfile = async (clientId: string, profileId: string): Promise<Profile> => {
+  const profileRef = doc(
+    db,
+    'agencies',
+    'agency1',
+    'clients',
+    clientId,
+    'subClients',
+    profileId
+  );
+  const snap = await getDoc(profileRef);
+  if (!snap.exists()) throw new Error('Profile not found');
+  const data = snap.data();
+
+  return {
+    profileType: data.profileType || '',
+    location: data.location || '',
+    profileName: data.profileName || '',
+    joinedDate: data.joinedDate || '',
+    onboardingLink: data.onboardingLink || '',
+    id: snap.id,
+    linkedin: {
+      profileImage: data.linkedin?.profileImage || '',
+      linkedinAccountName: data.linkedin?.linkedinAccountName || '',
+      linkedinName: data.linkedin?.linkedinName || '',
+      linkedinConnected: !!data.linkedin?.linkedinConnected,
+      linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
+      linkedinToken: data.linkedin?.linkedinToken || '',
+    },
+    role: data.role || '',
+    createdAt: data.createdAt || '',
+    status: data.status || '',
+    clientId: data.clientId || '',
+    contentProfile: {
+      customInstructions: data.contentProfile?.customInstructions || '',
+      hookGuidelines: data.contentProfile?.hookGuidelines || '',
+      hotTakes: data.contentProfile?.hotTakes || '',
+      primaryGoal: data.contentProfile?.primaryGoal || '',
+      coreTones: data.contentProfile?.coreTones || '',
+      audienceFocus: data.contentProfile?.audienceFocus || '',
+      contentPersona: data.contentProfile?.contentPersona || '',
+      topicsToAvoid: data.contentProfile?.topicsToAvoid || [],
+      emojiUsage: data.contentProfile?.emojiUsage || '',
+      sampleCTA: data.contentProfile?.sampleCTA || '',
+      expertise: data.contentProfile?.expertise || '',
+      contentLanguage: data.contentProfile?.contentLanguage || '',
+      personalStories: data.contentProfile?.personalStories || '',
+      postLength: data.contentProfile?.postLength || '',
+      favPosts: data.contentProfile?.favPosts || [],
+    },
+    contactEmail: data.contactEmail || '',
+  };
+};
+
+// Fetch a company profile by clientId and profileId
+export const getCompanyProfile = async (clientId: string, profileId: string): Promise<CompanyProfile> => {
+  const profileRef = doc(
+    db,
+    'agencies',
+    'agency1',
+    'clients',
+    clientId,
+    'subClients',
+    profileId
+  );
+  const snap = await getDoc(profileRef);
+  if (!snap.exists()) throw new Error('Company profile not found');
+  const data = snap.data();
+
+  return {
+    onboardingLink: data.onboardingLink || '',
+    id: snap.id,
+    status: data.status || '',
+    clientId: data.clientId || '',
+    foundationDate: data.foundationDate || null,
+    contactEmail: data.contactEmail || '',
+    profileType: data.profileType || '',
+    updatedAt: data.updatedAt || '',
+    linkedin: {
+      profileImage: data.linkedin?.profileImage || '',
+      linkedinAccountName: data.linkedin?.linkedinAccountName || '',
+      linkedinName: data.linkedin?.linkedinName || '',
+      linkedinConnected: !!data.linkedin?.linkedinConnected,
+      linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
+      linkedinToken: data.linkedin?.linkedinToken || '',
+    },
+    role: data.role || '',
+    createdAt: data.createdAt || '',
+    profileName: data.profileName || '',
+    contentProfile: {
+      customInstructions: data.contentProfile?.customInstructions || '',
+      favPosts: data.contentProfile?.favPosts || [],
+      hookGuidelines: data.contentProfile?.hookGuidelines || '',
+      emojiUsage: data.contentProfile?.emojiUsage || '',
+      sampleCTA: data.contentProfile?.sampleCTA || '',
+      primaryGoal: data.contentProfile?.primaryGoal || '',
+      contentLanguage: data.contentProfile?.contentLanguage || '',
+      hotTakes: data.contentProfile?.hotTakes || '',
+      coreTones: data.contentProfile?.coreTones || '',
+      audienceFocus: data.contentProfile?.audienceFocus || '',
+      postLength: data.contentProfile?.postLength || '',
+      contentPersona: data.contentProfile?.contentPersona || '',
+      topicsToAvoid: data.contentProfile?.topicsToAvoid || [],
+    },
+    location: data.location || '',
+  };
+};
 
 export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
   // Store profiles by clientId
@@ -82,10 +252,10 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
         onboardingLink: doc.data().onboardingLink || '',
         createdAt: doc.data().createdAt
           ? new Date(
-              doc.data().createdAt.seconds
-                ? doc.data().createdAt.seconds * 1000
-                : doc.data().createdAt
-            )
+            doc.data().createdAt.seconds
+              ? doc.data().createdAt.seconds * 1000
+              : doc.data().createdAt
+          )
           : undefined,
       }));
       setProfilesByClient(prev => ({

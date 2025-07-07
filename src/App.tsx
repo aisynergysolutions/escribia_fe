@@ -12,6 +12,7 @@ import { AgencyProfileProvider } from '@/context/AgencyProfileContext';
 import { ClientsProvider } from '@/context/ClientsContext'; // <-- import this
 import { ProfilesProvider } from '@/context/ProfilesContext'; // <-- Add this import
 import { PostsProvider } from "./context/PostsContext";
+import ProfileDetailsRouter from './components/client/ProfileDetailsRouter'; // <-- Add this import
 
 // Lazy load components for code splitting
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -111,7 +112,7 @@ function App() {
                         } />
                         <Route path="clients/:clientId/profiles/:profileId" element={
                           <Suspense fallback={<PageSkeleton />}>
-                            <ProfileDetailsPage />
+                            <ProfileDetailsRouter /> {/* <-- Use the router here */}
                           </Suspense>
                         } />
                         <Route path="calendar" element={

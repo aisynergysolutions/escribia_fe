@@ -726,7 +726,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onAddMedia={handleOpenMediaModal}
         />
         
-        <div className="p-4 bg-gray-50">
+        <div className="pb-4 bg-gray-50">
           <EditorContainer
             editorRef={editorRef}
             generatedPost={currentContent}
@@ -743,7 +743,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           
           {/* Fixed: Media/Poll area with correct width matching text editor */}
           {mediaFiles.length === 0 && !pollData && (
-            <div className={`${maxWidthClass} mx-auto mt-4`}>
+            <div className={`${maxWidthClass} mx-auto mt-0`}>
               <div
                 className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer transition-colors hover:bg-gray-100 hover:border-gray-400"
                 onDrop={handleDirectFileDrop}
