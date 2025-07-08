@@ -108,7 +108,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         // Step 3: Handle mock response if needed
         let result;
         try {
-          const response = await fetch('https://web-production-2fc1.up.railway.app/posts/generate', {
+          const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
