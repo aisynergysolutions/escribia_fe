@@ -23,9 +23,9 @@ export type ContentProfile = {
   topicsToAvoid: string[];
   emojiUsage: string;
   sampleCTA: string;
-  expertise: string;
+  expertise?: string; // Mark as optional
   contentLanguage: string;
-  personalStories: string;
+  personalStories?: string; // Mark as optional
   postLength: string;
   favPosts: string[];
   addHashtags: boolean;

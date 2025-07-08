@@ -11,7 +11,7 @@ import { useIdeaForm } from '../hooks/useIdeaForm';
 import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
-import { usePosts } from '@/context/PostsContext'; // <-- Import PostsContext
+import { usePostsDetails } from '@/context/PostsDetailsContext'; // <-- Import PostsDetailsContext
 import OptionsCard from '@/components/idea/OptionsCard';
 
 const IdeaDetails = () => {
@@ -21,9 +21,9 @@ const IdeaDetails = () => {
 
   const isNewPost = searchParams.get('new') === 'true';
 
-  // NEW: Use PostsContext for post details
+  // NEW: Use PostsDetailsContext for post details
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
-  const { getPostDetails, postDetails, postDetailsLoading, postDetailsError } = usePosts();
+  const { getPostDetails, postDetails, postDetailsLoading, postDetailsError, saveNewDraft } = usePostsDetails();
 
   // Fetch post details when ideaId/clientId/agencyId changes and not a new post
   useEffect(() => {
@@ -76,7 +76,45 @@ const IdeaDetails = () => {
     templateFromUrl: ''
   });
 
-  const postEditor = usePostEditor({ initialText: postDetails?.currentDraftText });
+  // Get the latest draft text from postDetails
+  const getLatestDraftText = () => {
+    if (!postDetails?.drafts || postDetails.drafts.length === 0) {
+      return postDetails?.currentDraftText || '';
+    }
+    // Return text from the last draft (latest version)
+    const latestDraft = postDetails.drafts[postDetails.drafts.length - 1];
+    return latestDraft?.text || postDetails?.currentDraftText || '';
+  };
+
+  // Create save function for the post editor
+  const handleSavePost = async (newText: string) => {
+    if (!isNewPost && agencyId && clientId && ideaId) {
+      await saveNewDraft(agencyId, clientId, ideaId, newText, 'Manual save', false);
+    }
+  };
+
+  // Create save function for AI-generated content
+  const handleSaveAIPost = async (newText: string) => {
+    if (!isNewPost && agencyId && clientId && ideaId) {
+      await saveNewDraft(agencyId, clientId, ideaId, newText, 'AI-generated content', true);
+    }
+  };
+
+  const postEditor = usePostEditor({
+    initialText: isNewPost ? '' : getLatestDraftText(),
+    onSave: isNewPost ? undefined : handleSavePost,
+    onSaveAI: isNewPost ? undefined : handleSaveAIPost
+  });
+
+  // Update post editor when postDetails changes (when data is loaded)
+  useEffect(() => {
+    if (!isNewPost && postDetails) {
+      const latestText = getLatestDraftText();
+      if (latestText && latestText !== postEditor.generatedPost) {
+        postEditor.handlePostChange(latestText);
+      }
+    }
+  }, [postDetails, isNewPost]);
 
   // Version history: use postDetails.drafts if available
   const versionHistory = !isNewPost && postDetails?.drafts
@@ -84,7 +122,9 @@ const IdeaDetails = () => {
       id: `v${draft.version}`,
       version: draft.version,
       text: draft.text,
-      createdAt: new Date(draft.createdAt.seconds * 1000),
+      createdAt: draft.createdAt?.seconds
+        ? new Date(draft.createdAt.seconds * 1000)
+        : new Date(),
       generatedByAI: draft.generatedByAI,
       notes: draft.notes
     }))

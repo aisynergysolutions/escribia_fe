@@ -6,7 +6,7 @@ import StatusCard from './StatusCard';
 import EditableTitle from '../EditableTitle';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
-import { usePosts } from '@/context/PostsContext';
+import { usePostsDetails } from '@/context/PostsDetailsContext'; // Change from PostsContext to PostsDetailsContext
 
 interface IdeaHeaderProps {
   clientId: string;
@@ -40,7 +40,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   // Get agencyId and ideaId from params or props as needed
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
   const { ideaId } = useParams<{ ideaId: string }>();
-  const { updatePostTitle, updatePostStatus } = usePosts();
+  const { updatePostTitle, updatePostStatus } = usePostsDetails(); // Use PostsDetailsContext
 
   // Handler for updating title in Firestore and context
   const handleTitleChange = async (newTitle: string) => {

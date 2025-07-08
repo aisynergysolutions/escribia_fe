@@ -38,7 +38,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
   // NEW: Use PostsContext
-  const { posts, loading, error, fetchPosts } = usePosts();
+  const { posts, loading, error, fetchPosts, deletePost } = usePosts();
   const navigate = useNavigate();
 
   // TODO: Replace with real agencyId logic as needed
@@ -181,8 +181,16 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     console.log('Duplicating post:', postId);
   };
 
-  const handleDelete = (postId: string) => {
-    console.log('Deleting post:', postId);
+  const handleDelete = async (postId: string) => {
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      try {
+        await deletePost('agency1', clientId, postId); // Call deletePost from PostsContext
+        console.log('Post deleted:', postId);
+      } catch (error) {
+        console.error('Error deleting post:', error);
+        alert('Failed to delete the post. Please try again.');
+      }
+    }
   };
 
   const getScheduledDate = (idea: Idea) => {

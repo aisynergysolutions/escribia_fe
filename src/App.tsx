@@ -12,6 +12,7 @@ import { AgencyProfileProvider } from '@/context/AgencyProfileContext';
 import { ClientsProvider } from '@/context/ClientsContext'; // <-- import this
 import { ProfilesProvider } from '@/context/ProfilesContext'; // <-- Add this import
 import { PostsProvider } from "./context/PostsContext";
+import { PostsDetailsProvider } from "./context/PostsDetailsContext";
 import { TemplatesProvider } from '@/context/TemplatesContext'; // <-- Add this import
 import ProfileDetailsRouter from './components/client/ProfileDetailsRouter'; // <-- Add this import
 import { EventsProvider } from "./context/EventsContext";
@@ -49,7 +50,8 @@ function App() {
         <TemplatesProvider> {/* <-- Add TemplatesProvider here */}
           <ProfilesProvider> {/* <-- Wrap here */}
             <PostsProvider>
-              <EventsProvider>
+              <PostsDetailsProvider>
+                <EventsProvider>
                 <QueryClientProvider client={queryClient}>
                   <TooltipProvider>
                     <Toaster />
@@ -155,7 +157,7 @@ function App() {
                   </TooltipProvider>
                 </QueryClientProvider>
               </EventsProvider>
-
+            </PostsDetailsProvider>
             </PostsProvider>
           </ProfilesProvider>
         </TemplatesProvider> {/* <-- Close TemplatesProvider here */}

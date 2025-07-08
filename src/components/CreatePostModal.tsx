@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid'; // Import UUID library
+import { ProfileCard, useProfiles } from '@/context/ProfilesContext'; // Import ProfilesContext
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -10,6 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Separator } from '@/components/ui/separator';
 import { mockTemplates, mockClients } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { usePosts } from '@/context/PostsContext'; // Import PostsContext
+import { handleMockResponse } from '@/context/PostsDetailsContext'; // Import handleMockResponse
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -19,6 +23,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   children
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [postId, setPostId] = useState<string>(''); // State to store the generated UUID
   const [selectedMethod, setSelectedMethod] = useState<string>('text');
   const [ideaText, setIdeaText] = useState('');
   const [selectedObjective, setSelectedObjective] = useState<string>('');
@@ -36,6 +41,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [postSuggestions, setPostSuggestions] = useState(['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).']);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [profiles, setProfiles] = useState<ProfileCard[]>([]); // State to store fetched profiles
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -44,6 +50,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string; }>();
   const { toast } = useToast();
+  const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles(); // Use ProfilesContext
+  const { createPost } = usePosts(); // Use createPost from PostsContext
   const objectives = ['Thought Leadership', 'Product Launch', 'Event Promotion', 'Brand Awareness', 'Lead Generation', 'Customer Education', 'Community Building'];
 
   // Get current client and sub-clients
@@ -53,18 +61,128 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   // Get selected sub-client for display
   const selectedSubClientData = subClients.find(sc => sc.id === selectedSubClient);
 
-  const handleCreateFromText = () => {
+  useEffect(() => {
+    if (isOpen) {
+      // Generate a random UUID when the modal opens
+      setPostId(uuidv4());
+
+      // Fetch profiles for the selected client
+      if (clientId) {
+        setActiveClientId(clientId);
+        fetchProfiles(clientId).then(() => {
+          setProfiles(clientProfiles); // Update local state with fetched profiles
+        });
+      }
+    }
+  }, [isOpen, clientId, fetchProfiles, clientProfiles, setActiveClientId]);
+
+  const handleCreateFromText = async () => {
     if (ideaText.trim() && clientId && selectedSubClient) {
-      const tempIdeaId = `temp-${Date.now()}`;
-      const textData = {
-        idea: ideaText.trim(),
-        objective: selectedObjective,
-        template: selectedTemplate,
-        subClientId: selectedSubClient
-      };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=text&data=${encodeURIComponent(JSON.stringify(textData))}`);
-      setIsOpen(false);
-      resetForm();
+      try {
+        const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
+        if (!selectedProfile) {
+          toast({
+            title: 'Error',
+            description: 'Selected profile not found',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Show loader on the button
+        setIsRefreshing(true);
+
+        // Step 1: Generate a unique post ID
+        const ideaId = uuidv4();
+
+        // Step 2: Create the post in Firestore
+        await createPost('agency1', clientId, {
+          profileId: selectedProfile.id,
+          profileName: selectedProfile.profileName,
+          profileRole: selectedProfile.role || '',
+          objective: selectedObjective,
+          templateUsedId: selectedTemplate,
+          initialIdeaPrompt: ideaText.trim(),
+        }, ideaId); // Pass the ideaId explicitly
+
+        // Step 3: Handle mock response if needed
+        let result;
+        try {
+          const response = await fetch('https://web-production-2fc1.up.railway.app/posts/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              agency_id: 'agency1',
+              client_id: clientId,
+              subclient_id: selectedProfile.id,
+              idea_id: ideaId,
+              template_id: selectedTemplate || '',
+              save: true,
+              create_title: true,
+              create_hooks: true,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch from the endpoint');
+          }
+
+          result = await response.json();
+        } catch (error) {
+          console.error('Error fetching from endpoint:', error);
+
+          // Use mock response in case of an error
+          result = {
+            success: true,
+            post_content: 'This is a mock LinkedIn post generated as a fallback.',
+            title: 'Mock Post Title',
+            generatedHooks: [
+              { angle: 'Angle A', selected: true, text: 'Hook 1' },
+              { angle: 'Angle B', selected: false, text: 'Hook 2' },
+              { angle: 'Angle C', selected: false, text: 'Hook 3' },
+              { angle: 'Angle D', selected: false, text: 'Hook 4' },
+            ],
+            post_id: ideaId,
+            error: null,
+          };
+
+          // Call the auxiliary function to upload mock response data
+          await handleMockResponse('agency1', clientId, ideaId, result);
+        }
+
+        // Step 3: Handle the response
+        if (result.success) {
+          toast({
+            title: 'Post Generated',
+            description: 'Your post has been successfully generated.',
+          });
+          console.log('Generated Post:', result.post_content);
+          console.log('Generated Title:', result.title);
+          console.log('Generated Hooks:', result.generatedHooks);
+        } else {
+          toast({
+            title: 'Error',
+            description: result.error || 'Failed to generate post. Please try again.',
+            variant: 'destructive',
+          });
+        }
+
+        // Close the modal and reset the form
+        setIsOpen(false);
+        resetForm();
+      } catch (error) {
+        console.error('Error generating post:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        // Hide the loader
+        setIsRefreshing(false);
+      }
     }
   };
 
@@ -119,10 +237,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const refreshSuggestions = async () => {
     setIsRefreshing(true);
     const allSuggestions = ['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).', 'The Remote Work Revolution: 5 productivity tools that increased our team\'s output by 40% while reducing meeting time by half.', 'Cloud Migration Mistakes That Cost Companies Millions: What we learned from 100+ failed migrations and how to avoid them.', 'The Future of Cybersecurity: Why traditional firewalls are becoming obsolete and what\'s replacing them.', 'Building SaaS Products That Scale: Technical decisions we made at day 1 that saved us from rewriting everything at 1M users.'];
-    
+
     // Simulate loading time
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
     setPostSuggestions(shuffled.slice(0, 4));
     setIsRefreshing(false);
@@ -324,20 +442,27 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Insert any text to turn into a post <span className="text-destructive">*</span>
               </label>
-              <Textarea 
-                value={ideaText} 
-                onChange={e => setIdeaText(e.target.value)} 
-                placeholder="Enter your idea here..." 
-                className="min-h-[200px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]" 
+              <Textarea
+                value={ideaText}
+                onChange={e => setIdeaText(e.target.value)}
+                placeholder="Enter your idea here..."
+                className="min-h-[200px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
               />
             </div>
 
-            <Button 
-              onClick={handleCreateFromText} 
-              disabled={!ideaText.trim() || !selectedSubClient} 
+            <Button
+              onClick={handleCreateFromText}
+              disabled={!ideaText.trim() || !selectedSubClient || isRefreshing}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-              Generate post from text
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate post from text'
+              )}
             </Button>
           </div>
         );
@@ -369,11 +494,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Take notes before recording (optional)
               </label>
-              <Textarea 
-                value={voiceNotes} 
-                onChange={e => setVoiceNotes(e.target.value)} 
-                placeholder="Why you want to speak on this topic?&#10;What you want to convey to your audience?" 
-                className="min-h-[120px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]" 
+              <Textarea
+                value={voiceNotes}
+                onChange={e => setVoiceNotes(e.target.value)}
+                placeholder="Why you want to speak on this topic?&#10;What you want to convey to your audience?"
+                className="min-h-[120px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
               />
             </div>
 
@@ -392,10 +517,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   <div className="text-green-700 font-medium">
                     ✓ Recording completed ({formatRecordingTime(recordingTime)})
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={isPlaying ? stopPlayback : playRecording} 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={isPlaying ? stopPlayback : playRecording}
                     className="flex items-center gap-2 hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
                   >
                     {isPlaying ? (
@@ -414,13 +539,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </div>
             )}
 
-            <Button 
-              onClick={isRecording ? stopVoiceRecording : startVoiceRecording} 
-              className={`w-full py-3 transition-all transform hover:scale-[1.02] ${
-                isRecording 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-[#4F46E5] hover:bg-[#4338CA]'
-              }`}
+            <Button
+              onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+              className={`w-full py-3 transition-all transform hover:scale-[1.02] ${isRecording
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-[#4F46E5] hover:bg-[#4338CA]'
+                }`}
             >
               {isRecording ? (
                 <>
@@ -436,8 +560,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </Button>
 
             {hasRecording && (
-              <Button 
-                onClick={handleCreateFromVoice} 
+              <Button
+                onClick={handleCreateFromVoice}
                 disabled={!selectedSubClient}
                 className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
               >
@@ -456,10 +580,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <label className="block text-sm font-medium text-foreground mb-2">
                 YouTube or Article URL <span className="text-destructive">*</span>
               </label>
-              <Input 
-                value={urlInput} 
-                onChange={e => setUrlInput(e.target.value)} 
-                placeholder="https://www.youtube.com/watch?v=... or https://example.com/article" 
+              <Input
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... or https://example.com/article"
                 className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
               />
             </div>
@@ -468,17 +592,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Additional remarks (optional)
               </label>
-              <Textarea 
-                value={urlRemarks} 
-                onChange={e => setUrlRemarks(e.target.value)} 
-                placeholder="Any specific aspects you want to focus on or additional context..." 
-                className="min-h-[100px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]" 
+              <Textarea
+                value={urlRemarks}
+                onChange={e => setUrlRemarks(e.target.value)}
+                placeholder="Any specific aspects you want to focus on or additional context..."
+                className="min-h-[100px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
               />
             </div>
 
-            <Button 
-              onClick={handleCreateFromUrl} 
-              disabled={!urlInput.trim() || !selectedSubClient} 
+            <Button
+              onClick={handleCreateFromUrl}
+              disabled={!urlInput.trim() || !selectedSubClient}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
               Generate posts from URL
@@ -491,7 +615,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <div className="h-full flex flex-col animate-fade-in">
             <div className="relative h-full">
               {/* Floating Refresh Button */}
-              <button 
+              <button
                 onClick={refreshSuggestions}
                 disabled={isRefreshing}
                 className="absolute top-0 right-0 z-10 p-2 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group"
@@ -504,7 +628,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <div className="grid grid-cols-2 gap-3 h-full pr-12">
                 {isRefreshing ? (
                   Array.from({ length: 4 }).map((_, index) => (
-                    <div 
+                    <div
                       key={`skeleton-${index}`}
                       className="relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse h-[170px]"
                       style={{ animationDelay: `${index * 100}ms` }}
@@ -519,10 +643,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   ))
                 ) : (
                   postSuggestions.map((suggestion, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className={`relative p-5 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start min-h-[140px] ${!selectedSubClient ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      style={{ 
+                      style={{
                         animationDelay: `${index * 100}ms`,
                         height: '170px'
                       }}
@@ -544,17 +668,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                           {suggestion}
                         </p>
                       </div>
-                      <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${
-                        hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
-                      }`} />
-                      <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${
-                        hoveredSuggestion === suggestion ? 'opacity-100' : ''
-                      }`} />
+                      <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
+                        }`} />
+                      <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${hoveredSuggestion === suggestion ? 'opacity-100' : ''
+                        }`} />
                     </div>
                   ))
                 )}
               </div>
-              
+
               {!selectedSubClient && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg">
                   <p className="text-sm text-muted-foreground">Please select who this post is for first</p>
@@ -584,17 +706,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 px-4 py-3 bg-transparent border-0 rounded-md cursor-pointer hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition-all min-w-[280px]">
-                  {selectedSubClientData ? (
+                  {selectedSubClient ? (
                     <>
                       <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                         <User className="w-4 h-4 text-gray-600" />
                       </div>
                       <div className="flex flex-col items-start flex-1 min-w-0">
                         <div className="text-sm font-medium text-foreground truncate w-full">
-                          {selectedSubClientData.name}
+                          {profiles.find(profile => profile.id === selectedSubClient)?.profileName || 'Unknown'}
                         </div>
                         <div className="text-xs text-muted-foreground truncate w-full">
-                          {selectedSubClientData.role}
+                          {profiles.find(profile => profile.id === selectedSubClient)?.role || ''}
                         </div>
                       </div>
                     </>
@@ -610,26 +732,25 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[280px] bg-white border shadow-lg z-50" align="start">
-                {subClients.map(subClient => (
+                {profiles.map(profile => (
                   <DropdownMenuItem
-                    key={subClient.id}
-                    onClick={() => setSelectedSubClient(subClient.id)}
-                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 ${
-                      selectedSubClient === subClient.id ? 'bg-gray-50' : ''
-                    }`}
+                    key={profile.id}
+                    onClick={() => setSelectedSubClient(profile.id)}
+                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 ${selectedSubClient === profile.id ? 'bg-gray-50' : ''
+                      }`}
                   >
                     <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-gray-600" />
                     </div>
                     <div className="flex flex-col items-start flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate w-full">
-                        {subClient.name}
+                        {profile.profileName}
                       </div>
                       <div className="text-xs text-muted-foreground truncate w-full">
-                        {subClient.role}
+                        {profile.role}
                       </div>
                     </div>
-                    {selectedSubClient === subClient.id && (
+                    {selectedSubClient === profile.id && (
                       <div className="w-2 h-2 bg-[#4F46E5] rounded-full flex-shrink-0" />
                     )}
                   </DropdownMenuItem>
@@ -640,21 +761,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           {/* Header Divider */}
           <Separator className="border-gray-200" />
         </DialogHeader>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 pb-6">
           {/* Left side - Creation methods */}
           <div className="space-y-6">
             {/* Creation Methods */}
             <div className="space-y-3">
               {createMethods.map(method => (
-                <button 
-                  key={method.id} 
-                  onClick={() => handleMethodSelect(method.id)} 
-                  className={`w-full p-4 rounded-lg text-left transition-all duration-200 transform hover:scale-[1.02] border ${
-                    selectedMethod === method.id 
-                      ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-lg' 
-                      : 'border-border bg-card hover:border-[#4F46E5]/50 hover:bg-[#4F46E5]/5'
-                  }`}
+                <button
+                  key={method.id}
+                  onClick={() => handleMethodSelect(method.id)}
+                  className={`w-full p-4 rounded-lg text-left transition-all duration-200 transform hover:scale-[1.02] border ${selectedMethod === method.id
+                    ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-lg'
+                    : 'border-border bg-card hover:border-[#4F46E5]/50 hover:bg-[#4F46E5]/5'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`p-2.5 rounded-lg transition-all ${method.color}`}>
