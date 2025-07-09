@@ -38,10 +38,22 @@ type PostsContextType = {
       objective: string;
       templateUsedId: string;
       initialIdeaPrompt: string;
+      status?: string;
+      title?: string;
     },
     postId: string
   ) => Promise<void>;
   deletePost: (agencyId: string, clientId: string, postId: string) => Promise<void>;
+  updatePostInContext: (
+    agencyId: string,
+    clientId: string,
+    postId: string,
+    updates: {
+      title?: string;
+      currentDraftText?: string;
+      generatedHooks?: any[];
+    }
+  ) => Promise<void>;
 };
 
 const PostsContext = createContext<PostsContextType>({
@@ -51,6 +63,7 @@ const PostsContext = createContext<PostsContextType>({
   fetchPosts: async () => { },
   createPost: async () => { },
   deletePost: async () => { },
+  updatePostInContext: async () => { },
 });
 
 export const usePosts = () => useContext(PostsContext);
@@ -83,7 +96,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       const postsList: PostCard[] = snapshot.docs.map(docSnap => {
         const data = docSnap.data();
         return {
-          title: data.title || data.initialIdeaPrompt || 'Untitled Post',
+          title: data.title || 'Untitled Post',
           profile: data.profile || data.profileName || '',
           status: data.status || '',
           lastUpdated: data.updatedAt || { nanoseconds: 0, seconds: 0 },
@@ -120,6 +133,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       templateUsedId: string;
       initialIdeaPrompt: string;
       status?: string;
+      // Add optional title parameter for AI-generated titles
+      title?: string;
     },
     postId: string
   ): Promise<void> => {
@@ -132,10 +147,11 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         objective: postData.objective || '',
         templateUsedId: postData.templateUsedId || '',
         initialIdeaPrompt: postData.initialIdeaPrompt,
+        // Use provided title or fallback to initialIdeaPrompt
+        title: postData.title || postData.initialIdeaPrompt,
         lastUpdated: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         status: postData.status || 'Drafted',
-        title: postData.initialIdeaPrompt,
         // Initialize with empty drafts array and currentDraftText
         drafts: [],
         currentDraftText: '',
@@ -149,7 +165,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       // **FIX: Update the context cache immediately**
       const key: PostsCacheKey = `${agencyId}_${clientId}`;
       const newPostCard: PostCard = {
-        title: postData.initialIdeaPrompt,
+        // Use the provided title or fallback to initialIdeaPrompt
+        title: postData.title || postData.initialIdeaPrompt,
         profile: postData.profileName,
         status: postData.status || 'Drafted',
         lastUpdated: { nanoseconds: 0, seconds: Math.floor(Date.now() / 1000) },
@@ -171,6 +188,50 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('[PostsContext] Error creating post:', err);
       throw new Error('Failed to create post');
+    }
+  };
+
+  // Add a new function to update post title in context after AI generation
+  const updatePostInContext = async (
+    agencyId: string,
+    clientId: string,
+    postId: string,
+    updates: {
+      title?: string;
+      currentDraftText?: string;
+      generatedHooks?: any[];
+    }
+  ): Promise<void> => {
+    const key: PostsCacheKey = `${agencyId}_${clientId}`;
+    
+    // Update the cache
+    setPostsCache(prev => {
+      if (!prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: prev[key].map(post => 
+          post.postId === postId 
+            ? { 
+                ...post, 
+                ...(updates.title && { title: updates.title }),
+                lastUpdated: { nanoseconds: 0, seconds: Math.floor(Date.now() / 1000) }
+              }
+            : post
+        ),
+      };
+    });
+
+    // Update the current posts if we're viewing this client
+    if (currentKey === key) {
+      setPosts(prev => prev.map(post => 
+        post.postId === postId 
+          ? { 
+              ...post, 
+              ...(updates.title && { title: updates.title }),
+              lastUpdated: { nanoseconds: 0, seconds: Math.floor(Date.now() / 1000) }
+            }
+          : post
+      ));
     }
   };
 
@@ -204,6 +265,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         fetchPosts,
         createPost,
         deletePost,
+        updatePostInContext, // Add this to the context
       }}
     >
       {children}

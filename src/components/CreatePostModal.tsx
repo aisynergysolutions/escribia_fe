@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid'; // Import UUID library
 import { ProfileCard, useProfiles } from '@/context/ProfilesContext'; // Import ProfilesContext
+import { TemplateCard, useTemplates } from '@/context/TemplatesContext'; // Import TemplatesContext
 import { useNavigate, useParams } from 'react-router-dom';
 import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,10 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from '@/components/ui/separator';
-import { mockTemplates, mockClients } from '@/types';
+import { mockClients } from '@/types'; // Remove mockTemplates import
 import { useToast } from '@/hooks/use-toast';
 import { usePosts } from '@/context/PostsContext'; // Import PostsContext
-import { handleMockResponse } from '@/context/PostsDetailsContext'; // Import handleMockResponse
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -42,6 +42,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profiles, setProfiles] = useState<ProfileCard[]>([]); // State to store fetched profiles
+  const [templates, setTemplates] = useState<TemplateCard[]>([]); // State to store fetched templates
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -51,8 +52,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { clientId } = useParams<{ clientId: string; }>();
   const { toast } = useToast();
   const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles(); // Use ProfilesContext
-  const { createPost } = usePosts(); // Use createPost from PostsContext
-  const objectives = ['Thought Leadership', 'Product Launch', 'Event Promotion', 'Brand Awareness', 'Lead Generation', 'Customer Education', 'Community Building'];
+  const { fetchTemplates, templates: allTemplates } = useTemplates(); // Use TemplatesContext
+  const { createPost, updatePostInContext } = usePosts(); // Add updatePostInContext
+  const objectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
 
   // Get current client and sub-clients
   const currentClient = mockClients.find(client => client.id === clientId);
@@ -73,8 +75,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           setProfiles(clientProfiles); // Update local state with fetched profiles
         });
       }
+
+      // Fetch templates
+      fetchTemplates().then(() => {
+        setTemplates(allTemplates); // Update local state with fetched templates
+      });
     }
-  }, [isOpen, clientId, fetchProfiles, clientProfiles, setActiveClientId]);
+  }, [isOpen, clientId, fetchProfiles, clientProfiles, setActiveClientId, fetchTemplates, allTemplates]);
 
   const handleCreateFromText = async () => {
     if (ideaText.trim() && clientId && selectedSubClient) {
@@ -95,7 +102,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         // Step 1: Generate a unique post ID
         const ideaId = uuidv4();
 
-        // Step 2: Create the post in Firestore
+        // Step 2: Create the post in Firestore (without AI-generated title initially)
         await createPost('agency1', clientId, {
           profileId: selectedProfile.id,
           profileName: selectedProfile.profileName,
@@ -103,9 +110,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           objective: selectedObjective,
           templateUsedId: selectedTemplate,
           initialIdeaPrompt: ideaText.trim(),
-        }, ideaId); // Pass the ideaId explicitly
+        }, ideaId);
 
-        // Step 3: Handle mock response if needed
+        // Step 3: Generate AI content and update
         let result;
         try {
           const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
@@ -118,7 +125,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               client_id: clientId,
               subclient_id: selectedProfile.id,
               idea_id: ideaId,
-              template_id: selectedTemplate || '',
               save: true,
               create_title: true,
               create_hooks: true,
@@ -132,46 +138,46 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           result = await response.json();
         } catch (error) {
           console.error('Error fetching from endpoint:', error);
-
-          // Use mock response in case of an error
-          result = {
-            success: true,
-            post_content: 'This is a mock LinkedIn post generated as a fallback.',
-            title: 'Mock Post Title',
-            generatedHooks: [
-              { angle: 'Angle A', selected: true, text: 'Hook 1' },
-              { angle: 'Angle B', selected: false, text: 'Hook 2' },
-              { angle: 'Angle C', selected: false, text: 'Hook 3' },
-              { angle: 'Angle D', selected: false, text: 'Hook 4' },
-            ],
-            post_id: ideaId,
-            error: null,
-          };
-
-          // Call the auxiliary function to upload mock response data
-          await handleMockResponse('agency1', clientId, ideaId, result);
+          toast({
+            title: 'AI Generation Error',
+            description: 'There was a problem generating your post. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsRefreshing(false);
+          return;
         }
 
-        // Step 3: Handle the response
-        if (result.success) {
+        // Step 4: Update the context with AI-generated data
+        if (result.success && result.title) {
+          await updatePostInContext('agency1', clientId, ideaId, {
+            title: result.title,
+            currentDraftText: result.post_content,
+            generatedHooks: result.generatedHooks || result.hooks
+          });
+
           toast({
             title: 'Post Generated',
             description: 'Your post has been successfully generated.',
           });
           console.log('Generated Post:', result.post_content);
           console.log('Generated Title:', result.title);
-          console.log('Generated Hooks:', result.generatedHooks);
+          console.log('Generated Hooks:', result.generatedHooks || result.hooks);
         } else {
           toast({
-            title: 'Error',
-            description: result.error || 'Failed to generate post. Please try again.',
+            title: 'AI Generation Error',
+            description: result.error || 'Failed to generate post. Please try again in a few minutes.',
             variant: 'destructive',
           });
+          setIsRefreshing(false);
+          return;
         }
 
         // Close the modal and reset the form
         setIsOpen(false);
         resetForm();
+
+        // Navigate to the new post
+        navigate(`/clients/${clientId}/ideas/${ideaId}?new=true`);
       } catch (error) {
         console.error('Error generating post:', error);
         toast({
@@ -391,11 +397,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         <label className="block text-sm font-medium text-foreground mb-2">
           Objective (optional)
         </label>
-        <Select value={selectedObjective} onValueChange={setSelectedObjective}>
+        <Select value={selectedObjective} onValueChange={(value) => setSelectedObjective(value === "none" ? "" : value)}>
           <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
             <SelectValue placeholder="Select an objective" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">
+              <span className="text-muted-foreground ">Select an objective</span>
+            </SelectItem>
             {objectives.map(objective => (
               <SelectItem key={objective} value={objective}>
                 {objective}
@@ -409,12 +418,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         <label className="block text-sm font-medium text-foreground mb-2">
           Template (optional)
         </label>
-        <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+        <Select value={selectedTemplate} onValueChange={(value) => setSelectedTemplate(value === "none" ? "" : value)}>
           <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
             <SelectValue placeholder="Select a template" />
           </SelectTrigger>
           <SelectContent>
-            {mockTemplates.map(template => (
+            <SelectItem value="none">
+              <span className="text-muted-foreground">Select a template</span>
+            </SelectItem>
+            {templates.map(template => (
               <SelectItem key={template.id} value={template.id}>
                 {template.templateName}
               </SelectItem>
