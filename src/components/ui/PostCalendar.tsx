@@ -69,7 +69,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   }, []);
 
   const handlePostClick = useCallback((post: any) => {
-    navigate(`/clients/${post.clientId}/ideas/${post.id}`);
+    navigate(`/clients/${post.clientId}/posts/${post.id}`);
   }, [navigate]);
 
   const handleDayClick = useCallback((day: Date) => {

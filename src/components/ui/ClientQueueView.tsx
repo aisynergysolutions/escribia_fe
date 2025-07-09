@@ -25,26 +25,27 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   const [newScheduleDate, setNewScheduleDate] = useState<Date | null>(null);
   const [hideEmptySlots, setHideEmptySlots] = useState(false);
 
-  const { 
-    queueSlots, 
-    dayGroups, 
-    refreshQueue, 
-    hasTimeslotsConfigured, 
-    predefinedTimeSlots, 
-    activeDays, 
+  const {
+    queueSlots,
+    dayGroups,
+    refreshQueue,
+    hasTimeslotsConfigured,
+    predefinedTimeSlots,
+    activeDays,
     updateTimeslots,
     loadMoreDays,
     loadingTimeslotData
   } = useQueueData(clientId, hideEmptySlots);
-  
+
   const { handleRemoveFromQueue, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
-  
+
   // Show timeslot modal automatically if no timeslots are configured
+  // Only trigger after loading is complete
   React.useEffect(() => {
-    if (!hasTimeslotsConfigured) {
+    if (!loadingTimeslotData && !hasTimeslotsConfigured) {
       setTimeslotModalOpen(true);
     }
-  }, [hasTimeslotsConfigured]);
+  }, [hasTimeslotsConfigured, loadingTimeslotData]);
 
   const showRescheduleModal = (draggedSlot: any, targetSlot: DaySlot) => {
     const slot = queueSlots.find(s => s.id === draggedSlot.id);
@@ -56,12 +57,12 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   };
 
   const { draggedItem, dragOverSlot, handleDragStart, handleDragOver, handleDragEnd, handleDrop } = useDragAndDrop(
-    hideEmptySlots, 
+    hideEmptySlots,
     refreshQueue
   );
 
   const handlePostClick = (postId: string) => {
-    navigate(`/clients/${clientId}/ideas/${postId}`);
+    navigate(`/clients/${clientId}/posts/${postId}`);
   };
 
   const handleEditSlot = (slotId: string) => {
@@ -75,7 +76,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
   const handleSchedulePost = (date: Date, time: string) => {
     console.log('Create new post for:', date, 'at', time);
-    navigate(`/clients/${clientId}/ideas/new?new=true`);
+    navigate(`/clients/${clientId}/posts/new?new=true`);
   };
 
   const handleRescheduleFromModal = (newDateTime: Date, time: string) => {
@@ -97,8 +98,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     return (
       <>
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 opacity-50 pointer-events-none">
-          <QueueHeader 
-            hideEmptySlots={hideEmptySlots} 
+          <QueueHeader
+            hideEmptySlots={hideEmptySlots}
             onToggle={setHideEmptySlots}
             onEditTimeslots={() => setTimeslotModalOpen(true)}
           />
@@ -126,8 +127,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     return (
       <>
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-          <QueueHeader 
-            hideEmptySlots={hideEmptySlots} 
+          <QueueHeader
+            hideEmptySlots={hideEmptySlots}
             onToggle={setHideEmptySlots}
             onEditTimeslots={() => setTimeslotModalOpen(true)}
           />
@@ -162,8 +163,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   return (
     <>
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-        <QueueHeader 
-          hideEmptySlots={hideEmptySlots} 
+        <QueueHeader
+          hideEmptySlots={hideEmptySlots}
           onToggle={setHideEmptySlots}
           onEditTimeslots={() => setTimeslotModalOpen(true)}
         />
@@ -172,10 +173,10 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
           <TooltipProvider>
             {Object.entries(dayGroups).map(([dateStr, slots], index, array) => {
               if (slots.length === 0) return null;
-              
+
               const date = new Date(dateStr);
               const isLastCard = index === array.length - 1;
-              
+
               return (
                 <DayCard key={dateStr} date={date} className={!isLastCard ? 'mb-4' : ''}>
                   {slots.map((slot) => {
@@ -199,7 +200,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
 
                     // Handle regular post slots
                     const queueSlot = slot as any;
-                    
+
                     return (
                       <PostSlotCard
                         key={queueSlot.id}

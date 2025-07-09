@@ -8,7 +8,7 @@ const MainLayout = () => {
   const location = useLocation();
   
   // Check if we're on a client-specific page
-  // This includes: /clients/[clientId], /clients/[clientId]/*, and /clients/[clientId]/ideas/[ideaId]
+  // This includes: /clients/[clientId], /clients/[clientId]/*, and /clients/[clientId]/posts/[postId]
   const isClientPage = location.pathname.startsWith('/clients/') && 
                        location.pathname !== '/clients' &&
                        location.pathname.match(/^\/clients\/[^\/]+/); // Any path that starts with /clients/[clientId]

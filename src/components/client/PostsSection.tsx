@@ -223,15 +223,15 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                   const count = clientIdeas.filter(idea => idea.status === status).length;
                   const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
                   const isSelected = selectedStatus === status;
-                  
+
                   return (
                     <button
                       key={status}
                       onClick={() => handleStatusSelect(status)}
                       className={`
                         flex-1 relative group px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap
-                        ${isSelected 
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                        ${isSelected
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }
                       `}
@@ -250,20 +250,20 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             {/* Gradient fade for overflow indication */}
             <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white to-transparent pointer-events-none opacity-0 status-gradient"></div>
           </div>
-          
+
           {/* Right Side: Search & Primary Action - Fixed */}
           <div className="flex items-center gap-4 flex-shrink-0">
             {/* Search Input - Made narrower */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input 
-                placeholder="Search posts..." 
-                value={searchTerm} 
-                onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-9 h-10 w-48 focus:border-indigo-600 focus:ring-indigo-600" 
+              <Input
+                placeholder="Search posts..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-9 h-10 w-48 focus:border-indigo-600 focus:ring-indigo-600"
               />
             </div>
-            
+
             {/* New Post Button - Icon Only */}
             <CreatePostModal>
               <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
@@ -273,7 +273,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Posts Table */}
       <div className="bg-white rounded-xl shadow-sm border">
         {loading ? (
@@ -338,11 +338,11 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                   <TableRow
                     key={post.postId}
                     className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
-                    onClick={() => navigate(`/clients/${clientId}/ideas/${post.postId}`)}
+                    onClick={() => navigate(`/clients/${clientId}/posts/${post.postId}`)}
                   >
                     <TableCell className="py-4">
-                      <div className="font-semibold text-gray-900">
-                        {post.title}
+                      <div className="font-semibold text-gray-900 max-w-xs truncate" title={post.title}>
+                        {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
                       </div>
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
@@ -369,9 +369,9 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                     <TableCell className="py-4">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 hover:bg-gray-100"
                             data-testid="post-actions-btn"
                             onClick={(e) => e.stopPropagation()}
@@ -387,7 +387,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(post.postId);

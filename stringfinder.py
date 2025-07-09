@@ -21,8 +21,8 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python stringfinder.py <search_string> <folder_path>")
         sys.exit(1)
-    search_string = sys.argv[1]
-    folder_path = sys.argv[2]
+    folder_path = sys.argv[1]
+    search_string = sys.argv[2]
     result = find_string_in_files(search_string, folder_path)
     for path in result:
         print(path)

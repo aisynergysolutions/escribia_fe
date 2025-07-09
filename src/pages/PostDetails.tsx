@@ -14,8 +14,8 @@ import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
 import { usePostsDetails } from '@/context/PostsDetailsContext'; // <-- Import PostsDetailsContext
 import OptionsCard from '@/components/idea/OptionsCard';
 
-const IdeaDetails = () => {
-  const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
+const PostDetails = () => {
+  const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -25,13 +25,13 @@ const IdeaDetails = () => {
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
   const { getPostDetails, postDetails, postDetailsLoading, postDetailsError, saveNewDraft } = usePostsDetails();
 
-  // Fetch post details when ideaId/clientId/agencyId changes and not a new post
+  // Fetch post details when postId/clientId/agencyId changes and not a new post
   useEffect(() => {
-    if (!isNewPost && agencyId && clientId && ideaId) {
-      getPostDetails(agencyId, clientId, ideaId);
+    if (!isNewPost && agencyId && clientId && postId) {
+      getPostDetails(agencyId, clientId, postId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agencyId, clientId, ideaId, isNewPost]);
+  }, [agencyId, clientId, postId, isNewPost]);
 
   const [selectedHookIndex, setSelectedHookIndex] = useState(-1);
   const [useAsTrainingData, setUseAsTrainingData] = useState(false);
@@ -88,15 +88,15 @@ const IdeaDetails = () => {
 
   // Create save function for the post editor
   const handleSavePost = async (newText: string) => {
-    if (!isNewPost && agencyId && clientId && ideaId) {
-      await saveNewDraft(agencyId, clientId, ideaId, newText, 'Manual save', false);
+    if (!isNewPost && agencyId && clientId && postId) {
+      await saveNewDraft(agencyId, clientId, postId, newText, 'Manual save', false);
     }
   };
 
   // Create save function for AI-generated content
   const handleSaveAIPost = async (newText: string) => {
-    if (!isNewPost && agencyId && clientId && ideaId) {
-      await saveNewDraft(agencyId, clientId, ideaId, newText, 'AI-generated content', true);
+    if (!isNewPost && agencyId && clientId && postId) {
+      await saveNewDraft(agencyId, clientId, postId, newText, 'AI-generated content', true);
     }
   };
 
@@ -110,11 +110,18 @@ const IdeaDetails = () => {
   useEffect(() => {
     if (!isNewPost && postDetails) {
       const latestText = getLatestDraftText();
-      if (latestText && latestText !== postEditor.generatedPost) {
-        postEditor.handlePostChange(latestText);
-      }
+      // Always update the editor text when postDetails changes
+      postEditor.handlePostChange(latestText);
     }
-  }, [postDetails, isNewPost]);
+  }, [postDetails, isNewPost, postId]); // Add postId as dependency
+
+  // Add this effect to reset the editor when navigating to a different post
+  useEffect(() => {
+    if (!isNewPost) {
+      // Reset the editor text when postId changes
+      postEditor.handlePostChange('');
+    }
+  }, [postId, isNewPost]);
 
   // Version history: use postDetails.drafts if available
   const versionHistory = !isNewPost && postDetails?.drafts
@@ -395,4 +402,4 @@ const IdeaDetails = () => {
   );
 };
 
-export default IdeaDetails;
+export default PostDetails;

@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from '@/components/ui/separator';
-import { mockClients } from '@/types'; // Remove mockTemplates import
 import { useToast } from '@/hooks/use-toast';
 import { usePosts } from '@/context/PostsContext'; // Import PostsContext
 
@@ -38,11 +37,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [hasRecording, setHasRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [postSuggestions, setPostSuggestions] = useState(['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).']);
+  const [postSuggestions, setPostSuggestions] = useState([
+    'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
+    'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.',
+    "The LinkedIn Algorithm Just Changed: Here's exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.",
+    "From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we've consulted)."
+  ]);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profiles, setProfiles] = useState<ProfileCard[]>([]); // State to store fetched profiles
-  const [templates, setTemplates] = useState<TemplateCard[]>([]); // State to store fetched templates
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -52,16 +55,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { clientId } = useParams<{ clientId: string; }>();
   const { toast } = useToast();
   const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles(); // Use ProfilesContext
-  const { fetchTemplates, templates: allTemplates } = useTemplates(); // Use TemplatesContext
+  const { templates: allTemplates } = useTemplates(); // Use TemplatesContext
   const { createPost, updatePostInContext } = usePosts(); // Add updatePostInContext
   const objectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
 
-  // Get current client and sub-clients
-  const currentClient = mockClients.find(client => client.id === clientId);
-  const subClients = currentClient?.subClients || [];
-
-  // Get selected sub-client for display
-  const selectedSubClientData = subClients.find(sc => sc.id === selectedSubClient);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,12 +73,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         });
       }
 
-      // Fetch templates
-      fetchTemplates().then(() => {
-        setTemplates(allTemplates); // Update local state with fetched templates
-      });
+      // Fetch templates (no .then, no setTemplates)
+      // fetchTemplates();
     }
-  }, [isOpen, clientId, fetchProfiles, clientProfiles, setActiveClientId, fetchTemplates, allTemplates]);
+    // REMOVE allTemplates from dependencies!
+  }, [isOpen, clientId, fetchProfiles, setActiveClientId]);
 
   const handleCreateFromText = async () => {
     if (ideaText.trim() && clientId && selectedSubClient) {
@@ -100,9 +96,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         setIsRefreshing(true);
 
         // Step 1: Generate a unique post ID
-        const ideaId = uuidv4();
+        const postId = uuidv4();
 
-        // Step 2: Create the post in Firestore (without AI-generated title initially)
+        // Step 2: Create the post in Firestore (without AI-generated content initially)
         await createPost('agency1', clientId, {
           profileId: selectedProfile.id,
           profileName: selectedProfile.profileName,
@@ -110,9 +106,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           objective: selectedObjective,
           templateUsedId: selectedTemplate,
           initialIdeaPrompt: ideaText.trim(),
-        }, ideaId);
+        }, postId);
 
-        // Step 3: Generate AI content and update
+        // Step 3: Generate AI content and let Railway save it to Firestore
         let result;
         try {
           const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
@@ -124,8 +120,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               agency_id: 'agency1',
               client_id: clientId,
               subclient_id: selectedProfile.id,
-              idea_id: ideaId,
-              save: true,
+              idea_id: postId,
+              save: true, // This should save to Firestore
               create_title: true,
               create_hooks: true,
             }),
@@ -147,14 +143,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           return;
         }
 
-        // Step 4: Update the context with AI-generated data
-        if (result.success && result.title) {
-          await updatePostInContext('agency1', clientId, ideaId, {
-            title: result.title,
-            currentDraftText: result.post_content,
-            generatedHooks: result.generatedHooks || result.hooks
-          });
-
+        // Step 4: Check if generation was successful
+        if (result.success) {
           toast({
             title: 'Post Generated',
             description: 'Your post has been successfully generated.',
@@ -162,6 +152,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           console.log('Generated Post:', result.post_content);
           console.log('Generated Title:', result.title);
           console.log('Generated Hooks:', result.generatedHooks || result.hooks);
+
+          // REMOVE the updatePostInContext call - Railway should handle Firestore updates
+          // await updatePostInContext('agency1', clientId, postId, { ... });
+
+          // Close the modal and reset the form
+          setIsOpen(false);
+          resetForm();
+
+          // Navigate to the PostDetails page - it will fetch fresh data from Firestore
+          navigate(`/clients/${clientId}/posts/${postId}`);
         } else {
           toast({
             title: 'AI Generation Error',
@@ -171,13 +171,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           setIsRefreshing(false);
           return;
         }
-
-        // Close the modal and reset the form
-        setIsOpen(false);
-        resetForm();
-
-        // Navigate to the new post
-        navigate(`/clients/${clientId}/ideas/${ideaId}?new=true`);
       } catch (error) {
         console.error('Error generating post:', error);
         toast({
@@ -194,7 +187,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleCreateFromVoice = () => {
     if (clientId && hasRecording && selectedSubClient) {
-      const tempIdeaId = `temp-${Date.now()}`;
+      const temppostId = `temp-${Date.now()}`;
       const voiceData = {
         language: recordingLanguage,
         notes: voiceNotes,
@@ -203,7 +196,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         subClientId: selectedSubClient,
         hasRecording: true
       };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=voice&data=${encodeURIComponent(JSON.stringify(voiceData))}`);
+      navigate(`/clients/${clientId}/posts/${temppostId}?new=true&method=voice&data=${encodeURIComponent(JSON.stringify(voiceData))}`);
       setIsOpen(false);
       resetForm();
     }
@@ -211,7 +204,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleCreateFromUrl = () => {
     if (urlInput.trim() && clientId && selectedSubClient) {
-      const tempIdeaId = `temp-${Date.now()}`;
+      const temppostId = `temp-${Date.now()}`;
       const urlData = {
         url: urlInput,
         remarks: urlRemarks,
@@ -219,7 +212,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         template: selectedTemplate,
         subClientId: selectedSubClient
       };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=url&data=${encodeURIComponent(JSON.stringify(urlData))}`);
+      navigate(`/clients/${clientId}/posts/${temppostId}?new=true&method=url&data=${encodeURIComponent(JSON.stringify(urlData))}`);
       setIsOpen(false);
       resetForm();
     }
@@ -227,14 +220,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleCreateFromSuggestion = (suggestion: string) => {
     if (clientId && selectedSubClient) {
-      const tempIdeaId = `temp-${Date.now()}`;
+      const temppostId = `temp-${Date.now()}`;
       const suggestionData = {
         initialIdea: suggestion,
         objective: selectedObjective,
         template: selectedTemplate,
         subClientId: selectedSubClient
       };
-      navigate(`/clients/${clientId}/ideas/${tempIdeaId}?new=true&method=suggestion&data=${encodeURIComponent(JSON.stringify(suggestionData))}`);
+      navigate(`/clients/${clientId}/posts/${temppostId}?new=true&method=suggestion&data=${encodeURIComponent(JSON.stringify(suggestionData))}`);
       setIsOpen(false);
       resetForm();
     }
@@ -426,7 +419,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <SelectItem value="none">
               <span className="text-muted-foreground">Select a template</span>
             </SelectItem>
-            {templates.map(template => (
+            {/* Use allTemplates from context */}
+            {allTemplates.map(template => (
               <SelectItem key={template.id} value={template.id}>
                 {template.templateName}
               </SelectItem>

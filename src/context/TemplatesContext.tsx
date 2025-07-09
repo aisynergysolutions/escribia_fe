@@ -98,6 +98,7 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
                 };
             });
             setTemplates(templatesList);
+            setLoading(false);
         } catch (err: any) {
             console.error('[TemplatesContext] Error fetching templates:', err);
             setError(err.message || 'Failed to fetch templates');

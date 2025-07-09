@@ -37,24 +37,24 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // Get agencyId and ideaId from params or props as needed
+  // Get agencyId and postId from params or props as needed
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
-  const { ideaId } = useParams<{ ideaId: string }>();
+  const { postId } = useParams<{ postId: string }>();
   const { updatePostTitle, updatePostStatus } = usePostsDetails(); // Use PostsDetailsContext
 
   // Handler for updating title in Firestore and context
   const handleTitleChange = async (newTitle: string) => {
     onTitleChange(newTitle);
-    if (!isNewPost && agencyId && clientId && ideaId) {
-      await updatePostTitle(agencyId, clientId, ideaId, newTitle);
+    if (!isNewPost && agencyId && clientId && postId) {
+      await updatePostTitle(agencyId, clientId, postId, newTitle);
     }
   };
 
   // Handler for updating status in Firestore and context
   const handleStatusChange = async (newStatus: string) => {
     onStatusChange(newStatus);
-    if (!isNewPost && agencyId && clientId && ideaId) {
-      await updatePostStatus(agencyId, clientId, ideaId, newStatus);
+    if (!isNewPost && agencyId && clientId && postId) {
+      await updatePostStatus(agencyId, clientId, postId, newStatus);
     }
   };
 

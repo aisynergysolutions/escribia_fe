@@ -24,7 +24,7 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
     if (onClick) {
       onClick();
     } else {
-      navigate(`/clients/${idea.clientId}/ideas/${idea.id}`);
+      navigate(`/clients/${idea.clientId}/posts/${idea.id}`);
     }
   }, [onClick, navigate, idea.clientId, idea.id]);
 

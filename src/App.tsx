@@ -21,7 +21,7 @@ import { EventsProvider } from "./context/EventsContext";
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Clients = React.lazy(() => import("./pages/Clients"));
 const ClientDetails = React.lazy(() => import("./pages/ClientDetails"));
-const IdeaDetails = React.lazy(() => import("./pages/IdeaDetails"));
+const PostDetails = React.lazy(() => import("./pages/PostDetails"));
 const Calendar = React.lazy(() => import("./pages/Calendar"));
 const Templates = React.lazy(() => import("./pages/Templates"));
 const TemplateDetails = React.lazy(() => import("./pages/TemplateDetails"));
@@ -110,9 +110,9 @@ function App() {
                                 <ClientDetails />
                               </Suspense>
                             } />
-                            <Route path="clients/:clientId/ideas/:ideaId" element={
+                            <Route path="clients/:clientId/posts/:postId" element={
                               <Suspense fallback={<PageSkeleton />}>
-                                <IdeaDetails />
+                                <PostDetails />
                               </Suspense>
                             } />
                             <Route path="clients/:clientId/profiles/:profileId" element={

@@ -20,24 +20,24 @@ const OptionsCard: React.FC<OptionsCardProps> = ({
   internalNotes,
   onInternalNotesChange
 }) => {
-  const { clientId, ideaId } = useParams<{ clientId: string; ideaId: string }>();
+  const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
   const { updateInternalNotes, updateTrainAI } = usePostsDetails(); // Use PostsDetailsContext
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingTrainAI, setSavingTrainAI] = useState(false);
 
   const handleSaveNotes = async () => {
-    if (!clientId || !ideaId) return;
+    if (!clientId || !postId) return;
     setSavingNotes(true);
-    await updateInternalNotes(agencyId, clientId, ideaId, internalNotes);
+    await updateInternalNotes(agencyId, clientId, postId, internalNotes);
     setSavingNotes(false);
   };
 
   const handleTrainAIToggle = async (checked: boolean) => {
     onUseAsTrainingDataChange(checked);
-    if (!clientId || !ideaId) return;
+    if (!clientId || !postId) return;
     setSavingTrainAI(true);
-    await updateTrainAI(agencyId, clientId, ideaId, checked);
+    await updateTrainAI(agencyId, clientId, postId, checked);
     setSavingTrainAI(false);
   };
 
