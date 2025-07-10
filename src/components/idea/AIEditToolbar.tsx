@@ -50,8 +50,8 @@ const AIEditToolbar: React.FC<AIEditToolbarProps> = ({
     <div
       className="fixed z-[10000] bg-white border rounded-lg shadow-lg p-2 min-w-80"
       style={{
-        top: position.top - 200,
-        left: position.left - 160,
+        top: position.top + 50,
+        left: position.left,
         pointerEvents: 'auto'
       }}
     >

@@ -6,14 +6,12 @@ import StatusCard from './StatusCard';
 import EditableTitle from '../EditableTitle';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
-import { usePostsDetails } from '@/context/PostsDetailsContext'; // Change from PostsContext to PostsDetailsContext
+import { usePostDetails } from '@/context/PostDetailsContext'; // Change from PostsContext to PostsDetailsContext
 
 interface IdeaHeaderProps {
   clientId: string;
   title: string;
   onTitleChange: (title: string) => void;
-  isNewPost: boolean;
-  hasUnsavedChanges: boolean;
   onSave: () => void;
   status: string;
   onStatusChange: (status: string) => void;
@@ -25,8 +23,6 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   clientId,
   title,
   onTitleChange,
-  isNewPost,
-  hasUnsavedChanges,
   onSave,
   status,
   onStatusChange,
@@ -40,12 +36,12 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   // Get agencyId and postId from params or props as needed
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
   const { postId } = useParams<{ postId: string }>();
-  const { updatePostTitle, updatePostStatus } = usePostsDetails(); // Use PostsDetailsContext
+  const { updatePostTitle, updatePostStatus } = usePostDetails(); // Use PostsDetailsContext
 
   // Handler for updating title in Firestore and context
   const handleTitleChange = async (newTitle: string) => {
     onTitleChange(newTitle);
-    if (!isNewPost && agencyId && clientId && postId) {
+    if (agencyId && clientId && postId) {
       await updatePostTitle(agencyId, clientId, postId, newTitle);
     }
   };
@@ -53,7 +49,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   // Handler for updating status in Firestore and context
   const handleStatusChange = async (newStatus: string) => {
     onStatusChange(newStatus);
-    if (!isNewPost && agencyId && clientId && postId) {
+    if ( agencyId && clientId && postId) {
       await updatePostStatus(agencyId, clientId, postId, newStatus);
     }
   };

@@ -1,227 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-// Remove mockIdeas import, keep mockClients for now
-import { mockClients } from '../types';
 import IdeaHeader from '../components/idea/IdeaHeader';
-import PostEditor from '../components/idea/PostEditor';
+// import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
-import UnsavedChangesDialog from '../components/idea/UnsavedChangesDialog';
-import TimeslotDefinitionModal from '../components/ui/TimeslotDefinitionModal';
-import { useIdeaForm } from '../hooks/useIdeaForm';
-import { usePostEditor } from '../hooks/usePostEditor';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
-import { usePostsDetails } from '@/context/PostsDetailsContext'; // <-- Import PostsDetailsContext
 import OptionsCard from '@/components/idea/OptionsCard';
+import HooksSection from '@/components/idea/HooksSection';
+import { usePostDetails } from '@/context/PostDetailsContext';
+import PostEditor from '@/components/idea/PostEditor';
 
 const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
-  const isNewPost = searchParams.get('new') === 'true';
+  // Use the context
+  const { post, loading, error, fetchPost } = usePostDetails();
 
-  // NEW: Use PostsDetailsContext for post details
-  const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
-  const { getPostDetails, postDetails, postDetailsLoading, postDetailsError, saveNewDraft } = usePostsDetails();
+  // Basic form state
+  const [title, setTitle] = useState('');
+  const [initialIdea, setInitialIdea] = useState('');
+  const [objective, setObjective] = useState('');
+  const [template, setTemplate] = useState('none');
+  const [status, setStatus] = useState('Idea');
+  const [formInternalNotes, setFormInternalNotes] = useState('');
 
-  // Fetch post details when postId/clientId/agencyId changes and not a new post
-  useEffect(() => {
-    if (!isNewPost && agencyId && clientId && postId) {
-      getPostDetails(agencyId, clientId, postId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agencyId, clientId, postId, isNewPost]);
-
+  // UI State
   const [selectedHookIndex, setSelectedHookIndex] = useState(-1);
   const [useAsTrainingData, setUseAsTrainingData] = useState(false);
   const [isIdeaExpanded, setIsIdeaExpanded] = useState(false);
-  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   const [comments, setComments] = useState<CommentThread[]>([]);
   const [hasPoll, setHasPoll] = useState(false);
-  const [showTimeslotModal, setShowTimeslotModal] = useState(false);
-  const [predefinedTimeSlots, setPredefinedTimeSlots] = useState<string[]>([]);
-  const [activeDays, setActiveDays] = useState<string[]>([]);
-  const [internalNotes, setInternalNotes] = useState(postDetails?.internalNotes || '');
+  const [internalNotes, setInternalNotes] = useState('');
 
-  // Extract initial idea data from URL params (for all creation methods)
-  let initialIdeaText = '';
-  let urlObjective = '';
-  let urlTemplate = '';
-
-  if (isNewPost) {
-    const dataParam = searchParams.get('data');
-    if (dataParam) {
-      try {
-        const decoded = JSON.parse(decodeURIComponent(dataParam));
-        // Handle both 'idea' (from text method) and 'initialIdea' (from suggestions)
-        initialIdeaText = decoded.initialIdea || decoded.idea || '';
-        urlObjective = decoded.objective || '';
-        urlTemplate = decoded.template || '';
-      } catch (e) {
-        initialIdeaText = '';
-      }
-    }
-  }
-
-  // Custom hooks - pass the extracted initial idea data
-  // For new posts, use URL params; for existing, use postDetails
-  const ideaForm = useIdeaForm({
-    idea: isNewPost ? undefined : postDetails,
-    isNewPost,
-    initialIdeaFromUrl: '', // You can extract from URL if needed
-    objectiveFromUrl: '',
-    templateFromUrl: ''
-  });
-
-  // Get the latest draft text from postDetails
-  const getLatestDraftText = () => {
-    if (!postDetails?.drafts || postDetails.drafts.length === 0) {
-      return postDetails?.currentDraftText || '';
-    }
-    // Return text from the last draft (latest version)
-    const latestDraft = postDetails.drafts[postDetails.drafts.length - 1];
-    return latestDraft?.text || postDetails?.currentDraftText || '';
-  };
-
-  // Create save function for the post editor
-  const handleSavePost = async (newText: string) => {
-    if (!isNewPost && agencyId && clientId && postId) {
-      await saveNewDraft(agencyId, clientId, postId, newText, 'Manual save', false);
-    }
-  };
-
-  // Create save function for AI-generated content
-  const handleSaveAIPost = async (newText: string) => {
-    if (!isNewPost && agencyId && clientId && postId) {
-      await saveNewDraft(agencyId, clientId, postId, newText, 'AI-generated content', true);
-    }
-  };
-
-  const postEditor = usePostEditor({
-    initialText: isNewPost ? '' : getLatestDraftText(),
-    onSave: isNewPost ? undefined : handleSavePost,
-    onSaveAI: isNewPost ? undefined : handleSaveAIPost
-  });
-
-  // Update post editor when postDetails changes (when data is loaded)
+  // Fetch post data when component mounts
   useEffect(() => {
-    if (!isNewPost && postDetails) {
-      const latestText = getLatestDraftText();
-      // Always update the editor text when postDetails changes
-      postEditor.handlePostChange(latestText);
+    if (clientId && postId) {
+      fetchPost(clientId, postId);
     }
-  }, [postDetails, isNewPost, postId]); // Add postId as dependency
+  }, [clientId, postId, fetchPost]);
 
-  // Add this effect to reset the editor when navigating to a different post
+  // Update form state when post data is loaded
   useEffect(() => {
-    if (!isNewPost) {
-      // Reset the editor text when postId changes
-      postEditor.handlePostChange('');
+    if (post) {
+      setTitle(post.title || '');
+      setInitialIdea(post.initialIdea.initialIdeaPrompt || '');
+      setObjective(post.initialIdea.objective || '');
+      setTemplate(post.initialIdea.templateUsedId || 'none');
+      setStatus(post.status || 'Idea');
+      setFormInternalNotes(post.internalNotes || '');
+      setUseAsTrainingData(post.trainAI || false);
+      setInternalNotes(post.internalNotes || '');
     }
-  }, [postId, isNewPost]);
+  }, [post]);
 
-  // Version history: use postDetails.drafts if available
-  const versionHistory = !isNewPost && postDetails?.drafts
-    ? postDetails.drafts.map((draft, idx) => ({
+  // Get hooks from context or use mock data
+  const hooks = post?.generatedHooks || [];
+
+  // Get version history from context - sort by version to ensure correct order
+  const versionHistory = post?.drafts
+    ?.sort((a, b) => a.version - b.version) // Sort by version number ascending
+    ?.map(draft => ({
       id: `v${draft.version}`,
       version: draft.version,
       text: draft.text,
-      createdAt: draft.createdAt?.seconds
-        ? new Date(draft.createdAt.seconds * 1000)
-        : new Date(),
+      createdAt: new Date(draft.createdAt),
       generatedByAI: draft.generatedByAI,
       notes: draft.notes
-    }))
-    : [];
+    })) || [];
+    console.log('Version History:', versionHistory);
 
-  // Hooks: use postDetails.generatedHooks if available
-  const sampleHooks = !isNewPost && postDetails?.generatedHooks
-    ? postDetails.generatedHooks
-    : [];
+  // Get the latest draft text for the PostEditor
+  const getLatestDraftText = () => {
+    if (!post?.drafts || post.drafts.length === 0) {
+      return '';
+    }
 
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (postEditor.hasUnsavedChanges) {
-        event.preventDefault();
-        event.returnValue = '';
-      }
-    };
+    // Find the draft with the highest version number
+    const latestDraft = post.drafts.reduce((latest, current) =>
+      current.version > latest.version ? current : latest
+    );
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [postEditor.hasUnsavedChanges]);
+    return latestDraft.text;
+  };
 
-  useEffect(() => {
-    const handleNavigation = (event: PopStateEvent) => {
-      if (postEditor.hasUnsavedChanges) {
-        event.preventDefault();
-        setShowUnsavedDialog(true);
-        setPendingNavigation(window.location.pathname);
-      }
-    };
+  const latestDraftText = getLatestDraftText();
 
-    window.addEventListener('popstate', handleNavigation);
-    return () => window.removeEventListener('popstate', handleNavigation);
-  }, [postEditor.hasUnsavedChanges]);
-
-  useEffect(() => {
-    setInternalNotes(postDetails?.internalNotes || '');
-  }, [postDetails?.internalNotes]);
-
-  if (!isNewPost && postDetailsLoading) {
+  // Show loading state
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold">Loading post details...</h2>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading post details...</div>
       </div>
     );
   }
 
-  if (!isNewPost && postDetailsError) {
+  // Show error state
+  if (error) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold">Failed to load post details</h2>
-        <p className="text-red-500">{postDetailsError}</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500">Error loading post: {error}</div>
       </div>
     );
   }
 
-  if (!isNewPost && !postDetails) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold">Post not found</h2>
-        <Link to={`/clients/${clientId}/posts`} className="text-indigo-600 hover:underline mt-4 inline-block">
-          Return to posts list
-        </Link>
-      </div>
-    );
-  }
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+  };
 
-  // Sample hooks to demonstrate functionality
-  // const sampleHooks = [
-  //   {
-  //     text: "Cloud migration security gaps putting your data at risk.\nHow to bridge them effectively.",
-  //     angle: "Security Risk",
-  //   },
-  //   {
-  //     text: "Is your cloud transition secure? Common pitfalls to avoid.",
-  //     angle: "Fear-based",
-  //   },
-  // ];
+  const handleInitialIdeaChange = (newInitialIdea: string) => {
+    setInitialIdea(newInitialIdea);
+  };
 
-  // Event handlers
+  const handleFormSave = () => {
+    console.log('Saving idea:', {
+      title,
+      initialIdea,
+      objective,
+      status
+    });
+  };
+
   const handleSendToAI = () => {
-    postEditor.handlePostChange("In today's rapidly evolving business landscape, staying ahead of industry trends is more critical than ever...");
+    console.log('Send to AI clicked');
   };
 
   const handleAddCustomObjective = (customObjective: string) => {
-    ideaForm.setters.setObjective(customObjective);
+    setObjective(customObjective);
   };
 
   const handleAddCustomStatus = (customStatus: string) => {
-    ideaForm.setters.setStatus(customStatus);
+    setStatus(customStatus);
   };
 
   const handleHookSelect = (index: number) => {
@@ -230,23 +139,6 @@ const PostDetails = () => {
 
   const handleRegenerateHooks = () => {
     console.log('Regenerating hooks...');
-  };
-
-  const handleUnsavedDialogSave = () => {
-    postEditor.handleSave();
-    setShowUnsavedDialog(false);
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-      setPendingNavigation(null);
-    }
-  };
-
-  const handleUnsavedDialogDiscard = () => {
-    setShowUnsavedDialog(false);
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-      setPendingNavigation(null);
-    }
   };
 
   const handleAddReply = (threadId: string, replyText: string) => {
@@ -270,71 +162,42 @@ const PostDetails = () => {
   const handlePollStateChange = (pollActive: boolean) => {
     setHasPoll(pollActive);
   };
-
   const handleAddToQueue = () => {
-    if (!hasTimeslotsConfigured) {
-      setShowTimeslotModal(true);
-    } else {
-      // Proceed with normal add to queue functionality
-      console.log('Adding to queue with existing timeslots');
-    }
-  };
-
-  const handleSaveTimeslots = (timeslots: string[], days: string[]) => {
-    setPredefinedTimeSlots(timeslots);
-    setActiveDays(days);
-  };
-
-  const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
+    console.log('Adding post to queue...');
+  }
 
   return (
     <div className="space-y-4">
-      <UnsavedChangesDialog
-        open={showUnsavedDialog}
-        onOpenChange={setShowUnsavedDialog}
-        onSave={handleUnsavedDialogSave}
-        onDiscard={handleUnsavedDialogDiscard}
-      />
-
       <IdeaHeader
         clientId={clientId!}
-        title={isNewPost ? ideaForm.formData.title : postDetails?.title || ''}
-        onTitleChange={ideaForm.setters.setTitle}
-        isNewPost={isNewPost}
-        hasUnsavedChanges={ideaForm.hasUnsavedChanges}
-        onSave={ideaForm.handleSave}
-        status={isNewPost ? ideaForm.formData.status : postDetails?.status || ''}
-        onStatusChange={ideaForm.setters.setStatus}
+        title={title}
+        onTitleChange={handleTitleChange}
+        onSave={handleFormSave}
+        status={status}
+        onStatusChange={setStatus}
         onAddCustomStatus={handleAddCustomStatus}
         onAddToQueue={handleAddToQueue}
       />
-
-      {isNewPost && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-blue-800">
-            <strong>New Idea:</strong> Enter a title above and start building your idea. Don't forget to save!
-          </p>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <PostEditor
             postData={{
-              generatedPost: postEditor.generatedPost,
-              editingInstructions: postEditor.editingInstructions,
-              hasUnsavedChanges: postEditor.hasUnsavedChanges
+              // generatedPost: latestDraftText, // Use the latest draft text
+              generatedPost: post?.drafts?.[post.drafts.length - 1]?.text || '',
+              editingInstructions: '',
+              hasUnsavedChanges: false
             }}
             postHandlers={{
-              onGeneratedPostChange: postEditor.handlePostChange,
-              onEditingInstructionsChange: postEditor.setEditingInstructions,
-              onCopyText: postEditor.handleCopyText,
-              onRegenerateWithInstructions: postEditor.handleRegenerateWithInstructions,
-              onSave: postEditor.handleSave,
+              onGeneratedPostChange: undefined,
+              onEditingInstructionsChange: undefined,
+              onCopyText: undefined,
+              onRegenerateWithInstructions: undefined,
+              onSave: undefined,
               onUnsavedChangesChange: () => { }
             }}
-            versionHistory={versionHistory}
-            onRestoreVersion={postEditor.handlePostChange}
+            versionHistory={versionHistory} // Use the sorted version history
+            onRestoreVersion={undefined}
             onToggleCommentsPanel={() => setShowCommentsPanel(p => !p)}
             comments={comments}
             setComments={setComments}
@@ -349,23 +212,23 @@ const PostDetails = () => {
             <>
               <SubClientDisplayCard
                 subClient={{
-                  name: postDetails?.profile || '',
-                  role: postDetails?.profileRole || '',
-                  profileImage: undefined // If you add a profile image field, use it here
+                  name: post?.profile.profileName || 'No Profile',
+                  role: post?.profile.profileRole || '',
+                  profileImage: undefined
                 }}
               />
               <IdeaForm
                 formData={{
-                  initialIdea: isNewPost ? ideaForm.formData.initialIdea : postDetails?.initialIdeaPrompt || '',
-                  objective: isNewPost ? ideaForm.formData.objective : postDetails?.objective || '',
-                  template: isNewPost ? ideaForm.formData.template : postDetails?.templateUsedId || '',
-                  internalNotes: isNewPost ? ideaForm.formData.internalNotes : postDetails?.internalNotes || ''
+                  initialIdea,
+                  objective,
+                  template,
+                  internalNotes: formInternalNotes
                 }}
                 setters={{
-                  setInitialIdea: ideaForm.setters.setInitialIdea,
-                  setObjective: ideaForm.setters.setObjective,
-                  setTemplate: ideaForm.setters.setTemplate,
-                  setInternalNotes: ideaForm.setters.setInternalNotes
+                  setInitialIdea: handleInitialIdeaChange,
+                  setObjective,
+                  setTemplate,
+                  setInternalNotes: setFormInternalNotes
                 }}
                 options={{
                   useAsTrainingData,
@@ -375,11 +238,15 @@ const PostDetails = () => {
                 onExpandChange={setIsIdeaExpanded}
                 onSendToAI={handleSendToAI}
                 onAddCustomObjective={handleAddCustomObjective}
-                hooks={sampleHooks}
+              />
+
+              <HooksSection
+                hooks={hooks}
                 selectedHookIndex={selectedHookIndex}
                 onHookSelect={handleHookSelect}
                 onRegenerateHooks={handleRegenerateHooks}
               />
+
               <OptionsCard
                 useAsTrainingData={useAsTrainingData}
                 onUseAsTrainingDataChange={setUseAsTrainingData}
@@ -390,14 +257,6 @@ const PostDetails = () => {
           )}
         </div>
       </div>
-
-      <TimeslotDefinitionModal
-        isOpen={showTimeslotModal}
-        onClose={() => setShowTimeslotModal(false)}
-        onSave={handleSaveTimeslots}
-        initialTimeslots={predefinedTimeSlots}
-        initialDays={activeDays}
-      />
     </div>
   );
 };

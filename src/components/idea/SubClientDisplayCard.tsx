@@ -14,7 +14,7 @@ interface SubClientDisplayCardProps {
 }
 
 const SubClientDisplayCard: React.FC<SubClientDisplayCardProps> = ({ subClient }) => {
-  const isCompany = subClient.role.toLowerCase() === 'company';
+const isCompany = subClient.role.toLowerCase().includes('company');
   
   return (
     <Card className="border-l-4 border-l-indigo-500">
@@ -39,7 +39,7 @@ const SubClientDisplayCard: React.FC<SubClientDisplayCardProps> = ({ subClient }
             </div>
             <p className="text-sm text-muted-foreground">
               {isCompany 
-                ? "Post generated for the company's official presence"
+                ? `Post generated for ${subClient.name}`
                 : `Post generated for ${subClient.name} as ${subClient.role}`
               }
             </p>

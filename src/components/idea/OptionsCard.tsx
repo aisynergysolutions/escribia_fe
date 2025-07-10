@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Save } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { usePostsDetails } from '@/context/PostsDetailsContext'; // Change from PostsContext to PostsDetailsContext
+import { usePostDetails } from '@/context/PostDetailsContext'; // Change from PostsContext to PostsDetailsContext
 
 interface OptionsCardProps {
   useAsTrainingData: boolean;
@@ -22,7 +22,7 @@ const OptionsCard: React.FC<OptionsCardProps> = ({
 }) => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
   const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
-  const { updateInternalNotes, updateTrainAI } = usePostsDetails(); // Use PostsDetailsContext
+  const { updateInternalNotes, updateTrainAI } = usePostDetails(); // Use PostsDetailsContext
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingTrainAI, setSavingTrainAI] = useState(false);
 

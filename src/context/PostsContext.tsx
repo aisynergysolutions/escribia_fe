@@ -37,6 +37,7 @@ type PostsContextType = {
       profileRole: string;
       objective: string;
       templateUsedId: string;
+      templateUsedName: string;
       initialIdeaPrompt: string;
       status?: string;
       title?: string;
@@ -131,6 +132,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       profileRole: string;
       objective: string;
       templateUsedId: string;
+      templateUsedName: string;
       initialIdeaPrompt: string;
       status?: string;
       // Add optional title parameter for AI-generated titles
@@ -146,6 +148,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         profileRole: postData.profileRole,
         objective: postData.objective || '',
         templateUsedId: postData.templateUsedId || '',
+        templateUsedName: postData.templateUsedName || '',
         initialIdeaPrompt: postData.initialIdeaPrompt,
         // Use provided title or fallback to initialIdeaPrompt
         title: postData.title || postData.initialIdeaPrompt,

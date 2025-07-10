@@ -99,12 +99,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         const postId = uuidv4();
 
         // Step 2: Create the post in Firestore (without AI-generated content initially)
+        const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
         await createPost('agency1', clientId, {
           profileId: selectedProfile.id,
           profileName: selectedProfile.profileName,
           profileRole: selectedProfile.role || '',
           objective: selectedObjective,
           templateUsedId: selectedTemplate,
+          templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
           initialIdeaPrompt: ideaText.trim(),
         }, postId);
 
@@ -152,11 +154,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           console.log('Generated Post:', result.post_content);
           console.log('Generated Title:', result.title);
           console.log('Generated Hooks:', result.generatedHooks || result.hooks);
-
-          // REMOVE the updatePostInContext call - Railway should handle Firestore updates
-          // await updatePostInContext('agency1', clientId, postId, { ... });
-
-          // Close the modal and reset the form
           setIsOpen(false);
           resetForm();
 

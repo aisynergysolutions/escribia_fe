@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { 
+import {
   ArrowLeft,
-  LayoutDashboard, 
-  FileText, 
+  LayoutDashboard,
+  FileText,
   Calendar,
   FolderOpen,
   BarChart3,
@@ -32,7 +32,14 @@ const ClientSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string }>();
-  const { clientDetails, clientDetailsLoading } = useClients();
+  const { clientDetails, clientDetailsLoading, getClientDetails } = useClients();
+
+  // Add this effect to fetch client details when clientId changes
+  useEffect(() => {
+    if (clientId && (!clientDetails || clientDetails.id !== clientId)) {
+      getClientDetails(clientId);
+    }
+  }, [clientId, clientDetails, getClientDetails]);
 
   const handleBackToClients = () => {
     navigate('/clients');
@@ -65,18 +72,17 @@ const ClientSidebar = () => {
   const renderNavItems = (items: typeof clientNavItems) => {
     return items.map((item) => {
       const fullPath = `/clients/${clientId}${item.path}`;
-      const isActive = location.pathname === fullPath || 
+      const isActive = location.pathname === fullPath ||
         (item.path === '' && location.pathname === `/clients/${clientId}`);
-      
+
       return (
         <li key={item.path}>
           <Link
             to={fullPath}
-            className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              isActive 
-                ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
+            className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-            }`}
+              }`}
           >
             <item.icon className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{item.title}</span>
@@ -97,7 +103,7 @@ const ClientSidebar = () => {
           <ArrowLeft className="h-3 w-3" />
           <span className="text-xs">Back to Clients</span>
         </button>
-        
+
         <button
           onClick={handleOverviewClick}
           className="text-left w-full hover:opacity-75 transition-opacity mb-3"
@@ -115,7 +121,7 @@ const ClientSidebar = () => {
             </div>
           </div>
         </button>
-        
+
         {/* Create Post Button with Modal */}
         <CreatePostModal>
           <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
@@ -166,12 +172,11 @@ const ClientSidebar = () => {
         <div className="bg-white rounded-lg p-2 border border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Status</span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              clientDetails.status === 'active' ? 'bg-green-100 text-green-700' :
-              clientDetails.status === 'onboarding' ? 'bg-blue-100 text-blue-700' :
-              clientDetails.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
-              'bg-gray-100 text-gray-700'
-            }`}>
+            <span className={`text-xs px-2 py-1 rounded-full ${clientDetails.status === 'active' ? 'bg-green-100 text-green-700' :
+                clientDetails.status === 'onboarding' ? 'bg-blue-100 text-blue-700' :
+                  clientDetails.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-gray-100 text-gray-700'
+              }`}>
               {clientDetails.status}
             </span>
           </div>

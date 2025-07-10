@@ -1,14 +1,12 @@
-
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CustomInputModal from '../CustomInputModal';
-import { mockTemplates } from '../../types';
 
 interface InitialIdeaSectionProps {
   isExpanded: boolean;
@@ -23,7 +21,7 @@ interface InitialIdeaSectionProps {
   onAddCustomObjective: (objective: string) => void;
 }
 
-const predefinedObjectives = ['Thought Leadership', 'Lead Generation', 'Brand Awareness', 'Engagement', 'Product Launch', 'Event Promotion'];
+const predefinedObjectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
 
 const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   isExpanded,
@@ -45,9 +43,6 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   };
 
   const getObjectiveDisplayName = (obj: string) => {
-    if (predefinedObjectives.includes(obj)) {
-      return obj;
-    }
     return obj || 'Select objective';
   };
 
@@ -70,19 +65,19 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
               </div>
             </div>
           </CollapsibleTrigger>
-          
+
           <CollapsibleContent className="space-y-4 pt-2">
             <div>
-              <Textarea 
-                id="initialIdea" 
-                value={initialIdea} 
-                onChange={e => onInitialIdeaChange(e.target.value)} 
-                placeholder="Write your initial idea here..." 
-                rows={4} 
-                className="w-full" 
+              <Textarea
+                id="initialIdea"
+                value={initialIdea}
+                onChange={e => onInitialIdeaChange(e.target.value)}
+                placeholder="Write your initial idea here..."
+                rows={4}
+                className="w-full"
               />
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
@@ -107,25 +102,19 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              
+
               <div>
                 <label htmlFor="template" className="block text-sm font-medium mb-1">Template</label>
-                <Select value={template} onValueChange={onTemplateChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Not Selected" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="none">None</SelectItem>
-                      {mockTemplates.map(templ => (
-                        <SelectItem key={templ.id} value={templ.id}>{templ.templateName}</SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="template"
+                  value={template || 'No template selected'}
+                  readOnly
+                  className={`w-full bg-gray-50 ${(!template || template === 'none' || template === 'No template selected') ? 'text-muted-foreground' : ''}`}
+                  placeholder="No template selected"
+                />
               </div>
             </div>
-            
+
             <Button onClick={onSendToAI} className="w-full bg-indigo-600 hover:bg-indigo-700">
               Regenerate Post
             </Button>
@@ -133,12 +122,12 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
         </Card>
       </Collapsible>
 
-      <CustomInputModal 
-        open={showCustomObjectiveModal} 
-        onOpenChange={setShowCustomObjectiveModal} 
-        title="Add Custom Objective" 
-        placeholder="Enter custom objective..." 
-        onSave={handleCustomObjective} 
+      <CustomInputModal
+        open={showCustomObjectiveModal}
+        onOpenChange={setShowCustomObjectiveModal}
+        title="Add Custom Objective"
+        placeholder="Enter custom objective..."
+        onSave={handleCustomObjective}
       />
     </>
   );

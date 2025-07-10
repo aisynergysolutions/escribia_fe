@@ -113,14 +113,14 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   const calculateContentMetrics = (content: string) => {
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
     const charCount = textContent.length;
-    
+
     // Calculate precise line positioning based on view mode
     const lineHeight = 21; // 14px * 1.5
     const paddingTop = 24; // Container's padding-top where text actually starts
-    
+
     // Use different widths based on view mode
     const containerWidth = viewMode === 'mobile' ? 272 : 504; // Effective content width (excluding padding)
-    
+
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
     tempDiv.style.cssText = `
@@ -137,17 +137,17 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     `;
     tempDiv.innerHTML = content || 'A';
     document.body.appendChild(tempDiv);
-    
+
     const height = tempDiv.offsetHeight;
     const lines = Math.max(1, Math.ceil(height / lineHeight));
-    
+
     document.body.removeChild(tempDiv);
-    
+
     // Position the line exactly after the 3rd line of text
     // Account for padding-top and add exactly 3 line heights
     const threeLineHeight = lineHeight * 3;
     setCutoffLineTop(paddingTop + threeLineHeight);
-    
+
     return { charCount, lineCount: lines };
   };
 
@@ -212,7 +212,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
 
   const handleSaveComment = (commentText: string) => {
     if (!lastSelection.current || !editorRef.current) return;
-    
+
     const selection = window.getSelection();
     if (!selection) return;
 
@@ -222,16 +222,16 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     const commentId = `comment-${Date.now()}`;
     const mark = document.createElement('mark');
     mark.dataset.commentId = commentId;
-    
+
     try {
       lastSelection.current.surroundContents(mark);
-    } catch(e) {
+    } catch (e) {
       console.error("Could not wrap selection", e);
       toast({ title: "Error", description: "Could not add comment to a selection that spans multiple paragraphs.", variant: "destructive" });
       setCommentPopover({ visible: false, top: 0, left: 0 });
       return;
     }
-    
+
     const newThread: CommentThread = {
       id: commentId,
       selectionText: lastSelection.current.toString(),
@@ -283,7 +283,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       const newContent = editorRef.current.innerHTML;
       handleUndoRedoContentChange(newContent);
       checkForChanges(newContent);
-      
+
       // Update metrics
       const metrics = calculateContentMetrics(newContent);
       setCharCount(metrics.charCount);
@@ -476,7 +476,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     if (!files) return;
 
     const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
-    
+
     newFiles.forEach(file => {
       if (!file.type.startsWith('image/')) {
         toast({
@@ -497,7 +497,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           url,
           isVertical
         };
-        
+
         setMediaFiles(prev => [...prev, mediaFile]);
         setPollData(null); // Clear poll when adding media
         if (onPollStateChange) {
@@ -519,7 +519,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     if (!files) return;
 
     const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
-    
+
     newFiles.forEach(file => {
       if (!file.type.startsWith('image/')) {
         toast({
@@ -540,7 +540,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           url,
           isVertical
         };
-        
+
         setMediaFiles(prev => [...prev, mediaFile]);
         setPollData(null); // Clear poll when adding media
         if (onPollStateChange) {
@@ -636,9 +636,9 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   return (
     <div className="space-y-6">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} onComment={handleCommentRequest} />
-      
+
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
-      
+
       <CommentPopover
         visible={commentPopover.visible}
         position={commentPopover}
@@ -648,25 +648,25 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           lastSelection.current = null;
         }}
       />
-      
-      <PostPreviewModal 
-        open={showPreviewModal} 
-        onOpenChange={setShowPreviewModal} 
+
+      <PostPreviewModal
+        open={showPreviewModal}
+        onOpenChange={setShowPreviewModal}
         postContent={currentContent}
         pollData={pollData}
         mediaFiles={mediaFiles}
       />
-      
-      <SchedulePostModal 
-        open={showScheduleModal} 
-        onOpenChange={setShowScheduleModal} 
+
+      <SchedulePostModal
+        open={showScheduleModal}
+        onOpenChange={setShowScheduleModal}
         postContent={currentContent}
         onSchedule={handleSchedule}
       />
-      
-      <PostNowModal 
-        open={showPostNowModal} 
-        onOpenChange={setShowPostNowModal} 
+
+      <PostNowModal
+        open={showPostNowModal}
+        onOpenChange={setShowPostNowModal}
         postContent={currentContent}
         onPost={handlePostNow}
       />
@@ -677,7 +677,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         versions={versions}
         onRestore={handleRestoreVersion}
       />
-      
+
       <CreatePollModal
         open={showCreatePollModal}
         onOpenChange={(open) => {
@@ -689,7 +689,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         onCreatePoll={handleAddPoll}
         editingPoll={editingPoll}
       />
-      
+
       <MediaUploadModal
         open={showMediaUploadModal}
         onOpenChange={(open) => {
@@ -701,7 +701,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
         onUploadMedia={handleUploadMedia}
         editingMedia={editingMedia || undefined}
       />
-      
+
       <div className="bg-white rounded-lg border">
         <EditorToolbar
           onFormat={handleFormat}
@@ -725,7 +725,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           hasMedia={hasMedia}
           onAddMedia={handleOpenMediaModal}
         />
-        
+
         <div className="pb-4 bg-gray-50">
           <EditorContainer
             editorRef={editorRef}
@@ -740,7 +740,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
             cutoffLineTop={cutoffLineTop}
             viewMode={viewMode}
           />
-          
+
           {/* Fixed: Media/Poll area with correct width matching text editor */}
           {mediaFiles.length === 0 && !pollData && (
             <div className={`${maxWidthClass} mx-auto mt-0`}>
@@ -771,20 +771,20 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
               </div>
             </div>
           )}
-          
+
           {mediaFiles.length > 0 && (
-            <MediaPreview 
+            <MediaPreview
               mediaFiles={mediaFiles}
               onRemove={handleRemoveMedia}
               onEdit={handleEditMedia}
               viewMode={viewMode}
             />
           )}
-          
+
           {pollData && (
-            <PollPreview 
-              pollData={pollData} 
-              onRemove={handleRemovePoll} 
+            <PollPreview
+              pollData={pollData}
+              onRemove={handleRemovePoll}
               onEdit={handleEditPoll}
               viewMode={viewMode}
             />
@@ -800,7 +800,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
           onRegenerateWithInstructions={onRegenerateWithInstructions}
         />
       </div>
-      
+
       <style>
         {`
           mark[data-comment-id] {

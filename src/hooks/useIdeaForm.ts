@@ -20,7 +20,7 @@ export const useIdeaForm = ({
   const [initialIdea, setInitialIdea] = useState('');
   const [objective, setObjective] = useState('');
   const [template, setTemplate] = useState('none');
-  const [status, setStatus] = useState('Idea');
+  const [status, setStatus] = useState('Drafted');
   const [internalNotes, setInternalNotes] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 

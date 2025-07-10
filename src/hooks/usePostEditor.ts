@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UsePostEditorProps {
@@ -8,7 +7,13 @@ interface UsePostEditorProps {
   autoSaveDelay?: number; // in milliseconds
 }
 
-export const usePostEditor = ({ initialText = '', onSave, onSaveAI, autoSaveDelay = 3000 }: UsePostEditorProps) => {
+export const usePostEditor = ({ 
+  initialText = '', 
+  onSave, 
+  onSaveAI, 
+  autoSaveDelay = 3000,
+  resetKey // Add this parameter
+}: UsePostEditorProps & { resetKey?: string }) => {
   const [generatedPost, setGeneratedPost] = useState('');
   const [editingInstructions, setEditingInstructions] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -106,6 +111,13 @@ export const usePostEditor = ({ initialText = '', onSave, onSaveAI, autoSaveDela
       }
     }
   }, [onSave, onSaveAI]);
+
+  // Add this useEffect to reset when resetKey changes
+  useEffect(() => {
+    setGeneratedPost('');
+    setEditingInstructions('');
+    setHasUnsavedChanges(false);
+  }, [resetKey]);
 
   return {
     generatedPost,

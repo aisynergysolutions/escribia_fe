@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useCa
 import { collection, getDocs, setDoc, doc, serverTimestamp, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Template } from '@/types/interfaces';
+import { v4 as uuidv4 } from 'uuid';
 
 export type TemplateCard = {
     id: string;
@@ -109,7 +110,7 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
 
     const addTemplate = async (templateData: CreateTemplateData): Promise<string | null> => {
         try {
-            const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const templateId = uuidv4(); // Use UUID v4 for the template ID
             const templateDocRef = doc(db, 'agencies', 'agency1', 'templates', templateId);
 
             const newTemplate = {
