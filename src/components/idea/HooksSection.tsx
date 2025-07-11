@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,13 +15,17 @@ interface HooksSectionProps {
   selectedHookIndex: number;
   onHookSelect: (index: number) => void;
   onRegenerateHooks: () => void;
+  onGenerateInitialHooks?: () => Promise<void>;
+  isInitialLoad?: boolean;
 }
 
 const HooksSection: React.FC<HooksSectionProps> = ({
   hooks = [],
   selectedHookIndex,
   onHookSelect,
-  onRegenerateHooks
+  onRegenerateHooks,
+  onGenerateInitialHooks,
+  isInitialLoad = false
 }) => {
   const [loadingHookIndex, setLoadingHookIndex] = useState<number | null>(null);
   const [errorHook, setErrorHook] = useState<{
@@ -29,9 +33,36 @@ const HooksSection: React.FC<HooksSectionProps> = ({
     message: string;
   } | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isGeneratingInitial, setIsGeneratingInitial] = useState(false);
+
+  // Track if we've already attempted to generate hooks to prevent infinite loops
+  const hasAttemptedGeneration = useRef(false);
+
+  // Auto-generate hooks if empty on initial load
+  useEffect(() => {
+    const shouldGenerateHooks = isInitialLoad &&
+      hooks.length === 0 &&
+      onGenerateInitialHooks &&
+      !isGeneratingInitial &&
+      !hasAttemptedGeneration.current;
+
+    if (shouldGenerateHooks) {
+      hasAttemptedGeneration.current = true;
+      setIsGeneratingInitial(true);
+      onGenerateInitialHooks()
+        .finally(() => setIsGeneratingInitial(false));
+    }
+  }, [isInitialLoad, hooks.length, onGenerateInitialHooks, isGeneratingInitial]);
+
+  // Reset the attempt flag when hooks are successfully loaded
+  useEffect(() => {
+    if (hooks.length > 0) {
+      hasAttemptedGeneration.current = false;
+    }
+  }, [hooks.length]);
 
   const handleHookClick = async (index: number) => {
-    if (loadingHookIndex !== null || isRegenerating) return;
+    if (loadingHookIndex !== null || isRegenerating || isGeneratingInitial) return;
     setLoadingHookIndex(index);
     setErrorHook(null);
 
@@ -53,11 +84,14 @@ const HooksSection: React.FC<HooksSectionProps> = ({
 
   const handleRegenerateClick = async () => {
     setIsRegenerating(true);
+    hasAttemptedGeneration.current = true; // Mark as attempted to prevent auto-generation
     // Simulate API call to regenerate hooks
     await new Promise(resolve => setTimeout(resolve, 1500));
     onRegenerateHooks();
     setIsRegenerating(false);
   };
+
+  const isDisabled = isRegenerating || isGeneratingInitial;
 
   return (
     <div className="bg-card rounded-lg border p-4">
@@ -66,7 +100,12 @@ const HooksSection: React.FC<HooksSectionProps> = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={handleRegenerateClick} variant="outline" size="icon" disabled={isRegenerating}>
+              <Button
+                onClick={handleRegenerateClick}
+                variant="outline"
+                size="icon"
+                disabled={isDisabled}
+              >
                 {isRegenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -81,9 +120,16 @@ const HooksSection: React.FC<HooksSectionProps> = ({
         </TooltipProvider>
       </div>
       <div className="space-y-3">
-        {hooks.length === 0 ? (
+        {isGeneratingInitial ? (
+          <div className="w-full p-8 rounded-md border border-dashed text-center flex flex-col items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">Generating hooks...</p>
+          </div>
+        ) : hooks.length === 0 ? (
           <div className="w-full p-3 rounded-md border border-dashed text-center flex items-center justify-center h-[68px]">
-            <p className="italic text-muted-foreground">No hooks available</p>
+            <p className="italic text-muted-foreground">
+              {hasAttemptedGeneration.current ? 'Failed to generate hooks' : 'No hooks available'}
+            </p>
           </div>
         ) : (
           hooks.map((hook, index) => {
@@ -94,11 +140,11 @@ const HooksSection: React.FC<HooksSectionProps> = ({
               <div key={index}>
                 <button
                   onClick={() => handleHookClick(index)}
-                  disabled={isLoading || isRegenerating}
+                  disabled={isLoading || isDisabled}
                   className={`w-full p-3 rounded-md border text-left transition-all 
                       focus-visible:outline-none focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-[#4F46E5]/20 focus-visible:ring-offset-2
                       hover:border-[#4F46E5]
-                      ${isLoading || isRegenerating ? 'cursor-wait' : ''}
+                      ${isLoading || isDisabled ? 'cursor-wait' : ''}
                       ${isSelected && !isLoading ? 'border-[#4F46E5] bg-[#4F46E5]/10' : ''}`}
                 >
                   {isLoading ? (

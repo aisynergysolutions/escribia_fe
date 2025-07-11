@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, ReactNode, useCallback } fr
 import { doc as firestoreDoc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-
 // --- Types ---
 export type Draft = {
     text: string;
@@ -53,6 +52,7 @@ type PostDetailsContextType = {
     fetchPost: (clientId: string, postId: string) => Promise<void>;
     clearPost: () => void;
     saveNewDraft: (agencyId: string, clientId: string, postId: string, newText: string, notes?: string, generatedByAI?: boolean) => Promise<void>;
+    generatePostHooks: (clientId: string, postId: string) => Promise<Hook[]>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -62,8 +62,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     fetchPost: async () => { },
     clearPost: () => { },
     saveNewDraft: async () => { },
-
-
+    generatePostHooks: async () => [],
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -73,6 +72,45 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
     const [post, setPost] = useState<PostDetails | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Generate hooks function - moved from api.ts
+    const generateHooks = async (
+        agencyId: string,
+        clientId: string,
+        ideaId: string,
+        subClientId?: string,
+        save: boolean = true
+    ): Promise<Hook[]> => {
+        try {
+            const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate-hooks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agency_id: agencyId,
+                    client_id: clientId,
+                    idea_id: ideaId,
+                    subclient_id: subClientId,
+                    save
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.hooks) {
+                return data.hooks;
+            } else {
+                console.error('API returned error:', data.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error generating hooks:', error);
+            return [];
+        }
+    };
 
     const fetchPost = useCallback(async (clientId: string, postId: string) => {
         setLoading(true);
@@ -123,6 +161,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         setPost(null);
         setError(null);
     }, []);
+
     const saveNewDraft = async (
         agencyId: string,
         clientId: string,
@@ -151,10 +190,10 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
 
             // Update Firestore with the new draft appended to the drafts array
             const updatedDrafts = [...currentDrafts, newDraft];
-            await updateDoc(postRef, {
-                drafts: updatedDrafts,
-                currentDraftText: newText // Also update currentDraftText for compatibility
-            });
+            // await updateDoc(postRef, {
+            //     drafts: updatedDrafts,
+            //     currentDraftText: newText // Also update currentDraftText for compatibility
+            // });
 
             // Update context post if it's the same post
             setPost(prev =>
@@ -174,10 +213,32 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const generatePostHooks = useCallback(async (clientId: string, postId: string): Promise<Hook[]> => {
+        try {
+            const hooks = await generateHooks('agency1', clientId, postId);
 
-    // Update the provider
+            // Update the post state with the new hooks if this is the current post
+            if (post && post.id === postId) {
+                setPost(prev => prev ? { ...prev, generatedHooks: hooks } : null);
+            }
+
+            return hooks;
+        } catch (error) {
+            console.error('Error generating hooks for post:', error);
+            return [];
+        }
+    }, [post]);
+
     return (
-        <PostDetailsContext.Provider value={{ post, loading, error, fetchPost, clearPost, saveNewDraft }}>
+        <PostDetailsContext.Provider value={{
+            post,
+            loading,
+            error,
+            fetchPost,
+            clearPost,
+            saveNewDraft,
+            generatePostHooks
+        }}>
             {children}
         </PostDetailsContext.Provider>
     );

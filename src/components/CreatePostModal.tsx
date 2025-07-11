@@ -158,7 +158,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           resetForm();
 
           // Navigate to the PostDetails page - it will fetch fresh data from Firestore
-          navigate(`/clients/${clientId}/posts/${postId}`);
+          navigate(`/clients/${clientId}/posts/${postId}?new=true`);
         } else {
           toast({
             title: 'AI Generation Error',

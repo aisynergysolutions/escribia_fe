@@ -14,7 +14,7 @@ const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
 
   // Use the context
-  const { post, loading, error, fetchPost, saveNewDraft } = usePostDetails();
+  const { post, loading, error, fetchPost, saveNewDraft, generatePostHooks } = usePostDetails();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -142,8 +142,16 @@ const PostDetails = () => {
     setSelectedHookIndex(index);
   };
 
-  const handleRegenerateHooks = () => {
-    console.log('Regenerating hooks...');
+  const handleRegenerateHooks = async () => {
+    if (clientId && postId) {
+      await generatePostHooks(clientId, postId);
+    }
+  };
+
+  const handleGenerateInitialHooks = async () => {
+    if (clientId && postId) {
+      await generatePostHooks(clientId, postId);
+    }
   };
 
   const handleAddReply = (threadId: string, replyText: string) => {
@@ -250,6 +258,8 @@ const PostDetails = () => {
                 selectedHookIndex={selectedHookIndex}
                 onHookSelect={handleHookSelect}
                 onRegenerateHooks={handleRegenerateHooks}
+                onGenerateInitialHooks={handleGenerateInitialHooks}
+                isInitialLoad={!loading && !!post}
               />
 
               <OptionsCard
