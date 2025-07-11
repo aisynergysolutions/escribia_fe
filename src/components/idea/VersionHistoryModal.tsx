@@ -54,12 +54,12 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
               No versions available
             </div>
           ) : (
-            versions.map((version, index) => (
+            [...versions].map((version, index) => (
               <Card key={version.id} className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      Version {versions.length - index}
+                      Version {index + 1}
                     </Badge>
                     <span className="text-sm text-gray-600">
                       {version.title}

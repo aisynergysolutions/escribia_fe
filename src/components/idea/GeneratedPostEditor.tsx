@@ -674,7 +674,19 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       <VersionHistoryModal
         open={showVersionHistoryModal}
         onOpenChange={setShowVersionHistoryModal}
-        versions={versions}
+        versions={versionHistory.map(v => ({
+          id: v.id,
+          content: v.text,
+          createdAt: v.createdAt,
+          title: `Version ${v.version} - ${v.createdAt.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+          })} at ${v.createdAt.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}`
+        }))}
         onRestore={handleRestoreVersion}
       />
 

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import IdeaHeader from '../components/idea/IdeaHeader';
-// import PostEditor from '../components/idea/PostEditor';
+import PostEditor from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
 import OptionsCard from '@/components/idea/OptionsCard';
 import HooksSection from '@/components/idea/HooksSection';
+import { usePostEditor } from '../hooks/usePostEditor';
 import { usePostDetails } from '@/context/PostDetailsContext';
-import PostEditor from '@/components/idea/PostEditor';
 
 const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
 
   // Use the context
-  const { post, loading, error, fetchPost } = usePostDetails();
+  const { post, loading, error, fetchPost, saveNewDraft } = usePostDetails();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -54,6 +54,26 @@ const PostDetails = () => {
     }
   }, [post]);
 
+  const handleSavePost = async (newText: string) => {
+    if (clientId && postId) {
+      await saveNewDraft("agency1", clientId, postId, newText, 'Manual save', false);
+    }
+  };
+
+  const handleSaveAIPost = async (newText: string) => {
+    if (clientId && postId) {
+      await saveNewDraft("agency1", clientId, postId, newText, 'AI-generated content', true);
+    }
+  };
+
+  const postEditor = usePostEditor({
+    initialText: post?.drafts?.length
+      ? post.drafts[post.drafts.length - 1].text // Use last draft's text
+      : '',
+    onSave: handleSavePost,
+    onSaveAI: handleSaveAIPost
+  });
+
   // Get hooks from context or use mock data
   const hooks = post?.generatedHooks || [];
 
@@ -64,27 +84,12 @@ const PostDetails = () => {
       id: `v${draft.version}`,
       version: draft.version,
       text: draft.text,
-      createdAt: new Date(draft.createdAt),
+      createdAt: draft.createdAt.toDate(), // Convert Firestore Timestamp to Date
       generatedByAI: draft.generatedByAI,
       notes: draft.notes
     })) || [];
-    console.log('Version History:', versionHistory);
+  console.log('Version History:', versionHistory);
 
-  // Get the latest draft text for the PostEditor
-  const getLatestDraftText = () => {
-    if (!post?.drafts || post.drafts.length === 0) {
-      return '';
-    }
-
-    // Find the draft with the highest version number
-    const latestDraft = post.drafts.reduce((latest, current) =>
-      current.version > latest.version ? current : latest
-    );
-
-    return latestDraft.text;
-  };
-
-  const latestDraftText = getLatestDraftText();
 
   // Show loading state
   if (loading) {
@@ -189,15 +194,15 @@ const PostDetails = () => {
               hasUnsavedChanges: false
             }}
             postHandlers={{
-              onGeneratedPostChange: undefined,
-              onEditingInstructionsChange: undefined,
-              onCopyText: undefined,
-              onRegenerateWithInstructions: undefined,
-              onSave: undefined,
+              onGeneratedPostChange: postEditor.handlePostChange,
+              onEditingInstructionsChange: postEditor.setEditingInstructions,
+              onCopyText: postEditor.handleCopyText,
+              onRegenerateWithInstructions: postEditor.handleRegenerateWithInstructions,
+              onSave: postEditor.handleSave,
               onUnsavedChangesChange: () => { }
             }}
             versionHistory={versionHistory} // Use the sorted version history
-            onRestoreVersion={undefined}
+            onRestoreVersion={postEditor.handlePostChange}
             onToggleCommentsPanel={() => setShowCommentsPanel(p => !p)}
             comments={comments}
             setComments={setComments}
