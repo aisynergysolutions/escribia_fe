@@ -13,8 +13,8 @@ export interface Hook {
 interface HooksSectionProps {
   hooks?: Hook[];
   selectedHookIndex: number;
-  onHookSelect: (index: number) => void;
-  onRegenerateHooks: () => void;
+  onHookSelect: (index: number) => Promise<void>; // Changed to async
+  onRegenerateHooks: () => Promise<void>;
   onGenerateInitialHooks?: () => Promise<void>;
   isInitialLoad?: boolean;
 }
@@ -66,29 +66,30 @@ const HooksSection: React.FC<HooksSectionProps> = ({
     setLoadingHookIndex(index);
     setErrorHook(null);
 
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Simulate success/failure
-    const isSuccess = Math.random() > 0.3;
-    if (isSuccess) {
-      onHookSelect(index);
-    } else {
+    try {
+      await onHookSelect(index); // Wait for the actual hook application
+    } catch (error) {
+      console.error('Error applying hook:', error);
       setErrorHook({
         index,
         message: "Couldn't apply—try again"
       });
+    } finally {
+      setLoadingHookIndex(null);
     }
-    setLoadingHookIndex(null);
   };
 
   const handleRegenerateClick = async () => {
     setIsRegenerating(true);
     hasAttemptedGeneration.current = true; // Mark as attempted to prevent auto-generation
-    // Simulate API call to regenerate hooks
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    onRegenerateHooks();
-    setIsRegenerating(false);
+
+    try {
+      await onRegenerateHooks(); // Wait for the actual API call
+    } catch (error) {
+      console.error('Error regenerating hooks:', error);
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const isDisabled = isRegenerating || isGeneratingInitial;

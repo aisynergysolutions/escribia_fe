@@ -14,7 +14,7 @@ const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
 
   // Use the context
-  const { post, loading, error, fetchPost, saveNewDraft, generatePostHooks } = usePostDetails();
+  const { post, loading, error, fetchPost, saveNewDraft, generatePostHooks, applyHook } = usePostDetails();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -138,19 +138,41 @@ const PostDetails = () => {
     setStatus(customStatus);
   };
 
-  const handleHookSelect = (index: number) => {
-    setSelectedHookIndex(index);
+  const handleHookSelect = async (index: number) => {
+    if (clientId && postId && post?.profile.profileId) {
+      const selectedHook = hooks[index];
+      const currentPostContent = post?.drafts?.[post.drafts.length - 1]?.text || '';
+
+      const newPostContent = await applyHook(
+        clientId,
+        postId,
+        post.profile.profileId,
+        currentPostContent,
+        selectedHook.text
+      );
+
+      if (newPostContent) {
+        // Save the new content as a draft
+        await handleSaveAIPost(newPostContent);
+        
+        // Re-fetch the post to get the updated data
+        await fetchPost(clientId, postId);
+        
+        // Update the selected hook index
+        setSelectedHookIndex(index);
+      }
+    }
   };
 
   const handleRegenerateHooks = async () => {
-    if (clientId && postId) {
-      await generatePostHooks(clientId, postId);
+    if (clientId && postId && post.profile.profileId) {
+      await generatePostHooks(clientId, postId, post.profile.profileId);
     }
   };
 
   const handleGenerateInitialHooks = async () => {
-    if (clientId && postId) {
-      await generatePostHooks(clientId, postId);
+    if (clientId && postId && post.profile.profileId) {
+      await generatePostHooks(clientId, postId, post.profile.profileId);
     }
   };
 

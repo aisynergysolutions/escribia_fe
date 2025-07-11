@@ -52,7 +52,8 @@ type PostDetailsContextType = {
     fetchPost: (clientId: string, postId: string) => Promise<void>;
     clearPost: () => void;
     saveNewDraft: (agencyId: string, clientId: string, postId: string, newText: string, notes?: string, generatedByAI?: boolean) => Promise<void>;
-    generatePostHooks: (clientId: string, postId: string) => Promise<Hook[]>;
+    generatePostHooks: (clientId: string, postId: string, subClientId: string) => Promise<Hook[]>;
+    applyHook: (clientId: string, postId: string, subClientId: string, postContent: string, hookText: string) => Promise<string | null>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -63,6 +64,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     clearPost: () => { },
     saveNewDraft: async () => { },
     generatePostHooks: async () => [],
+    applyHook: async () => null,
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -78,7 +80,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         agencyId: string,
         clientId: string,
         ideaId: string,
-        subClientId?: string,
+        subClientId: string,
         save: boolean = true
     ): Promise<Hook[]> => {
         try {
@@ -190,10 +192,10 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
 
             // Update Firestore with the new draft appended to the drafts array
             const updatedDrafts = [...currentDrafts, newDraft];
-            // await updateDoc(postRef, {
-            //     drafts: updatedDrafts,
-            //     currentDraftText: newText // Also update currentDraftText for compatibility
-            // });
+            await updateDoc(postRef, {
+                drafts: updatedDrafts,
+                // currentDraftText: newText // Also update currentDraftText for compatibility
+            });
 
             // Update context post if it's the same post
             setPost(prev =>
@@ -201,7 +203,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                         ...prev,
                         drafts: updatedDrafts,
-                        currentDraftText: newText
+                        // currentDraftText: newText
                     }
                     : prev
             );
@@ -213,9 +215,9 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const generatePostHooks = useCallback(async (clientId: string, postId: string): Promise<Hook[]> => {
+    const generatePostHooks = useCallback(async (clientId: string, postId: string, subClientId: string): Promise<Hook[]> => {
         try {
-            const hooks = await generateHooks('agency1', clientId, postId);
+            const hooks = await generateHooks('agency1', clientId, postId, subClientId);
 
             // Update the post state with the new hooks if this is the current post
             if (post && post.id === postId) {
@@ -229,6 +231,62 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [post]);
 
+    // Apply hook function
+    const applyHook = async (
+        agencyId: string,
+        clientId: string,
+        ideaId: string,
+        subClientId: string,
+        postContent: string,
+        hookText: string
+    ): Promise<string | null> => {
+        try {
+            const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/apply-hook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agency_id: agencyId,
+                    client_id: clientId,
+                    subclient_id: subClientId,
+                    idea_id: ideaId,
+                    post_content: postContent,
+                    hook_text: hookText
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.new_post_content) {
+                return data.new_post_content;
+            } else {
+                console.error('API returned error:', data.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error applying hook:', error);
+            return null;
+        }
+    };
+
+    const applyHookToPost = useCallback(async (
+        clientId: string,
+        postId: string,
+        subClientId: string,
+        postContent: string,
+        hookText: string
+    ): Promise<string | null> => {
+        try {
+            return await applyHook('agency1', clientId, postId, subClientId, postContent, hookText);
+        } catch (error) {
+            console.error('Error applying hook to post:', error);
+            return null;
+        }
+    }, []);
+
     return (
         <PostDetailsContext.Provider value={{
             post,
@@ -237,7 +295,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             fetchPost,
             clearPost,
             saveNewDraft,
-            generatePostHooks
+            generatePostHooks,
+            applyHook: applyHookToPost
         }}>
             {children}
         </PostDetailsContext.Provider>
