@@ -9,45 +9,47 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 
 interface AIEditModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     selectedText: string;
-    onApplyEdit: (instruction: string) => void;
+    onApplyEdit: (action: string, customPrompt?: string) => Promise<void>;
+    isLoading?: boolean;
 }
 
 const AIEditModal: React.FC<AIEditModalProps> = ({
     open,
     onOpenChange,
     selectedText,
-    onApplyEdit
+    onApplyEdit,
+    isLoading = false
 }) => {
     const [instruction, setInstruction] = useState('');
 
-    const handleApply = () => {
+    const handleApply = async () => {
         if (instruction.trim()) {
-            onApplyEdit(instruction);
+            await onApplyEdit('custom_prompt', instruction);
             setInstruction('');
-            onOpenChange(false);
+            // Don't close modal here - let the parent handle it after successful response
         }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !isLoading) {
             e.preventDefault();
             handleApply();
         }
     };
 
-    const handleQuickEdit = (quickInstruction: string) => {
-        onApplyEdit(quickInstruction);
-        onOpenChange(false);
+    const handleQuickEdit = async (action: string) => {
+        await onApplyEdit(action);
+        // Don't close modal here - let the parent handle it after successful response
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={isLoading ? undefined : onOpenChange}>
             <DialogContent className="sm:max-w-[525px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -81,7 +83,8 @@ const AIEditModal: React.FC<AIEditModalProps> = ({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleQuickEdit('Make this text shorter and more concise')}
+                                onClick={() => handleQuickEdit('shorten')}
+                                disabled={isLoading}
                                 className="justify-start text-left h-auto py-2"
                             >
                                 <div>
@@ -93,7 +96,8 @@ const AIEditModal: React.FC<AIEditModalProps> = ({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleQuickEdit('Make this text longer and more detailed')}
+                                onClick={() => handleQuickEdit('lengthen')}
+                                disabled={isLoading}
                                 className="justify-start text-left h-auto py-2"
                             >
                                 <div>
@@ -105,7 +109,8 @@ const AIEditModal: React.FC<AIEditModalProps> = ({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleQuickEdit('Rewrite this text in a different way while keeping the same meaning')}
+                                onClick={() => handleQuickEdit('rephrase')}
+                                disabled={isLoading}
                                 className="justify-start text-left h-auto py-2"
                             >
                                 <div>
@@ -117,7 +122,8 @@ const AIEditModal: React.FC<AIEditModalProps> = ({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleQuickEdit('Fix any spelling and grammar errors in this text')}
+                                onClick={() => handleQuickEdit('fix_grammar')}
+                                disabled={isLoading}
                                 className="justify-start text-left h-auto py-2"
                             >
                                 <div>
@@ -140,9 +146,10 @@ const AIEditModal: React.FC<AIEditModalProps> = ({
                             onKeyDown={handleKeyPress}
                             className="min-h-[80px]"
                             autoFocus
+                            disabled={isLoading}
                         />
                         <p className="text-xs text-gray-500">
-                            Press Ctrl+Enter to apply, or use the button below
+                            {isLoading ? 'Processing your request...' : 'Press Ctrl+Enter to apply, or use the button below'}
                         </p>
                     </div>
                 </div>
@@ -154,16 +161,26 @@ const AIEditModal: React.FC<AIEditModalProps> = ({
                             setInstruction('');
                             onOpenChange(false);
                         }}
+                        disabled={isLoading}
                     >
                         Cancel
                     </Button>
                     <Button
                         onClick={handleApply}
-                        disabled={!instruction.trim()}
+                        disabled={!instruction.trim() || isLoading}
                         className="flex items-center gap-2"
                     >
-                        Apply Changes
-                        <ArrowRight className="h-4 w-4" />
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Applying changes...
+                            </>
+                        ) : (
+                            <>
+                                Apply Changes
+                                <ArrowRight className="h-4 w-4" />
+                            </>
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>

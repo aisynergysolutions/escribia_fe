@@ -55,6 +55,7 @@ type PostDetailsContextType = {
     generatePostHooks: (clientId: string, postId: string, subClientId: string) => Promise<Hook[]>;
     applyHook: (clientId: string, postId: string, subClientId: string, postContent: string, hookText: string) => Promise<string | null>;
     editPostWithInstructions: (clientId: string, postId: string, subClientId: string, postContent: string, instructions: string) => Promise<string | null>;
+    editPostPartial: (clientId: string, postId: string, subClientId: string, selectedText: string, postContent: string, action: string, customPrompt?: string) => Promise<string | null>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -67,6 +68,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     generatePostHooks: async () => [],
     applyHook: async () => null,
     editPostWithInstructions: async () => null,
+    editPostPartial: async () => null,
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -346,6 +348,74 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    // Partial edit function for selected text
+    const editPostPartial = async (
+        agencyId: string,
+        clientId: string,
+        ideaId: string,
+        subClientId: string,
+        selectedText: string,
+        postContent: string,
+        action: string,
+        customPrompt?: string
+    ): Promise<string | null> => {
+        try {
+            const requestBody: any = {
+                agency_id: agencyId,
+                client_id: clientId,
+                subclient_id: subClientId,
+                idea_id: ideaId,
+                selected_text: selectedText,
+                post_content: postContent,
+                action
+            };
+
+            // Add custom prompt if action is custom_prompt
+            if (action === 'custom_prompt' && customPrompt) {
+                requestBody.custom_prompt = customPrompt;
+            }
+
+            const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/edit/partial', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.full_edited_content) {
+                return data.full_edited_content;
+            } else {
+                console.error('API returned error:', data.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error editing post partial:', error);
+            return null;
+        }
+    };
+
+    const editPostPartialWrapper = useCallback(async (
+        clientId: string,
+        postId: string,
+        subClientId: string,
+        selectedText: string,
+        postContent: string,
+        action: string,
+        customPrompt?: string
+    ): Promise<string | null> => {
+        try {
+            return await editPostPartial('agency1', clientId, postId, subClientId, selectedText, postContent, action, customPrompt);
+        } catch (error) {
+            console.error('Error editing post partial:', error);
+            return null;
+        }
+    }, []);
+
     return (
         <PostDetailsContext.Provider value={{
             post,
@@ -356,7 +426,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             saveNewDraft,
             generatePostHooks,
             applyHook: applyHookToPost,
-            editPostWithInstructions: editPostWithInstructionsWrapper
+            editPostWithInstructions: editPostWithInstructionsWrapper,
+            editPostPartial: editPostPartialWrapper
         }}>
             {children}
         </PostDetailsContext.Provider>

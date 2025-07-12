@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { usePostDetails } from '@/context/PostDetailsContext';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
 import AIEditModal from './AIEditModal';
@@ -44,6 +45,12 @@ interface GeneratedPostEditorProps {
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
   onPollStateChange?: (hasPoll: boolean) => void;
   isRegeneratingWithInstructions?: boolean;
+  // Add these new props for partial editing
+  clientId?: string;
+  postId?: string;
+  subClientId?: string;
+  // Add prop for saving AI-generated content
+  onSaveAI?: (text: string) => Promise<void>;
 }
 
 export interface GeneratedPostEditorRef {
@@ -66,7 +73,11 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   comments,
   setComments,
   onPollStateChange,
-  isRegeneratingWithInstructions = false
+  isRegeneratingWithInstructions = false,
+  clientId,
+  postId,
+  subClientId,
+  onSaveAI
 }, ref) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -75,6 +86,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [aiEditToolbarVisible, setAiEditToolbarVisible] = useState(false);
   const [aiEditModalVisible, setAiEditModalVisible] = useState(false);
+  const [aiEditLoading, setAiEditLoading] = useState(false); // Add loading state
   const [originalPost, setOriginalPost] = useState(generatedPost);
   const [selectedText, setSelectedText] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -94,6 +106,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { editPostPartial } = usePostDetails();
   const lastSelection = useRef<Range | null>(null);
 
   // NEW state for comment popover
@@ -208,26 +221,97 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     }
   };
 
-  const handleAIEditModalApply = (instruction: string) => {
-    if (selectedText) {
-      toast({
-        title: "AI Edit Applied",
-        description: `Instruction: "${instruction}" applied to selected text.`
-      });
+  const handleAIEditModalApply = async (action: string, customPrompt?: string) => {
+    if (selectedText && clientId && postId) {
+      setAiEditLoading(true); // Start loading
 
-      // Clear selection and hide toolbars/modal
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
+      try {
+        // Use the passed subClientId (profileId) for the API call
+        if (!clientId || !postId || !subClientId) {
+          toast({
+            title: "Missing Information",
+            description: "Required client, post, or profile information is missing.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const editedContent = await editPostPartial(
+          clientId,
+          postId,
+          subClientId,
+          selectedText,
+          currentContent,
+          action,
+          customPrompt
+        );
+
+        if (editedContent) {
+          // Save the edited content as a new AI-generated draft first
+          if (onSaveAI) {
+            try {
+              await onSaveAI(editedContent);
+            } catch (error) {
+              console.error('Error saving AI-edited content:', error);
+              toast({
+                title: "Save Failed",
+                description: "Failed to save the edited content. Please try again.",
+                variant: "destructive"
+              });
+              return;
+            }
+          }
+
+          // Update the editor content silently without triggering auto-save
+          updateContentSilently(editedContent);
+
+          toast({
+            title: "AI Edit Applied",
+            description: `Text has been ${action === 'shorten' ? 'shortened' :
+              action === 'lengthen' ? 'lengthened' :
+                action === 'rephrase' ? 'rephrased' :
+                  action === 'fix_grammar' ? 'corrected' : 'edited'} successfully.`
+          });
+
+          // Clear selection and hide modal after successful edit
+          const selection = window.getSelection();
+          if (selection) {
+            selection.removeAllRanges();
+          }
+          setSelectedText('');
+          lastSelection.current = null;
+          setAiEditModalVisible(false);
+          setToolbarVisible(false);
+        } else {
+          toast({
+            title: "Edit Failed",
+            description: "Failed to apply the edit. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error applying AI edit:', error);
+        toast({
+          title: "Edit Failed",
+          description: "An error occurred while applying the edit.",
+          variant: "destructive"
+        });
+      } finally {
+        setAiEditLoading(false); // Stop loading
       }
-      setSelectedText('');
-      lastSelection.current = null;
-      setAiEditModalVisible(false);
-      setToolbarVisible(false);
+    } else {
+      toast({
+        title: "Missing Information",
+        description: "Unable to apply edit - missing client or post information.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleAIEditModalClose = () => {
+    // Prevent closing while loading
+    if (aiEditLoading) return;
+
     setAiEditModalVisible(false);
     // Restore the floating toolbar and selection if text is still selected
     if (selectedText && lastSelection.current) {
@@ -694,6 +778,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         onOpenChange={handleAIEditModalClose}
         selectedText={selectedText}
         onApplyEdit={handleAIEditModalApply}
+        isLoading={aiEditLoading}
       />
 
       <CommentPopover

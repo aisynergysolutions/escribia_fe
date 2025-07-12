@@ -279,6 +279,10 @@ const PostDetails = () => {
             setComments={setComments}
             onPollStateChange={handlePollStateChange}
             isRegeneratingWithInstructions={postEditor.isSaving}
+            clientId={clientId}
+            postId={postId}
+            subClientId={post?.profile.profileId}
+            onSaveAI={handleSaveAIPost}
           />
         </div>
 

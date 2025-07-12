@@ -28,6 +28,12 @@ interface PostEditorProps {
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
   onPollStateChange?: (hasPoll: boolean) => void;
   isRegeneratingWithInstructions?: boolean;
+  // Add these for partial editing
+  clientId?: string;
+  postId?: string;
+  subClientId?: string;
+  // Add prop for AI saves
+  onSaveAI?: (text: string) => Promise<void>;
 }
 
 const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
@@ -40,6 +46,10 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
   setComments,
   onPollStateChange,
   isRegeneratingWithInstructions = false,
+  clientId,
+  postId,
+  subClientId,
+  onSaveAI,
 }, ref) => {
   const generatedPostEditorRef = React.useRef<any>(null);
 
@@ -70,6 +80,10 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
       setComments={setComments}
       onPollStateChange={onPollStateChange}
       isRegeneratingWithInstructions={isRegeneratingWithInstructions}
+      clientId={clientId}
+      postId={postId}
+      subClientId={subClientId}
+      onSaveAI={onSaveAI}
     />
   );
 });

@@ -12,7 +12,7 @@ export const usePostEditor = ({
   initialText = '', 
   onSave, 
   onSaveAI, 
-  autoSaveDelay = 3000,
+  autoSaveDelay = 2000,
   onEditWithInstructions,
   resetKey // Add this parameter
 }: UsePostEditorProps & { resetKey?: string }) => {
