@@ -27,6 +27,7 @@ interface PostEditorProps {
   comments: CommentThread[];
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
   onPollStateChange?: (hasPoll: boolean) => void;
+  isRegeneratingWithInstructions?: boolean;
 }
 
 const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
@@ -38,6 +39,7 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
   comments,
   setComments,
   onPollStateChange,
+  isRegeneratingWithInstructions = false,
 }, ref) => {
   const generatedPostEditorRef = React.useRef<any>(null);
 
@@ -67,6 +69,7 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
       comments={comments}
       setComments={setComments}
       onPollStateChange={onPollStateChange}
+      isRegeneratingWithInstructions={isRegeneratingWithInstructions}
     />
   );
 });

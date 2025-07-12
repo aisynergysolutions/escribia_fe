@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageSquare, Sparkles } from 'lucide-react';
+import { MessageSquare, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface EditingInstructionsProps {
@@ -10,6 +10,7 @@ interface EditingInstructionsProps {
   onEditingInstructionsChange: (value: string) => void;
   onRegeneratePost: () => void;
   onRegenerateWithInstructions: () => void;
+  isLoading?: boolean;
 }
 
 const EditingInstructions: React.FC<EditingInstructionsProps> = ({
@@ -18,7 +19,8 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
   editingInstructions,
   onEditingInstructionsChange,
   onRegeneratePost,
-  onRegenerateWithInstructions
+  onRegenerateWithInstructions,
+  isLoading = false
 }) => {
   return (
     <div className="border-t bg-gray-50">
@@ -27,26 +29,38 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
           <MessageSquare className="h-4 w-4" />
           {showChatBox ? 'Hide' : 'Show'} editing instructions
         </Button>
-        
+
         <Button variant="ghost" size="sm" onClick={onRegeneratePost} className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
           <Sparkles className="h-4 w-4" />
           Regenerate with AI
         </Button>
       </div>
-      
+
       {showChatBox && (
         <div className="p-4 space-y-3">
           <div className="flex gap-3">
-            <textarea 
-              value={editingInstructions} 
-              onChange={e => onEditingInstructionsChange(e.target.value)} 
-              className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white" 
-              placeholder="Provide feedback or instructions for the AI to improve the generated content..." 
+            <textarea
+              value={editingInstructions}
+              onChange={e => onEditingInstructionsChange(e.target.value)}
+              className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white"
+              placeholder="Provide feedback or instructions for the AI to improve the generated content..."
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={onRegenerateWithInstructions} size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!editingInstructions.trim()}>
-              Send Instructions
+            <Button
+              onClick={onRegenerateWithInstructions}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700"
+              disabled={!editingInstructions.trim() || isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                'Send Instructions'
+              )}
             </Button>
           </div>
         </div>

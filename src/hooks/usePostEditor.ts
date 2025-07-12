@@ -5,6 +5,7 @@ interface UsePostEditorProps {
   onSave?: (text: string) => Promise<void>;
   onSaveAI?: (text: string) => Promise<void>;
   autoSaveDelay?: number; // in milliseconds
+  onEditWithInstructions?: (instructions: string) => Promise<void>; // New prop
 }
 
 export const usePostEditor = ({ 
@@ -12,6 +13,7 @@ export const usePostEditor = ({
   onSave, 
   onSaveAI, 
   autoSaveDelay = 3000,
+  onEditWithInstructions,
   resetKey // Add this parameter
 }: UsePostEditorProps & { resetKey?: string }) => {
   const [generatedPost, setGeneratedPost] = useState('');
@@ -110,25 +112,45 @@ export const usePostEditor = ({
   }, [generatedPost]);
 
   const handleRegenerateWithInstructions = useCallback(async () => {
-    const newContent = "Based on your instructions, here's an updated version that focuses more on practical implementation...";
-    setGeneratedPost(newContent);
-    setHasUnsavedChanges(true);
-    
-    // Automatically save AI-generated content as a new draft
-    const saveFunction = onSaveAI || onSave; // Use AI save function if available, otherwise fallback to regular save
-    if (saveFunction) {
+    if (!editingInstructions.trim()) {
+      console.log('No editing instructions provided');
+      return;
+    }
+
+    if (onEditWithInstructions) {
       try {
         setIsSaving(true);
-        await saveFunction(newContent);
-        setHasUnsavedChanges(false);
-        console.log('AI-generated content saved successfully');
+        await onEditWithInstructions(editingInstructions);
+        // Clear instructions after successful edit
+        setEditingInstructions('');
+        console.log('Post edited with instructions successfully');
       } catch (error) {
-        console.error('Error saving AI-generated content:', error);
+        console.error('Error editing post with instructions:', error);
       } finally {
         setIsSaving(false);
       }
+    } else {
+      // Fallback for old behavior if no function provided
+      const newContent = "Based on your instructions, here's an updated version that focuses more on practical implementation...";
+      setGeneratedPost(newContent);
+      setHasUnsavedChanges(true);
+      
+      // Automatically save AI-generated content as a new draft
+      const saveFunction = onSaveAI || onSave; // Use AI save function if available, otherwise fallback to regular save
+      if (saveFunction) {
+        try {
+          setIsSaving(true);
+          await saveFunction(newContent);
+          setHasUnsavedChanges(false);
+          console.log('AI-generated content saved successfully');
+        } catch (error) {
+          console.error('Error saving AI-generated content:', error);
+        } finally {
+          setIsSaving(false);
+        }
+      }
     }
-  }, [onSave, onSaveAI]);
+  }, [editingInstructions, onEditWithInstructions, onSave, onSaveAI]);
 
   // Add this useEffect to reset when resetKey changes
   useEffect(() => {

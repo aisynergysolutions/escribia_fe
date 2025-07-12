@@ -54,6 +54,7 @@ type PostDetailsContextType = {
     saveNewDraft: (agencyId: string, clientId: string, postId: string, newText: string, notes?: string, generatedByAI?: boolean) => Promise<void>;
     generatePostHooks: (clientId: string, postId: string, subClientId: string) => Promise<Hook[]>;
     applyHook: (clientId: string, postId: string, subClientId: string, postContent: string, hookText: string) => Promise<string | null>;
+    editPostWithInstructions: (clientId: string, postId: string, subClientId: string, postContent: string, instructions: string) => Promise<string | null>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -65,6 +66,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     saveNewDraft: async () => { },
     generatePostHooks: async () => [],
     applyHook: async () => null,
+    editPostWithInstructions: async () => null,
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -287,6 +289,63 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    // Edit post with instructions function
+    const editPostWithInstructions = async (
+        agencyId: string,
+        clientId: string,
+        ideaId: string,
+        subClientId: string,
+        postContent: string,
+        instructions: string
+    ): Promise<string | null> => {
+        try {
+            const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/edit/full', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agency_id: agencyId,
+                    client_id: clientId,
+                    subclient_id: subClientId,
+                    idea_id: ideaId,
+                    post_content: postContent,
+                    action: 'custom_prompt',
+                    custom_prompt: instructions
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.edited_content) {
+                return data.edited_content;
+            } else {
+                console.error('API returned error:', data.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error editing post with instructions:', error);
+            return null;
+        }
+    };
+
+    const editPostWithInstructionsWrapper = useCallback(async (
+        clientId: string,
+        postId: string,
+        subClientId: string,
+        postContent: string,
+        instructions: string
+    ): Promise<string | null> => {
+        try {
+            return await editPostWithInstructions('agency1', clientId, postId, subClientId, postContent, instructions);
+        } catch (error) {
+            console.error('Error editing post with instructions:', error);
+            return null;
+        }
+    }, []);
+
     return (
         <PostDetailsContext.Provider value={{
             post,
@@ -296,7 +355,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             clearPost,
             saveNewDraft,
             generatePostHooks,
-            applyHook: applyHookToPost
+            applyHook: applyHookToPost,
+            editPostWithInstructions: editPostWithInstructionsWrapper
         }}>
             {children}
         </PostDetailsContext.Provider>

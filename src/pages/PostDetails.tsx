@@ -14,7 +14,7 @@ const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
 
   // Use the context
-  const { post, loading, error, fetchPost, saveNewDraft, generatePostHooks, applyHook } = usePostDetails();
+  const { post, loading, error, fetchPost, saveNewDraft, generatePostHooks, applyHook, editPostWithInstructions } = usePostDetails();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -69,12 +69,35 @@ const PostDetails = () => {
     }
   };
 
+  const handleEditWithInstructions = async (instructions: string) => {
+    if (clientId && postId && post?.profile.profileId && instructions.trim()) {
+      const currentPostContent = post?.drafts?.[post.drafts.length - 1]?.text || '';
+
+      const editedContent = await editPostWithInstructions(
+        clientId,
+        postId,
+        post.profile.profileId,
+        currentPostContent,
+        instructions
+      );
+
+      if (editedContent) {
+        // Save the edited content as a new draft first
+        await handleSaveAIPost(editedContent);
+
+        // Update the editor content silently without triggering auto-save
+        postEditorRef.current?.updateContent(editedContent);
+      }
+    }
+  };
+
   const postEditor = usePostEditor({
     initialText: post?.drafts?.length
       ? post.drafts[post.drafts.length - 1].text // Use last draft's text
       : '',
     onSave: handleSavePost,
-    onSaveAI: handleSaveAIPost
+    onSaveAI: handleSaveAIPost,
+    onEditWithInstructions: handleEditWithInstructions
   });
 
   // Get hooks from context or use mock data
@@ -238,8 +261,8 @@ const PostDetails = () => {
             postData={{
               // generatedPost: latestDraftText, // Use the latest draft text
               generatedPost: post?.drafts?.[post.drafts.length - 1]?.text || '',
-              editingInstructions: '',
-              hasUnsavedChanges: false
+              editingInstructions: postEditor.editingInstructions,
+              hasUnsavedChanges: postEditor.hasUnsavedChanges
             }}
             postHandlers={{
               onGeneratedPostChange: postEditor.handlePostChange,
@@ -255,6 +278,7 @@ const PostDetails = () => {
             comments={comments}
             setComments={setComments}
             onPollStateChange={handlePollStateChange}
+            isRegeneratingWithInstructions={postEditor.isSaving}
           />
         </div>
 

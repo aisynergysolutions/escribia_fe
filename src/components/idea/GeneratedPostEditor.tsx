@@ -42,6 +42,7 @@ interface GeneratedPostEditorProps {
   comments: CommentThread[];
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
   onPollStateChange?: (hasPoll: boolean) => void;
+  isRegeneratingWithInstructions?: boolean;
 }
 
 export interface GeneratedPostEditorRef {
@@ -63,7 +64,8 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   onToggleCommentsPanel,
   comments,
   setComments,
-  onPollStateChange
+  onPollStateChange,
+  isRegeneratingWithInstructions = false
 }, ref) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -822,6 +824,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           onEditingInstructionsChange={onEditingInstructionsChange}
           onRegeneratePost={handleRegeneratePost}
           onRegenerateWithInstructions={onRegenerateWithInstructions}
+          isLoading={isRegeneratingWithInstructions}
         />
       </div>
 
