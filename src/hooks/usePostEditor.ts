@@ -18,6 +18,7 @@ export const usePostEditor = ({
   const [editingInstructions, setEditingInstructions] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [autoSaveDisabled, setAutoSaveDisabled] = useState(false); // New flag
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export const usePostEditor = ({
 
   // Auto-save effect
   useEffect(() => {
-    if (hasUnsavedChanges && onSave && generatedPost.trim() && autoSaveDelay > 0) {
+    if (hasUnsavedChanges && onSave && generatedPost.trim() && autoSaveDelay > 0 && !autoSaveDisabled) {
       // Clear previous timer
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
@@ -53,7 +54,7 @@ export const usePostEditor = ({
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [hasUnsavedChanges, generatedPost, onSave, autoSaveDelay]);
+  }, [hasUnsavedChanges, generatedPost, onSave, autoSaveDelay, autoSaveDisabled]);
 
   const handlePostChange = useCallback((newText: string) => {
     setGeneratedPost(newText);
@@ -64,6 +65,17 @@ export const usePostEditor = ({
   const handlePostChangeWithoutUnsaved = useCallback((newText: string) => {
     setGeneratedPost(newText);
     // Don't set hasUnsavedChanges to true for programmatic updates
+  }, []);
+
+  // Add a method to temporarily disable auto-save during programmatic updates
+  const handlePostChangeWithoutAutoSave = useCallback((newText: string) => {
+    setAutoSaveDisabled(true);
+    setGeneratedPost(newText);
+    
+    // Re-enable auto-save after a short delay
+    setTimeout(() => {
+      setAutoSaveDisabled(false);
+    }, 100);
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -133,6 +145,7 @@ export const usePostEditor = ({
     setEditingInstructions,
     handlePostChange,
     handlePostChangeWithoutUnsaved,
+    handlePostChangeWithoutAutoSave,
     handleSave,
     handleCopyText,
     handleRegenerateWithInstructions

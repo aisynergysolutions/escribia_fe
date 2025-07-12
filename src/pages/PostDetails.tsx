@@ -155,11 +155,11 @@ const PostDetails = () => {
       );
 
       if (newPostContent) {
-        // Directly update the editor content using the ref
-        postEditorRef.current?.updateContent(newPostContent);
-
-        // Save the new content as a draft in the background
+        // Save the new content as a draft first
         await handleSaveAIPost(newPostContent);
+
+        // Update the editor content silently without triggering auto-save
+        postEditorRef.current?.updateContent(newPostContent);
 
         // Update the selected hook index
         setSelectedHookIndex(index);

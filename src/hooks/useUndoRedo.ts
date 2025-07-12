@@ -24,6 +24,7 @@ export const useUndoRedo = ({
   const [currentContent, setCurrentContent] = useState(initialContent);
   const pauseTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef(initialContent);
+  const suppressOnChange = useRef(false); // New flag to suppress onChange
 
   // Initialize with first version
   useEffect(() => {
@@ -71,7 +72,11 @@ export const useUndoRedo = ({
 
   const handleContentChange = useCallback((content: string) => {
     setCurrentContent(content);
-    onContentChange(content);
+    
+    // Only call onContentChange if not suppressed
+    if (!suppressOnChange.current) {
+      onContentChange(content);
+    }
 
     // Clear existing timer
     if (pauseTimer.current) {
@@ -86,6 +91,17 @@ export const useUndoRedo = ({
       }, pauseDelay);
     }
   }, [createNewVersion, onContentChange, pauseDelay]);
+
+  // Add method to update content without triggering onChange
+  const updateContentSilently = useCallback((content: string) => {
+    suppressOnChange.current = true;
+    setCurrentContent(content);
+    
+    // Reset the flag after a brief delay
+    setTimeout(() => {
+      suppressOnChange.current = false;
+    }, 10);
+  }, []);
 
   const undo = useCallback(() => {
     if (currentIndex > 0) {
@@ -152,6 +168,7 @@ export const useUndoRedo = ({
     undo,
     redo,
     restoreVersion,
-    handleContentChange
+    handleContentChange,
+    updateContentSilently
   };
 };

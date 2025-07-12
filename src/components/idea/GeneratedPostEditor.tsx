@@ -107,7 +107,8 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     undo,
     redo,
     restoreVersion,
-    handleContentChange: handleUndoRedoContentChange
+    handleContentChange: handleUndoRedoContentChange,
+    updateContentSilently
   } = useUndoRedo({
     initialContent: generatedPost,
     onContentChange: onGeneratedPostChange,
@@ -117,7 +118,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     updateContent: (content: string) => {
-      handleUndoRedoContentChange(content);
+      updateContentSilently(content);
     }
   }));
 
