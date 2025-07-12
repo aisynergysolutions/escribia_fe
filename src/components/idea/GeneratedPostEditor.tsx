@@ -37,7 +37,7 @@ interface GeneratedPostEditorProps {
     generatedByAI: boolean;
     notes: string;
   }>;
-  onRestoreVersion: (text: string) => void;
+  onRestoreVersion: (versionId: string) => void;
   onToggleCommentsPanel: () => void;
   comments: CommentThread[];
   setComments: React.Dispatch<React.SetStateAction<CommentThread[]>>;
@@ -441,7 +441,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   };
 
   const handleRestoreVersion = (versionId: string) => {
-    restoreVersion(versionId);
+    onRestoreVersion(versionId);
     toast({
       title: "Version Restored",
       description: "Version has been restored successfully."

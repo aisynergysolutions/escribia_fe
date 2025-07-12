@@ -167,6 +167,20 @@ const PostDetails = () => {
     }
   };
 
+  const handleRestoreVersion = async (versionId: string) => {
+    if (clientId && postId) {
+      // Find the version by ID
+      const version = versionHistory.find(v => v.id === versionId);
+      if (version) {
+        // Save the restored content as a new draft first
+        await handleSavePost(version.text);
+
+        // Update the editor content silently without triggering auto-save
+        postEditorRef.current?.updateContent(version.text);
+      }
+    }
+  };
+
   const handleRegenerateHooks = async () => {
     if (clientId && postId && post.profile.profileId) {
       await generatePostHooks(clientId, postId, post.profile.profileId);
@@ -236,7 +250,7 @@ const PostDetails = () => {
               onUnsavedChangesChange: () => { }
             }}
             versionHistory={versionHistory} // Use the sorted version history
-            onRestoreVersion={postEditor.handlePostChange}
+            onRestoreVersion={handleRestoreVersion}
             onToggleCommentsPanel={() => setShowCommentsPanel(p => !p)}
             comments={comments}
             setComments={setComments}
