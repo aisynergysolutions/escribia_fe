@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import IdeaHeader from '../components/idea/IdeaHeader';
-import PostEditor from '../components/idea/PostEditor';
+import PostEditor, { PostEditorRef } from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
 import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
@@ -32,6 +32,9 @@ const PostDetails = () => {
   const [comments, setComments] = useState<CommentThread[]>([]);
   const [hasPoll, setHasPoll] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
+
+  // Ref to access PostEditor methods
+  const postEditorRef = useRef<PostEditorRef>(null);
 
   // Fetch post data when component mounts
   useEffect(() => {
@@ -152,12 +155,12 @@ const PostDetails = () => {
       );
 
       if (newPostContent) {
-        // Save the new content as a draft
+        // Directly update the editor content using the ref
+        postEditorRef.current?.updateContent(newPostContent);
+
+        // Save the new content as a draft in the background
         await handleSaveAIPost(newPostContent);
-        
-        // Re-fetch the post to get the updated data
-        await fetchPost(clientId, postId);
-        
+
         // Update the selected hook index
         setSelectedHookIndex(index);
       }
@@ -217,6 +220,7 @@ const PostDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <PostEditor
+            ref={postEditorRef}
             postData={{
               // generatedPost: latestDraftText, // Use the latest draft text
               generatedPost: post?.drafts?.[post.drafts.length - 1]?.text || '',

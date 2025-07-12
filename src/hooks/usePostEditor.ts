@@ -60,6 +60,12 @@ export const usePostEditor = ({
     setHasUnsavedChanges(true);
   }, []);
 
+  // Add a method for programmatic updates that don't trigger unsaved changes flag
+  const handlePostChangeWithoutUnsaved = useCallback((newText: string) => {
+    setGeneratedPost(newText);
+    // Don't set hasUnsavedChanges to true for programmatic updates
+  }, []);
+
   const handleSave = useCallback(async () => {
     if (!onSave) {
       console.log('No save function provided, only logging:', generatedPost);
@@ -126,6 +132,7 @@ export const usePostEditor = ({
     isSaving,
     setEditingInstructions,
     handlePostChange,
+    handlePostChangeWithoutUnsaved,
     handleSave,
     handleCopyText,
     handleRegenerateWithInstructions

@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useImperativeHandle, forwardRef } from 'react';
 import GeneratedPostEditor from './GeneratedPostEditor';
 import { CommentThread } from './CommentsPanel';
+
+export interface PostEditorRef {
+  updateContent: (content: string) => void;
+}
 
 interface PostEditorProps {
   postData: {
@@ -25,7 +29,7 @@ interface PostEditorProps {
   onPollStateChange?: (hasPoll: boolean) => void;
 }
 
-const PostEditor: React.FC<PostEditorProps> = ({
+const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
   postData,
   postHandlers,
   versionHistory,
@@ -34,9 +38,20 @@ const PostEditor: React.FC<PostEditorProps> = ({
   comments,
   setComments,
   onPollStateChange,
-}) => {
+}, ref) => {
+  const generatedPostEditorRef = React.useRef<any>(null);
+
+  useImperativeHandle(ref, () => ({
+    updateContent: (content: string) => {
+      if (generatedPostEditorRef.current) {
+        generatedPostEditorRef.current.updateContent(content);
+      }
+    }
+  }));
+
   return (
     <GeneratedPostEditor
+      ref={generatedPostEditorRef}
       generatedPost={postData.generatedPost}
       onGeneratedPostChange={postHandlers.onGeneratedPostChange}
       editingInstructions={postData.editingInstructions}
@@ -54,6 +69,6 @@ const PostEditor: React.FC<PostEditorProps> = ({
       onPollStateChange={onPollStateChange}
     />
   );
-};
+});
 
 export default PostEditor;

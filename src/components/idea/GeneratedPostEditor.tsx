@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
@@ -44,7 +44,11 @@ interface GeneratedPostEditorProps {
   onPollStateChange?: (hasPoll: boolean) => void;
 }
 
-const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
+export interface GeneratedPostEditorRef {
+  updateContent: (content: string) => void;
+}
+
+const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEditorProps>(({
   generatedPost,
   onGeneratedPostChange,
   editingInstructions,
@@ -60,7 +64,7 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
   comments,
   setComments,
   onPollStateChange
-}) => {
+}, ref) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
     left: 0
@@ -109,6 +113,13 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
     onContentChange: onGeneratedPostChange,
     pauseDelay: 1000 // Reduced from 3000 to 1000ms for more frequent undo/redo points
   });
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    updateContent: (content: string) => {
+      handleUndoRedoContentChange(content);
+    }
+  }));
 
   const calculateContentMetrics = (content: string) => {
     const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML for character count
@@ -832,6 +843,8 @@ const GeneratedPostEditor: React.FC<GeneratedPostEditorProps> = ({
       </style>
     </div>
   );
-};
+});
+
+GeneratedPostEditor.displayName = 'GeneratedPostEditor';
 
 export default GeneratedPostEditor;
