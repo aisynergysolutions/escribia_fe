@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } f
 import { useToast } from '@/hooks/use-toast';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
+import AIEditModal from './AIEditModal';
 import PostPreviewModal from './PostPreviewModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
@@ -73,6 +74,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   });
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [aiEditToolbarVisible, setAiEditToolbarVisible] = useState(false);
+  const [aiEditModalVisible, setAiEditModalVisible] = useState(false);
   const [originalPost, setOriginalPost] = useState(generatedPost);
   const [selectedText, setSelectedText] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -182,16 +184,17 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     } else {
       setToolbarVisible(false);
       setAiEditToolbarVisible(false);
+      setAiEditModalVisible(false);
       setSelectedText('');
     }
   };
 
   const handleAIEdit = () => {
-    if (selectedText) {
+    if (selectedText && lastSelection.current) {
+      // Open the AI edit modal
+      setAiEditModalVisible(true);
+      // Hide the floating toolbar while modal is open
       setToolbarVisible(false);
-      setTimeout(() => {
-        setAiEditToolbarVisible(true);
-      }, 50);
     }
   };
 
@@ -202,6 +205,38 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         description: `Instruction: "${instruction}" applied to selected text.`
       });
       setAiEditToolbarVisible(false);
+    }
+  };
+
+  const handleAIEditModalApply = (instruction: string) => {
+    if (selectedText) {
+      toast({
+        title: "AI Edit Applied",
+        description: `Instruction: "${instruction}" applied to selected text.`
+      });
+
+      // Clear selection and hide toolbars/modal
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+      }
+      setSelectedText('');
+      lastSelection.current = null;
+      setAiEditModalVisible(false);
+      setToolbarVisible(false);
+    }
+  };
+
+  const handleAIEditModalClose = () => {
+    setAiEditModalVisible(false);
+    // Restore the floating toolbar and selection if text is still selected
+    if (selectedText && lastSelection.current) {
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(lastSelection.current);
+      }
+      setToolbarVisible(true);
     }
   };
 
@@ -634,6 +669,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       if (!selection || selection.toString().length === 0) {
         setToolbarVisible(false);
         setAiEditToolbarVisible(false);
+        // Don't close modal on outside click - let the modal handle its own closing
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -652,6 +688,13 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} onComment={handleCommentRequest} />
 
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
+
+      <AIEditModal
+        open={aiEditModalVisible}
+        onOpenChange={handleAIEditModalClose}
+        selectedText={selectedText}
+        onApplyEdit={handleAIEditModalApply}
+      />
 
       <CommentPopover
         visible={commentPopover.visible}
