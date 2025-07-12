@@ -42,7 +42,7 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
             <textarea
               value={editingInstructions}
               onChange={e => onEditingInstructionsChange(e.target.value)}
-              className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white"
+              className="flex-1 min-h-[80px] border rounded-lg p-3 focus:outline-none focus:ring-2 focus-ring-indigo-500 resize-none bg-white text-sm"
               placeholder="Provide feedback or instructions for the AI to improve the generated content..."
             />
           </div>
