@@ -56,6 +56,12 @@ type PostDetailsContextType = {
     applyHook: (clientId: string, postId: string, subClientId: string, postContent: string, hookText: string) => Promise<string | null>;
     editPostWithInstructions: (clientId: string, postId: string, subClientId: string, postContent: string, instructions: string) => Promise<string | null>;
     editPostPartial: (clientId: string, postId: string, subClientId: string, selectedText: string, postContent: string, action: string, customPrompt?: string) => Promise<string | null>;
+    updatePostTitle: (agencyId: string, clientId: string, postId: string, newTitle: string) => Promise<void>;
+    updatePostStatus: (agencyId: string, clientId: string, postId: string, newStatus: string) => Promise<void>;
+    updateInternalNotes: (agencyId: string, clientId: string, postId: string, newNotes: string) => Promise<void>;
+    updateTrainAI: (agencyId: string, clientId: string, postId: string, trainAI: boolean) => Promise<void>;
+    updateInitialIdea: (agencyId: string, clientId: string, postId: string, initialIdeaPrompt: string, objective: string) => Promise<void>;
+    regeneratePostFromIdea: (agencyId: string, clientId: string, postId: string, subClientId: string, initialIdeaPrompt: string, objective: string) => Promise<string | null>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -69,6 +75,12 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     applyHook: async () => null,
     editPostWithInstructions: async () => null,
     editPostPartial: async () => null,
+    updatePostTitle: async () => { },
+    updatePostStatus: async () => { },
+    updateInternalNotes: async () => { },
+    updateTrainAI: async () => { },
+    updateInitialIdea: async () => { },
+    regeneratePostFromIdea: async () => null,
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -416,6 +428,222 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const updatePostTitle = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        newTitle: string
+    ): Promise<void> => {
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Update Firestore with the new title
+            await updateDoc(postRef, {
+                title: newTitle,
+                lastUpdated: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        title: newTitle,
+                        lastUpdated: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            console.log('Post title updated successfully:', newTitle);
+        } catch (error) {
+            console.error('Error updating post title:', error);
+            throw new Error('Failed to update post title');
+        }
+    }, []);
+
+    const updatePostStatus = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        newStatus: string
+    ): Promise<void> => {
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Update Firestore with the new status
+            await updateDoc(postRef, {
+                status: newStatus,
+                lastUpdated: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        status: newStatus,
+                        lastUpdated: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            console.log('Post status updated successfully:', newStatus);
+        } catch (error) {
+            console.error('Error updating post status:', error);
+            throw new Error('Failed to update post status');
+        }
+    }, []);
+
+    const updateInternalNotes = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        newNotes: string
+    ): Promise<void> => {
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Update Firestore with the new internal notes
+            await updateDoc(postRef, {
+                internalNotes: newNotes,
+                lastUpdated: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        internalNotes: newNotes,
+                        lastUpdated: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            console.log('Post internal notes updated successfully');
+        } catch (error) {
+            console.error('Error updating post internal notes:', error);
+            throw new Error('Failed to update post internal notes');
+        }
+    }, []);
+
+    const updateTrainAI = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        trainAI: boolean
+    ): Promise<void> => {
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Update Firestore with the new trainAI setting
+            await updateDoc(postRef, {
+                trainAI: trainAI,
+                lastUpdated: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        trainAI: trainAI,
+                        lastUpdated: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            console.log('Post trainAI setting updated successfully:', trainAI);
+        } catch (error) {
+            console.error('Error updating post trainAI setting:', error);
+            throw new Error('Failed to update post trainAI setting');
+        }
+    }, []);
+
+    const updateInitialIdea = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        initialIdeaPrompt: string,
+        objective: string
+    ): Promise<void> => {
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Update Firestore with the new initial idea and objective
+            await updateDoc(postRef, {
+                initialIdeaPrompt: initialIdeaPrompt,
+                objective: objective,
+                lastUpdated: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        initialIdea: {
+                            ...prev.initialIdea,
+                            initialIdeaPrompt: initialIdeaPrompt,
+                            objective: objective
+                        },
+                        lastUpdated: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            console.log('Post initial idea and objective updated successfully');
+        } catch (error) {
+            console.error('Error updating post initial idea:', error);
+            throw new Error('Failed to update post initial idea');
+        }
+    }, []);
+
+    const regeneratePostFromIdea = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        subClientId: string,
+        initialIdeaPrompt: string,
+        objective: string
+    ): Promise<string | null> => {
+        try {
+            const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    agency_id: agencyId,
+                    client_id: clientId,
+                    subclient_id: subClientId,
+                    idea_id: postId,
+                    save: true, // This should save to Firestore
+                    create_title: false, // Don't overwrite the existing title
+                    create_hooks: false, // Don't regenerate hooks
+                    initial_idea_prompt: initialIdeaPrompt,
+                    objective: objective
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.post_content) {
+                return result.post_content;
+            } else {
+                console.error('API returned error:', result.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error regenerating post from idea:', error);
+            return null;
+        }
+    }, []);
+
     return (
         <PostDetailsContext.Provider value={{
             post,
@@ -427,7 +655,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             generatePostHooks,
             applyHook: applyHookToPost,
             editPostWithInstructions: editPostWithInstructionsWrapper,
-            editPostPartial: editPostPartialWrapper
+            editPostPartial: editPostPartialWrapper,
+            updatePostTitle,
+            updatePostStatus,
+            updateInternalNotes,
+            updateTrainAI,
+            updateInitialIdea,
+            regeneratePostFromIdea
         }}>
             {children}
         </PostDetailsContext.Provider>

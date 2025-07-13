@@ -13,8 +13,19 @@ import { usePostDetails } from '@/context/PostDetailsContext';
 const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
 
-  // Use the context
-  const { post, loading, error, fetchPost, saveNewDraft, generatePostHooks, applyHook, editPostWithInstructions } = usePostDetails();
+  // Use the context - add the new functions
+  const {
+    post,
+    loading,
+    error,
+    fetchPost,
+    saveNewDraft,
+    generatePostHooks,
+    applyHook,
+    editPostWithInstructions,
+    updateInitialIdea,
+    regeneratePostFromIdea
+  } = usePostDetails();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -32,6 +43,7 @@ const PostDetails = () => {
   const [comments, setComments] = useState<CommentThread[]>([]);
   const [hasPoll, setHasPoll] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
+  const [isRegeneratingPost, setIsRegeneratingPost] = useState(false); // Add loading state
 
   // Ref to access PostEditor methods
   const postEditorRef = useRef<PostEditorRef>(null);
@@ -152,8 +164,48 @@ const PostDetails = () => {
     });
   };
 
-  const handleSendToAI = () => {
-    console.log('Send to AI clicked');
+  const handleSendToAI = async () => {
+    if (!clientId || !postId || !post?.profile.profileId) {
+      console.error('Missing required data for regeneration');
+      return;
+    }
+
+    try {
+      setIsRegeneratingPost(true);
+
+      // Step 1: Update the initial idea and objective in Firestore
+      console.log('Updating initial idea and objective...');
+      await updateInitialIdea('agency1', clientId, postId, initialIdea, objective);
+
+      // Step 2: Regenerate the post content using the Railway API
+      console.log('Regenerating post content...');
+      const newPostContent = await regeneratePostFromIdea(
+        'agency1',
+        clientId,
+        postId,
+        post.profile.profileId,
+        initialIdea,
+        objective
+      );
+
+      if (newPostContent) {
+        // Step 3: Save the new content as a draft
+        await handleSaveAIPost(newPostContent);
+
+        // Step 4: Update the editor content
+        postEditorRef.current?.updateContent(newPostContent);
+
+        console.log('Post regenerated successfully');
+      } else {
+        console.error('Failed to regenerate post content');
+        // You might want to show a toast notification here
+      }
+    } catch (error) {
+      console.error('Error during post regeneration:', error);
+      // You might want to show an error toast notification here
+    } finally {
+      setIsRegeneratingPost(false);
+    }
   };
 
   const handleAddCustomObjective = (customObjective: string) => {
@@ -259,7 +311,6 @@ const PostDetails = () => {
           <PostEditor
             ref={postEditorRef}
             postData={{
-              // generatedPost: latestDraftText, // Use the latest draft text
               generatedPost: post?.drafts?.[post.drafts.length - 1]?.text || '',
               editingInstructions: postEditor.editingInstructions,
               hasUnsavedChanges: postEditor.hasUnsavedChanges
@@ -272,7 +323,7 @@ const PostDetails = () => {
               onSave: postEditor.handleSave,
               onUnsavedChangesChange: () => { }
             }}
-            versionHistory={versionHistory} // Use the sorted version history
+            versionHistory={versionHistory}
             onRestoreVersion={handleRestoreVersion}
             onToggleCommentsPanel={() => setShowCommentsPanel(p => !p)}
             comments={comments}
@@ -319,6 +370,7 @@ const PostDetails = () => {
                 onExpandChange={setIsIdeaExpanded}
                 onSendToAI={handleSendToAI}
                 onAddCustomObjective={handleAddCustomObjective}
+                isRegeneratingPost={isRegeneratingPost} // Pass loading state
               />
 
               <HooksSection

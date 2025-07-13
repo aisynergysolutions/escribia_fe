@@ -23,6 +23,7 @@ interface IdeaFormProps {
   onExpandChange: (expanded: boolean) => void;
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
+  isRegeneratingPost?: boolean; // Add loading prop
 }
 
 const IdeaForm: React.FC<IdeaFormProps> = ({
@@ -33,6 +34,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
   onExpandChange,
   onSendToAI,
   onAddCustomObjective,
+  isRegeneratingPost = false, // Default to false
 }) => {
   return (
     <div className="space-y-6">
@@ -47,8 +49,8 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         onTemplateChange={setters.setTemplate}
         onSendToAI={onSendToAI}
         onAddCustomObjective={onAddCustomObjective}
+        isRegeneratingPost={isRegeneratingPost} // Pass loading state
       />
-
     </div>
   );
 };

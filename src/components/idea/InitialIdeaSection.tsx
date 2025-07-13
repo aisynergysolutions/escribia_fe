@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,6 +19,7 @@ interface InitialIdeaSectionProps {
   onTemplateChange: (value: string) => void;
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
+  isRegeneratingPost?: boolean; // Add loading prop
 }
 
 const predefinedObjectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
@@ -33,7 +34,8 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   template,
   onTemplateChange,
   onSendToAI,
-  onAddCustomObjective
+  onAddCustomObjective,
+  isRegeneratingPost = false // Default to false
 }) => {
   const [showCustomObjectiveModal, setShowCustomObjectiveModal] = useState(false);
 
@@ -75,6 +77,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
                 placeholder="Write your initial idea here..."
                 rows={4}
                 className="w-full"
+                disabled={isRegeneratingPost} // Disable during regeneration
               />
             </div>
 
@@ -83,7 +86,11 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
                 <label htmlFor="objective" className="block text-sm font-medium mb-1">Objective</label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      disabled={isRegeneratingPost} // Disable during regeneration
+                    >
                       <span className={objective ? '' : 'text-muted-foreground'}>
                         {getObjectiveDisplayName(objective)}
                       </span>
@@ -107,7 +114,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
                 <label htmlFor="template" className="block text-sm font-medium mb-1">Template</label>
                 <Input
                   id="template"
-                  value={template || 'No template selected'}
+                  value={(template === 'none') ? 'No template selected' : template}
                   readOnly
                   className={`w-full bg-gray-50 ${(!template || template === 'none' || template === 'No template selected') ? 'text-muted-foreground' : ''}`}
                   placeholder="No template selected"
@@ -115,8 +122,19 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
               </div>
             </div>
 
-            <Button onClick={onSendToAI} className="w-full bg-indigo-600 hover:bg-indigo-700">
-              Regenerate Post
+            <Button
+              onClick={onSendToAI}
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              disabled={isRegeneratingPost || !initialIdea.trim() || !objective} // Disable if loading or missing data
+            >
+              {isRegeneratingPost ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Regenerating Post...
+                </>
+              ) : (
+                'Regenerate Post'
+              )}
             </Button>
           </CollapsibleContent>
         </Card>

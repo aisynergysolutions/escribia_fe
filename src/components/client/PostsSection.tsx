@@ -344,9 +344,9 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                       <div className="font-semibold text-gray-900 max-w-xs truncate" title={post.title}>
                         {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
                       </div>
-                      <div>
+                      {/* <div>
                         {post.postId}
-                      </div>
+                      </div> */}
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
                       {post.profile}
