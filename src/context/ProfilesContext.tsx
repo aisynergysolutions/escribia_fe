@@ -144,7 +144,9 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
     profileType: data.profileType || '',
     location: data.location || '',
     profileName: data.profileName || '',
-    joinedDate: data.joinedDate || '',
+    joinedDate: data.joinedDate?.seconds ?
+      new Date(data.joinedDate.seconds * 1000).toISOString() :
+      (data.joinedDate || ''),
     onboardingLink: data.onboardingLink || '', // Make sure this is included
     id: snap.id,
     linkedin: {
@@ -171,7 +173,9 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
       } : undefined,
     },
     role: data.role || '',
-    createdAt: data.createdAt || '', // Make sure this is included
+    createdAt: data.createdAt?.seconds ?
+      new Date(data.createdAt.seconds * 1000).toISOString() :
+      (data.createdAt || ''), // Make sure this is included
     status: data.status || '', // Make sure this is included
     clientId: data.clientId || '',
     contentProfile: {
@@ -244,7 +248,9 @@ export const getCompanyProfile = async (clientId: string, profileId: string): Pr
       } : undefined,
     },
     role: data.role || '',
-    createdAt: data.createdAt || '',
+    createdAt: data.createdAt?.seconds ?
+      new Date(data.createdAt.seconds * 1000).toISOString() :
+      (data.createdAt || ''),
     profileName: data.profileName || '',
     contentProfile: {
       customInstructions: data.contentProfile?.customInstructions || '',

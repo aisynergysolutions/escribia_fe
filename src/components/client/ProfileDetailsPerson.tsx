@@ -35,13 +35,18 @@ const ProfileDetailsPerson: React.FC = () => {
     linkedinUrl: '',
     language: '',
     customInstructions: '',
-    contactEmail: '', // Add this field
+    contactEmail: '',
+    onboardingLink: '',
+    status: '',
+    profileType: '',
+    createdAt: '',
+    clientId: '',
   });
 
   const [strategyData, setStrategyData] = useState({
     primaryGoal: '',
     audienceFocus: '',
-    expertiseAreas: [] as string[],
+    expertise: '',
   });
 
   const [voiceData, setVoiceData] = useState({
@@ -70,18 +75,23 @@ const ProfileDetailsPerson: React.FC = () => {
         setProfileInfoData({
           fullName: fetchedProfile.profileName,
           currentRole: fetchedProfile.role,
-          joinedDate: fetchedProfile.joinedDate.split(' ')[0], // Extract date part
+          joinedDate: formatDateForInput(fetchedProfile.joinedDate),
           operatingLocation: fetchedProfile.location,
           linkedinUrl: `https://linkedin.com/in/${fetchedProfile.linkedin.linkedinName}`,
           language: fetchedProfile.contentProfile.contentLanguage,
           customInstructions: fetchedProfile.contentProfile.customInstructions,
-          contactEmail: fetchedProfile.contactEmail, // Add this field
+          contactEmail: fetchedProfile.contactEmail,
+          onboardingLink: fetchedProfile.onboardingLink,
+          status: fetchedProfile.status,
+          profileType: fetchedProfile.profileType,
+          createdAt: fetchedProfile.createdAt,
+          clientId: fetchedProfile.clientId,
         });
 
         setStrategyData({
           primaryGoal: fetchedProfile.contentProfile.primaryGoal,
           audienceFocus: fetchedProfile.contentProfile.audienceFocus,
-          expertiseAreas: [fetchedProfile.contentProfile.expertise], // Convert to array
+          expertise: fetchedProfile.contentProfile.expertise || '',
         });
 
         setVoiceData({
@@ -105,12 +115,45 @@ const ProfileDetailsPerson: React.FC = () => {
   }, [clientId, profileId]);
 
   // Helper functions
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | any) => {
     try {
+      if (!dateString) return 'N/A';
+
+      // Handle Firestore timestamp objects
+      if (typeof dateString === 'object' && dateString.seconds) {
+        const date = new Date(dateString.seconds * 1000);
+        return date.toLocaleDateString();
+      }
+      // Handle regular date strings
       const date = new Date(dateString);
       return date.toLocaleDateString();
     } catch (error) {
       return dateString || 'N/A';
+    }
+  };
+
+  const formatDateForInput = (dateString: string | any) => {
+    try {
+      if (!dateString) return '';
+
+      // Handle Firestore timestamp objects
+      if (typeof dateString === 'object' && dateString.seconds) {
+        const date = new Date(dateString.seconds * 1000);
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      }
+      // Handle ISO date strings
+      if (typeof dateString === 'string' && dateString.includes('T')) {
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0];
+      }
+      // Handle other date strings
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+      return '';
+    } catch (error) {
+      return '';
     }
   };
 
@@ -171,27 +214,6 @@ const ProfileDetailsPerson: React.FC = () => {
     // In real app, this would make API call to delete profile
     console.log('Profile deleted');
     navigate(`/clients/${clientId}/settings`);
-  };
-
-  const handleAddExpertiseArea = () => {
-    setStrategyData(prev => ({
-      ...prev,
-      expertiseAreas: [...prev.expertiseAreas, 'New expertise area']
-    }));
-  };
-
-  const handleRemoveExpertiseArea = (index: number) => {
-    setStrategyData(prev => ({
-      ...prev,
-      expertiseAreas: prev.expertiseAreas.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleExpertiseAreaChange = (index: number, value: string) => {
-    setStrategyData(prev => ({
-      ...prev,
-      expertiseAreas: prev.expertiseAreas.map((area, i) => i === index ? value : area)
-    }));
   };
 
   const handleAddTopicToAvoid = () => {
@@ -557,37 +579,17 @@ const ProfileDetailsPerson: React.FC = () => {
           <div>
             <Label className="text-base font-medium">Specific Areas of Expertise</Label>
             {editingSection === 'strategy' ? (
-              <div className="space-y-2 mt-2">
-                {strategyData.expertiseAreas.map((area, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      value={area}
-                      onChange={(e) => handleExpertiseAreaChange(index, e.target.value)}
-                      className="flex-1"
-                      placeholder="Expertise area"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRemoveExpertiseArea(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={handleAddExpertiseArea}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Expertise Area
-                </Button>
-              </div>
+              <Textarea
+                value={strategyData.expertise}
+                onChange={(e) => setStrategyData(prev => ({ ...prev, expertise: e.target.value }))}
+                className="mt-2"
+                rows={3}
+                placeholder="Describe your specific areas of expertise..."
+              />
             ) : (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {strategyData.expertiseAreas.map((area, index) => (
-                  <Badge key={index} variant="outline" className="px-3 py-1">
-                    {area}
-                  </Badge>
-                ))}
-              </div>
+              <p className="text-sm mt-2 p-3 bg-muted rounded-md">
+                {strategyData.expertise || 'No expertise areas specified'}
+              </p>
             )}
           </div>
         </CardContent>
