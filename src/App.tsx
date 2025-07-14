@@ -16,6 +16,7 @@ import { PostDetailsProvider } from "./context/PostDetailsContext";
 import { TemplatesProvider } from '@/context/TemplatesContext'; // <-- Add this import
 import ProfileDetailsRouter from './components/client/ProfileDetailsRouter'; // <-- Add this import
 import { EventsProvider } from "./context/EventsContext";
+import { LinkedinProvider } from '@/context/LinkedinContext';
 
 // Lazy load components for code splitting
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -49,9 +50,10 @@ function App() {
       <ClientsProvider>
         <TemplatesProvider> {/* <-- Add TemplatesProvider here */}
           <ProfilesProvider> {/* <-- Wrap here */}
-            <PostsProvider>
-              <PostDetailsProvider>
-                <EventsProvider>
+            <LinkedinProvider>
+              <PostsProvider>
+                <PostDetailsProvider>
+                  <EventsProvider>
                   <QueryClientProvider client={queryClient}>
                     <TooltipProvider>
                       <Toaster />
@@ -159,6 +161,7 @@ function App() {
                 </EventsProvider>
               </PostDetailsProvider>
             </PostsProvider>
+            </LinkedinProvider>
           </ProfilesProvider>
         </TemplatesProvider> {/* <-- Close TemplatesProvider here */}
       </ClientsProvider>

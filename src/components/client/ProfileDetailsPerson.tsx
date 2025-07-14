@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { getPersonProfile } from '@/context/ProfilesContext';
+import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 
 // Use types directly from ProfilesContext
 import type { Profile } from '@/context/ProfilesContext';
@@ -436,28 +437,12 @@ const ProfileDetailsPerson: React.FC = () => {
 
           <div>
             <Label className="text-base font-medium">LinkedIn Integration</Label>
-            <div className="mt-3 p-4 bg-secondary rounded-lg">
-              {linkedin.linkedinConnected ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Linkedin className="h-5 w-5 text-[#0A66C2]" />
-                    <div>
-                      <p className="font-medium">Connected as {linkedin.linkedinAccountName || profile.profileName}</p>
-                      <p className="text-sm text-muted-foreground">Expires on {linkedin.linkedinExpiryDate}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Disconnect
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center">
-                  <Button>
-                    <Linkedin className="h-4 w-4 mr-2" />
-                    Connect LinkedIn
-                  </Button>
-                </div>
-              )}
+            <div className="mt-3">
+              <LinkedInConnectionPanel 
+                linkedinInfo={linkedin}
+                profileId={profileId!}
+                clientId={clientId!}
+              />
             </div>
           </div>
 

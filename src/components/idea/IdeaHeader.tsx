@@ -38,6 +38,14 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   const { postId } = useParams<{ postId: string }>();
   const { updatePostTitle, updatePostStatus } = usePostDetails(); // Use PostsDetailsContext
 
+  // Helper function to get display title
+  const getDisplayTitle = () => {
+    if (!title || title.trim() === '' || title.toLowerCase() === 'none') {
+      return 'Untitled Post';
+    }
+    return title;
+  };
+
   // Handler for updating title in Firestore and context
   const handleTitleChange = async (newTitle: string) => {
     onTitleChange(newTitle);
@@ -49,7 +57,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   // Handler for updating status in Firestore and context
   const handleStatusChange = async (newStatus: string) => {
     onStatusChange(newStatus);
-    if ( agencyId && clientId && postId) {
+    if (agencyId && clientId && postId) {
       await updatePostStatus(agencyId, clientId, postId, newStatus);
     }
   };
@@ -90,7 +98,7 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
         </Button>
         <div className="flex items-center min-w-0 gap-4">
           <EditableTitle
-            title={title}
+            title={getDisplayTitle()}
             onSave={handleTitleChange}
             className="text-2xl font-bold"
           />

@@ -3,6 +3,20 @@ import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/fi
 import { db } from '@/lib/firebase';
 
 // --- Types for Person Profile ---
+export type LinkedInProfile = {
+  email: string;
+  email_verified: boolean;
+  family_name: string;
+  given_name: string;
+  locale: string;
+  name: string;
+  picture: string;
+  linkedinRefreshToken: string | null;
+  linkedinScope: string;
+  linkedinToken: string;
+  linkedinUserId: string;
+};
+
 export type LinkedInInfo = {
   profileImage: string;
   linkedinAccountName: string;
@@ -10,6 +24,9 @@ export type LinkedInInfo = {
   linkedinConnected: boolean;
   linkedinExpiryDate: string | null;
   linkedinToken: string;
+  connectedAt?: string;
+  lastUpdated?: string;
+  linkedinProfile?: LinkedInProfile;
 };
 
 export type ContentProfile = {
@@ -131,12 +148,27 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
     onboardingLink: data.onboardingLink || '', // Make sure this is included
     id: snap.id,
     linkedin: {
-      profileImage: data.linkedin?.profileImage || '',
-      linkedinAccountName: data.linkedin?.linkedinAccountName || '',
-      linkedinName: data.linkedin?.linkedinName || '',
+      profileImage: data.linkedin?.profileImage || data.linkedin?.linkedinProfile?.picture || '',
+      linkedinAccountName: data.linkedin?.linkedinAccountName || data.linkedin?.linkedinProfile?.name || '',
+      linkedinName: data.linkedin?.linkedinName || data.linkedin?.linkedinProfile?.given_name || '',
       linkedinConnected: !!data.linkedin?.linkedinConnected,
       linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
-      linkedinToken: data.linkedin?.linkedinToken || '',
+      linkedinToken: data.linkedin?.linkedinToken || data.linkedin?.linkedinProfile?.linkedinToken || '',
+      connectedAt: data.linkedin?.connectedAt || '',
+      lastUpdated: data.linkedin?.lastUpdated || '',
+      linkedinProfile: data.linkedin?.linkedinProfile ? {
+        email: data.linkedin.linkedinProfile.email || '',
+        email_verified: !!data.linkedin.linkedinProfile.email_verified,
+        family_name: data.linkedin.linkedinProfile.family_name || '',
+        given_name: data.linkedin.linkedinProfile.given_name || '',
+        locale: data.linkedin.linkedinProfile.locale || '',
+        name: data.linkedin.linkedinProfile.name || '',
+        picture: data.linkedin.linkedinProfile.picture || '',
+        linkedinRefreshToken: data.linkedin.linkedinProfile.linkedinRefreshToken || null,
+        linkedinScope: data.linkedin.linkedinProfile.linkedinScope || '',
+        linkedinToken: data.linkedin.linkedinProfile.linkedinToken || '',
+        linkedinUserId: data.linkedin.linkedinProfile.linkedinUserId || '',
+      } : undefined,
     },
     role: data.role || '',
     createdAt: data.createdAt || '', // Make sure this is included
@@ -189,12 +221,27 @@ export const getCompanyProfile = async (clientId: string, profileId: string): Pr
     profileType: data.profileType || '',
     updatedAt: data.updatedAt || '',
     linkedin: {
-      profileImage: data.linkedin?.profileImage || '',
-      linkedinAccountName: data.linkedin?.linkedinAccountName || '',
-      linkedinName: data.linkedin?.linkedinName || '',
+      profileImage: data.linkedin?.profileImage || data.linkedin?.linkedinProfile?.picture || '',
+      linkedinAccountName: data.linkedin?.linkedinAccountName || data.linkedin?.linkedinProfile?.name || '',
+      linkedinName: data.linkedin?.linkedinName || data.linkedin?.linkedinProfile?.given_name || '',
       linkedinConnected: !!data.linkedin?.linkedinConnected,
       linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
-      linkedinToken: data.linkedin?.linkedinToken || '',
+      linkedinToken: data.linkedin?.linkedinToken || data.linkedin?.linkedinProfile?.linkedinToken || '',
+      connectedAt: data.linkedin?.connectedAt || '',
+      lastUpdated: data.linkedin?.lastUpdated || '',
+      linkedinProfile: data.linkedin?.linkedinProfile ? {
+        email: data.linkedin.linkedinProfile.email || '',
+        email_verified: !!data.linkedin.linkedinProfile.email_verified,
+        family_name: data.linkedin.linkedinProfile.family_name || '',
+        given_name: data.linkedin.linkedinProfile.given_name || '',
+        locale: data.linkedin.linkedinProfile.locale || '',
+        name: data.linkedin.linkedinProfile.name || '',
+        picture: data.linkedin.linkedinProfile.picture || '',
+        linkedinRefreshToken: data.linkedin.linkedinProfile.linkedinRefreshToken || null,
+        linkedinScope: data.linkedin.linkedinProfile.linkedinScope || '',
+        linkedinToken: data.linkedin.linkedinProfile.linkedinToken || '',
+        linkedinUserId: data.linkedin.linkedinProfile.linkedinUserId || '',
+      } : undefined,
     },
     role: data.role || '',
     createdAt: data.createdAt || '',
