@@ -37,7 +37,8 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
 
   const predefinedTimeSlots = timeslotData?.predefinedTimeSlots || [];
   const activeDays = timeslotData?.activeDays || [];
-  const hasTimeslotsConfigured = predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
+  const isInitialized = timeslotData?.isInitialized || false;
+  const hasTimeslotsConfigured = isInitialized && predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
 
   // Get scheduled posts for this client
   const queueSlots = useMemo(() => {
@@ -69,7 +70,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
 
   // Group slots by day with empty placeholders
   const dayGroups = useMemo(() => {
-    if (!hasTimeslotsConfigured) return {};
+    if (!isInitialized || !hasTimeslotsConfigured) return {};
 
     // Get unique dates that have scheduled posts
     const scheduledDates = Array.from(new Set(
@@ -131,7 +132,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     });
 
     return groups;
-  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, weeksToShow]);
+  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, weeksToShow, isInitialized]);
 
   const refreshQueue = () => {
     setRefreshKey(prev => prev + 1);
@@ -151,5 +152,6 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     loadMoreDays,
     loadingTimeslotData,
     updateTimeslots, // Expose the function
+    isInitialized,
   };
 };

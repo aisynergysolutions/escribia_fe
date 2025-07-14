@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 export type TimeslotData = {
   predefinedTimeSlots: string[];
   activeDays: string[];
+  isInitialized: boolean; // Add flag to track if we've attempted to load data
 };
 
 type EventsContextType = {
@@ -17,8 +18,8 @@ type EventsContextType = {
 const EventsContext = createContext<EventsContextType>({
   timeslotData: null,
   loadingTimeslotData: false,
-  fetchTimeslotData: async () => {},
-  updateTimeslots: async () => {},
+  fetchTimeslotData: async () => { },
+  updateTimeslots: async () => { },
 });
 
 export const useEvents = () => useContext(EventsContext);
@@ -39,14 +40,23 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
         setTimeslotData({
           predefinedTimeSlots: data.predefinedTimeSlots || [],
           activeDays: data.activeDays || [],
+          isInitialized: true,
         });
       } else {
         console.log('[EventsContext] No timeslots found'); // Debugging log
-        setTimeslotData(null); // No timeslot data found
+        setTimeslotData({
+          predefinedTimeSlots: [],
+          activeDays: [],
+          isInitialized: true,
+        }); // No timeslot data found, but mark as initialized
       }
     } catch (error) {
       console.error('[EventsContext] Error fetching timeslot data:', error);
-      setTimeslotData(null);
+      setTimeslotData({
+        predefinedTimeSlots: [],
+        activeDays: [],
+        isInitialized: true,
+      });
     }
     setLoadingTimeslotData(false);
   }, []); // Use an empty dependency array to ensure the function reference is stable
@@ -58,7 +68,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
         predefinedTimeSlots: timeslots,
         activeDays: days,
       });
-      setTimeslotData({ predefinedTimeSlots: timeslots, activeDays: days }); // Update local state
+      setTimeslotData({ predefinedTimeSlots: timeslots, activeDays: days, isInitialized: true }); // Update local state
     } catch (error) {
       console.error('[EventsContext] Error updating timeslots:', error);
     }

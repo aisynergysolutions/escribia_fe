@@ -34,18 +34,19 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     activeDays,
     updateTimeslots,
     loadMoreDays,
-    loadingTimeslotData
+    loadingTimeslotData,
+    isInitialized
   } = useQueueData(clientId, hideEmptySlots);
 
   const { handleRemoveFromQueue, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
 
   // Show timeslot modal automatically if no timeslots are configured
-  // Only trigger after loading is complete
+  // Only trigger after loading is complete AND data has been initialized
   React.useEffect(() => {
-    if (!loadingTimeslotData && !hasTimeslotsConfigured) {
+    if (!loadingTimeslotData && isInitialized && !hasTimeslotsConfigured) {
       setTimeslotModalOpen(true);
     }
-  }, [hasTimeslotsConfigured, loadingTimeslotData]);
+  }, [hasTimeslotsConfigured, loadingTimeslotData, isInitialized]);
 
   const showRescheduleModal = (draggedSlot: any, targetSlot: DaySlot) => {
     const slot = queueSlots.find(s => s.id === draggedSlot.id);
@@ -93,8 +94,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     updateTimeslots(clientId, timeslots, days); // Pass clientId to updateTimeslots
   };
 
-  // Show greyed out state if no timeslots configured
-  if (!hasTimeslotsConfigured) {
+  // Show greyed out state if data is initialized but no timeslots configured
+  if (isInitialized && !hasTimeslotsConfigured) {
     return (
       <>
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 opacity-50 pointer-events-none">
