@@ -14,8 +14,8 @@ import { Switch } from '@/components/ui/switch'; // Add this import
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import {
-  getPersonProfile,
+import { 
+  getPersonProfile, 
   updatePersonProfileInfo,
   updatePersonProfileStrategy,
   updatePersonProfileVoice,

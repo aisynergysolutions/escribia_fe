@@ -38,14 +38,13 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   const handleCheckStatus = async () => {
     try {
       setError(null);
-      setIsStatusModalOpen(true);
       const status = await checkLinkedInStatus(profileId, agencyId, clientId);
       console.log('LinkedIn status:', status);
       setStatusData(status);
+      setIsStatusModalOpen(true);
     } catch (error) {
       console.error('Failed to check LinkedIn status:', error);
       setError('Failed to check LinkedIn status. Please try again.');
-      setIsStatusModalOpen(false);
     }
   };
 
@@ -72,58 +71,68 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   if (linkedinInfo.linkedinConnected) {
     // Connected state - show full LinkedIn info
     return (
-      <div
-        style={style}
-        className="flex items-center justify-between bg-secondary/70 hover:bg-secondary/90 focus-within:ring-2 focus-within:ring-blue-400 transition rounded-lg px-6 py-3 outline-none"
-        tabIndex={0}
-        aria-label="LinkedIn connected"
-      >
-        <div className="flex items-center gap-2">
-          <Linkedin className="h-5 w-5 text-[#0A66C2]" />
-          <span className="font-medium text-base mr-3">LinkedIn</span>
+      <>
+        <div
+          style={style}
+          className="flex items-center justify-between bg-secondary/70 hover:bg-secondary/90 focus-within:ring-2 focus-within:ring-blue-400 transition rounded-lg px-6 py-3 outline-none"
+          tabIndex={0}
+          aria-label="LinkedIn connected"
+        >
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="font-semibold">
-              {linkedinInfo.linkedinAccountName || linkedinInfo.linkedinProfile?.name || 'Connected'}
-            </span>
+            <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+            <span className="font-medium text-base mr-3">LinkedIn</span>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="font-semibold">
+                {linkedinInfo.linkedinAccountName || linkedinInfo.linkedinProfile?.name || 'Connected'}
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground space-x-2">
+              <span>Expires {formatExpiryDate(linkedinInfo.linkedinExpiryDate)}</span>
+              {linkedinInfo.connectedAt && (
+                <span>• Connected {formatExpiryDate(linkedinInfo.connectedAt)}</span>
+              )}
+              {linkedinInfo.linkedinProfile?.email && (
+                <span>• {linkedinInfo.linkedinProfile.email}</span>
+              )}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground space-x-2">
-            <span>Expires {formatExpiryDate(linkedinInfo.linkedinExpiryDate)}</span>
-            {linkedinInfo.connectedAt && (
-              <span>• Connected {formatExpiryDate(linkedinInfo.connectedAt)}</span>
-            )}
-            {linkedinInfo.linkedinProfile?.email && (
-              <span>• {linkedinInfo.linkedinProfile.email}</span>
-            )}
+          <div className="flex items-center gap-4">
+            <button
+              className="text-xs text-blue-700 underline underline-offset-2 hover:text-blue-900"
+              onClick={handleConnectClick}
+              type="button"
+              disabled={isConnecting}
+            >
+              {isConnecting ? 'Reconnecting...' : 'Reconnect'}
+            </button>
+            <button
+              className="text-xs text-gray-600 underline underline-offset-2 hover:text-gray-800"
+              onClick={handleCheckStatus}
+              type="button"
+              disabled={isCheckingStatus}
+            >
+              {isCheckingStatus ? 'Checking...' : 'Check Status'}
+            </button>
+            <button
+              className="text-xs text-red-600 underline underline-offset-2 hover:text-red-800"
+              onClick={handleDisconnect}
+              type="button"
+              disabled={isDisconnecting}
+            >
+              {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <button
-            className="text-xs text-blue-700 underline underline-offset-2 hover:text-blue-900"
-            onClick={handleConnectClick}
-            type="button"
-            disabled={isConnecting}
-          >
-            {isConnecting ? 'Reconnecting...' : 'Reconnect'}
-          </button>
-          <button
-            className="text-xs text-gray-600 underline underline-offset-2 hover:text-gray-800"
-            onClick={handleCheckStatus}
-            type="button"
-            disabled={isCheckingStatus}
-          >
-            {isCheckingStatus ? 'Checking...' : 'Check Status'}
-          </button>
-          <button
-            className="text-xs text-red-600 underline underline-offset-2 hover:text-red-800"
-            onClick={handleDisconnect}
-            type="button"
-            disabled={isDisconnecting}
-          >
-            {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
-          </button>
-        </div>
-      </div>
+
+        {/* Status Modal - moved here for connected state */}
+        <LinkedInStatusModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          statusData={statusData}
+          isLoading={isCheckingStatus}
+        />
+      </>
     );
   }
 
@@ -168,14 +177,6 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
           {' '}to refresh.
         </p>
       </div>
-
-      {/* Status Modal */}
-      <LinkedInStatusModal
-        isOpen={isStatusModalOpen}
-        onClose={() => setIsStatusModalOpen(false)}
-        statusData={statusData}
-        isLoading={isCheckingStatus}
-      />
     </div>
   );
 };

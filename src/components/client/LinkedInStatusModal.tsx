@@ -13,7 +13,25 @@ import { Linkedin, CheckCircle, XCircle, Clock, User, Mail } from 'lucide-react'
 interface LinkedInStatusModalProps {
     isOpen: boolean;
     onClose: () => void;
-    statusData: any;
+    statusData: {
+        connected?: boolean;
+        linkedinConnected?: boolean;
+        linkedin_account_name?: string;
+        linkedinAccountName?: string;
+        connected_scopes?: string;
+        expires_at?: string;
+        linkedin_profile?: {
+            email?: string;
+            email_verified?: boolean;
+            name?: string;
+            locale?: string | { language: string; country: string };
+            picture?: string;
+        };
+        message?: string;
+        connectedAt?: string;
+        lastUpdated?: string;
+        linkedinExpiryDate?: string;
+    } | null;
     isLoading: boolean;
 }
 
@@ -23,6 +41,14 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
     statusData,
     isLoading,
 }) => {
+    // Debug logging
+    React.useEffect(() => {
+        if (isOpen) {
+            console.log('Modal opened with statusData:', statusData);
+            console.log('isLoading:', isLoading);
+        }
+    }, [isOpen, statusData, isLoading]);
+
     const formatDate = (dateString: string | null) => {
         if (!dateString) return 'N/A';
         try {
@@ -51,8 +77,8 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+                <DialogHeader className="flex-shrink-0">
                     <DialogTitle className="flex items-center gap-2">
                         <Linkedin className="h-5 w-5 text-[#0A66C2]" />
                         LinkedIn Connection Status
@@ -62,107 +88,187 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                     </DialogDescription>
                 </DialogHeader>
 
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0A66C2]"></div>
-                        <span className="ml-2">Checking status...</span>
-                    </div>
-                ) : statusData ? (
-                    <div className="space-y-4">
-                        {/* Connection Status */}
-                        <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                {getStatusIcon(statusData.connected || statusData.linkedinConnected)}
-                                <span className="font-medium">Connection Status</span>
-                            </div>
-                            {getStatusBadge(statusData.connected || statusData.linkedinConnected)}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0A66C2]"></div>
+                            <span className="ml-2">Checking status...</span>
                         </div>
-
-                        {/* Profile Information */}
-                        {(statusData.connected || statusData.linkedinConnected) && (
-                            <div className="space-y-3">
-                                <h4 className="font-medium flex items-center gap-2">
-                                    <User className="h-4 w-4" />
-                                    Profile Information
-                                </h4>
-
-                                <div className="grid grid-cols-1 gap-3 pl-6">
-                                    {statusData.linkedinAccountName && (
-                                        <div>
-                                            <span className="text-sm text-muted-foreground">Account Name:</span>
-                                            <p className="font-medium">{statusData.linkedinAccountName}</p>
-                                        </div>
-                                    )}
-
-                                    {statusData.linkedinProfile?.email && (
-                                        <div className="flex items-center gap-2">
-                                            <Mail className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{statusData.linkedinProfile.email}</span>
-                                        </div>
-                                    )}
-
-                                    {statusData.linkedinProfile?.name && (
-                                        <div>
-                                            <span className="text-sm text-muted-foreground">Full Name:</span>
-                                            <p className="font-medium">{statusData.linkedinProfile.name}</p>
-                                        </div>
-                                    )}
+                    ) : statusData ? (
+                        <div className="space-y-4 pr-2">
+                            {/* Debug Information - Remove this in production */}
+                            <details className="text-xs text-gray-500 border rounded p-2">
+                                <summary className="cursor-pointer">Debug Info (Click to expand)</summary>
+                                <div className="mt-2 max-h-40 overflow-y-auto bg-gray-50 rounded p-2">
+                                    <pre className="whitespace-pre-wrap text-xs">{JSON.stringify(statusData, null, 2)}</pre>
                                 </div>
-                            </div>
-                        )}
+                            </details>
 
-                        {/* Connection Dates */}
-                        {(statusData.connected || statusData.linkedinConnected) && (
-                            <div className="space-y-3">
-                                <h4 className="font-medium flex items-center gap-2">
-                                    <Clock className="h-4 w-4" />
-                                    Timeline
-                                </h4>
-
-                                <div className="grid grid-cols-1 gap-2 pl-6 text-sm">
-                                    {statusData.connectedAt && (
-                                        <div>
-                                            <span className="text-muted-foreground">Connected:</span>
-                                            <span className="ml-2 font-medium">{formatDate(statusData.connectedAt)}</span>
-                                        </div>
-                                    )}
-
-                                    {statusData.lastUpdated && (
-                                        <div>
-                                            <span className="text-muted-foreground">Last Updated:</span>
-                                            <span className="ml-2 font-medium">{formatDate(statusData.lastUpdated)}</span>
-                                        </div>
-                                    )}
-
-                                    {statusData.linkedinExpiryDate && (
-                                        <div>
-                                            <span className="text-muted-foreground">Expires:</span>
-                                            <span className="ml-2 font-medium">{formatDate(statusData.linkedinExpiryDate)}</span>
-                                        </div>
-                                    )}
+                            {/* Connection Status */}
+                            <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    {getStatusIcon(statusData.connected || statusData.linkedinConnected)}
+                                    <span className="font-medium">Connection Status</span>
                                 </div>
+                                {getStatusBadge(statusData.connected || statusData.linkedinConnected)}
                             </div>
-                        )}
 
-                        {/* Token Information */}
-                        {statusData.linkedinProfile?.linkedinScope && (
-                            <div className="space-y-2">
-                                <h4 className="font-medium text-sm">Permissions</h4>
-                                <div className="pl-4">
-                                    <Badge variant="outline" className="text-xs">
-                                        {statusData.linkedinProfile.linkedinScope}
-                                    </Badge>
+                            {/* LinkedIn Account Name */}
+                            {(statusData.linkedin_account_name || statusData.linkedinAccountName) && (
+                                <div className="space-y-3">
+                                    <h4 className="font-medium flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        Account Information
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 gap-3 pl-6">
+                                        <div>
+                                            <span className="text-sm text-muted-foreground">LinkedIn Account Name:</span>
+                                            <p className="font-medium">{statusData.linkedin_account_name || statusData.linkedinAccountName}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                        No status data available
-                    </div>
-                )}
+                            )}
 
-                <div className="flex justify-end gap-2 pt-4">
+                            {/* Connected Scopes */}
+                            {statusData.connected_scopes && (
+                                <div className="space-y-3">
+                                    <h4 className="font-medium text-sm">Connected Scopes</h4>
+                                    <div className="pl-4 flex flex-wrap gap-1">
+                                        {statusData.connected_scopes.split(',').map((scope, index) => (
+                                            <Badge key={index} variant="outline" className="text-xs">
+                                                {scope.trim()}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* LinkedIn Profile Information */}
+                            {statusData.linkedin_profile && (
+                                <div className="space-y-3">
+                                    <h4 className="font-medium flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        Profile Details
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 gap-3 pl-6">
+                                        {statusData.linkedin_profile.email && (
+                                            <div className="flex items-center gap-2">
+                                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <span className="text-sm text-muted-foreground">Email:</span>
+                                                    <p className="text-sm font-medium">{statusData.linkedin_profile.email}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {statusData.linkedin_profile.email_verified !== undefined && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Email Verified:</span>
+                                                <Badge variant={statusData.linkedin_profile.email_verified ? "default" : "destructive"} className="ml-2 text-xs">
+                                                    {statusData.linkedin_profile.email_verified ? 'Yes' : 'No'}
+                                                </Badge>
+                                            </div>
+                                        )}
+
+                                        {statusData.linkedin_profile.name && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Full Name:</span>
+                                                <p className="font-medium">{statusData.linkedin_profile.name}</p>
+                                            </div>
+                                        )}
+
+                                        {statusData.linkedin_profile.locale && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Locale:</span>
+                                                <p className="text-sm">
+                                                    {typeof statusData.linkedin_profile.locale === 'object' 
+                                                        ? `${statusData.linkedin_profile.locale.language}-${statusData.linkedin_profile.locale.country}`
+                                                        : statusData.linkedin_profile.locale}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {statusData.linkedin_profile.picture && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Profile Picture:</span>
+                                                <div className="mt-2 flex items-center gap-3">
+                                                    <img 
+                                                        src={statusData.linkedin_profile.picture} 
+                                                        alt="LinkedIn Profile" 
+                                                        className="w-12 h-12 rounded-full object-cover"
+                                                    />
+                                                    <a 
+                                                        href={statusData.linkedin_profile.picture}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs text-blue-600 hover:underline"
+                                                    >
+                                                        View Full Size
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Connection Timeline */}
+                            {(statusData.expires_at || statusData.connectedAt || statusData.lastUpdated || statusData.linkedinExpiryDate) && (
+                                <div className="space-y-3">
+                                    <h4 className="font-medium flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        Timeline
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 gap-2 pl-6 text-sm">
+                                        {statusData.expires_at && (
+                                            <div>
+                                                <span className="text-muted-foreground">Expires At:</span>
+                                                <span className="ml-2 font-medium">{formatDate(statusData.expires_at)}</span>
+                                            </div>
+                                        )}
+
+                                        {statusData.connectedAt && (
+                                            <div>
+                                                <span className="text-muted-foreground">Connected:</span>
+                                                <span className="ml-2 font-medium">{formatDate(statusData.connectedAt)}</span>
+                                            </div>
+                                        )}
+
+                                        {statusData.lastUpdated && (
+                                            <div>
+                                                <span className="text-muted-foreground">Last Updated:</span>
+                                                <span className="ml-2 font-medium">{formatDate(statusData.lastUpdated)}</span>
+                                            </div>
+                                        )}
+
+                                        {statusData.linkedinExpiryDate && (
+                                            <div>
+                                                <span className="text-muted-foreground">Legacy Expiry:</span>
+                                                <span className="ml-2 font-medium">{formatDate(statusData.linkedinExpiryDate)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Message from API */}
+                            {statusData.message && (
+                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <p className="text-sm text-green-800">{statusData.message}</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            No status data available
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
                     <Button variant="outline" onClick={onClose}>
                         Close
                     </Button>
