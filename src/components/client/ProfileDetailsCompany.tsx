@@ -57,7 +57,7 @@ const ProfileDetailsCompany: React.FC = () => {
     if (clientId && profileId) {
       getCompanyProfile(clientId, profileId).then(fetchedProfile => {
         setProfile(fetchedProfile);
-        
+
         // Populate form data
         setCompanyInfoData({
           companyName: fetchedProfile.profileName,
@@ -323,10 +323,10 @@ const ProfileDetailsCompany: React.FC = () => {
                     className="mt-1"
                   />
                 ) : (
-                  <a 
-                    href={companyInfoData.linkedinUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={companyInfoData.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
                   >
                     {companyInfoData.linkedinUrl}
@@ -388,7 +388,7 @@ const ProfileDetailsCompany: React.FC = () => {
           <div>
             <Label className="text-base font-medium">LinkedIn Integration</Label>
             <div className="mt-3">
-              <LinkedInConnectionPanel 
+              <LinkedInConnectionPanel
                 linkedinInfo={linkedin}
                 profileId={profileId!}
                 clientId={clientId!}
@@ -400,10 +400,10 @@ const ProfileDetailsCompany: React.FC = () => {
 
           <div>
             <Label className="text-base font-medium">Onboarding Link</Label>
-            <a 
-              href={profile.onboardingLink} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={profile.onboardingLink}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
             >
               {profile.onboardingLink}
@@ -501,9 +501,9 @@ const ProfileDetailsCompany: React.FC = () => {
                 ) : (
                   <div className="mt-2 flex items-center gap-2">
                     <Badge variant="secondary" className="px-3 py-1">
-                      {brandStrategyData.brandPersona.includes('Leader') ? '🏆' : 
-                       brandStrategyData.brandPersona.includes('Innovative') ? '⚡' : 
-                       brandStrategyData.brandPersona.includes('Trusted') ? '🤝' : '🎯'} {brandStrategyData.brandPersona}
+                      {brandStrategyData.brandPersona.includes('Leader') ? '🏆' :
+                        brandStrategyData.brandPersona.includes('Innovative') ? '⚡' :
+                          brandStrategyData.brandPersona.includes('Trusted') ? '🤝' : '🎯'} {brandStrategyData.brandPersona}
                     </Badge>
                   </div>
                 )}
@@ -706,9 +706,9 @@ const ProfileDetailsCompany: React.FC = () => {
                       className="flex-1"
                       placeholder="Topic to avoid"
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleRemoveTopicToAvoid(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -746,9 +746,9 @@ const ProfileDetailsCompany: React.FC = () => {
                       placeholder="Favorite post example"
                       rows={2}
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleRemoveFavPost(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -786,13 +786,13 @@ const ProfileDetailsCompany: React.FC = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                You are about to permanently delete the company profile for <strong>{profile.profileName}</strong>. 
+                You are about to permanently delete the company profile for <strong>{profile.profileName}</strong>.
                 All associated data will be lost. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={handleDeleteProfile}
                 className="bg-red-600 hover:bg-red-700"
               >

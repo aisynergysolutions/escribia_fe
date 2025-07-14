@@ -65,7 +65,7 @@ const ProfileDetailsPerson: React.FC = () => {
     if (clientId && profileId) {
       getPersonProfile(clientId, profileId).then(fetchedProfile => {
         setProfile(fetchedProfile);
-        
+
         // Populate form data
         setProfileInfoData({
           fullName: fetchedProfile.profileName,
@@ -373,10 +373,10 @@ const ProfileDetailsPerson: React.FC = () => {
                     className="mt-1"
                   />
                 ) : (
-                  <a 
-                    href={profileInfoData.linkedinUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={profileInfoData.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
                   >
                     {profileInfoData.linkedinUrl}
@@ -438,7 +438,7 @@ const ProfileDetailsPerson: React.FC = () => {
           <div>
             <Label className="text-base font-medium">LinkedIn Integration</Label>
             <div className="mt-3">
-              <LinkedInConnectionPanel 
+              <LinkedInConnectionPanel
                 linkedinInfo={linkedin}
                 profileId={profileId!}
                 clientId={clientId!}
@@ -450,10 +450,10 @@ const ProfileDetailsPerson: React.FC = () => {
 
           <div>
             <Label className="text-base font-medium">Onboarding Link</Label>
-            <a 
-              href={profile.onboardingLink} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={profile.onboardingLink}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
             >
               {profile.onboardingLink}
@@ -566,9 +566,9 @@ const ProfileDetailsPerson: React.FC = () => {
                       className="flex-1"
                       placeholder="Expertise area"
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleRemoveExpertiseArea(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -637,9 +637,9 @@ const ProfileDetailsPerson: React.FC = () => {
                 ) : (
                   <div className="mt-2 flex items-center gap-2">
                     <Badge variant="secondary" className="px-3 py-1">
-                      {voiceData.personalBrandPersona.includes('Seasoned') ? '🏆' : 
-                       voiceData.personalBrandPersona.includes('Helpful') ? '🤝' : 
-                       voiceData.personalBrandPersona.includes('Bold') ? '⚡' : '👥'} {voiceData.personalBrandPersona}
+                      {voiceData.personalBrandPersona.includes('Seasoned') ? '🏆' :
+                        voiceData.personalBrandPersona.includes('Helpful') ? '🤝' :
+                          voiceData.personalBrandPersona.includes('Bold') ? '⚡' : '👥'} {voiceData.personalBrandPersona}
                     </Badge>
                   </div>
                 )}
@@ -847,9 +847,9 @@ const ProfileDetailsPerson: React.FC = () => {
                       className="flex-1"
                       placeholder="Topic to avoid"
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleRemoveTopicToAvoid(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -887,9 +887,9 @@ const ProfileDetailsPerson: React.FC = () => {
                       placeholder="Favorite post example"
                       rows={2}
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleRemoveFavPost(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -927,13 +927,13 @@ const ProfileDetailsPerson: React.FC = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                You are about to permanently delete the profile for <strong>{profile.profileName}</strong>. 
+                You are about to permanently delete the profile for <strong>{profile.profileName}</strong>.
                 All associated data will be lost. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={handleDeleteProfile}
                 className="bg-red-600 hover:bg-red-700"
               >

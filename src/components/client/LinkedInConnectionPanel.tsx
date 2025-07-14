@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Linkedin, Loader2, AlertCircle } from "lucide-react";
 import { useLinkedin } from "@/context/LinkedinContext";
 import { LinkedInInfo } from "@/context/ProfilesContext";
+import LinkedInStatusModal from "./LinkedInStatusModal";
 
 interface LinkedInConnectionPanelProps {
   style?: React.CSSProperties;
@@ -19,8 +20,10 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   clientId,
   agencyId = "agency1",
 }) => {
-  const { isConnecting, connectLinkedIn, refreshProfile } = useLinkedin();
+  const { isConnecting, isCheckingStatus, isDisconnecting, connectLinkedIn, checkLinkedInStatus, disconnectLinkedIn, refreshProfile } = useLinkedin();
   const [error, setError] = useState<string | null>(null);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusData, setStatusData] = useState<any>(null);
 
   const handleConnectClick = async () => {
     try {
@@ -29,6 +32,30 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
     } catch (error) {
       console.error('Failed to connect LinkedIn:', error);
       setError('Failed to initiate LinkedIn connection. Please try again.');
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    try {
+      setError(null);
+      setIsStatusModalOpen(true);
+      const status = await checkLinkedInStatus(profileId, agencyId, clientId);
+      console.log('LinkedIn status:', status);
+      setStatusData(status);
+    } catch (error) {
+      console.error('Failed to check LinkedIn status:', error);
+      setError('Failed to check LinkedIn status. Please try again.');
+      setIsStatusModalOpen(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      setError(null);
+      await disconnectLinkedIn(profileId, agencyId, clientId);
+    } catch (error) {
+      console.error('Failed to disconnect LinkedIn:', error);
+      setError('Failed to disconnect LinkedIn. Please try again.');
     }
   };
 
@@ -70,14 +97,32 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
             )}
           </div>
         </div>
-        <button
-          className="text-xs text-blue-700 underline underline-offset-2 hover:text-blue-900"
-          onClick={handleConnectClick}
-          type="button"
-          disabled={isConnecting}
-        >
-          {isConnecting ? 'Reconnecting...' : 'Reconnect'}
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            className="text-xs text-blue-700 underline underline-offset-2 hover:text-blue-900"
+            onClick={handleConnectClick}
+            type="button"
+            disabled={isConnecting}
+          >
+            {isConnecting ? 'Reconnecting...' : 'Reconnect'}
+          </button>
+          <button
+            className="text-xs text-gray-600 underline underline-offset-2 hover:text-gray-800"
+            onClick={handleCheckStatus}
+            type="button"
+            disabled={isCheckingStatus}
+          >
+            {isCheckingStatus ? 'Checking...' : 'Check Status'}
+          </button>
+          <button
+            className="text-xs text-red-600 underline underline-offset-2 hover:text-red-800"
+            onClick={handleDisconnect}
+            type="button"
+            disabled={isDisconnecting}
+          >
+            {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -103,17 +148,17 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
           )}
           {isConnecting ? 'Connecting...' : 'Connect LinkedIn'}
         </Button>
-        
+
         {error && (
           <div className="flex items-center gap-1 text-xs text-red-600">
             <AlertCircle className="h-3 w-3" />
             {error}
           </div>
         )}
-        
+
         <p className="text-xs text-muted-foreground text-center">
-          Already connected? 
-          <button 
+          Already connected?
+          <button
             onClick={() => refreshProfile(clientId)}
             className="ml-1 text-blue-600 hover:text-blue-800 underline"
             type="button"
@@ -123,6 +168,14 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
           {' '}to refresh.
         </p>
       </div>
+
+      {/* Status Modal */}
+      <LinkedInStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        statusData={statusData}
+        isLoading={isCheckingStatus}
+      />
     </div>
   );
 };
