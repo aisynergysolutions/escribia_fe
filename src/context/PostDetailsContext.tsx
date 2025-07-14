@@ -37,7 +37,6 @@ export type PostDetails = {
     internalNotes: string;
     trainAI: boolean;
     updatedAt: Timestamp;
-    lastUpdated: Timestamp;
     createdAt: Timestamp;
     initialIdea: InitialIdea;
     profile: Profile;
@@ -148,7 +147,6 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 internalNotes: data.internalNotes,
                 trainAI: data.trainAI,
                 updatedAt: data.updatedAt,
-                lastUpdated: data.lastUpdated,
                 createdAt: data.createdAt,
                 initialIdea: {
                     objective: data.objective,
@@ -440,7 +438,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             // Update Firestore with the new title
             await updateDoc(postRef, {
                 title: newTitle,
-                lastUpdated: Timestamp.now()
+                updatedAt: Timestamp.now()
             });
 
             // Update context post if it's the same post
@@ -449,7 +447,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                         ...prev,
                         title: newTitle,
-                        lastUpdated: Timestamp.now()
+                        updatedAt: Timestamp.now()
                     }
                     : prev
             );
@@ -473,7 +471,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             // Update Firestore with the new status
             await updateDoc(postRef, {
                 status: newStatus,
-                lastUpdated: Timestamp.now()
+                updatedAt: Timestamp.now()
             });
 
             // Update context post if it's the same post
@@ -482,7 +480,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                         ...prev,
                         status: newStatus,
-                        lastUpdated: Timestamp.now()
+                        updatedAt: Timestamp.now()
                     }
                     : prev
             );
@@ -506,7 +504,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             // Update Firestore with the new internal notes
             await updateDoc(postRef, {
                 internalNotes: newNotes,
-                lastUpdated: Timestamp.now()
+                updatedAt: Timestamp.now()
             });
 
             // Update context post if it's the same post
@@ -515,7 +513,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                         ...prev,
                         internalNotes: newNotes,
-                        lastUpdated: Timestamp.now()
+                        updatedAt: Timestamp.now()
                     }
                     : prev
             );
@@ -539,7 +537,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             // Update Firestore with the new trainAI setting
             await updateDoc(postRef, {
                 trainAI: trainAI,
-                lastUpdated: Timestamp.now()
+                updatedAt: Timestamp.now()
             });
 
             // Update context post if it's the same post
@@ -548,7 +546,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                         ...prev,
                         trainAI: trainAI,
-                        lastUpdated: Timestamp.now()
+                        updatedAt: Timestamp.now()
                     }
                     : prev
             );
@@ -574,7 +572,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             await updateDoc(postRef, {
                 initialIdeaPrompt: initialIdeaPrompt,
                 objective: objective,
-                lastUpdated: Timestamp.now()
+                updatedAt: Timestamp.now()
             });
 
             // Update context post if it's the same post
@@ -587,7 +585,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                             initialIdeaPrompt: initialIdeaPrompt,
                             objective: objective
                         },
-                        lastUpdated: Timestamp.now()
+                        updatedAt: Timestamp.now()
                     }
                     : prev
             );

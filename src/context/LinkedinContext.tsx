@@ -20,7 +20,7 @@ export interface LinkedInProfile {
 // LinkedIn info structure as it appears in the profile
 export interface LinkedInInfo {
     connectedAt?: string;
-    lastUpdated?: string;
+    updatedAt?: string;
     linkedinAccountName: string;
     linkedinConnected: boolean;
     linkedinExpiryDate: string | null;

@@ -6,7 +6,7 @@ export type PostCard = {
   title: string;
   profile: string;
   status: string;
-  lastUpdated: Timestamp;
+  updatedAt: Timestamp;
   scheduledPostAt: Timestamp;
   postId: string;
 };
@@ -94,7 +94,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
           title: data.title || 'Untitled Post',
           profile: data.profile || data.profileName || '',
           status: data.status || '',
-          lastUpdated: data.updatedAt || Timestamp.now(),
+          updatedAt: data.updatedAt || Timestamp.now(),
           scheduledPostAt: data.scheduledPostAt || Timestamp.fromMillis(0),
           postId: data.postId || docSnap.id,
           profileId: data.profileId || data.subClientId || '',
@@ -146,7 +146,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         initialIdeaPrompt: postData.initialIdeaPrompt,
         // Use provided title or fallback to initialIdeaPrompt
         title: postData.title || postData.initialIdeaPrompt,
-        lastUpdated: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         status: postData.status || 'Drafted',
         // Initialize with empty drafts array and currentDraftText
@@ -166,7 +166,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         title: postData.title || postData.initialIdeaPrompt,
         profile: postData.profileName,
         status: postData.status || 'Drafted',
-        lastUpdated: Timestamp.now(),
+        updatedAt: Timestamp.now(),
         scheduledPostAt: Timestamp.fromMillis(0),
         postId: postId, // Use the explicit postId
       };
@@ -211,7 +211,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
             ? {
               ...post,
               ...(updates.title && { title: updates.title }),
-              lastUpdated: Timestamp.now()
+              updatedAt: Timestamp.now()
             }
             : post
         ),
@@ -225,7 +225,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
           ? {
             ...post,
             ...(updates.title && { title: updates.title }),
-            lastUpdated: Timestamp.now()
+            updatedAt: Timestamp.now()
           }
           : post
       ));

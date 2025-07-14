@@ -25,7 +25,7 @@ export type LinkedInInfo = {
   linkedinExpiryDate: string | null;
   linkedinToken: string;
   connectedAt?: string;
-  lastUpdated?: string;
+  updatedAt?: string;
   linkedinProfile?: LinkedInProfile;
 };
 
@@ -157,7 +157,7 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
       linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
       linkedinToken: data.linkedin?.linkedinToken || data.linkedin?.linkedinProfile?.linkedinToken || '',
       connectedAt: data.linkedin?.connectedAt || '',
-      lastUpdated: data.linkedin?.lastUpdated || '',
+      updatedAt: data.linkedin?.updatedAt || '',
       linkedinProfile: data.linkedin?.linkedinProfile ? {
         email: data.linkedin.linkedinProfile.email || '',
         email_verified: !!data.linkedin.linkedinProfile.email_verified,
@@ -232,7 +232,7 @@ export const getCompanyProfile = async (clientId: string, profileId: string): Pr
       linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
       linkedinToken: data.linkedin?.linkedinToken || data.linkedin?.linkedinProfile?.linkedinToken || '',
       connectedAt: data.linkedin?.connectedAt || '',
-      lastUpdated: data.linkedin?.lastUpdated || '',
+      updatedAt: data.linkedin?.updatedAt || '',
       linkedinProfile: data.linkedin?.linkedinProfile ? {
         email: data.linkedin.linkedinProfile.email || '',
         email_verified: !!data.linkedin.linkedinProfile.email_verified,

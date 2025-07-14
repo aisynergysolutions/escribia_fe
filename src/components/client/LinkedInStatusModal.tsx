@@ -29,7 +29,7 @@ interface LinkedInStatusModalProps {
         };
         message?: string;
         connectedAt?: string;
-        lastUpdated?: string;
+        updatedAt?: string;
         linkedinExpiryDate?: string;
     } | null;
     isLoading: boolean;
@@ -215,7 +215,7 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                             )}
 
                             {/* Connection Timeline */}
-                            {(statusData.expires_at || statusData.connectedAt || statusData.lastUpdated || statusData.linkedinExpiryDate) && (
+                            {(statusData.expires_at || statusData.connectedAt || statusData.updatedAt || statusData.linkedinExpiryDate) && (
                                 <div className="space-y-3">
                                     <h4 className="font-medium flex items-center gap-2">
                                         <Clock className="h-4 w-4" />
@@ -237,10 +237,10 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                                             </div>
                                         )}
 
-                                        {statusData.lastUpdated && (
+                                        {statusData.updatedAt && (
                                             <div>
                                                 <span className="text-muted-foreground">Last Updated:</span>
-                                                <span className="ml-2 font-medium">{formatDate(statusData.lastUpdated)}</span>
+                                                <span className="ml-2 font-medium">{formatDate(statusData.updatedAt)}</span>
                                             </div>
                                         )}
 

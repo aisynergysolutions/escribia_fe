@@ -50,7 +50,7 @@ const Clients = () => {
               clientName: client.name,
               brandBriefSummary: client.oneLiner,
               status: client.status,
-              updatedAt: Timestamp.fromMillis(client.lastUpdated * 1000),
+              updatedAt: Timestamp.fromMillis(client.updatedAt * 1000),
               onboarding_link: client.onboarding_link,
               industry: '', // placeholder
               contactName: '', // placeholder

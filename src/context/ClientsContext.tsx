@@ -7,7 +7,7 @@ export type ClientCard = {
     name: string;
     oneLiner: string;
     status: string;
-    lastUpdated: number;
+    updatedAt: number;
     onboarding_link?: string;
 };
 
@@ -94,9 +94,9 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
                     name: data.clientName || '',
                     oneLiner: data.oneLiner || '',
                     status: data.status || '',
-                    lastUpdated: typeof data.lastUpdated === 'number'
-                        ? data.lastUpdated
-                        : (data.lastUpdated?.seconds ? data.lastUpdated.seconds : 0),
+                    updatedAt: typeof data.updatedAt === 'number'
+                        ? data.updatedAt
+                        : (data.updatedAt?.seconds ? data.updatedAt.seconds : 0),
                     onboarding_link: data.onboarding_link || '',
                 };
             });
@@ -122,7 +122,7 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
             await setDoc(clientDocRef, {
                 onboarding_link,
                 status: 'onboarding',
-                lastUpdated: serverTimestamp(),
+                updatedAt: serverTimestamp(),
                 clientName,
             });
             // Optionally, re-fetch clients to update UI

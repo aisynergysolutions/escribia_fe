@@ -109,7 +109,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
         switch (sortField) {
           case 'updated':
-            comparison = a.lastUpdated.seconds - b.lastUpdated.seconds;
+            comparison = a.updatedAt.seconds - b.updatedAt.seconds;
             break;
           case 'created':
             // If you add createdAt to PostCard, use it here
@@ -128,7 +128,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             comparison = a.profile.localeCompare(b.profile);
             break;
           default:
-            comparison = a.lastUpdated.seconds - b.lastUpdated.seconds;
+            comparison = a.updatedAt.seconds - b.updatedAt.seconds;
         }
 
         return sortDirection === 'desc' ? -comparison : comparison;
@@ -357,10 +357,10 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                     <TableCell className="py-4 text-gray-600">
                       <Tooltip>
                         <TooltipTrigger>
-                          {formatRelativeTime(post.lastUpdated)}
+                          {formatRelativeTime(post.updatedAt)}
                         </TooltipTrigger>
                         <TooltipContent>
-                          {formatDateTime(post.lastUpdated)}
+                          {formatDateTime(post.updatedAt)}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
