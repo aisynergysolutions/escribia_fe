@@ -1,6 +1,7 @@
 
 import { format } from 'date-fns';
 import { mockIdeas } from '../types';
+import { Timestamp } from 'firebase/firestore';
 
 export const useQueueOperations = (refreshQueue: () => void) => {
   const handleRemoveFromQueue = (slotId: string) => {
@@ -20,10 +21,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       const newTime = new Date(earliestPost.datetime.getTime() - 30 * 60 * 1000);
       const postIndex = mockIdeas.findIndex(idea => idea.id === slotId);
       if (postIndex !== -1) {
-        mockIdeas[postIndex].scheduledPostAt = {
-          seconds: Math.floor(newTime.getTime() / 1000),
-          nanoseconds: 0
-        };
+        mockIdeas[postIndex].scheduledPostAt = Timestamp.fromMillis(newTime.getTime());
         refreshQueue();
       }
     }
@@ -35,10 +33,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       
       const postIndex = mockIdeas.findIndex(idea => idea.id === selectedPost.id);
       if (postIndex !== -1) {
-        mockIdeas[postIndex].scheduledPostAt = {
-          seconds: Math.floor(newDateTime.getTime() / 1000),
-          nanoseconds: 0
-        };
+        mockIdeas[postIndex].scheduledPostAt = Timestamp.fromMillis(newDateTime.getTime());
         
         refreshQueue();
         console.log('Post successfully rescheduled to:', newDateTime);

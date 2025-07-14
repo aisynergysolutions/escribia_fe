@@ -8,6 +8,7 @@ import AddClientModal from '../components/AddClientModal';
 import { useSearchAndFilter } from '../hooks/useSearchAndFilter';
 import { useClients } from '../context/ClientsContext';
 import { ClientCard as ClientCardType } from '../context/ClientsContext';
+import { Timestamp } from 'firebase/firestore';
 
 const Clients = () => {
   const { clients: clientCards, loading: isLoading } = useClients();
@@ -40,27 +41,33 @@ const Clients = () => {
 
   const memoizedClientCards = useMemo(() => {
     return filteredClients.map((client) => {
-        console.log("Rendering client card:", client); // Debug: client card props
-        return (
-            <div key={client.id} onClick={() => handleCardClick(client)}>
-                <ClientCard 
-                    client={{
-                        id: client.id,
-                        clientName: client.name,
-                        brandBriefSummary: client.oneLiner,
-                        status: client.status,
-                        updatedAt: { seconds: client.lastUpdated, nanoseconds: 0 },
-                        onboarding_link: client.onboarding_link,
-                        industry: '', // placeholder
-                        contactName: '', // placeholder
-                        contactEmail: '', // placeholder
-                        createdAt: { seconds: 0, nanoseconds: 0 }, // placeholder
-                        agencyId: '', // placeholder
-                        hard_facts: {}, // placeholder
-                    }}
-                />
-            </div>
-        );
+      console.log("Rendering client card:", client); // Debug: client card props
+      return (
+        <div key={client.id} onClick={() => handleCardClick(client)}>
+          <ClientCard
+            client={{
+              id: client.id,
+              clientName: client.name,
+              brandBriefSummary: client.oneLiner,
+              status: client.status,
+              updatedAt: Timestamp.fromMillis(client.lastUpdated * 1000),
+              onboarding_link: client.onboarding_link,
+              industry: '', // placeholder
+              contactName: '', // placeholder
+              contactEmail: '', // placeholder
+              createdAt: Timestamp.fromMillis(0), // placeholder
+              agencyId: '', // placeholder
+              hard_facts: {}, // placeholder
+              subClients: [], // placeholder
+              aiTraining: {
+                status: 'pending_data',
+                lastTrainedAt: Timestamp.fromMillis(0),
+                modelVersion: ''
+              }
+            }}
+          />
+        </div>
+      );
     });
   }, [filteredClients]);
 
@@ -69,7 +76,7 @@ const Clients = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
-          <AddClientModal onAddClient={() => {}}>
+          <AddClientModal onAddClient={() => { }}>
             <Button className="bg-indigo-600 hover:bg-indigo-700">
               <PlusCircle className="h-4 w-4 mr-2" />
               Add New Client
@@ -85,7 +92,7 @@ const Clients = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Clients</h1>
-        <AddClientModal onAddClient={() => {}}>
+        <AddClientModal onAddClient={() => { }}>
           <Button className="bg-indigo-600 hover:bg-indigo-700">
             <PlusCircle className="h-4 w-4 mr-2" />
             Add New Client
@@ -102,7 +109,7 @@ const Clients = () => {
           className="pl-10"
         />
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {memoizedClientCards}
       </div>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { collection, getDocs, setDoc, doc, serverTimestamp, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, serverTimestamp, deleteDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Template } from '@/types/interfaces';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +13,7 @@ export type TemplateCard = {
     scope: string;
     usageCount: number;
     tags: string[];
-    createdAt: { seconds: number; nanoseconds: number };
+    createdAt: Timestamp;
 };
 
 export type CreateTemplateData = {
@@ -95,7 +95,7 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
                     scope: data.scope || '',
                     usageCount: data.usageCount || 0,
                     tags: data.tags || [],
-                    createdAt: data.createdAt || { seconds: 0, nanoseconds: 0 },
+                    createdAt: data.createdAt || Timestamp.now(),
                 };
             });
             setTemplates(templatesList);
@@ -198,7 +198,7 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
                 contentType: data.contentType || '',
                 scope: data.scope || '',
                 agencyId: data.agencyId || 'agency1',
-                createdAt: data.createdAt || { seconds: 0, nanoseconds: 0 },
+                createdAt: data.createdAt || Timestamp.now(),
                 usageCount: data.usageCount || 0,
                 examplePlaceholders: data.examplePlaceholders || {},
                 tags: data.tags || [],

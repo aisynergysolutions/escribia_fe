@@ -1,12 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { collection, getDocs, doc as firestoreDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc as firestoreDoc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-
-// Firestore Timestamp type
-export type Timestamp = {
-  nanoseconds: number;
-  seconds: number;
-};
 
 export type PostCard = {
   title: string;
@@ -100,8 +94,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
           title: data.title || 'Untitled Post',
           profile: data.profile || data.profileName || '',
           status: data.status || '',
-          lastUpdated: data.updatedAt || { nanoseconds: 0, seconds: 0 },
-          scheduledPostAt: data.scheduledPostAt || { nanoseconds: 0, seconds: 0 },
+          lastUpdated: data.updatedAt || Timestamp.now(),
+          scheduledPostAt: data.scheduledPostAt || Timestamp.fromMillis(0),
           postId: data.postId || docSnap.id,
           profileId: data.profileId || data.subClientId || '',
         };
@@ -172,8 +166,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         title: postData.title || postData.initialIdeaPrompt,
         profile: postData.profileName,
         status: postData.status || 'Drafted',
-        lastUpdated: { nanoseconds: 0, seconds: Math.floor(Date.now() / 1000) },
-        scheduledPostAt: { nanoseconds: 0, seconds: 0 },
+        lastUpdated: Timestamp.now(),
+        scheduledPostAt: Timestamp.fromMillis(0),
         postId: postId, // Use the explicit postId
       };
 
@@ -206,19 +200,19 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
     }
   ): Promise<void> => {
     const key: PostsCacheKey = `${agencyId}_${clientId}`;
-    
+
     // Update the cache
     setPostsCache(prev => {
       if (!prev[key]) return prev;
       return {
         ...prev,
-        [key]: prev[key].map(post => 
-          post.postId === postId 
-            ? { 
-                ...post, 
-                ...(updates.title && { title: updates.title }),
-                lastUpdated: { nanoseconds: 0, seconds: Math.floor(Date.now() / 1000) }
-              }
+        [key]: prev[key].map(post =>
+          post.postId === postId
+            ? {
+              ...post,
+              ...(updates.title && { title: updates.title }),
+              lastUpdated: Timestamp.now()
+            }
             : post
         ),
       };
@@ -226,13 +220,13 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
 
     // Update the current posts if we're viewing this client
     if (currentKey === key) {
-      setPosts(prev => prev.map(post => 
-        post.postId === postId 
-          ? { 
-              ...post, 
-              ...(updates.title && { title: updates.title }),
-              lastUpdated: { nanoseconds: 0, seconds: Math.floor(Date.now() / 1000) }
-            }
+      setPosts(prev => prev.map(post =>
+        post.postId === postId
+          ? {
+            ...post,
+            ...(updates.title && { title: updates.title }),
+            lastUpdated: Timestamp.now()
+          }
           : post
       ));
     }

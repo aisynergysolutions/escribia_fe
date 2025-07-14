@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface SubClient {
   id: string;
   name: string;
@@ -8,7 +10,7 @@ export interface SubClient {
   linkedinAccountName?: string;
   linkedinExpiryDate?: string;
   customInstructions?: string;
-  createdAt: { seconds: number; nanoseconds: number };
+  createdAt: Timestamp;
 }
 
 export interface Idea {
@@ -22,17 +24,17 @@ export interface Idea {
   status: string;
   objective: string;
   templateUsedId?: string;
-  scheduledPostAt?: { seconds: number; nanoseconds: number };
-  actuallyPostedAt?: { seconds: number; nanoseconds: number };
+  scheduledPostAt?: Timestamp;
+  actuallyPostedAt?: Timestamp;
   livePostUrl?: string;
   internalNotes?: string;
-  createdAt: { seconds: number; nanoseconds: number };
-  updatedAt: { seconds: number; nanoseconds: number };
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   generatedHooks: { text: string; angle: string; selected: boolean }[];
   drafts: {
     version: number;
     text: string;
-    createdAt: { seconds: number; nanoseconds: number };
+    createdAt: Timestamp;
     generatedByAI: boolean;
     notes?: string;
   }[];
@@ -46,7 +48,7 @@ export interface Idea {
     comments: number;
     shares: number;
     views: number;
-    lastFetched: { seconds: number; nanoseconds: number };
+    lastFetched: Timestamp;
   };
   aiProcessingInfo?: {
     modelUsed: string;
@@ -66,13 +68,13 @@ export interface Client {
   profileImage?: string;
   brandBriefSummary?: string;
   writingStyle?: string;
-  createdAt: { seconds: number; nanoseconds: number };
-  updatedAt: { seconds: number; nanoseconds: number };
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   subClients: SubClient[]; // New field for sub-clients
   hard_facts?: {}; // Optional field for hard facts
   aiTraining: {
     status: 'pending_data' | 'training_queued' | 'completed' | 'failed';
-    lastTrainedAt: { seconds: number; nanoseconds: number };
+    lastTrainedAt: Timestamp;
     modelVersion?: string;
   };
 }
@@ -86,7 +88,7 @@ export interface Template {
   contentType: string;
   scope: string;
   agencyId: string;
-  createdAt: { seconds: number; nanoseconds: number };
+  createdAt: Timestamp;
   usageCount: number;
   examplePlaceholders: Record<string, string>;
   tags: string[];
@@ -100,16 +102,16 @@ export interface Agency {
     status: string;
     planId: string;
     stripeCustomerId: string;
-    currentPeriodEnd: { seconds: number; nanoseconds: number };
-    createdAtSubscription: { seconds: number; nanoseconds: number };
+    currentPeriodEnd: Timestamp;
+    createdAtSubscription: Timestamp;
     paymentHistory: {
-      paymentDate: { seconds: number; nanoseconds: number };
+      paymentDate: Timestamp;
       amount: number;
       transactionId: string;
     }[];
   };
-  createdAtAgency: { seconds: number; nanoseconds: number };
-  updatedAt: { seconds: number; nanoseconds: number };
+  createdAtAgency: Timestamp;
+  updatedAt: Timestamp;
   settings: {
     defaultLanguage: string;
     timezone: string;
@@ -117,7 +119,7 @@ export interface Agency {
   apiUsage: {
     postsGeneratedThisMonth: number;
     clientsManagedCount: number;
-    lastCalculationDate: { seconds: number; nanoseconds: number };
+    lastCalculationDate: Timestamp;
   };
   referral: {
     code: string;

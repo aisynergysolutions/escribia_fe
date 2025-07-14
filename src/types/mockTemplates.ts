@@ -1,5 +1,6 @@
 
 import { Template } from './interfaces';
+import { Timestamp } from 'firebase/firestore';
 
 export const mockTemplates: Template[] = [
   {
@@ -11,7 +12,7 @@ export const mockTemplates: Template[] = [
     contentType: 'text',
     scope: 'agency_specific',
     agencyId: 'agency1',
-    createdAt: { seconds: 1714416000, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1714416000 * 1000),
     usageCount: 12,
     examplePlaceholders: { industry: 'manufacturing', insight: 'automation improves efficiency by 40%', opinion: 'human oversight remains critical' },
     tags: ['thought leadership', 'industry insights', 'discussion starter']
@@ -25,7 +26,7 @@ export const mockTemplates: Template[] = [
     contentType: 'text',
     scope: 'agency_specific',
     agencyId: 'agency1',
-    createdAt: { seconds: 1714329600, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1714329600 * 1000),
     usageCount: 8,
     examplePlaceholders: { 
       product: 'AI-powered CRM', 
@@ -46,7 +47,7 @@ export const mockTemplates: Template[] = [
     contentType: 'text',
     scope: 'agency_specific',
     agencyId: 'agency1',
-    createdAt: { seconds: 1714243200, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1714243200 * 1000),
     usageCount: 5,
     examplePlaceholders: {
       'event name': 'Digital Transformation Summit',

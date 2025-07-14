@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { mockIdeas } from '../types';
 import { DaySlot } from './useQueueData';
+import { Timestamp } from 'firebase/firestore';
 
 export const useDragAndDrop = (hideEmptySlots: boolean, refreshQueue: () => void) => {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -34,10 +35,7 @@ export const useDragAndDrop = (hideEmptySlots: boolean, refreshQueue: () => void
         // Snap-to-grid behavior when empty slots are visible
         const postIndex = mockIdeas.findIndex(idea => idea.id === draggedItem);
         if (postIndex !== -1) {
-          mockIdeas[postIndex].scheduledPostAt = {
-            seconds: Math.floor(targetSlot.datetime.getTime() / 1000),
-            nanoseconds: 0
-          };
+          mockIdeas[postIndex].scheduledPostAt = Timestamp.fromMillis(targetSlot.datetime.getTime());
           refreshQueue();
         }
       }

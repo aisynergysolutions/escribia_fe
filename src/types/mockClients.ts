@@ -1,5 +1,6 @@
 
 import { Client } from './interfaces';
+import { Timestamp } from 'firebase/firestore';
 
 export const mockClients: Client[] = [
   {
@@ -12,8 +13,8 @@ export const mockClients: Client[] = [
     status: 'active',
     brandBriefSummary: 'Leading technology solutions provider specializing in enterprise software.',
     writingStyle: 'Professional and informative',
-    createdAt: { seconds: 1669852800, nanoseconds: 0 },
-    updatedAt: { seconds: 1672531200, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1669852800 * 1000),
+    updatedAt: Timestamp.fromMillis(1672531200 * 1000),
     subClients: [
       {
         id: 'subclient1_company',
@@ -24,7 +25,7 @@ export const mockClients: Client[] = [
         linkedinExpiryDate: 'June 15, 2025',
         writingStyle: 'Professional and informative',
         customInstructions: 'Always mention ROI and business impact',
-        createdAt: { seconds: 1669852800, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1669852800 * 1000)
       },
       {
         id: 'subclient1_ceo',
@@ -33,7 +34,7 @@ export const mockClients: Client[] = [
         linkedinConnected: false,
         writingStyle: 'Authoritative and visionary',
         customInstructions: 'Focus on industry leadership and innovation',
-        createdAt: { seconds: 1669852800, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1669852800 * 1000)
       }
     ],
     brandProfile: {
@@ -60,7 +61,7 @@ export const mockClients: Client[] = [
     },
     aiTraining: {
       status: 'completed',
-      lastTrainedAt: { seconds: 1672444800, nanoseconds: 0 },
+      lastTrainedAt: Timestamp.fromMillis(1672444800 * 1000),
       modelVersion: 'v2.1'
     }
   },
@@ -73,15 +74,15 @@ export const mockClients: Client[] = [
     status: 'onboarding',
     brandBriefSummary: 'Full-service marketing agency helping brands grow their digital presence.',
     writingStyle: 'Creative and engaging',
-    createdAt: { seconds: 1669939200, nanoseconds: 0 },
-    updatedAt: { seconds: 1672444800, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1669939200 * 1000),
+    updatedAt: Timestamp.fromMillis(1672444800 * 1000),
     subClients: [
       {
         id: 'subclient2_company',
         name: 'Global Marketing Corp',
         role: 'Company',
         linkedinConnected: false,
-        createdAt: { seconds: 1669939200, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1669939200 * 1000)
       }
     ],
     brandProfile: {
@@ -108,7 +109,7 @@ export const mockClients: Client[] = [
     },
     aiTraining: {
       status: 'training_queued',
-      lastTrainedAt: { seconds: 0, nanoseconds: 0 }
+      lastTrainedAt: Timestamp.fromMillis(0 * 1000)
     }
   },
   {
@@ -120,8 +121,8 @@ export const mockClients: Client[] = [
     status: 'active',
     brandBriefSummary: 'Innovative healthcare provider focused on patient-centered care and medical technology.',
     writingStyle: 'Compassionate and educational',
-    createdAt: { seconds: 1670112000, nanoseconds: 0 },
-    updatedAt: { seconds: 1672617600, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1670112000 * 1000),
+    updatedAt: Timestamp.fromMillis(1672617600 * 1000),
     subClients: [
       {
         id: 'subclient3_company',
@@ -130,7 +131,7 @@ export const mockClients: Client[] = [
         linkedinConnected: true,
         linkedinAccountName: 'HealthFirst Medical',
         linkedinExpiryDate: 'August 20, 2025',
-        createdAt: { seconds: 1670112000, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1670112000 * 1000)
       }
     ],
     brandProfile: {
@@ -157,7 +158,7 @@ export const mockClients: Client[] = [
     },
     aiTraining: {
       status: 'completed',
-      lastTrainedAt: { seconds: 1672531200, nanoseconds: 0 },
+      lastTrainedAt: Timestamp.fromMillis(1672531200 * 1000),
       modelVersion: 'v2.0'
     }
   },
@@ -170,15 +171,15 @@ export const mockClients: Client[] = [
     status: 'active',
     brandBriefSummary: 'Environmental consulting firm helping businesses reduce their carbon footprint.',
     writingStyle: 'Passionate and informative',
-    createdAt: { seconds: 1670198400, nanoseconds: 0 },
-    updatedAt: { seconds: 1672704000, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1670198400 * 1000),
+    updatedAt: Timestamp.fromMillis(1672704000 * 1000),
     subClients: [
       {
         id: 'subclient4_company',
         name: 'EcoGreen Solutions',
         role: 'Company',
         linkedinConnected: false,
-        createdAt: { seconds: 1670198400, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1670198400 * 1000)
       }
     ],
     brandProfile: {
@@ -205,7 +206,7 @@ export const mockClients: Client[] = [
     },
     aiTraining: {
       status: 'completed',
-      lastTrainedAt: { seconds: 1672617600, nanoseconds: 0 },
+      lastTrainedAt: Timestamp.fromMillis(1672617600 * 1000),
       modelVersion: 'v2.1'
     }
   },
@@ -218,15 +219,15 @@ export const mockClients: Client[] = [
     status: 'paused',
     brandBriefSummary: 'Modern financial planning platform for small business owners and entrepreneurs.',
     writingStyle: 'Clear and trustworthy',
-    createdAt: { seconds: 1670284800, nanoseconds: 0 },
-    updatedAt: { seconds: 1672790400, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1670284800 * 1000),
+    updatedAt: Timestamp.fromMillis(1672790400 * 1000),
     subClients: [
       {
         id: 'subclient5_company',
         name: 'FinanceFlow Pro',
         role: 'Company',
         linkedinConnected: false,
-        createdAt: { seconds: 1670284800, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1670284800 * 1000)
       }
     ],
     brandProfile: {
@@ -253,7 +254,7 @@ export const mockClients: Client[] = [
     },
     aiTraining: {
       status: 'pending_data',
-      lastTrainedAt: { seconds: 0, nanoseconds: 0 }
+      lastTrainedAt: Timestamp.fromMillis(0 * 1000)
     }
   },
   {
@@ -265,15 +266,15 @@ export const mockClients: Client[] = [
     status: 'onboarding',
     brandBriefSummary: 'Premium construction company specializing in sustainable building practices.',
     writingStyle: 'Straightforward and reliable',
-    createdAt: { seconds: 1670371200, nanoseconds: 0 },
-    updatedAt: { seconds: 1672876800, nanoseconds: 0 },
+    createdAt: Timestamp.fromMillis(1670371200 * 1000),
+    updatedAt: Timestamp.fromMillis(1672876800 * 1000),
     subClients: [
       {
         id: 'subclient6_company',
         name: 'BuildRight Construction',
         role: 'Company',
         linkedinConnected: false,
-        createdAt: { seconds: 1670371200, nanoseconds: 0 }
+        createdAt: Timestamp.fromMillis(1670371200 * 1000)
       }
     ],
     brandProfile: {
@@ -300,7 +301,7 @@ export const mockClients: Client[] = [
     },
     aiTraining: {
       status: 'training_queued',
-      lastTrainedAt: { seconds: 0, nanoseconds: 0 }
+      lastTrainedAt: Timestamp.fromMillis(0 * 1000)
     }
   }
 ];

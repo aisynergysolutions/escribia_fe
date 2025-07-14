@@ -16,11 +16,12 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import StatusBadge from '../common/StatusBadge';
 import { SubClient } from '../../types/interfaces';
+import { Timestamp } from 'firebase/firestore';
 
 const ProfileDetails: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string; }>();
   const navigate = useNavigate();
-  
+
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
   // Mock profile data - in real app, this would come from API
@@ -34,7 +35,7 @@ const ProfileDetails: React.FC = () => {
     linkedinAccountName: profileId === 'company-1' ? 'TechCorp Solutions' : profileId === 'ceo-1' ? 'Sarah Johnson' : '',
     linkedinExpiryDate: profileId === 'company-1' ? 'June 15, 2025' : 'July 20, 2025',
     customInstructions: profileId === 'company-1' ? 'Focus on industry insights and company achievements. Highlight our innovative solutions and client success stories.' : profileId === 'ceo-1' ? 'Share vision, industry trends, and leadership perspectives. Focus on thought leadership and strategic insights.' : 'Technical insights, product development, innovation. Share technical expertise and engineering perspectives.',
-    createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
+    createdAt: Timestamp.now()
   });
 
   // Form data for main company profile
@@ -135,7 +136,7 @@ const ProfileDetails: React.FC = () => {
   };
 
   const handleTimeSlotChange = (index: number, field: 'day' | 'time', value: string) => {
-    setTimeSlots(prev => prev.map((slot, i) => 
+    setTimeSlots(prev => prev.map((slot, i) =>
       i === index ? { ...slot, [field]: value } : slot
     ));
   };
@@ -216,9 +217,9 @@ const ProfileDetails: React.FC = () => {
       if (!grouped[slot.day]) {
         grouped[slot.day] = [];
       }
-      const time = new Date(`2000-01-01T${slot.time}`).toLocaleTimeString([], { 
-        hour: 'numeric', 
-        minute: '2-digit' 
+      const time = new Date(`2000-01-01T${slot.time}`).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit'
       });
       grouped[slot.day].push(time);
     });
@@ -303,10 +304,10 @@ const ProfileDetails: React.FC = () => {
                       className="mt-1"
                     />
                   ) : (
-                    <a 
-                      href={clientInfoData.websiteUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={clientInfoData.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
                     >
                       {clientInfoData.websiteUrl}
@@ -324,10 +325,10 @@ const ProfileDetails: React.FC = () => {
                       className="mt-1"
                     />
                   ) : (
-                    <a 
-                      href={clientInfoData.linkedinUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={clientInfoData.linkedinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
                     >
                       {clientInfoData.linkedinUrl}
@@ -454,8 +455,8 @@ const ProfileDetails: React.FC = () => {
                   <div className="space-y-2 mt-3">
                     {timeSlots.map((slot, index) => (
                       <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
-                        <Select 
-                          value={slot.day} 
+                        <Select
+                          value={slot.day}
                           onValueChange={(value) => handleTimeSlotChange(index, 'day', value)}
                         >
                           <SelectTrigger className="w-32">
@@ -477,9 +478,9 @@ const ProfileDetails: React.FC = () => {
                           onChange={(e) => handleTimeSlotChange(index, 'time', e.target.value)}
                           className="w-28"
                         />
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleRemoveTimeSlot(index)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -801,19 +802,19 @@ const ProfileDetails: React.FC = () => {
                           className="flex-1"
                           placeholder="https://competitor.com"
                         />
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleRemoveCompetitor(index)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </>
                     ) : (
-                      <a 
-                        href={competitor} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                      <a
+                        href={competitor}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline flex items-center gap-1 p-2 bg-muted rounded-md flex-1"
                       >
                         {competitor}
@@ -845,9 +846,9 @@ const ProfileDetails: React.FC = () => {
                         className="flex-1"
                         placeholder="Topic to avoid"
                       />
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleRemoveTopicToAvoid(index)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -885,14 +886,14 @@ const ProfileDetails: React.FC = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  You are about to permanently delete the entire client account for <strong>{profile.name}</strong>. 
-                  This will delete all profiles, posts, settings, and data associated with this client. 
+                  You are about to permanently delete the entire client account for <strong>{profile.name}</strong>.
+                  This will delete all profiles, posts, settings, and data associated with this client.
                   This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogAction
                   onClick={handleDeleteClient}
                   className="bg-red-600 hover:bg-red-700"
                 >
@@ -1026,10 +1027,10 @@ const ProfileDetails: React.FC = () => {
                     className="mt-1"
                   />
                 ) : (
-                  <a 
-                    href={subProfileData.linkedinUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={subProfileData.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
                   >
                     {subProfileData.linkedinUrl}
@@ -1450,13 +1451,13 @@ const ProfileDetails: React.FC = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                You are about to permanently delete the profile for <strong>{profile.name}</strong>. 
+                You are about to permanently delete the profile for <strong>{profile.name}</strong>.
                 All associated data will be lost. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={handleDeleteProfile}
                 className="bg-red-600 hover:bg-red-700"
               >

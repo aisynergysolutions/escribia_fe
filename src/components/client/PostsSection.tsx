@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
-import { mockIdeas, mockClients, Idea } from '../../types';
+import { Idea } from '../../types';
 import { formatDate, formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
 import { usePosts } from '@/context/PostsContext'; // <-- Add this import
 import { useNavigate } from 'react-router-dom';
@@ -82,9 +82,9 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const clientIdeas = posts;
 
   // Get client information
-  const getClientInfo = (clientId: string) => {
-    return mockClients.find(client => client.id === clientId);
-  };
+  // const getClientInfo = (clientId: string) => {
+  //   return mockClients.find(client => client.id === clientId);
+  // };
 
   // Filter and sort posts
   const getFilteredAndSortedPosts = (): typeof posts => {
@@ -145,7 +145,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   const filteredPosts = getFilteredAndSortedPosts();
   const allowedStatuses = getAllowedStatuses();
-  const clientInfo = getClientInfo(clientId);
+  // const clientInfo = getClientInfo(clientId);
 
   const handleColumnSort = (field: SortField) => {
     if (sortField === field) {

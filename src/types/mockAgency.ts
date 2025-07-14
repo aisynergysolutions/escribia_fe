@@ -1,5 +1,6 @@
 
 import { Agency } from './interfaces';
+import { Timestamp } from 'firebase/firestore';
 
 export const mockAgency: Agency = {
   id: 'agency1',
@@ -9,23 +10,23 @@ export const mockAgency: Agency = {
     status: 'active',
     planId: 'pro_plan',
     stripeCustomerId: 'cus_example123',
-    currentPeriodEnd: { seconds: 1703980800, nanoseconds: 0 }, // Dec 31, 2023
-    createdAtSubscription: { seconds: 1672531200, nanoseconds: 0 }, // Jan 1, 2023
+    currentPeriodEnd: Timestamp.fromMillis(1703980800 * 1000), // Dec 31, 2023
+    createdAtSubscription: Timestamp.fromMillis(1672531200 * 1000), // Jan 1, 2023
     paymentHistory: [
       {
-        paymentDate: { seconds: 1672531200, nanoseconds: 0 },
+        paymentDate: Timestamp.fromMillis(1672531200 * 1000),
         amount: 99.00,
         transactionId: 'txn_123456789'
       },
       {
-        paymentDate: { seconds: 1675209600, nanoseconds: 0 },
+        paymentDate: Timestamp.fromMillis(1675209600 * 1000),
         amount: 99.00,
         transactionId: 'txn_987654321'
       }
     ]
   },
-  createdAtAgency: { seconds: 1672531200, nanoseconds: 0 },
-  updatedAt: { seconds: 1672617600, nanoseconds: 0 },
+  createdAtAgency: Timestamp.fromMillis(1672531200 * 1000),
+  updatedAt: Timestamp.fromMillis(1672617600 * 1000),
   settings: {
     defaultLanguage: 'en',
     timezone: 'Europe/Madrid'
@@ -33,7 +34,7 @@ export const mockAgency: Agency = {
   apiUsage: {
     postsGeneratedThisMonth: 42,
     clientsManagedCount: 8,
-    lastCalculationDate: { seconds: 1672531200, nanoseconds: 0 }
+    lastCalculationDate: Timestamp.fromMillis(1672531200 * 1000)
   },
   referral: {
     code: 'REF-ACME42',
