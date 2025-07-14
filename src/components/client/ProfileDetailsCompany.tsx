@@ -21,14 +21,15 @@ import {
   updateCompanyProfileContentGuidelines,
   updateCompanyProfileCustomInstructions,
   updateCompanyProfileLanguage,
-  deleteCompanyProfile
+  useProfiles // Add this import
 } from '@/context/ProfilesContext';
-import { Switch } from '@/components/ui/switch';
+import { Switch } from '../ui/switch';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 
 const ProfileDetailsCompany: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
   const navigate = useNavigate();
+  const { deleteProfile } = useProfiles(); // Use the context function
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -333,7 +334,7 @@ const ProfileDetailsCompany: React.FC = () => {
     if (!clientId || !profileId) return;
 
     try {
-      await deleteCompanyProfile(clientId, profileId);
+      await deleteProfile(clientId, profileId); // Use context function
       navigate(`/clients/${clientId}/settings`);
     } catch (error) {
       console.error('Error deleting profile:', error);
@@ -391,9 +392,15 @@ const ProfileDetailsCompany: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => navigate(`/clients/${clientId}/settings`)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Settings
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/clients/${clientId}/settings`)}
+          className="flex items-center justify-center rounded-full h-8 w-8 bg-transparent shadow-none border border-gray-100"
+          aria-label="Back"
+        >
+          <ArrowLeft className="h-4 w-4 mr-0" />
+          {/* Back to Settings */}
         </Button>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -402,9 +409,9 @@ const ProfileDetailsCompany: React.FC = () => {
               <Building2 className="h-6 w-6" />
             </AvatarFallback>
           </Avatar>
-          <div>
+          <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold">{profile.profileName}</h1>
-            <Badge variant="outline" className="mt-1">{profile.role}</Badge>
+            <Badge variant="outline" className="">{profile.role}</Badge>
           </div>
         </div>
       </div>

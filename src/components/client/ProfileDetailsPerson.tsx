@@ -14,14 +14,14 @@ import { Switch } from '@/components/ui/switch'; // Add this import
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { 
-  getPersonProfile, 
+import {
+  getPersonProfile,
   updatePersonProfileInfo,
   updatePersonProfileStrategy,
   updatePersonProfileVoice,
   updatePersonProfileGuidelines,
   updatePersonProfileCustomInstructions,
-  deletePersonProfile
+  useProfiles // Add this import
 } from '@/context/ProfilesContext';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 
@@ -31,6 +31,7 @@ import type { Profile } from '@/context/ProfilesContext';
 const ProfileDetailsPerson: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
   const navigate = useNavigate();
+  const { deleteProfile } = useProfiles(); // Use the context function
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
@@ -395,7 +396,7 @@ const ProfileDetailsPerson: React.FC = () => {
     if (!clientId || !profileId) return;
 
     try {
-      await deletePersonProfile(clientId, profileId);
+      await deleteProfile(clientId, profileId); // Use context function
       console.log('Profile deleted successfully');
       navigate(`/clients/${clientId}/settings`);
     } catch (error) {
@@ -455,9 +456,13 @@ const ProfileDetailsPerson: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => navigate(`/clients/${clientId}/settings`)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Settings
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/clients/${clientId}/settings`)}
+          className="flex items-center justify-center rounded-full h-8 w-8 bg-transparent shadow-none border border-gray-100"
+          aria-label="Back"
+        >          <ArrowLeft className="h-4 w-4 mr-2" />
         </Button>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -466,9 +471,9 @@ const ProfileDetailsPerson: React.FC = () => {
               <User className="h-6 w-6" />
             </AvatarFallback>
           </Avatar>
-          <div>
+          <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold">{profile.profileName}</h1>
-            <Badge variant="outline" className="mt-1">{profile.role}</Badge>
+            <Badge variant="outline" className="">{profile.role}</Badge>
           </div>
         </div>
       </div>
