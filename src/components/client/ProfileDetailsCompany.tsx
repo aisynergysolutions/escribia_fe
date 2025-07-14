@@ -13,7 +13,16 @@ import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { getCompanyProfile, CompanyProfile } from '@/context/ProfilesContext';
+import {
+  getCompanyProfile,
+  CompanyProfile,
+  updateCompanyProfileInfo,
+  updateCompanyProfileBrandStrategy,
+  updateCompanyProfileContentGuidelines,
+  updateCompanyProfileCustomInstructions,
+  updateCompanyProfileLanguage,
+  deleteCompanyProfile
+} from '@/context/ProfilesContext';
 import { Switch } from '@/components/ui/switch';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 
@@ -22,12 +31,26 @@ const ProfileDetailsCompany: React.FC = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Form data states
   const [companyInfoData, setCompanyInfoData] = useState({
     companyName: '',
     role: '',
     foundationDate: '',
+    location: '',
+    contactEmail: '',
+    linkedinUrl: '',
+    language: '',
+    customInstructions: '',
+  });
+
+  // Original values for cancel functionality
+  const [originalCompanyInfoData, setOriginalCompanyInfoData] = useState({
+    companyName: '',
+    role: '',
+    foundationDate: '',
+    location: '',
     contactEmail: '',
     linkedinUrl: '',
     language: '',
@@ -45,7 +68,27 @@ const ProfileDetailsCompany: React.FC = () => {
     addHashtags: false, // Add this field
   });
 
+  // Original values for cancel functionality
+  const [originalBrandStrategyData, setOriginalBrandStrategyData] = useState({
+    primaryGoal: '',
+    audienceFocus: '',
+    brandPersona: '',
+    coreTone: '',
+    postLengthValue: 0,
+    emojiUsageValue: 0,
+    addHashtags: false,
+  });
+
   const [contentGuidelinesData, setContentGuidelinesData] = useState({
+    hookGuidelines: '',
+    hotTakes: '',
+    sampleCTA: '',
+    topicsToAvoid: [] as string[],
+    favPosts: [] as string[],
+  });
+
+  // Original values for cancel functionality
+  const [originalContentGuidelinesData, setOriginalContentGuidelinesData] = useState({
     hookGuidelines: '',
     hotTakes: '',
     sampleCTA: '',
@@ -59,33 +102,51 @@ const ProfileDetailsCompany: React.FC = () => {
         setProfile(fetchedProfile);
 
         // Populate form data
-        setCompanyInfoData({
+        const companyInfo = {
           companyName: fetchedProfile.profileName,
           role: fetchedProfile.role,
           foundationDate: fetchedProfile.foundationDate || '',
+          location: fetchedProfile.location,
           contactEmail: fetchedProfile.contactEmail,
           linkedinUrl: `https://linkedin.com/company/${fetchedProfile.linkedin.linkedinName}`,
           language: fetchedProfile.contentProfile.contentLanguage,
           customInstructions: fetchedProfile.contentProfile.customInstructions,
-        });
+        };
 
-        setBrandStrategyData({
+        const brandStrategy = {
           primaryGoal: fetchedProfile.contentProfile.primaryGoal,
           audienceFocus: fetchedProfile.contentProfile.audienceFocus,
-          brandPersona: fetchedProfile.contentProfile.contentPersona,
-          coreTone: fetchedProfile.contentProfile.coreTones,
+          brandPersona: getValidBrandPersona(fetchedProfile.contentProfile.contentPersona),
+          coreTone: getValidCoreTone(fetchedProfile.contentProfile.coreTones),
           postLengthValue: getPostLengthValue(fetchedProfile.contentProfile.postLength),
           emojiUsageValue: getEmojiUsageValue(fetchedProfile.contentProfile.emojiUsage),
-          addHashtags: fetchedProfile.contentProfile.addHashtags, // Add this field
+          addHashtags: fetchedProfile.contentProfile.addHashtags,
+        };
+
+        // Debug log to check values
+        console.log('Brand Strategy Data:', {
+          originalPersona: fetchedProfile.contentProfile.contentPersona,
+          cleanedPersona: brandStrategy.brandPersona,
+          originalCoreTone: fetchedProfile.contentProfile.coreTones,
+          cleanedCoreTone: brandStrategy.coreTone
         });
 
-        setContentGuidelinesData({
+        const contentGuidelines = {
           hookGuidelines: fetchedProfile.contentProfile.hookGuidelines,
           hotTakes: fetchedProfile.contentProfile.hotTakes,
           sampleCTA: fetchedProfile.contentProfile.sampleCTA,
           topicsToAvoid: fetchedProfile.contentProfile.topicsToAvoid,
           favPosts: fetchedProfile.contentProfile.favPosts,
-        });
+        };
+
+        setCompanyInfoData(companyInfo);
+        setOriginalCompanyInfoData(companyInfo);
+
+        setBrandStrategyData(brandStrategy);
+        setOriginalBrandStrategyData(brandStrategy);
+
+        setContentGuidelinesData(contentGuidelines);
+        setOriginalContentGuidelinesData(contentGuidelines);
       });
     }
   }, [clientId, profileId]);
@@ -139,24 +200,145 @@ const ProfileDetailsCompany: React.FC = () => {
     return flags[language] || '🇺🇸';
   };
 
+  // Helper function to validate and clean brand persona values
+  const getValidBrandPersona = (persona: string): string => {
+    const validOptions = [
+      'The Industry Leader',
+      'The Innovative Disruptor',
+      'The Trusted Partner',
+      'The Trusted Peer',
+      'The Expert Authority'
+    ];
+
+    // Extract main part before parentheses
+    const cleanedPersona = persona.split(' (')[0];
+
+    // Check if it matches any valid option
+    if (validOptions.includes(cleanedPersona)) {
+      return cleanedPersona;
+    }
+
+    // Return the first valid option as fallback
+    return validOptions[0];
+  };
+
+  // Helper function to validate core tone values
+  const getValidCoreTone = (tone: string): string => {
+    const validOptions = [
+      'Professional & Authoritative',
+      'Friendly & Approachable',
+      'Innovative & Forward-thinking',
+      'Trustworthy & Reliable',
+      'Dynamic & Energetic'
+    ];
+
+    // Check if it matches any valid option
+    if (validOptions.includes(tone)) {
+      return tone;
+    }
+
+    // Return the first valid option as fallback
+    return validOptions[0];
+  };
+
   const handleSectionEdit = (section: string) => {
     setEditingSection(section);
   };
 
-  const handleSectionSave = (section: string) => {
-    // In real app, this would make API call to save data
-    setEditingSection(null);
+  const handleSectionSave = async (section: string) => {
+    if (!clientId || !profileId) return;
+
+    setIsLoading(true);
+    try {
+      switch (section) {
+        case 'companyInfo':
+          // Update basic profile info
+          await updateCompanyProfileInfo(clientId, profileId, {
+            profileName: companyInfoData.companyName,
+            role: companyInfoData.role,
+            foundationDate: companyInfoData.foundationDate,
+            location: companyInfoData.location,
+            contactEmail: companyInfoData.contactEmail,
+          });
+
+          // Update language separately since it's in contentProfile
+          await updateCompanyProfileLanguage(clientId, profileId, companyInfoData.language);
+
+          // Update custom instructions separately
+          await updateCompanyProfileCustomInstructions(clientId, profileId, companyInfoData.customInstructions);
+
+          // Update original values
+          setOriginalCompanyInfoData({ ...companyInfoData });
+          break;
+
+        case 'brandStrategy':
+          await updateCompanyProfileBrandStrategy(clientId, profileId, {
+            primaryGoal: brandStrategyData.primaryGoal,
+            audienceFocus: brandStrategyData.audienceFocus,
+            contentPersona: brandStrategyData.brandPersona,
+            coreTones: brandStrategyData.coreTone,
+            postLength: getPostLengthLabel(brandStrategyData.postLengthValue),
+            emojiUsage: getEmojiUsageLabel(brandStrategyData.emojiUsageValue),
+            addHashtags: brandStrategyData.addHashtags,
+          });
+
+          // Update original values
+          setOriginalBrandStrategyData({ ...brandStrategyData });
+          break;
+
+        case 'contentGuidelines':
+          await updateCompanyProfileContentGuidelines(clientId, profileId, {
+            hookGuidelines: contentGuidelinesData.hookGuidelines,
+            hotTakes: contentGuidelinesData.hotTakes,
+            sampleCTA: contentGuidelinesData.sampleCTA,
+            topicsToAvoid: contentGuidelinesData.topicsToAvoid,
+            favPosts: contentGuidelinesData.favPosts,
+          });
+
+          // Update original values
+          setOriginalContentGuidelinesData({ ...contentGuidelinesData });
+          break;
+      }
+
+      // Refresh profile data
+      const updatedProfile = await getCompanyProfile(clientId, profileId);
+      setProfile(updatedProfile);
+
+      setEditingSection(null);
+    } catch (error) {
+      console.error('Error saving section:', error);
+      // You might want to show a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSectionCancel = (section: string) => {
-    // In real app, this would reset form data to original values
+    // Reset form data to original values
+    switch (section) {
+      case 'companyInfo':
+        setCompanyInfoData({ ...originalCompanyInfoData });
+        break;
+      case 'brandStrategy':
+        setBrandStrategyData({ ...originalBrandStrategyData });
+        break;
+      case 'contentGuidelines':
+        setContentGuidelinesData({ ...originalContentGuidelinesData });
+        break;
+    }
     setEditingSection(null);
   };
 
-  const handleDeleteProfile = () => {
-    // In real app, this would make API call to delete profile
-    console.log('Profile deleted');
-    navigate(`/clients/${clientId}/settings`);
+  const handleDeleteProfile = async () => {
+    if (!clientId || !profileId) return;
+
+    try {
+      await deleteCompanyProfile(clientId, profileId);
+      navigate(`/clients/${clientId}/settings`);
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      // You might want to show a toast notification here
+    }
   };
 
   const handleAddTopicToAvoid = () => {
@@ -239,11 +421,11 @@ const ProfileDetailsCompany: React.FC = () => {
               </Button>
             ) : (
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleSectionSave('companyInfo')}>
+                <Button size="sm" onClick={() => handleSectionSave('companyInfo')} disabled={isLoading}>
                   <Save className="h-4 w-4 mr-2" />
-                  Save
+                  {isLoading ? 'Saving...' : 'Save'}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleSectionCancel('companyInfo')}>
+                <Button variant="outline" size="sm" onClick={() => handleSectionCancel('companyInfo')} disabled={isLoading}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
@@ -295,6 +477,22 @@ const ProfileDetailsCompany: React.FC = () => {
                   />
                 ) : (
                   <p className="text-sm mt-1">{companyInfoData.foundationDate ? formatDate(companyInfoData.foundationDate) : 'N/A'}</p>
+                )}
+              </div>
+              <div>
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </Label>
+                {editingSection === 'companyInfo' ? (
+                  <Input
+                    value={companyInfoData.location}
+                    onChange={(e) => setCompanyInfoData(prev => ({ ...prev, location: e.target.value }))}
+                    className="mt-1"
+                    placeholder="Company location"
+                  />
+                ) : (
+                  <p className="text-sm mt-1">{companyInfoData.location || 'N/A'}</p>
                 )}
               </div>
               <div>
@@ -446,11 +644,11 @@ const ProfileDetailsCompany: React.FC = () => {
               </Button>
             ) : (
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleSectionSave('brandStrategy')}>
+                <Button size="sm" onClick={() => handleSectionSave('brandStrategy')} disabled={isLoading}>
                   <Save className="h-4 w-4 mr-2" />
-                  Save
+                  {isLoading ? 'Saving...' : 'Save'}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleSectionCancel('brandStrategy')}>
+                <Button variant="outline" size="sm" onClick={() => handleSectionCancel('brandStrategy')} disabled={isLoading}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
@@ -487,14 +685,18 @@ const ProfileDetailsCompany: React.FC = () => {
               <div>
                 <Label className="text-base font-medium">Brand Persona</Label>
                 {editingSection === 'brandStrategy' ? (
-                  <Select value={brandStrategyData.brandPersona} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, brandPersona: value }))}>
+                  <Select
+                    value={brandStrategyData.brandPersona}
+                    onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, brandPersona: value }))}
+                  >
                     <SelectTrigger className="mt-2">
-                      <SelectValue />
+                      <SelectValue placeholder="Select brand persona" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="The Industry Leader">🏆 The Industry Leader</SelectItem>
                       <SelectItem value="The Innovative Disruptor">⚡ The Innovative Disruptor</SelectItem>
                       <SelectItem value="The Trusted Partner">🤝 The Trusted Partner</SelectItem>
+                      <SelectItem value="The Trusted Peer">🤝 The Trusted Peer</SelectItem>
                       <SelectItem value="The Expert Authority">🎯 The Expert Authority</SelectItem>
                     </SelectContent>
                   </Select>
@@ -511,9 +713,12 @@ const ProfileDetailsCompany: React.FC = () => {
               <div>
                 <Label className="text-base font-medium">Core Tone</Label>
                 {editingSection === 'brandStrategy' ? (
-                  <Select value={brandStrategyData.coreTone} onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, coreTone: value }))}>
+                  <Select
+                    value={brandStrategyData.coreTone}
+                    onValueChange={(value) => setBrandStrategyData(prev => ({ ...prev, coreTone: value }))}
+                  >
                     <SelectTrigger className="mt-2">
-                      <SelectValue />
+                      <SelectValue placeholder="Select core tone" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Professional & Authoritative">Professional & Authoritative</SelectItem>
@@ -627,11 +832,11 @@ const ProfileDetailsCompany: React.FC = () => {
               </Button>
             ) : (
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleSectionSave('contentGuidelines')}>
+                <Button size="sm" onClick={() => handleSectionSave('contentGuidelines')} disabled={isLoading}>
                   <Save className="h-4 w-4 mr-2" />
-                  Save
+                  {isLoading ? 'Saving...' : 'Save'}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleSectionCancel('contentGuidelines')}>
+                <Button variant="outline" size="sm" onClick={() => handleSectionCancel('contentGuidelines')} disabled={isLoading}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>

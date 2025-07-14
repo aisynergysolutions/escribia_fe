@@ -272,6 +272,206 @@ export const getCompanyProfile = async (clientId: string, profileId: string): Pr
   };
 };
 
+// Update functions for profile data
+export const updatePersonProfileInfo = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    profileName?: string;
+    role?: string;
+    joinedDate?: string;
+    location?: string;
+    contactEmail?: string;
+    status?: string;
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+    await setDoc(profileRef, updates, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating profile info:', error);
+    throw error;
+  }
+};
+
+export const updatePersonProfileStrategy = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    primaryGoal?: string;
+    audienceFocus?: string;
+    expertise?: string;
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      ...updates
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating profile strategy:', error);
+    throw error;
+  }
+};
+
+export const updatePersonProfileVoice = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    contentPersona?: string;
+    coreTones?: string;
+    postLength?: string;
+    emojiUsage?: string;
+    addHashtags?: boolean;
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      ...updates
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating profile voice:', error);
+    throw error;
+  }
+};
+
+export const updatePersonProfileGuidelines = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    hotTakes?: string;
+    personalStories?: string;
+    hookGuidelines?: string;
+    sampleCTA?: string;
+    topicsToAvoid?: string[];
+    favPosts?: string[];
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      ...updates
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating profile guidelines:', error);
+    throw error;
+  }
+};
+
+export const updatePersonProfileCustomInstructions = async (
+  clientId: string,
+  profileId: string,
+  customInstructions: string
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      customInstructions: customInstructions
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating custom instructions:', error);
+    throw error;
+  }
+};
+
 export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
   // Store profiles by clientId
   const [profilesByClient, setProfilesByClient] = useState<Record<string, ProfileCard[]>>({});
@@ -405,4 +605,239 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </ProfilesContext.Provider>
   );
+};
+
+export const deletePersonProfile = async (clientId: string, profileId: string) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+    await deleteDoc(profileRef);
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error deleting profile:', error);
+    throw error;
+  }
+};
+
+// Company profile update functions
+export const updateCompanyProfileInfo = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    profileName?: string;
+    role?: string;
+    foundationDate?: string;
+    location?: string;
+    contactEmail?: string;
+    status?: string;
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+    await setDoc(profileRef, updates, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating company profile info:', error);
+    throw error;
+  }
+};
+
+export const updateCompanyProfileBrandStrategy = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    primaryGoal?: string;
+    audienceFocus?: string;
+    contentPersona?: string;
+    coreTones?: string;
+    postLength?: string;
+    emojiUsage?: string;
+    addHashtags?: boolean;
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Company profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      ...updates
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating company profile brand strategy:', error);
+    throw error;
+  }
+};
+
+export const updateCompanyProfileContentGuidelines = async (
+  clientId: string,
+  profileId: string,
+  updates: {
+    hookGuidelines?: string;
+    hotTakes?: string;
+    sampleCTA?: string;
+    topicsToAvoid?: string[];
+    favPosts?: string[];
+  }
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Company profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      ...updates
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating company profile content guidelines:', error);
+    throw error;
+  }
+};
+
+export const updateCompanyProfileCustomInstructions = async (
+  clientId: string,
+  profileId: string,
+  customInstructions: string
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Company profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      customInstructions: customInstructions
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating company profile custom instructions:', error);
+    throw error;
+  }
+};
+
+export const updateCompanyProfileLanguage = async (
+  clientId: string,
+  profileId: string,
+  contentLanguage: string
+) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+
+    // Get current profile data
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) throw new Error('Company profile not found');
+    const currentData = snap.data();
+
+    // Update the contentProfile object
+    const updatedContentProfile = {
+      ...currentData.contentProfile,
+      contentLanguage: contentLanguage
+    };
+
+    await setDoc(profileRef, {
+      contentProfile: updatedContentProfile
+    }, { merge: true });
+
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error updating company profile language:', error);
+    throw error;
+  }
+};
+
+export const deleteCompanyProfile = async (clientId: string, profileId: string) => {
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      'agency1',
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+    await deleteDoc(profileRef);
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error deleting company profile:', error);
+    throw error;
+  }
 };

@@ -14,7 +14,15 @@ import { Switch } from '@/components/ui/switch'; // Add this import
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { getPersonProfile } from '@/context/ProfilesContext';
+import {
+  getPersonProfile,
+  updatePersonProfileInfo,
+  updatePersonProfileStrategy,
+  updatePersonProfileVoice,
+  updatePersonProfileGuidelines,
+  updatePersonProfileCustomInstructions,
+  deletePersonProfile
+} from '@/context/ProfilesContext';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 
 // Use types directly from ProfilesContext
@@ -200,20 +208,200 @@ const ProfileDetailsPerson: React.FC = () => {
     setEditingSection(section);
   };
 
-  const handleSectionSave = (section: string) => {
-    // In real app, this would make API call to save data
-    setEditingSection(null);
+  const handleSectionSave = async (section: string) => {
+    if (!clientId || !profileId) return;
+
+    try {
+      switch (section) {
+        case 'profileInfo':
+          await updatePersonProfileInfo(clientId, profileId, {
+            profileName: profileInfoData.fullName,
+            role: profileInfoData.currentRole,
+            joinedDate: profileInfoData.joinedDate,
+            location: profileInfoData.operatingLocation,
+            contactEmail: profileInfoData.contactEmail,
+            status: profileInfoData.status,
+          });
+
+          // Also update custom instructions
+          await updatePersonProfileCustomInstructions(
+            clientId,
+            profileId,
+            profileInfoData.customInstructions
+          );
+
+          // Update local profile state
+          if (profile) {
+            setProfile({
+              ...profile,
+              profileName: profileInfoData.fullName,
+              role: profileInfoData.currentRole,
+              joinedDate: profileInfoData.joinedDate,
+              location: profileInfoData.operatingLocation,
+              contactEmail: profileInfoData.contactEmail,
+              status: profileInfoData.status,
+              contentProfile: {
+                ...profile.contentProfile,
+                customInstructions: profileInfoData.customInstructions,
+              }
+            });
+          }
+          break;
+
+        case 'strategy':
+          await updatePersonProfileStrategy(clientId, profileId, {
+            primaryGoal: strategyData.primaryGoal,
+            audienceFocus: strategyData.audienceFocus,
+            expertise: strategyData.expertise,
+          });
+
+          // Update local profile state
+          if (profile) {
+            setProfile({
+              ...profile,
+              contentProfile: {
+                ...profile.contentProfile,
+                primaryGoal: strategyData.primaryGoal,
+                audienceFocus: strategyData.audienceFocus,
+                expertise: strategyData.expertise,
+              }
+            });
+          }
+          break;
+
+        case 'voice':
+          const postLengthLabels = ['Super Short (50–90 words)', 'Short (80–130 words)', 'Medium (130–280 words)', 'Long (280–450 words)'];
+          const emojiUsageLabels = ['Professional ⚫️', 'Sparingly 👍', 'Moderately 😊', 'Frequently ✨'];
+
+          await updatePersonProfileVoice(clientId, profileId, {
+            contentPersona: voiceData.personalBrandPersona,
+            coreTones: voiceData.coreTone,
+            postLength: postLengthLabels[voiceData.postLengthValue],
+            emojiUsage: emojiUsageLabels[voiceData.emojiUsageValue],
+            addHashtags: voiceData.addHashtags,
+          });
+
+          // Update local profile state
+          if (profile) {
+            setProfile({
+              ...profile,
+              contentProfile: {
+                ...profile.contentProfile,
+                contentPersona: voiceData.personalBrandPersona,
+                coreTones: voiceData.coreTone,
+                postLength: postLengthLabels[voiceData.postLengthValue],
+                emojiUsage: emojiUsageLabels[voiceData.emojiUsageValue],
+                addHashtags: voiceData.addHashtags,
+              }
+            });
+          }
+          break;
+
+        case 'guidelines':
+          await updatePersonProfileGuidelines(clientId, profileId, {
+            hotTakes: guidelinesData.uniquePOV,
+            personalStories: guidelinesData.personalStories,
+            hookGuidelines: guidelinesData.hookGuidelines,
+            sampleCTA: guidelinesData.sampleCTA,
+            topicsToAvoid: guidelinesData.topicsToAvoid,
+            favPosts: guidelinesData.favPosts,
+          });
+
+          // Update local profile state
+          if (profile) {
+            setProfile({
+              ...profile,
+              contentProfile: {
+                ...profile.contentProfile,
+                hotTakes: guidelinesData.uniquePOV,
+                personalStories: guidelinesData.personalStories,
+                hookGuidelines: guidelinesData.hookGuidelines,
+                sampleCTA: guidelinesData.sampleCTA,
+                topicsToAvoid: guidelinesData.topicsToAvoid,
+                favPosts: guidelinesData.favPosts,
+              }
+            });
+          }
+          break;
+      }
+
+      setEditingSection(null);
+      // You could add a toast notification here to show success
+      console.log(`Successfully updated ${section} section`);
+    } catch (error) {
+      console.error(`Error updating ${section} section:`, error);
+      // You could add error handling/toast notification here
+      alert(`Failed to update ${section}. Please try again.`);
+    }
   };
 
   const handleSectionCancel = (section: string) => {
-    // In real app, this would reset form data to original values
+    if (!profile) return;
+
+    // Reset form data to original values
+    switch (section) {
+      case 'profileInfo':
+        setProfileInfoData({
+          fullName: profile.profileName,
+          currentRole: profile.role,
+          joinedDate: formatDateForInput(profile.joinedDate),
+          operatingLocation: profile.location,
+          linkedinUrl: `https://linkedin.com/in/${profile.linkedin.linkedinName}`,
+          language: profile.contentProfile.contentLanguage,
+          customInstructions: profile.contentProfile.customInstructions,
+          contactEmail: profile.contactEmail,
+          onboardingLink: profile.onboardingLink,
+          status: profile.status,
+          profileType: profile.profileType,
+          createdAt: profile.createdAt,
+          clientId: profile.clientId,
+        });
+        break;
+
+      case 'strategy':
+        setStrategyData({
+          primaryGoal: profile.contentProfile.primaryGoal,
+          audienceFocus: profile.contentProfile.audienceFocus,
+          expertise: profile.contentProfile.expertise || '',
+        });
+        break;
+
+      case 'voice':
+        setVoiceData({
+          personalBrandPersona: profile.contentProfile.contentPersona,
+          coreTone: profile.contentProfile.coreTones,
+          postLengthValue: getPostLengthValue(profile.contentProfile.postLength),
+          emojiUsageValue: getEmojiUsageValue(profile.contentProfile.emojiUsage),
+          addHashtags: profile.contentProfile.addHashtags,
+        });
+        break;
+
+      case 'guidelines':
+        setGuidelinesData({
+          uniquePOV: profile.contentProfile.hotTakes,
+          personalStories: profile.contentProfile.personalStories || '',
+          hookGuidelines: profile.contentProfile.hookGuidelines,
+          sampleCTA: profile.contentProfile.sampleCTA,
+          topicsToAvoid: profile.contentProfile.topicsToAvoid,
+          favPosts: profile.contentProfile.favPosts,
+        });
+        break;
+    }
+
     setEditingSection(null);
   };
 
-  const handleDeleteProfile = () => {
-    // In real app, this would make API call to delete profile
-    console.log('Profile deleted');
-    navigate(`/clients/${clientId}/settings`);
+  const handleDeleteProfile = async () => {
+    if (!clientId || !profileId) return;
+
+    try {
+      await deletePersonProfile(clientId, profileId);
+      console.log('Profile deleted successfully');
+      navigate(`/clients/${clientId}/settings`);
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      alert('Failed to delete profile. Please try again.');
+    }
   };
 
   const handleAddTopicToAvoid = () => {
