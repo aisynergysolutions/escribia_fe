@@ -1,11 +1,12 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from './button';
 import { Card } from './card';
-import { mockIdeas, mockClients } from '../../types';
+import { mockClients } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useScheduledPosts } from '../../hooks/useScheduledPosts';
 import DayPostsModal from './DayPostsModal';
 
 interface PostCalendarProps {
@@ -32,20 +33,17 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   // Use external month if provided, otherwise use internal state
   const currentMonth = externalCurrentMonth || internalCurrentMonth;
 
-  // Memoize scheduled posts for better performance
-  const scheduledPosts = useMemo(() => {
-    let filteredIdeas = mockIdeas.filter(idea => 
-      idea.scheduledPostAt && 
-      idea.status === 'Scheduled'
-    );
+  // Fetch scheduled posts
+  const { scheduledPosts, loading, refetch } = useScheduledPosts(
+    showAllClients ? undefined : clientId
+  );
 
-    // If not showing all clients, filter by current client
+  // Refetch when clientId changes
+  useEffect(() => {
     if (!showAllClients && clientId) {
-      filteredIdeas = filteredIdeas.filter(idea => idea.clientId === clientId);
+      refetch();
     }
-
-    return filteredIdeas;
-  }, [showAllClients, clientId]);
+  }, [clientId, refetch, showAllClients]);
 
   // Memoize month calculations
   const monthData = useMemo(() => {

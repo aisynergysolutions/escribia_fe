@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import PostCalendar from '../ui/PostCalendar';
 import ClientQueueView from '../ui/ClientQueueView';
 import { mockClients } from '../../types';
@@ -11,6 +11,12 @@ interface CalendarSectionProps {
 
 const CalendarSection: React.FC<CalendarSectionProps> = ({ clientId }) => {
   const client = mockClients.find(c => c.id === clientId);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Function to trigger calendar refresh when posts are scheduled
+  const handlePostScheduled = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -23,11 +29,11 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ clientId }) => {
         </div>
         
         <TabsContent value="calendar" className="mt-0">
-          <PostCalendar clientName={client?.clientName} />
+          <PostCalendar key={refreshKey} clientName={client?.clientName} />
         </TabsContent>
         
         <TabsContent value="queue" className="mt-0">
-          <ClientQueueView clientId={clientId} />
+          <ClientQueueView clientId={clientId} onPostScheduled={handlePostScheduled} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useEvents } from '../context/EventsContext';
-import { mockIdeas, mockClients } from '../types';
+import { useScheduledPosts } from './useScheduledPosts';
+import { mockClients } from '../types';
 
 interface QueueSlot {
   id: string;
@@ -26,7 +27,8 @@ interface EmptySlot {
 export type DaySlot = QueueSlot | EmptySlot;
 
 export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
-  const { timeslotData, loadingTimeslotData, fetchTimeslotData, updateTimeslots } = useEvents(); // Include updateTimeslots
+  const { timeslotData, loadingTimeslotData, fetchTimeslotData, updateTimeslots } = useEvents();
+  const { scheduledPosts, refetch: refetchScheduledPosts } = useScheduledPosts(clientId);
   const [refreshKey, setRefreshKey] = useState(0);
   const [weeksToShow, setWeeksToShow] = useState(3);
 
@@ -40,33 +42,25 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const isInitialized = timeslotData?.isInitialized || false;
   const hasTimeslotsConfigured = isInitialized && predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
 
-  // Get scheduled posts for this client
+  // Get scheduled posts for this client (from Firestore via useScheduledPosts)
   const queueSlots = useMemo(() => {
-    const scheduledPosts = mockIdeas.filter(idea => 
-      idea.scheduledPostAt && 
-      idea.status === 'Scheduled' &&
-      idea.clientId === clientId
-    );
-
     const client = mockClients.find(c => c.id === clientId);
 
     return scheduledPosts.map(post => ({
       id: post.id,
-      datetime: new Date(post.scheduledPostAt!.seconds * 1000),
+      datetime: new Date(post.scheduledPostAt.seconds * 1000),
       title: post.title,
-      preview: post.currentDraftText ? 
-        (post.currentDraftText.length > 60 ? 
-          post.currentDraftText.substring(0, 60) + '...' : 
-          post.currentDraftText) : 
-        'No content',
+      preview: post.title.length > 60 ? 
+        post.title.substring(0, 60) + '...' : 
+        post.title,
       status: post.status,
       clientId: post.clientId,
       clientName: client?.clientName || 'Unknown Client',
       clientAvatar: client?.profileImage,
-      authorName: 'Sarah Johnson', // Mock author data
+      authorName: post.profile || 'Unknown Profile', // Use the actual profile name from Firestore
       authorAvatar: undefined // Will use fallback
     })).sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
-  }, [clientId, refreshKey]);
+  }, [scheduledPosts, clientId, refreshKey]);
 
   // Group slots by day with empty placeholders
   const dayGroups = useMemo(() => {
@@ -96,38 +90,55 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
 
     const groups: { [key: string]: DaySlot[] } = {};
 
-    scheduledDates.sort().forEach(dateStr => {
+    scheduledDates.sort().forEach((dateStr: string) => {
       const date = new Date(dateStr);
       const dayName = format(date, 'EEEE');
-      
-      // Only include days that are in activeDays
-      if (!activeDays.includes(dayName)) return;
       
       const slotsForDay = queueSlots.filter(slot => 
         format(slot.datetime, 'yyyy-MM-dd') === dateStr
       );
 
+      // Always include days that have scheduled posts, even if not in activeDays
+      const hasScheduledPosts = slotsForDay.length > 0;
+      const isActiveDay = activeDays.includes(dayName);
+      
+      // Skip this day only if it has no scheduled posts AND is not an active day
+      if (!hasScheduledPosts && !isActiveDay) return;
+
       groups[dateStr] = [];
 
-      predefinedTimeSlots.forEach(timeSlot => {
-        const existingSlot = slotsForDay.find(slot => 
-          format(slot.datetime, 'HH:mm') === timeSlot
-        );
+      // First, add all scheduled posts for this day (including custom times)
+      const addedTimes = new Set<string>();
+      
+      slotsForDay.forEach(slot => {
+        groups[dateStr].push(slot);
+        addedTimes.add(format(slot.datetime, 'HH:mm'));
+      });
 
-        if (existingSlot) {
-          groups[dateStr].push(existingSlot);
-        } else if (!hideEmptySlots) {
-          const slotDateTime = new Date(date);
-          const [hours, minutes] = timeSlot.split(':').map(Number);
-          slotDateTime.setHours(hours, minutes, 0, 0);
-          
-          groups[dateStr].push({
-            isEmpty: true,
-            datetime: slotDateTime,
-            time: timeSlot,
-            id: `empty-${dateStr}-${timeSlot}`
-          });
-        }
+      // Then, add empty slots for predefined timeslots that don't have posts
+      // But only for active days (don't add empty slots to non-active days)
+      if (!hideEmptySlots && isActiveDay) {
+        predefinedTimeSlots.forEach(timeSlot => {
+          if (!addedTimes.has(timeSlot)) {
+            const slotDateTime = new Date(date);
+            const [hours, minutes] = timeSlot.split(':').map(Number);
+            slotDateTime.setHours(hours, minutes, 0, 0);
+            
+            groups[dateStr].push({
+              isEmpty: true,
+              datetime: slotDateTime,
+              time: timeSlot,
+              id: `empty-${dateStr}-${timeSlot}`
+            });
+          }
+        });
+      }
+
+      // Sort slots by time
+      groups[dateStr].sort((a, b) => {
+        const timeA = 'isEmpty' in a ? a.datetime.getTime() : a.datetime.getTime();
+        const timeB = 'isEmpty' in b ? b.datetime.getTime() : b.datetime.getTime();
+        return timeA - timeB;
       });
     });
 
@@ -136,6 +147,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
 
   const refreshQueue = () => {
     setRefreshKey(prev => prev + 1);
+    refetchScheduledPosts(); // Also refresh scheduled posts from Firestore
   };
 
   const loadMoreDays = () => {

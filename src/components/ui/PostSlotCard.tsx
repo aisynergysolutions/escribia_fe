@@ -5,11 +5,11 @@ import { MoreVertical } from 'lucide-react';
 import { Button } from './button';
 import { Badge } from './badge';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from './dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
@@ -58,9 +58,8 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
       onDragOver={(e) => onDragOver(e, slot.id)}
       onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(e, slot)}
-      className={`flex items-center gap-4 px-0 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${
-        isDragging ? 'opacity-50' : ''
-      }`}
+      className={`flex items-center gap-4 px-0 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${isDragging ? 'opacity-50' : ''
+        }`}
     >
       <div className="flex flex-col items-center gap-2 min-w-[80px]">
         <Avatar className="h-8 w-8">
@@ -76,9 +75,9 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
           {format(slot.datetime, 'HH:mm')}
         </div>
       </div>
-      
+
       <div className="flex-1 min-w-0">
-        <h4 
+        <h4
           className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:underline transition-all"
           onClick={() => onPostClick(slot.id)}
         >
@@ -88,20 +87,20 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
           {slot.preview}
         </p>
       </div>
-      
+
       <Badge variant="secondary" className="flex-shrink-0">
         {slot.status}
       </Badge>
-      
+
       <div className="flex-shrink-0">
         <DropdownMenu>
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600"
+                  className="h-8 w-8 mr-2 text-gray-400 hover:text-gray-600"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>

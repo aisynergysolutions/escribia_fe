@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ReschedulePostModal from './ReschedulePostModal';
 import TimeslotDefinitionModal from './TimeslotDefinitionModal';
+import SchedulePostModal from './SchedulePostModal';
 import QueueHeader from './QueueHeader';
 import EmptySlotCard from './EmptySlotCard';
 import DayCard from './DayCard';
@@ -15,14 +16,17 @@ import { useQueueOperations } from '../../hooks/useQueueOperations';
 
 interface ClientQueueViewProps {
   clientId: string;
+  onPostScheduled?: () => void;
 }
 
-const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
+const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostScheduled }) => {
   const navigate = useNavigate();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [timeslotModalOpen, setTimeslotModalOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<any>(null);
   const [newScheduleDate, setNewScheduleDate] = useState<Date | null>(null);
+  const [selectedScheduleTime, setSelectedScheduleTime] = useState<string>('');
   const [hideEmptySlots, setHideEmptySlots] = useState(false);
 
   const {
@@ -38,7 +42,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     isInitialized
   } = useQueueData(clientId, hideEmptySlots);
 
-  const { handleRemoveFromQueue, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
+  const { handleRemoveFromQueue, handleEditSlot, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
 
   // Show timeslot modal automatically if no timeslots are configured
   // Only trigger after loading is complete AND data has been initialized
@@ -66,7 +70,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
     navigate(`/clients/${clientId}/posts/${postId}`);
   };
 
-  const handleEditSlot = (slotId: string) => {
+  const handleEditSlotModal = (slotId: string) => {
     const slot = queueSlots.find(s => s.id === slotId);
     if (slot) {
       setSelectedPostForReschedule(slot);
@@ -76,12 +80,26 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
   };
 
   const handleSchedulePost = (date: Date, time: string) => {
-    console.log('Create new post for:', date, 'at', time);
-    navigate(`/clients/${clientId}/posts/new?new=true`);
+    setNewScheduleDate(date);
+    setSelectedScheduleTime(time);
+    setScheduleModalOpen(true);
+  };
+
+  const handleScheduleSuccess = () => {
+    refreshQueue();
+    onPostScheduled?.(); // Notify parent component about the scheduling
+  };
+
+  const handleCloseScheduleModal = () => {
+    setScheduleModalOpen(false);
+    setNewScheduleDate(null);
+    setSelectedScheduleTime('');
   };
 
   const handleRescheduleFromModal = (newDateTime: Date, time: string) => {
-    handleReschedule(selectedPostForReschedule, newDateTime);
+    if (selectedPostForReschedule) {
+      handleEditSlot(selectedPostForReschedule.id, clientId, newDateTime, time);
+    }
   };
 
   const handleCloseRescheduleModal = () => {
@@ -208,8 +226,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
                         slot={queueSlot}
                         isDragging={isDragging}
                         onPostClick={handlePostClick}
-                        onEditSlot={handleEditSlot}
-                        onRemoveFromQueue={handleRemoveFromQueue}
+                        onEditSlot={handleEditSlotModal}
+                        onRemoveFromQueue={(slotId) => handleRemoveFromQueue(slotId, clientId)}
                         onMoveToTop={(slotId) => handleMoveToTop(slotId, queueSlots)}
                         onDragStart={handleDragStart}
                         onDragOver={handleDragOver}
@@ -243,6 +261,15 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId }) => {
         onReschedule={handleRescheduleFromModal}
         selectedDate={newScheduleDate}
         postTitle={selectedPostForReschedule?.title || ''}
+      />
+
+      <SchedulePostModal
+        isOpen={scheduleModalOpen}
+        onClose={handleCloseScheduleModal}
+        selectedDate={newScheduleDate || new Date()}
+        selectedTime={selectedScheduleTime}
+        clientId={clientId}
+        onScheduleSuccess={handleScheduleSuccess}
       />
 
       <TimeslotDefinitionModal
