@@ -17,8 +17,8 @@ interface PostCalendarProps {
   currentMonth?: Date;
 }
 
-const PostCalendar: React.FC<PostCalendarProps> = React.memo(({ 
-  showAllClients = false, 
+const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
+  showAllClients = false,
   clientName,
   hideTitle = false,
   onMonthChange,
@@ -50,13 +50,13 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
     const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    
+
     return { monthStart, monthEnd, monthDays };
   }, [currentMonth]);
 
   const getPostsForDay = useCallback((day: Date) => {
-    return scheduledPosts.filter(post => 
-      post.scheduledPostAt && 
+    return scheduledPosts.filter(post =>
+      post.scheduledPostAt &&
       isSameDay(new Date(post.scheduledPostAt.seconds * 1000), day)
     );
   }, [scheduledPosts]);
@@ -110,17 +110,15 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
       return (
         <div
           key={day.toISOString()}
-          className={`min-h-[80px] p-1 border rounded-sm cursor-pointer hover:bg-gray-50 ${
-            isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-          } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+          className={`min-h-[80px] p-1 border rounded-sm cursor-pointer hover:bg-gray-50 ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+            } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
           onClick={() => handleDayClick(day)}
         >
-          <div className={`text-sm mb-1 ${
-            isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-          } ${isToday ? 'font-bold' : ''}`}>
+          <div className={`text-sm mb-1 ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+            } ${isToday ? 'font-bold' : ''}`}>
             {format(day, 'd')}
           </div>
-          
+
           <div className="space-y-1">
             {postsForDay.length > 0 && (
               <div>

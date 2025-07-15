@@ -27,11 +27,11 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ clientId }) => {
             <TabsTrigger value="queue">Queue</TabsTrigger>
           </TabsList>
         </div>
-        
+
         <TabsContent value="calendar" className="mt-0">
           <PostCalendar key={refreshKey} clientName={client?.clientName} />
         </TabsContent>
-        
+
         <TabsContent value="queue" className="mt-0">
           <ClientQueueView clientId={clientId} onPostScheduled={handlePostScheduled} />
         </TabsContent>
