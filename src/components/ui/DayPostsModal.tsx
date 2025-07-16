@@ -49,8 +49,8 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
       id: post.id,
       datetime: new Date(post.scheduledPostAt!.seconds * 1000),
       title: post.title,
-      preview: post.title.length > 60 ? 
-        post.title.substring(0, 60) + '...' : 
+      preview: post.title.length > 60 ?
+        post.title.substring(0, 60) + '...' :
         post.title,
       status: post.status,
       clientId: post.clientId,
@@ -66,11 +66,11 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
   };
 
   // Dummy handlers for drag and drop (not used in this modal)
-  const handleDragStart = () => {};
-  const handleDragOver = () => {};
-  const handleDragEnd = () => {};
-  const handleDrop = () => {};
-  const handleMoveToTop = () => {};
+  const handleDragStart = () => { };
+  const handleDragOver = () => { };
+  const handleDragEnd = () => { };
+  const handleDrop = () => { };
+  const handleMoveToTop = () => { };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -85,7 +85,7 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
             </Button>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-3 max-h-96 overflow-y-auto">
           <TooltipProvider>
             {transformedSlots.map((slot) => (
@@ -105,7 +105,7 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
             ))}
           </TooltipProvider>
         </div>
-        
+
         {transformedSlots.length === 0 && (
           <div className="text-center text-muted-foreground py-8">
             No posts scheduled for this day
@@ -113,7 +113,7 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
         )}
 
         <div className="border-t pt-4">
-          <Button 
+          <Button
             onClick={handleSchedulePost}
             className="w-full"
             variant="outline"

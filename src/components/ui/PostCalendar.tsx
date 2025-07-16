@@ -125,7 +125,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
     // When a post is scheduled, we need to refetch to get the updated data from Firestore
     refetch();
     onPostScheduled?.(); // Notify parent component
-    
+
     // Close the schedule modal and optionally reopen the day posts modal
     setIsScheduleModalOpen(false);
     if (selectedDate) {
