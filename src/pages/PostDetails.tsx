@@ -9,9 +9,11 @@ import OptionsCard from '@/components/idea/OptionsCard';
 import HooksSection from '@/components/idea/HooksSection';
 import { usePostEditor } from '../hooks/usePostEditor';
 import { usePostDetails } from '@/context/PostDetailsContext';
+import { usePosts } from '@/context/PostsContext';
 
 const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
+  const navigate = useNavigate();
 
   // Use the context - add the new functions
   const {
@@ -26,6 +28,9 @@ const PostDetails = () => {
     updateInitialIdea,
     regeneratePostFromIdea
   } = usePostDetails();
+
+  // Add PostsContext for delete functionality
+  const { deletePost } = usePosts();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -44,6 +49,7 @@ const PostDetails = () => {
   const [hasPoll, setHasPoll] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
   const [isRegeneratingPost, setIsRegeneratingPost] = useState(false); // Add loading state
+  const [isDeleting, setIsDeleting] = useState(false); // Add delete loading state
 
   // Ref to access PostEditor methods
   const postEditorRef = useRef<PostEditorRef>(null);
@@ -293,6 +299,31 @@ const PostDetails = () => {
     console.log('Adding post to queue...');
   }
 
+  const handleDeletePost = async () => {
+    if (!clientId || !postId) return;
+
+    // Show confirmation dialog
+    const confirmed = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+
+      // Delete the post using the context function
+      await deletePost('agency1', clientId, postId);
+
+      // Navigate back to posts list
+      navigate(`/clients/${clientId}/posts`);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      // You might want to show an error toast notification here
+      alert('Failed to delete post. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <IdeaHeader
@@ -334,6 +365,9 @@ const PostDetails = () => {
             postId={postId}
             subClientId={post?.profile.profileId}
             onSaveAI={handleSaveAIPost}
+            postStatus={post?.status}
+            scheduledPostAt={post?.scheduledPostAt}
+            postedAt={post?.postedAt}
           />
         </div>
 
@@ -391,6 +425,24 @@ const PostDetails = () => {
             </>
           )}
         </div>
+      </div>
+
+      {/* Delete Post Button */}
+      <div className="flex justify-center pt-8 border-t border-gray-200">
+        <button
+          onClick={handleDeletePost}
+          disabled={isDeleting}
+          className="px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+        >
+          {isDeleting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Deleting...
+            </>
+          ) : (
+            'Delete Post'
+          )}
+        </button>
       </div>
     </div>
   );

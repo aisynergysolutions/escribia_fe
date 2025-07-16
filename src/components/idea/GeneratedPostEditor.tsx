@@ -51,6 +51,10 @@ interface GeneratedPostEditorProps {
   subClientId?: string;
   // Add prop for saving AI-generated content
   onSaveAI?: (text: string) => Promise<void>;
+  // Add scheduling props
+  postStatus?: string;
+  scheduledPostAt?: import('firebase/firestore').Timestamp;
+  postedAt?: import('firebase/firestore').Timestamp;
 }
 
 export interface GeneratedPostEditorRef {
@@ -77,7 +81,10 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   clientId,
   postId,
   subClientId,
-  onSaveAI
+  onSaveAI,
+  postStatus,
+  scheduledPostAt,
+  postedAt
 }, ref) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -878,6 +885,9 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           hasPoll={!!pollData}
           hasMedia={hasMedia}
           onAddMedia={handleOpenMediaModal}
+          postStatus={postStatus}
+          scheduledPostAt={scheduledPostAt}
+          postedAt={postedAt}
         />
 
         <div className="pb-4 bg-gray-50">

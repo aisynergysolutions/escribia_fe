@@ -38,6 +38,8 @@ export type PostDetails = {
     trainAI: boolean;
     updatedAt: Timestamp;
     createdAt: Timestamp;
+    scheduledPostAt?: Timestamp;
+    postedAt?: Timestamp;
     initialIdea: InitialIdea;
     profile: Profile;
     generatedHooks: Hook[];
@@ -148,6 +150,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 trainAI: data.trainAI,
                 updatedAt: data.updatedAt,
                 createdAt: data.createdAt,
+                scheduledPostAt: data.scheduledPostAt,
+                postedAt: data.postedAt,
                 initialIdea: {
                     objective: data.objective,
                     initialIdeaPrompt: data.initialIdeaPrompt,

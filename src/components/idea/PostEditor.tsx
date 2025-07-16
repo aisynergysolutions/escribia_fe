@@ -34,6 +34,10 @@ interface PostEditorProps {
   subClientId?: string;
   // Add prop for AI saves
   onSaveAI?: (text: string) => Promise<void>;
+  // Add scheduling props
+  postStatus?: string;
+  scheduledPostAt?: import('firebase/firestore').Timestamp;
+  postedAt?: import('firebase/firestore').Timestamp;
 }
 
 const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
@@ -50,6 +54,9 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
   postId,
   subClientId,
   onSaveAI,
+  postStatus,
+  scheduledPostAt,
+  postedAt,
 }, ref) => {
   const generatedPostEditorRef = React.useRef<any>(null);
 
@@ -84,6 +91,9 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
       postId={postId}
       subClientId={subClientId}
       onSaveAI={onSaveAI}
+      postStatus={postStatus}
+      scheduledPostAt={scheduledPostAt}
+      postedAt={postedAt}
     />
   );
 });
