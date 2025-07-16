@@ -207,6 +207,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       measuringDiv.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       measuringDiv.style.padding = '0';
       measuringDiv.style.margin = '0';
+      measuringDiv.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
       document.body.appendChild(measuringDiv);
 
       // Calculate how much text fits in exactly 3 lines
@@ -427,7 +428,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                     <div className="relative">
                       <div
                         ref={contentRef}
-                        className="text-sm leading-relaxed text-gray-900 mb-4"
+                        className="text-sm leading-relaxed text-gray-900 mb-4 whitespace-pre-wrap"
                         style={{
                           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                           fontSize: '14px',
@@ -436,7 +437,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                       >
                         {isExpanded ? (
                           <div>
-                            <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                            <span dangerouslySetInnerHTML={{ __html: postContent.replace(/\n/g, '<br>') }} />
                             {shouldShowMore && (
                               <span>
                                 {' '}
@@ -462,7 +463,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                                 </button>
                               </span>
                             ) : (
-                              <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                              <span dangerouslySetInnerHTML={{ __html: postContent.replace(/\n/g, '<br>') }} />
                             )}
                           </div>
                         )}

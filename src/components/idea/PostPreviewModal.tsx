@@ -43,6 +43,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
       measuringDiv.style.fontSize = '14px';
       measuringDiv.style.lineHeight = '1.5';
       measuringDiv.style.fontFamily = window.getComputedStyle(contentRef.current).fontFamily;
+      measuringDiv.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
       document.body.appendChild(measuringDiv);
       
       // Calculate how much text fits in 3 lines
@@ -295,11 +296,11 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                 <div className="relative">
                   <div 
                     ref={contentRef}
-                    className={`text-sm leading-relaxed mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
+                    className={`text-sm leading-relaxed mb-4 whitespace-pre-wrap ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
                   >
                     {isExpanded ? (
                       <div>
-                        <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                        <span dangerouslySetInnerHTML={{ __html: postContent.replace(/\n/g, '<br>') }} />
                         {shouldShowMore && (
                           <span>
                             {' '}
@@ -329,7 +330,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                             </button>
                           </span>
                         ) : (
-                          <span dangerouslySetInnerHTML={{ __html: postContent }} />
+                          <span dangerouslySetInnerHTML={{ __html: postContent.replace(/\n/g, '<br>') }} />
                         )}
                       </div>
                     )}
