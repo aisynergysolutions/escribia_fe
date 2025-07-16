@@ -430,6 +430,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onOpenChange={setShowScheduleModal}
         postContent={postContent}
         onSchedule={handleScheduleConfirm}
+        clientId={clientId}
+        postId={postId}
       />
 
       <PostNowModal

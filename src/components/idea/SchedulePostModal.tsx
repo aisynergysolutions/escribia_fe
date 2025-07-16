@@ -11,12 +11,18 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { usePostDetails } from '@/context/PostDetailsContext';
 
 interface SchedulePostModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   postContent: string;
   onSchedule: (date: Date, time: string, status: string) => void;
+  clientId?: string;
+  postId?: string;
 }
 
 const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
@@ -47,7 +53,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   open,
   onOpenChange,
   postContent,
-  onSchedule
+  onSchedule,
+  clientId,
+  postId
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedHour, setSelectedHour] = useState<number>(9);
@@ -61,13 +69,16 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const [isEditingMinute, setIsEditingMinute] = useState(false);
   const [hourInput, setHourInput] = useState('09');
   const [minuteInput, setMinuteInput] = useState('00');
+  const [isScheduling, setIsScheduling] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const hourInputRef = useRef<HTMLInputElement>(null);
   const minuteInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const { post, updatePostScheduling } = usePostDetails();
 
   // Generate hours array (00-23)
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-  
+
   // Generate minutes array (00, 15, 30, 45)
   const minutes = ['00', '15', '30', '45'];
 
@@ -77,7 +88,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = postContent;
       const plainText = tempDiv.textContent || tempDiv.innerText || '';
-      
+
       // Create a temporary element to measure text
       const measuringDiv = document.createElement('div');
       measuringDiv.style.visibility = 'hidden';
@@ -89,21 +100,21 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       measuringDiv.style.padding = '0';
       measuringDiv.style.margin = '0';
       document.body.appendChild(measuringDiv);
-      
+
       // Calculate how much text fits in exactly 3 lines
       const lineHeight = 21; // 14px * 1.5 line-height
       const maxHeight = lineHeight * 3;
-      
+
       // Binary search to find the optimal truncation point
       let start = 0;
       let end = plainText.length;
       let bestFit = 0;
-      
+
       while (start <= end) {
         const mid = Math.floor((start + end) / 2);
         const testText = plainText.substring(0, mid);
         measuringDiv.textContent = testText;
-        
+
         if (measuringDiv.offsetHeight <= maxHeight) {
           bestFit = mid;
           start = mid + 1;
@@ -111,9 +122,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           end = mid - 1;
         }
       }
-      
+
       document.body.removeChild(measuringDiv);
-      
+
       // Check if we need truncation
       if (bestFit < plainText.length && bestFit > 0) {
         setShouldShowMore(true);
@@ -142,8 +153,21 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     setMinuteInput(selectedMinute.toString().padStart(2, '0'));
   }, [selectedMinute]);
 
-  const handleSchedule = () => {
-    if (selectedDate) {
+  const handleSchedule = async () => {
+    if (!selectedDate || !clientId || !postId) {
+      console.error('[SchedulePostModal] Missing required data for scheduling');
+      toast({
+        title: "Missing Information",
+        description: "Please select a date and time, and ensure all required data is available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScheduling(true);
+
+    try {
+      // Create the scheduled datetime
       const scheduledDate = new Date(selectedDate);
       let hours = selectedHour;
       if (!isAM && hours !== 12) {
@@ -151,10 +175,83 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       } else if (isAM && hours === 12) {
         hours = 0;
       }
-      scheduledDate.setHours(hours, selectedMinute);
-      const timeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} ${isAM ? 'AM' : 'PM'}`;
-      onSchedule(scheduledDate, timeString, selectedStatus);
+      scheduledDate.setHours(hours, selectedMinute, 0, 0);
+
+      const newYearMonth = format(scheduledDate, 'yyyy-MM');
+      const timeString = `${hours.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+
+      // Prepare the post event data for scheduling
+      const postEventData = {
+        title: post?.title || '',
+        profile: post?.profile?.profileName || '',
+        status: selectedStatus,
+        updatedAt: Timestamp.now(),
+        scheduledPostAt: Timestamp.fromDate(scheduledDate),
+        postId: postId,
+        scheduledDate: scheduledDate.toISOString(),
+        timeSlot: timeString
+      };
+
+      // Save to Firestore in the postEvents collection
+      const postEventRef = doc(
+        db,
+        'agencies', 'agency1',
+        'clients', clientId,
+        'postEvents', newYearMonth
+      );
+
+      // Update the year-month document with the post field
+      await setDoc(postEventRef, {
+        [postId]: postEventData
+      }, { merge: true });
+
+      // Update the post status in the ideas collection
+      const postRef = doc(
+        db,
+        'agencies', 'agency1',
+        'clients', clientId,
+        'ideas', postId
+      );
+
+      await setDoc(postRef, {
+        status: selectedStatus,
+        scheduledPostAt: Timestamp.fromDate(scheduledDate),
+        updatedAt: Timestamp.now()
+      }, { merge: true });
+
+      // Update the PostDetailsContext with the new scheduling info
+      if (updatePostScheduling) {
+        await updatePostScheduling('agency1', clientId, postId, selectedStatus, Timestamp.fromDate(scheduledDate));
+      }
+
+      console.log('[SchedulePostModal] Post successfully scheduled:', {
+        postId,
+        scheduledDate,
+        status: selectedStatus
+      });
+
+      // Show success message
+      toast({
+        title: "Post Scheduled",
+        description: `Post successfully scheduled for ${format(scheduledDate, 'EEEE, MMMM d, yyyy')} at ${formatDisplayTime()}`,
+      });
+
+      // Call the parent callback and close modal
+      const displayTimeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} ${isAM ? 'AM' : 'PM'}`;
+      onSchedule(scheduledDate, displayTimeString, selectedStatus);
       onOpenChange(false);
+
+    } catch (error) {
+      console.error('[SchedulePostModal] Error scheduling post:', error);
+
+      // Show error message
+      toast({
+        title: "Scheduling Failed",
+        description: "There was an error scheduling your post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -239,7 +336,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
             Schedule Post
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Post Preview - Left Column with Independent Scroll */}
           <div className="flex flex-col min-h-0">
@@ -253,7 +350,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       <div>
                         <div className="font-semibold text-gray-900">Your Name</div>
                         <div className="text-sm text-gray-500">
-                          {selectedDate 
+                          {selectedDate
                             ? `Scheduled for ${format(selectedDate, 'MMM d, yyyy')} at ${formatDisplayTime()}`
                             : 'Scheduling...'
                           }
@@ -263,7 +360,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                   </div>
                   <div className="p-4">
                     <div className="relative">
-                      <div 
+                      <div
                         ref={contentRef}
                         className="text-sm leading-relaxed text-gray-900 mb-4"
                         style={{
@@ -305,7 +402,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Separator line at 3rd line position when collapsed */}
                       {!isExpanded && shouldShowMore && (
                         <Separator className="mb-4" />
@@ -320,7 +417,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           {/* Scheduling Interface - Right Column */}
           <div className="flex flex-col min-h-0">
             <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Choose Date & Time</h3>
-            
+
             <div className="flex-1 overflow-y-auto space-y-6">
               {/* Date Selection */}
               <div>
@@ -440,8 +537,8 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant={isAM ? "default" : "outline"}
                       className={cn(
                         "cursor-pointer px-1.5 py-0.5 text-xs",
-                        isAM 
-                          ? "bg-blue-500 hover:bg-blue-600 text-white" 
+                        isAM
+                          ? "bg-blue-500 hover:bg-blue-600 text-white"
                           : "hover:bg-gray-100 text-gray-600"
                       )}
                       onClick={() => setIsAM(true)}
@@ -452,8 +549,8 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       variant={!isAM ? "default" : "outline"}
                       className={cn(
                         "cursor-pointer px-1.5 py-0.5 text-xs",
-                        !isAM 
-                          ? "bg-blue-500 hover:bg-blue-600 text-white" 
+                        !isAM
+                          ? "bg-blue-500 hover:bg-blue-600 text-white"
                           : "hover:bg-gray-100 text-gray-600"
                       )}
                       onClick={() => setIsAM(false)}
@@ -503,13 +600,13 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleSchedule}
-            disabled={!selectedDate}
+            disabled={!selectedDate || isScheduling}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             <Calendar className="w-4 h-4 mr-2" />
-            Schedule Post
+            {isScheduling ? 'Scheduling...' : 'Schedule Post'}
           </Button>
         </div>
       </DialogContent>
