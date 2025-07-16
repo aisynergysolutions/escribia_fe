@@ -12,6 +12,7 @@ import { usePosts, PostCard } from '../../context/PostsContext';
 import { doc, setDoc, collection, getDocs, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Timestamp } from 'firebase/firestore';
+import { usePostDetails } from '../../context/PostDetailsContext';
 
 interface SchedulePostModalProps {
     isOpen: boolean;
@@ -33,6 +34,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     onScheduleSuccess
 }) => {
     const { posts, fetchPosts, loading } = usePosts();
+    const { updatePostScheduling } = usePostDetails();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedPostId, setSelectedPostId] = useState<string>('');
@@ -176,6 +178,15 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                 scheduledPostAt: Timestamp.fromDate(scheduledDateTime),
                 updatedAt: Timestamp.now()
             }, { merge: true });
+
+            // After successfully updating Firestore, update the PostDetailsContext
+            await updatePostScheduling(
+                'agency1',
+                clientId,
+                selectedPost.postId,
+                'Scheduled',
+                Timestamp.fromDate(scheduledDateTime)
+            );
 
             // Call success callback to refresh the queue
             onScheduleSuccess();

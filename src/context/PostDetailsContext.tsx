@@ -63,6 +63,7 @@ type PostDetailsContextType = {
     updateTrainAI: (agencyId: string, clientId: string, postId: string, trainAI: boolean) => Promise<void>;
     updateInitialIdea: (agencyId: string, clientId: string, postId: string, initialIdeaPrompt: string, objective: string) => Promise<void>;
     regeneratePostFromIdea: (agencyId: string, clientId: string, postId: string, subClientId: string, initialIdeaPrompt: string, objective: string) => Promise<string | null>;
+    updatePostScheduling: (agencyId: string, clientId: string, postId: string, newStatus: string, scheduledPostAt: Timestamp) => Promise<void>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -82,6 +83,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     updateTrainAI: async () => { },
     updateInitialIdea: async () => { },
     regeneratePostFromIdea: async () => null,
+    updatePostScheduling: async () => { },
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -646,6 +648,42 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const updatePostScheduling = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        newStatus: string,
+        scheduledPostAt: Timestamp
+    ): Promise<void> => {
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Update Firestore with the new status and scheduled time
+            await updateDoc(postRef, {
+                status: newStatus,
+                scheduledPostAt: scheduledPostAt,
+                updatedAt: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        status: newStatus,
+                        scheduledPostAt: scheduledPostAt,
+                        updatedAt: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            console.log('Post scheduling updated successfully:', { newStatus, scheduledPostAt });
+        } catch (error) {
+            console.error('Error updating post scheduling:', error);
+            throw new Error('Failed to update post scheduling');
+        }
+    }, []);
+
     return (
         <PostDetailsContext.Provider value={{
             post,
@@ -663,7 +701,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             updateInternalNotes,
             updateTrainAI,
             updateInitialIdea,
-            regeneratePostFromIdea
+            regeneratePostFromIdea,
+            updatePostScheduling
         }}>
             {children}
         </PostDetailsContext.Provider>

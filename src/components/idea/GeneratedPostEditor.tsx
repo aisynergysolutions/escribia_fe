@@ -889,6 +889,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           scheduledPostAt={scheduledPostAt}
           postedAt={postedAt}
           clientId={clientId}
+          postId={postId}
         />
 
         <div className="pb-4 bg-gray-50">

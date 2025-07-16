@@ -39,6 +39,7 @@ interface EditorToolbarProps {
   postedAt?: import('firebase/firestore').Timestamp;
   // Add clientId for queue logic
   clientId?: string;
+  postId?: string;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -66,7 +67,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   postStatus,
   scheduledPostAt,
   postedAt,
-  clientId
+  clientId,
+  postId
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
@@ -420,6 +422,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onAddToQueue={handleAddToQueueConfirm}
         onOpenScheduleModal={handleOpenScheduleModal}
         clientId={clientId}
+        postId={postId}
       />
 
       <SchedulePostModal

@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { format, addMonths, addDays, isSameDay, startOfDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { usePostDetails } from '@/context/PostDetailsContext';
 
 interface AddToQueueModalProps {
   open: boolean;
@@ -19,6 +21,7 @@ interface AddToQueueModalProps {
   onAddToQueue: (selectedTime: string, status: string) => void;
   onOpenScheduleModal: () => void;
   clientId?: string;
+  postId?: string;
 }
 
 const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
@@ -51,7 +54,8 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   postContent,
   onAddToQueue,
   onOpenScheduleModal,
-  clientId
+  clientId,
+  postId
 }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
@@ -61,8 +65,11 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   const [suggestedSlots, setSuggestedSlots] = useState<QueueSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [hasTimeslotConfig, setHasTimeslotConfig] = useState(true);
+  const [isScheduling, setIsScheduling] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { post, updatePostScheduling } = usePostDetails();
 
   // Types for queue slot data
   type QueueSlot = {
@@ -268,10 +275,107 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
     fetchSuggestedSlots();
   }, [open, clientId]);
 
-  const handleAddToQueue = () => {
-    if (selectedTime) {
+  const handleAddToQueue = async () => {
+    if (!selectedTime || !clientId || !postId) {
+      console.error('[AddToQueueModal] Missing required data for scheduling');
+      toast({
+        title: "Missing Information",
+        description: "Please select a time slot and ensure all required data is available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Find the selected slot data
+    const selectedSlot = suggestedSlots.find(slot => slot.formattedDisplay === selectedTime);
+    if (!selectedSlot) {
+      console.error('[AddToQueueModal] Selected time slot not found');
+      toast({
+        title: "Invalid Time Slot",
+        description: "The selected time slot is no longer available. Please choose another.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScheduling(true);
+
+    try {
+      // Create the scheduled datetime from the selected slot
+      const scheduledDateTime = selectedSlot.date;
+      const newYearMonth = format(scheduledDateTime, 'yyyy-MM');
+
+      // Prepare the post event data for scheduling
+      const postEventData = {
+        title: post?.title || '',
+        profile: post?.profile?.profileName || '',
+        status: selectedStatus,
+        updatedAt: Timestamp.now(),
+        scheduledPostAt: Timestamp.fromDate(scheduledDateTime),
+        postId: postId,
+        scheduledDate: scheduledDateTime.toISOString(),
+        timeSlot: selectedSlot.timeSlot
+      };
+
+      // Save to Firestore in the postEvents collection
+      const postEventRef = doc(
+        db,
+        'agencies', 'agency1',
+        'clients', clientId,
+        'postEvents', newYearMonth
+      );
+
+      // Update the year-month document with the post field
+      await setDoc(postEventRef, {
+        [postId]: postEventData
+      }, { merge: true });
+
+      // Update the post status in the ideas collection
+      const postRef = doc(
+        db,
+        'agencies', 'agency1',
+        'clients', clientId,
+        'ideas', postId
+      );
+
+      await setDoc(postRef, {
+        status: selectedStatus,
+        scheduledPostAt: Timestamp.fromDate(scheduledDateTime),
+        updatedAt: Timestamp.now()
+      }, { merge: true });
+
+      // Update the PostDetailsContext with the new scheduling info
+      if (updatePostScheduling) {
+        await updatePostScheduling('agency1', clientId, postId, selectedStatus, Timestamp.fromDate(scheduledDateTime));
+      }
+
+      console.log('[AddToQueueModal] Post successfully scheduled:', {
+        postId,
+        scheduledDateTime,
+        status: selectedStatus
+      });
+
+      // Show success message
+      toast({
+        title: "Post Scheduled",
+        description: `Post successfully added to queue for ${selectedTime}`,
+      });
+
+      // Call the parent callback and close modal
       onAddToQueue(selectedTime, selectedStatus);
       onOpenChange(false);
+
+    } catch (error) {
+      console.error('[AddToQueueModal] Error scheduling post:', error);
+
+      // Show error message
+      toast({
+        title: "Scheduling Failed",
+        description: "There was an error scheduling your post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -414,8 +518,8 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                       <button
                         onClick={() => setSelectedTime(suggestedSlots[0].formattedDisplay)}
                         className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${selectedTime === suggestedSlots[0].formattedDisplay
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
                           }`}
                       >
                         <div className="flex items-center gap-3">
@@ -442,8 +546,8 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                               key={slot.formattedDisplay}
                               onClick={() => setSelectedTime(slot.formattedDisplay)}
                               className={`p-3 text-left rounded-lg border transition-colors ${selectedTime === slot.formattedDisplay
-                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                  : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
                                 }`}
                             >
                               <div className="font-medium text-sm">{slot.formattedDisplay}</div>

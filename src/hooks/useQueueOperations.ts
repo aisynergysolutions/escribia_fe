@@ -59,7 +59,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       );
 
       await setDoc(postRef, {
-        status: 'Draft',
+        status: 'Drafted',
         scheduledPostAt: Timestamp.fromMillis(0),
         updatedAt: Timestamp.now()
       }, { merge: true });
