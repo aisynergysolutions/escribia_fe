@@ -37,6 +37,8 @@ interface EditorToolbarProps {
   postStatus?: string;
   scheduledPostAt?: import('firebase/firestore').Timestamp;
   postedAt?: import('firebase/firestore').Timestamp;
+  // Add clientId for queue logic
+  clientId?: string;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -63,7 +65,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onAddMedia,
   postStatus,
   scheduledPostAt,
-  postedAt
+  postedAt,
+  clientId
 }) => {
   const isMobile = useIsMobile();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
@@ -272,8 +275,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                   size="sm"
                   onClick={onShowComments}
                   className={`h-8 w-8 p-0 ${showCommentsPanel
-                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200'
-                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200'
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'
                     }`}
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -416,6 +419,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         postContent={postContent}
         onAddToQueue={handleAddToQueueConfirm}
         onOpenScheduleModal={handleOpenScheduleModal}
+        clientId={clientId}
       />
 
       <SchedulePostModal

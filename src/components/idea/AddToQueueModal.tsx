@@ -7,6 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { format, addMonths, addDays, isSameDay, startOfDay } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface AddToQueueModalProps {
   open: boolean;
@@ -14,6 +18,7 @@ interface AddToQueueModalProps {
   postContent: string;
   onAddToQueue: (selectedTime: string, status: string) => void;
   onOpenScheduleModal: () => void;
+  clientId?: string;
 }
 
 const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
@@ -45,14 +50,129 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   onOpenChange,
   postContent,
   onAddToQueue,
-  onOpenScheduleModal
+  onOpenScheduleModal,
+  clientId
 }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
+  const [suggestedSlots, setSuggestedSlots] = useState<QueueSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [hasTimeslotConfig, setHasTimeslotConfig] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  // Types for queue slot data
+  type QueueSlot = {
+    date: Date;
+    timeSlot: string;
+    formattedDisplay: string;
+  };
+
+  // Function to find the next five empty slots in the queue
+  const findNextEmptySlot = async (clientId: string): Promise<QueueSlot[]> => {
+    try {
+      // Step 1: Fetch timeslots configuration
+      const timeslotDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', 'timeslots');
+      const timeslotSnap = await getDoc(timeslotDocRef);
+
+      if (!timeslotSnap.exists()) {
+        console.log('[AddToQueueModal] No timeslots configuration found');
+        return []; // Return empty array if no configuration exists
+      }
+
+      const timeslotData = timeslotSnap.data();
+      const activeDays: string[] = timeslotData.activeDays || [];
+      const predefinedTimeSlots: string[] = timeslotData.predefinedTimeSlots || [];
+
+      if (activeDays.length === 0 || predefinedTimeSlots.length === 0) {
+        console.log('[AddToQueueModal] No active days or time slots configured');
+        return [];
+      }
+
+      // Step 2: Find the next 5 empty slots
+      const emptySlots: QueueSlot[] = [];
+      const today = startOfDay(new Date());
+      let currentDate = today;
+      let currentMonth = format(currentDate, 'yyyy-MM');
+      let monthData: any = null;
+
+      // Fetch the current month's data initially
+      const monthDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', currentMonth);
+      const monthSnap = await getDoc(monthDocRef);
+      monthData = monthSnap.exists() ? monthSnap.data() : {};
+
+      while (emptySlots.length < 5) {
+        const dayName = format(currentDate, 'EEEE'); // Get day name (Monday, Tuesday, etc.)
+
+        // Check if current date is an active day
+        if (activeDays.includes(dayName)) {
+          // Check each predefined time slot for this day
+          for (const timeSlot of predefinedTimeSlots) {
+            if (emptySlots.length >= 5) break;
+
+            // Create a unique slot identifier
+            const slotDateTime = new Date(currentDate);
+            const [hours, minutes] = timeSlot.split(':').map(Number);
+            slotDateTime.setHours(hours, minutes, 0, 0);
+
+            // Check if this slot is in the past (skip if so)
+            if (slotDateTime < new Date()) {
+              continue;
+            }
+
+            // Check if this slot is already occupied
+            const isSlotOccupied = Object.keys(monthData).some(postId => {
+              const postData = monthData[postId];
+              if (!postData || !postData.scheduledPostAt) return false;
+
+              const scheduledDate = new Date(postData.scheduledPostAt.seconds * 1000);
+              return isSameDay(scheduledDate, slotDateTime) &&
+                format(scheduledDate, 'HH:mm') === timeSlot;
+            });
+
+            if (!isSlotOccupied) {
+              // Convert 24-hour time to 12-hour format for display
+              const displayTime = format(slotDateTime, 'h:mm a');
+              const displayDate = format(slotDateTime, 'EEEE, MMMM d');
+
+              emptySlots.push({
+                date: new Date(slotDateTime),
+                timeSlot: timeSlot,
+                formattedDisplay: `${displayDate}, at ${displayTime}`
+              });
+            }
+          }
+        }
+
+        // Move to next day
+        currentDate = addDays(currentDate, 1);
+        const newMonth = format(currentDate, 'yyyy-MM');
+
+        // If we've moved to a new month, fetch the new month's data
+        if (newMonth !== currentMonth) {
+          currentMonth = newMonth;
+          const newMonthDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', currentMonth);
+          const newMonthSnap = await getDoc(newMonthDocRef);
+          monthData = newMonthSnap.exists() ? newMonthSnap.data() : {};
+        }
+
+        // Safety check to prevent infinite loop (don't search more than 90 days ahead)
+        if (currentDate > addDays(today, 90)) {
+          break;
+        }
+      }
+
+      console.log('[AddToQueueModal] Found empty slots:', emptySlots);
+      return emptySlots;
+
+    } catch (error) {
+      console.error('[AddToQueueModal] Error finding empty slots:', error);
+      return [];
+    }
+  };
 
   // Mock suggested times based on user's onboarding preferences
   const suggestedMainTime = "Tuesday 26, at 9:00 AM";
@@ -69,7 +189,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = postContent;
       const plainText = tempDiv.textContent || tempDiv.innerText || '';
-      
+
       // Create a temporary element to measure text
       const measuringDiv = document.createElement('div');
       measuringDiv.style.visibility = 'hidden';
@@ -81,21 +201,21 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       measuringDiv.style.padding = '0';
       measuringDiv.style.margin = '0';
       document.body.appendChild(measuringDiv);
-      
+
       // Calculate how much text fits in exactly 3 lines
       const lineHeight = 21; // 14px * 1.5 line-height
       const maxHeight = lineHeight * 3;
-      
+
       // Binary search to find the optimal truncation point
       let start = 0;
       let end = plainText.length;
       let bestFit = 0;
-      
+
       while (start <= end) {
         const mid = Math.floor((start + end) / 2);
         const testText = plainText.substring(0, mid);
         measuringDiv.textContent = testText;
-        
+
         if (measuringDiv.offsetHeight <= maxHeight) {
           bestFit = mid;
           start = mid + 1;
@@ -103,9 +223,9 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           end = mid - 1;
         }
       }
-      
+
       document.body.removeChild(measuringDiv);
-      
+
       // Check if we need truncation
       if (bestFit < plainText.length && bestFit > 0) {
         setShouldShowMore(true);
@@ -125,6 +245,28 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       }
     }
   }, [postContent, open]);
+
+  // Fetch suggested time slots when modal opens
+  useEffect(() => {
+    const fetchSuggestedSlots = async () => {
+      if (open && clientId) {
+        setLoadingSlots(true);
+        try {
+          const slots = await findNextEmptySlot(clientId);
+          setSuggestedSlots(slots);
+          setHasTimeslotConfig(slots.length > 0);
+        } catch (error) {
+          console.error('[AddToQueueModal] Error fetching suggested slots:', error);
+          setSuggestedSlots([]);
+          setHasTimeslotConfig(false);
+        } finally {
+          setLoadingSlots(false);
+        }
+      }
+    };
+
+    fetchSuggestedSlots();
+  }, [open, clientId]);
 
   const handleAddToQueue = () => {
     if (selectedTime) {
@@ -155,13 +297,13 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
             Add to Queue
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Post Preview - Left Column */}
           <div className="flex flex-col min-h-0">
             <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Post Preview</h3>
             <ScrollArea className="flex-1">
-              <div className="pr-4">
+              <div className="pr-0">
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-3">
@@ -169,7 +311,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                       <div>
                         <div className="font-semibold text-gray-900">Your Name</div>
                         <div className="text-sm text-gray-500">
-                          {selectedTime 
+                          {selectedTime
                             ? `Queued for ${selectedTime}`
                             : 'Adding to queue...'
                           }
@@ -179,7 +321,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                   </div>
                   <div className="p-4">
                     <div className="relative">
-                      <div 
+                      <div
                         ref={contentRef}
                         className="text-sm leading-relaxed text-gray-900 mb-4"
                         style={{
@@ -221,7 +363,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Separator line at 3rd line position when collapsed */}
                       {!isExpanded && shouldShowMore && (
                         <Separator className="mb-4" />
@@ -236,56 +378,82 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           {/* Queue Options - Right Column */}
           <div className="flex flex-col min-h-0">
             <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Choose Time</h3>
-            
+
             <div className="flex-1 overflow-y-auto space-y-6">
               {/* Suggested Posting Time */}
               <div>
-                {/* Main Suggested Time */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Recommended time (based on your preferences)
-                  </label>
-                  <button
-                    onClick={() => setSelectedTime(suggestedMainTime)}
-                    className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${
-                      selectedTime === suggestedMainTime
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
-                        <Clock className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{suggestedMainTime}</div>
-                        <div className="text-sm text-gray-500">Optimal engagement time</div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Other Suggested Times */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Other suggested times
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {otherSuggestedTimes.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={`p-3 text-left rounded-lg border transition-colors ${
-                          selectedTime === time
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
-                        }`}
-                      >
-                        <div className="font-medium text-sm">{time}</div>
-                      </button>
-                    ))}
+                {loadingSlots ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-gray-500">Finding the best time slots...</div>
                   </div>
-                </div>
+                ) : !hasTimeslotConfig || suggestedSlots.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500 mb-2">No queue timeslots configured</div>
+                    <div className="text-sm text-gray-400">
+                      Configure your posting schedule in the{' '}
+                      <button
+                        onClick={() => {
+                          if (clientId) {
+                            onOpenChange(false); // Close the modal first
+                            navigate(`/clients/${clientId}/calendar`);
+                          }
+                        }}
+                        className="text-blue-600 hover:text-blue-700 underline"
+                      >
+                        Calendar tab
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Main Suggested Time */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Recommended time (next available slot)
+                      </label>
+                      <button
+                        onClick={() => setSelectedTime(suggestedSlots[0].formattedDisplay)}
+                        className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${selectedTime === suggestedSlots[0].formattedDisplay
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                            <Clock className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{suggestedSlots[0].formattedDisplay}</div>
+                            <div className="text-sm text-gray-500">Next available slot</div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Other Suggested Times */}
+                    {suggestedSlots.length > 1 && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Other suggested times
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {suggestedSlots.slice(1, 5).map((slot, index) => (
+                            <button
+                              key={slot.formattedDisplay}
+                              onClick={() => setSelectedTime(slot.formattedDisplay)}
+                              className={`p-3 text-left rounded-lg border transition-colors ${selectedTime === slot.formattedDisplay
+                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                  : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                                }`}
+                            >
+                              <div className="font-medium text-sm">{slot.formattedDisplay}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Custom Time Option */}
                 <div>
@@ -339,7 +507,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleAddToQueue}
             disabled={!selectedTime}
             className="bg-[#4E46DD] hover:bg-[#453fca]"
