@@ -56,7 +56,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = postContent;
       const plainText = tempDiv.textContent || tempDiv.innerText || '';
-      
+
       // Create a temporary element to measure text
       const measuringDiv = document.createElement('div');
       measuringDiv.style.visibility = 'hidden';
@@ -69,21 +69,21 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
       measuringDiv.style.margin = '0';
       measuringDiv.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
       document.body.appendChild(measuringDiv);
-      
+
       // Calculate how much text fits in exactly 3 lines
       const lineHeight = 21; // 14px * 1.5 line-height
       const maxHeight = lineHeight * 3;
-      
+
       // Binary search to find the optimal truncation point
       let start = 0;
       let end = plainText.length;
       let bestFit = 0;
-      
+
       while (start <= end) {
         const mid = Math.floor((start + end) / 2);
         const testText = plainText.substring(0, mid);
         measuringDiv.textContent = testText;
-        
+
         if (measuringDiv.offsetHeight <= maxHeight) {
           bestFit = mid;
           start = mid + 1;
@@ -91,9 +91,9 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
           end = mid - 1;
         }
       }
-      
+
       document.body.removeChild(measuringDiv);
-      
+
       // Check if we need truncation
       if (bestFit < plainText.length && bestFit > 0) {
         setShouldShowMore(true);
@@ -136,7 +136,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
             Post to LinkedIn
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex-1 min-h-0 flex flex-col space-y-6">
           <h3 className="text-lg font-semibold flex-shrink-0">Post Preview</h3>
           <div className="flex-1 min-h-0">
@@ -154,7 +154,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                   </div>
                   <div className="p-4">
                     <div className="relative">
-                      <div 
+                      <div
                         ref={contentRef}
                         className="text-sm leading-relaxed text-gray-900 mb-4 whitespace-pre-wrap"
                         style={{
@@ -196,14 +196,14 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Separator line at 3rd line position when collapsed */}
                       {!isExpanded && shouldShowMore && (
                         <Separator className="mb-4" />
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Simulated engagement */}
                   <div className="px-4 pb-4">
                     <div className="flex justify-between pt-3 border-t border-gray-200">
@@ -221,7 +221,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                 {/* Confirmation */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
                   <p className="text-blue-800 text-sm">
-                    <strong>Ready to publish:</strong> Your post will be immediately published to your LinkedIn profile. 
+                    <strong>Ready to publish:</strong> Your post will be immediately published to your LinkedIn profile.
                     Make sure you've reviewed the content above.
                   </p>
                 </div>
@@ -267,7 +267,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handlePost}
             className="bg-indigo-600 hover:bg-indigo-700"
           >

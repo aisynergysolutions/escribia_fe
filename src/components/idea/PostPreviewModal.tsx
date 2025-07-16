@@ -34,7 +34,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = postContent;
       const plainText = tempDiv.textContent || tempDiv.innerText || '';
-      
+
       // Create a temporary element to measure text
       const measuringDiv = document.createElement('div');
       measuringDiv.style.visibility = 'hidden';
@@ -45,14 +45,14 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
       measuringDiv.style.fontFamily = window.getComputedStyle(contentRef.current).fontFamily;
       measuringDiv.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
       document.body.appendChild(measuringDiv);
-      
+
       // Calculate how much text fits in 3 lines
       const lineHeight = 21; // 14px * 1.5 line-height
       const maxHeight = lineHeight * 3;
-      
+
       let truncateAt = plainText.length;
       let testText = plainText;
-      
+
       while (testText.length > 0) {
         measuringDiv.textContent = testText + '...more';
         if (measuringDiv.offsetHeight <= maxHeight) {
@@ -61,9 +61,9 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
         }
         testText = testText.substring(0, testText.length - 10);
       }
-      
+
       document.body.removeChild(measuringDiv);
-      
+
       if (truncateAt < plainText.length) {
         setShouldShowMore(true);
         setTruncatedContent(plainText.substring(0, truncateAt));
@@ -112,8 +112,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               {remainingImages.length > 0 && (
                 <div className="w-32 flex flex-col">
                   {remainingImages.map((image, index) => (
-                    <div 
-                      key={image.id} 
+                    <div
+                      key={image.id}
                       className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-b border-white' : ''}`}
                     >
                       <img
@@ -145,8 +145,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               {remainingImages.length > 0 && (
                 <div className="flex h-16">
                   {remainingImages.map((image, index) => (
-                    <div 
-                      key={image.id} 
+                    <div
+                      key={image.id}
                       className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-r border-white' : ''}`}
                     >
                       <img
@@ -185,18 +185,18 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
               You can see how people vote. <span className="text-blue-600 cursor-pointer">Learn More</span>
             </div>
-            
+
             <div className="space-y-2">
               {pollData.options.map((option, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="border border-blue-500 rounded-full py-3 px-4 text-center text-blue-600 cursor-pointer hover:bg-blue-50 transition-colors"
                 >
                   {option}
                 </div>
               ))}
             </div>
-            
+
             <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
               <span>0 votes</span>
               <span>•</span>
@@ -218,7 +218,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             LinkedIn Post Preview
           </DialogTitle>
         </DialogHeader>
-        
+
         {/* Controls - Fixed position */}
         <div className="flex gap-4 items-center justify-center py-4 border-b flex-shrink-0">
           {/* Device Toggle */}
@@ -242,7 +242,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               Desktop
             </Button>
           </div>
-          
+
           {/* Theme Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
@@ -265,11 +265,11 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             </Button>
           </div>
         </div>
-        
+
         {/* Preview Area - Scrollable container */}
         <div className="flex-1 min-h-0 overflow-auto">
           <div className="flex items-start justify-center p-6 min-h-full">
-            <div 
+            <div
               className={`
                 ${deviceType === 'mobile' ? 'w-[375px]' : 'w-full max-w-[600px]'} 
                 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} 
@@ -290,11 +290,11 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               {/* Post Content */}
               <div className="p-4">
                 <div className="relative">
-                  <div 
+                  <div
                     ref={contentRef}
                     className={`text-sm leading-relaxed mb-4 whitespace-pre-wrap ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}
                   >
@@ -306,9 +306,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                             {' '}
                             <button
                               onClick={handleSeeLess}
-                              className={`font-medium ${
-                                theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                              }`}
+                              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                                }`}
                             >
                               See less
                             </button>
@@ -322,9 +321,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                             {truncatedContent}
                             <button
                               onClick={handleSeeMore}
-                              className={`font-medium ${
-                                theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                              }`}
+                              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                                }`}
                             >
                               ...more
                             </button>
@@ -336,14 +334,14 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                     )}
                   </div>
                 </div>
-                
+
                 {/* Media Preview - Always visible */}
                 {renderMediaPreview()}
-                
+
                 {/* Poll Preview - Always visible */}
                 {renderPollPreview()}
               </div>
-              
+
               {/* LinkedIn Engagement Bar */}
               <div className={`p-4 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex items-center justify-between text-sm">
@@ -358,15 +356,14 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                     47 Comments
                   </div>
                 </div>
-                
+
                 {/* Action Buttons */}
                 <div className="flex justify-between pt-3 mt-3 border-t border-gray-200">
                   {['Like', 'Comment', 'Share', 'Send'].map((action) => (
                     <button
                       key={action}
-                      className={`flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-100 ${
-                        theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       <span className="text-sm">{action}</span>
                     </button>
