@@ -145,8 +145,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           return;
         }
 
-        // Step 4: Check if generation was successful
+        // Step 4: Check if generation was successful and update context
         if (result.success) {
+          // **FIX: Update the context with the AI-generated title**
+          if (result.title) {
+            await updatePostInContext('agency1', clientId, postId, {
+              title: result.title,
+              ...(result.post_content && { currentDraftText: result.post_content }),
+              ...(result.generatedHooks && { generatedHooks: result.generatedHooks }),
+              ...(result.hooks && { generatedHooks: result.hooks })
+            });
+          }
+
           toast({
             title: 'Post Generated',
             description: 'Your post has been successfully generated.',
