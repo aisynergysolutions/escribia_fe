@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './label';
 import { Badge } from './badge';
 import { Card } from './card';
-import { Search, Clock, Calendar, User, X } from 'lucide-react';
+import { Search, Clock, Calendar, User } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { usePosts, PostCard } from '../../context/PostsContext';
 import { doc, setDoc, collection, getDocs, getDoc, updateDoc, deleteField } from 'firebase/firestore';
@@ -37,6 +37,10 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedPostId, setSelectedPostId] = useState<string>('');
     const [isScheduling, setIsScheduling] = useState(false);
+    
+    // Local state for editable date and time
+    const [localDate, setLocalDate] = useState(selectedDate);
+    const [localTime, setLocalTime] = useState(selectedTime);
 
     // Fetch posts when modal opens
     useEffect(() => {
@@ -44,6 +48,12 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
             fetchPosts('agency1', clientId);
         }
     }, [isOpen, clientId, fetchPosts]);
+
+    // Update local state when props change
+    useEffect(() => {
+        setLocalDate(selectedDate);
+        setLocalTime(selectedTime);
+    }, [selectedDate, selectedTime]);
 
     // Reset state when modal closes
     useEffect(() => {
@@ -77,8 +87,8 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
         try {
             // Create the scheduled datetime
-            const scheduledDateTime = new Date(selectedDate);
-            const [hours, minutes] = selectedTime.split(':').map(Number);
+            const scheduledDateTime = new Date(localDate);
+            const [hours, minutes] = localTime.split(':').map(Number);
             scheduledDateTime.setHours(hours, minutes, 0, 0);
 
             // Create year-month document name for the new schedule
@@ -137,7 +147,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                 scheduledPostAt: Timestamp.fromDate(scheduledDateTime),
                 postId: selectedPost.postId,
                 scheduledDate: scheduledDateTime.toISOString(),
-                timeSlot: selectedTime
+                timeSlot: localTime
             };
 
             // Save to Firestore in the new postEvents collection
@@ -179,7 +189,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     };
 
     const formatDateTime = () => {
-        return `${format(selectedDate, 'EEEE, MMMM d, yyyy')} at ${selectedTime}`;
+        return `${format(localDate, 'EEEE, MMMM d, yyyy')} at ${localTime}`;
     };
 
     const getStatusColor = (status: string) => {
@@ -197,160 +207,142 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+            <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
                 <DialogHeader className="flex-shrink-0">
-                    <DialogTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5" />
-                            Schedule Post for {formatDateTime()}
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={onClose}>
-                            <X className="h-4 w-4" />
-                        </Button>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Schedule Post
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="flex-1 flex gap-6 min-h-0">
-                    {/* Posts List - Left Side */}
-                    <div className="flex-1 flex flex-col min-h-0">
-                        <div className="space-y-4 mb-4 flex-shrink-0">
-                            {/* Search Bar */}
-                            <div className="relative">
-                                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <div className="flex-1 flex flex-col gap-4 min-h-0">
+                    {/* Date and Time Selector */}
+                    <Card className="p-4">
+                        <Label className="text-sm font-medium text-gray-600 mb-3 block">Schedule Date & Time</Label>
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <Label htmlFor="schedule-date" className="text-xs text-gray-500">Date</Label>
                                 <Input
-                                    placeholder="Search posts by title or profile..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
+                                    id="schedule-date"
+                                    type="date"
+                                    value={format(localDate, 'yyyy-MM-dd')}
+                                    onChange={(e) => setLocalDate(new Date(e.target.value))}
+                                    className="mt-1"
                                 />
                             </div>
-
-                            {/* Status Filter */}
-                            <div className="flex items-center gap-4">
-                                <Label className="text-sm font-medium">Filter by status:</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-40">
-                                        <SelectValue placeholder="All statuses" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All statuses</SelectItem>
-                                        {POST_STATUSES.filter(status => status !== 'Scheduled').map(status => (
-                                            <SelectItem key={status} value={status}>{status}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="flex-1">
+                                <Label htmlFor="schedule-time" className="text-xs text-gray-500">Time</Label>
+                                <Input
+                                    id="schedule-time"
+                                    type="time"
+                                    value={localTime}
+                                    onChange={(e) => setLocalTime(e.target.value)}
+                                    className="mt-1"
+                                />
                             </div>
                         </div>
+                    </Card>
 
-                        {/* Posts List */}
-                        <div className="flex-1 overflow-y-auto space-y-3">
-                            {loading ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <p className="text-gray-500">Loading posts...</p>
-                                </div>
-                            ) : filteredPosts.length === 0 ? (
-                                <div className="flex items-center justify-center py-8 text-center">
-                                    <div>
-                                        <p className="text-gray-500 mb-2">No posts found</p>
-                                        <p className="text-sm text-gray-400">
-                                            {searchTerm || (statusFilter && statusFilter !== 'all')
-                                                ? 'Try adjusting your search or filter criteria'
-                                                : 'Create some posts to schedule them'
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                filteredPosts.map((post) => (
-                                    <Card
-                                        key={post.postId}
-                                        className={`p-4 cursor-pointer transition-all border-2 ${selectedPostId === post.postId
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:border-gray-300'
-                                            }`}
-                                        onClick={() => setSelectedPostId(post.postId)}
-                                    >
-                                        <div className="space-y-3">
-                                            <div className="flex items-start justify-between">
-                                                <h3 className="font-semibold text-gray-900 flex-1 pr-3">
-                                                    {post.title}
-                                                </h3>
-                                                <Badge className={getStatusColor(post.status)}>
-                                                    {post.status}
-                                                </Badge>
-                                            </div>
+                    {/* Search Bar and Status Filter - Same Row */}
+                    <div className="flex gap-4">
+                        {/* Search Bar */}
+                        <div className="relative flex-1">
+                            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <Input
+                                placeholder="Search posts by title or profile..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
 
+                        {/* Status Filter */}
+                        <div className="flex items-center gap-2">
+                            <Label className="text-sm font-medium whitespace-nowrap">Filter:</Label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-40">
+                                    <SelectValue placeholder="All statuses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All statuses</SelectItem>
+                                    {POST_STATUSES.filter(status => status !== 'Scheduled').map(status => (
+                                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Posts List */}
+                    <div className="flex-1 overflow-y-auto space-y-3 border rounded-md p-2">
+                        {loading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <p className="text-gray-500">Loading posts...</p>
+                            </div>
+                        ) : filteredPosts.length === 0 ? (
+                            <div className="flex items-center justify-center py-8 text-center">
+                                <div>
+                                    <p className="text-gray-500 mb-2">No posts found</p>
+                                    <p className="text-sm text-gray-400">
+                                        {searchTerm || (statusFilter && statusFilter !== 'all')
+                                            ? 'Try adjusting your search or filter criteria'
+                                            : 'Create some posts to schedule them'
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            filteredPosts.map((post) => (
+                                <Card
+                                    key={post.postId}
+                                    className={`p-4 cursor-pointer transition-all border-2 ${selectedPostId === post.postId
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                        }`}
+                                    onClick={() => setSelectedPostId(post.postId)}
+                                >
+                                    <div className="space-y-3">
+                                        <div className="flex items-start justify-between">
+                                            <h3 className="font-semibold text-gray-900 flex-1 pr-3">
+                                                {post.title}
+                                            </h3>
+                                            <Badge className={getStatusColor(post.status)}>
+                                                {post.status}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between w-full">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <User className="h-4 w-4" />
                                                 <span>{post.profile}</span>
                                             </div>
-
                                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                                 <Clock className="h-3 w-3" />
                                                 <span>Updated {format(new Date(post.updatedAt.seconds * 1000), 'MMM d, yyyy')}</span>
                                             </div>
                                         </div>
-                                    </Card>
-                                ))
-                            )}
-                        </div>
+                                    </div>
+                                </Card>
+                            ))
+                        )}
                     </div>
 
-                    {/* Schedule Summary - Right Side */}
-                    <div className="w-80 flex-shrink-0 space-y-6">
-                        <div>
-                            <h3 className="text-lg font-semibold mb-4">Schedule Summary</h3>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2 border-t">
+                        <Button
+                            onClick={handleSchedulePost}
+                            disabled={!selectedPostId || !localTime || isScheduling}
+                            className="flex-1"
+                        >
+                            {isScheduling ? 'Scheduling...' : 'Schedule this post'}
+                        </Button>
 
-                            <Card className="p-4 space-y-4">
-                                <div>
-                                    <Label className="text-sm font-medium text-gray-600">Date & Time</Label>
-                                    <p className="text-sm font-semibold text-gray-900 mt-1">
-                                        {formatDateTime()}
-                                    </p>
-                                </div>
-
-                                {selectedPostId && (
-                                    <div>
-                                        <Label className="text-sm font-medium text-gray-600">Selected Post</Label>
-                                        <div className="mt-2 p-3 bg-gray-50 rounded-md">
-                                            {(() => {
-                                                const selectedPost = posts.find(p => p.postId === selectedPostId);
-                                                return selectedPost ? (
-                                                    <div className="space-y-2">
-                                                        <p className="font-medium text-sm">{selectedPost.title}</p>
-                                                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                                                            <User className="h-3 w-3" />
-                                                            <span>{selectedPost.profile}</span>
-                                                        </div>
-                                                        <Badge className={`${getStatusColor(selectedPost.status)} text-xs`}>
-                                                            {selectedPost.status}
-                                                        </Badge>
-                                                    </div>
-                                                ) : null;
-                                            })()}
-                                        </div>
-                                    </div>
-                                )}
-                            </Card>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <Button
-                                onClick={handleSchedulePost}
-                                disabled={!selectedPostId || isScheduling}
-                                className="w-full"
-                            >
-                                {isScheduling ? 'Scheduling...' : 'Schedule this post'}
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                onClick={onClose}
-                                className="w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            className="flex-1"
+                        >
+                            Cancel
+                        </Button>
                     </div>
                 </div>
             </DialogContent>

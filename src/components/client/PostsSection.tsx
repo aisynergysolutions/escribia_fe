@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
 import { Idea } from '../../types';
-import { formatDate, formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
+import { formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
 import { usePosts } from '@/context/PostsContext'; // <-- Add this import
 import { useNavigate } from 'react-router-dom';
 
@@ -145,7 +145,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   const filteredPosts = getFilteredAndSortedPosts();
   const allowedStatuses = getAllowedStatuses();
-  // const clientInfo = getClientInfo(clientId);
 
   const handleColumnSort = (field: SortField) => {
     if (sortField === field) {
@@ -229,7 +228,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                       key={status}
                       onClick={() => handleStatusSelect(status)}
                       className={`
-                        flex-1 relative group px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap
+                        flex-1 relative group px-4 py-2 mx-1 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap
                         ${isSelected
                           ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

@@ -7,7 +7,7 @@ import { Card } from './card';
 import { mockClients } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useScheduledPosts } from '../../hooks/useScheduledPosts';
-import DayPostsModal from './DayPostsModal';
+import SchedulePostModal from './SchedulePostModal';
 
 interface PostCalendarProps {
   showAllClients?: boolean;
@@ -15,6 +15,7 @@ interface PostCalendarProps {
   hideTitle?: boolean;
   onMonthChange?: (month: Date) => void;
   currentMonth?: Date;
+  onPostScheduled?: () => void;
 }
 
 const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
@@ -22,11 +23,12 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   clientName,
   hideTitle = false,
   onMonthChange,
-  currentMonth: externalCurrentMonth
+  currentMonth: externalCurrentMonth,
+  onPostScheduled
 }) => {
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
 
@@ -72,8 +74,13 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
 
   const handleDayClick = useCallback((day: Date) => {
     setSelectedDate(day);
-    setIsModalOpen(true);
+    setIsScheduleModalOpen(true);
   }, []);
+
+  const handleScheduleSuccess = useCallback(() => {
+    refetch(); // Refresh the scheduled posts
+    onPostScheduled?.(); // Notify parent component
+  }, [refetch, onPostScheduled]);
 
   const goToPreviousMonth = useCallback(() => {
     const newMonth = subMonths(currentMonth, 1);
@@ -201,13 +208,13 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
         )}
       </Card>
 
-      <DayPostsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        selectedDate={selectedDate}
-        posts={selectedDate ? getPostsForDay(selectedDate) : []}
-        onPostClick={handlePostClick}
-        showAllClients={showAllClients}
+      <SchedulePostModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        selectedDate={selectedDate || new Date()}
+        selectedTime="" // Default time when opened from calendar
+        clientId={clientId || ''}
+        onScheduleSuccess={handleScheduleSuccess}
       />
     </>
   );

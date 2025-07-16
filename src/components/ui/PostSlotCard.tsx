@@ -94,8 +94,6 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
 
       <div className="flex-shrink-0">
         <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -105,11 +103,6 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Actions</p>
-            </TooltipContent>
-          </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEditSlot(slot.id)}>
               Edit slot
@@ -117,9 +110,9 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
             <DropdownMenuItem onClick={() => onRemoveFromQueue(slot.id)}>
               Remove from queue
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onMoveToTop(slot.id)}>
+            {/* <DropdownMenuItem onClick={() => onMoveToTop(slot.id)}>
               Move to top
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
