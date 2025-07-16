@@ -31,6 +31,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ clientId }) => {
         <TabsContent value="calendar" className="mt-0">
           <PostCalendar
             key={refreshKey}
+            clientId={clientId}
             clientName={client?.clientName}
             onPostScheduled={handlePostScheduled}
           />

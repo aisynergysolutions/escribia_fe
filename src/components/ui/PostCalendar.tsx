@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
@@ -7,10 +6,14 @@ import { Card } from './card';
 import { mockClients } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useScheduledPosts } from '../../hooks/useScheduledPosts';
+import { useQueueOperations } from '../../hooks/useQueueOperations';
 import SchedulePostModal from './SchedulePostModal';
+import DayPostsModal from './DayPostsModal';
+import ReschedulePostModal from './ReschedulePostModal';
 
 interface PostCalendarProps {
   showAllClients?: boolean;
+  clientId?: string;
   clientName?: string;
   hideTitle?: boolean;
   onMonthChange?: (month: Date) => void;
@@ -20,6 +23,7 @@ interface PostCalendarProps {
 
 const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   showAllClients = false,
+  clientId: propClientId,
   clientName,
   hideTitle = false,
   onMonthChange,
@@ -28,10 +32,16 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
 }) => {
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isDayPostsModalOpen, setIsDayPostsModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<any>(null);
   const [loadedMonths, setLoadedMonths] = useState<string[]>([]);
-  const { clientId } = useParams<{ clientId: string }>();
+  const { clientId: routeClientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
+
+  // Use prop clientId if provided, otherwise fall back to route params
+  const clientId = propClientId || routeClientId;
 
   // Use external month if provided, otherwise use internal state
   const currentMonth = externalCurrentMonth || internalCurrentMonth;
@@ -93,14 +103,36 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
 
   const handleDayClick = useCallback((day: Date) => {
     setSelectedDate(day);
+    setIsDayPostsModalOpen(true);
+  }, []);
+
+  const handleSchedulePostFromDay = useCallback(() => {
+    setIsDayPostsModalOpen(false);
     setIsScheduleModalOpen(true);
+  }, []);
+
+  const handleScheduleModalClose = useCallback(() => {
+    setIsScheduleModalOpen(false);
+    setSelectedDate(null);
+  }, []);
+
+  const handleDayPostsModalClose = useCallback(() => {
+    setIsDayPostsModalOpen(false);
+    setSelectedDate(null);
   }, []);
 
   const handleScheduleSuccess = useCallback(() => {
     // When a post is scheduled, we need to refetch to get the updated data from Firestore
     refetch();
     onPostScheduled?.(); // Notify parent component
-  }, [refetch, onPostScheduled]);
+    
+    // Close the schedule modal and optionally reopen the day posts modal
+    setIsScheduleModalOpen(false);
+    if (selectedDate) {
+      // Optionally reopen the day posts modal to show the updated schedule
+      setIsDayPostsModalOpen(true);
+    }
+  }, [refetch, onPostScheduled, selectedDate]);
 
   const goToPreviousMonth = useCallback(() => {
     const newMonth = subMonths(currentMonth, 1);
@@ -128,6 +160,40 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
     }
     return clientName ? `${clientName} Content Calendar` : 'Content Calendar';
   }, [showAllClients, clientName]);
+
+  // Use queue operations for edit/remove functionality
+  const { handleRemoveFromQueue, handleEditSlot } = useQueueOperations(() => {
+    refetch(); // Refresh calendar when queue operations are performed
+  });
+
+  const handleEditSlotFromDay = useCallback((slotId: string) => {
+    if (clientId) {
+      const post = scheduledPosts.find(p => p.id === slotId);
+      if (post) {
+        setSelectedPostForReschedule(post);
+        setIsRescheduleModalOpen(true);
+      }
+    }
+  }, [clientId, scheduledPosts]);
+
+  const handleRemoveFromQueueDay = useCallback((slotId: string) => {
+    if (clientId) {
+      handleRemoveFromQueue(slotId, clientId);
+    }
+  }, [clientId, handleRemoveFromQueue]);
+
+  const handleRescheduleFromModal = useCallback((newDateTime: Date, time: string) => {
+    if (selectedPostForReschedule && clientId) {
+      handleEditSlot(selectedPostForReschedule.id, clientId, newDateTime, time);
+      setIsRescheduleModalOpen(false);
+      setSelectedPostForReschedule(null);
+    }
+  }, [selectedPostForReschedule, clientId, handleEditSlot]);
+
+  const handleCloseRescheduleModal = useCallback(() => {
+    setIsRescheduleModalOpen(false);
+    setSelectedPostForReschedule(null);
+  }, []);
 
   // Memoize calendar days rendering for better performance
   const calendarDays = useMemo(() => {
@@ -230,13 +296,33 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
         )}
       </Card>
 
+      <DayPostsModal
+        isOpen={isDayPostsModalOpen}
+        onClose={handleDayPostsModalClose}
+        selectedDate={selectedDate}
+        posts={selectedDate ? getPostsForDay(selectedDate) : []}
+        onPostClick={handlePostClick}
+        onSchedulePost={handleSchedulePostFromDay}
+        showAllClients={showAllClients}
+        onEditSlot={handleEditSlotFromDay}
+        onRemoveFromQueue={handleRemoveFromQueueDay}
+      />
+
       <SchedulePostModal
         isOpen={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
+        onClose={handleScheduleModalClose}
         selectedDate={selectedDate || new Date()}
         selectedTime="" // Default time when opened from calendar
         clientId={clientId || ''}
         onScheduleSuccess={handleScheduleSuccess}
+      />
+
+      <ReschedulePostModal
+        isOpen={isRescheduleModalOpen}
+        onClose={handleCloseRescheduleModal}
+        onReschedule={handleRescheduleFromModal}
+        selectedDate={selectedPostForReschedule ? new Date(selectedPostForReschedule.scheduledPostAt.seconds * 1000) : null}
+        postTitle={selectedPostForReschedule?.title || ''}
       />
     </>
   );
