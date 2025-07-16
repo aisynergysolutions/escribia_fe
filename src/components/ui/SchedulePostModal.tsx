@@ -37,7 +37,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedPostId, setSelectedPostId] = useState<string>('');
     const [isScheduling, setIsScheduling] = useState(false);
-    
+
     // Local state for editable date and time
     const [localDate, setLocalDate] = useState(selectedDate);
     const [localTime, setLocalTime] = useState(selectedTime);
