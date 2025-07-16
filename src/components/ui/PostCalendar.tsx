@@ -29,23 +29,42 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [loadedMonths, setLoadedMonths] = useState<string[]>([]);
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
 
   // Use external month if provided, otherwise use internal state
   const currentMonth = externalCurrentMonth || internalCurrentMonth;
 
-  // Fetch scheduled posts
+  // Initialize loaded months with current month only once
+  useEffect(() => {
+    const currentMonthStr = format(new Date(), 'yyyy-MM');
+    setLoadedMonths([currentMonthStr]);
+  }, []); // Empty dependency array to run only once
+
+  // Ensure the current viewing month is always loaded
+  useEffect(() => {
+    const currentMonthStr = format(currentMonth, 'yyyy-MM');
+    setLoadedMonths(prev => {
+      if (!prev.includes(currentMonthStr)) {
+        return [...prev, currentMonthStr];
+      }
+      return prev;
+    });
+  }, [currentMonth]);
+
+  // Fetch scheduled posts with month-based loading (except for showAllClients)
   const { scheduledPosts, loading, refetch } = useScheduledPosts(
-    showAllClients ? undefined : clientId
+    showAllClients ? undefined : clientId,
+    showAllClients ? undefined : loadedMonths
   );
 
-  // Refetch when clientId changes
+  // Only refetch when clientId changes, not when refetch function changes
   useEffect(() => {
     if (!showAllClients && clientId) {
-      refetch();
+      // The refetch will happen automatically when loadedMonths changes via useScheduledPosts
     }
-  }, [clientId, refetch, showAllClients]);
+  }, [clientId, showAllClients]);
 
   // Memoize month calculations
   const monthData = useMemo(() => {
@@ -78,12 +97,14 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   }, []);
 
   const handleScheduleSuccess = useCallback(() => {
-    refetch(); // Refresh the scheduled posts
+    // When a post is scheduled, we need to refetch to get the updated data from Firestore
+    refetch();
     onPostScheduled?.(); // Notify parent component
   }, [refetch, onPostScheduled]);
 
   const goToPreviousMonth = useCallback(() => {
     const newMonth = subMonths(currentMonth, 1);
+
     if (onMonthChange) {
       onMonthChange(newMonth);
     } else {
@@ -93,6 +114,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
 
   const goToNextMonth = useCallback(() => {
     const newMonth = addMonths(currentMonth, 1);
+
     if (onMonthChange) {
       onMonthChange(newMonth);
     } else {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { format } from 'date-fns';
@@ -14,12 +14,12 @@ scheduledPostAt: import('firebase/firestore').Timestamp;
   scheduledDate: string;
 }
 
-export const useScheduledPosts = (clientId?: string) => {
+export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) => {
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchScheduledPosts = async (targetClientId?: string) => {
+  const fetchScheduledPosts = async (targetClientId?: string, targetMonths?: string[]) => {
     setLoading(true);
     setError(null);
     
@@ -27,34 +27,72 @@ export const useScheduledPosts = (clientId?: string) => {
       const posts: ScheduledPost[] = [];
       
       if (targetClientId) {
-        // Fetch for specific client
-        const postEventsRef = collection(
-          db, 
-          'agencies', 'agency1', 
-          'clients', targetClientId, 
-          'postEvents'
-        );
-        
-        const postEventsSnapshot = await getDocs(postEventsRef);
-        
-        for (const docSnap of postEventsSnapshot.docs) {
-          const data = docSnap.data();
-          
-          // Each document is a year-month with postId fields
-          Object.entries(data).forEach(([postId, postData]: [string, any]) => {
-            if (postData && typeof postData === 'object' && postData.scheduledPostAt) {
-              posts.push({
-                id: postId,
-                title: postData.title || '',
-                profile: postData.profile || '',
-                status: postData.status || 'Scheduled',
-                scheduledPostAt: postData.scheduledPostAt,
-                clientId: targetClientId,
-                timeSlot: postData.timeSlot || '',
-                scheduledDate: postData.scheduledDate || ''
-              });
+        // If specific months are provided, fetch only those months
+        if (targetMonths && targetMonths.length > 0) {
+          for (const yearMonth of targetMonths) {
+            try {
+              const postEventRef = doc(
+                db, 
+                'agencies', 'agency1', 
+                'clients', targetClientId, 
+                'postEvents', yearMonth
+              );
+              
+              const postEventSnap = await getDoc(postEventRef);
+              
+              if (postEventSnap.exists()) {
+                const data = postEventSnap.data();
+                
+                // Each document is a year-month with postId fields
+                Object.entries(data).forEach(([postId, postData]: [string, any]) => {
+                  if (postData && typeof postData === 'object' && postData.scheduledPostAt) {
+                    posts.push({
+                      id: postId,
+                      title: postData.title || '',
+                      profile: postData.profile || '',
+                      status: postData.status || 'Scheduled',
+                      scheduledPostAt: postData.scheduledPostAt,
+                      clientId: targetClientId,
+                      timeSlot: postData.timeSlot || '',
+                      scheduledDate: postData.scheduledDate || ''
+                    });
+                  }
+                });
+              }
+            } catch (docError) {
+              console.log(`Month document ${yearMonth} doesn't exist or error accessing it, skipping...`);
             }
-          });
+          }
+        } else {
+          // Fallback to fetching all months (old behavior)
+          const postEventsRef = collection(
+            db, 
+            'agencies', 'agency1', 
+            'clients', targetClientId, 
+            'postEvents'
+          );
+          
+          const postEventsSnapshot = await getDocs(postEventsRef);
+          
+          for (const docSnap of postEventsSnapshot.docs) {
+            const data = docSnap.data();
+            
+            // Each document is a year-month with postId fields
+            Object.entries(data).forEach(([postId, postData]: [string, any]) => {
+              if (postData && typeof postData === 'object' && postData.scheduledPostAt) {
+                posts.push({
+                  id: postId,
+                  title: postData.title || '',
+                  profile: postData.profile || '',
+                  status: postData.status || 'Scheduled',
+                  scheduledPostAt: postData.scheduledPostAt,
+                  clientId: targetClientId,
+                  timeSlot: postData.timeSlot || '',
+                  scheduledDate: postData.scheduledDate || ''
+                });
+              }
+            });
+          }
         }
       } else {
         // Fetch for all clients (for dashboard view)
@@ -107,15 +145,21 @@ export const useScheduledPosts = (clientId?: string) => {
 
   useEffect(() => {
     if (clientId) {
-      fetchScheduledPosts(clientId);
+      fetchScheduledPosts(clientId, monthsToLoad);
     }
-  }, [clientId]);
+  }, [clientId, monthsToLoad]);
+
+  const refetch = useCallback(() => {
+    if (clientId) {
+      fetchScheduledPosts(clientId, monthsToLoad);
+    }
+  }, [clientId, monthsToLoad]);
 
   return {
     scheduledPosts,
     loading,
     error,
     fetchScheduledPosts,
-    refetch: () => fetchScheduledPosts(clientId)
+    refetch
   };
 };

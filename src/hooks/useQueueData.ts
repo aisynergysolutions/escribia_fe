@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { useEvents } from '../context/EventsContext';
 import { useScheduledPosts } from './useScheduledPosts';
 import { mockClients } from '../types';
@@ -28,9 +28,18 @@ export type DaySlot = QueueSlot | EmptySlot;
 
 export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const { timeslotData, loadingTimeslotData, fetchTimeslotData, updateTimeslots } = useEvents();
-  const { scheduledPosts, refetch: refetchScheduledPosts } = useScheduledPosts(clientId);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [weeksToShow, setWeeksToShow] = useState(3);
+  const [monthsToLoad, setMonthsToLoad] = useState<string[]>([]);
+
+  // Generate initial months (current month and next month)
+  useEffect(() => {
+    const today = new Date();
+    const currentMonth = format(today, 'yyyy-MM');
+    const nextMonth = format(addMonths(today, 1), 'yyyy-MM');
+    setMonthsToLoad([currentMonth, nextMonth]);
+  }, []);
+
+  const { scheduledPosts, refetch: refetchScheduledPosts } = useScheduledPosts(clientId, monthsToLoad);
 
   // Fetch timeslot data when the clientId changes
   useEffect(() => {
@@ -71,19 +80,27 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
       queueSlots.map(slot => format(slot.datetime, 'yyyy-MM-dd'))
     ));
 
-    // Add dates for the specified number of weeks that match active days
+    // Add dates for the loaded months that match active days
     const today = new Date();
-    const daysToShow = weeksToShow * 7;
     
-    for (let i = 0; i < daysToShow; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dayName = format(date, 'EEEE');
+    // Generate all days for the loaded months
+    for (const yearMonth of monthsToLoad) {
+      const [year, month] = yearMonth.split('-').map(Number);
+      const monthStart = startOfMonth(new Date(year, month - 1));
+      const monthEnd = endOfMonth(new Date(year, month - 1));
+      const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
       
-      if (activeDays.includes(dayName)) {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        if (!scheduledDates.includes(dateStr)) {
-          scheduledDates.push(dateStr);
+      for (const day of monthDays) {
+        // Only include days from today onwards
+        if (day >= today) {
+          const dayName = format(day, 'EEEE');
+          
+          if (activeDays.includes(dayName)) {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            if (!scheduledDates.includes(dateStr)) {
+              scheduledDates.push(dateStr);
+            }
+          }
         }
       }
     }
@@ -143,7 +160,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     });
 
     return groups;
-  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, weeksToShow, isInitialized]);
+  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, monthsToLoad, isInitialized]);
 
   const refreshQueue = () => {
     setRefreshKey(prev => prev + 1);
@@ -151,7 +168,13 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   };
 
   const loadMoreDays = () => {
-    setWeeksToShow(prev => prev + 3);
+    // Add the next month to the loaded months
+    const lastMonth = monthsToLoad[monthsToLoad.length - 1];
+    if (lastMonth) {
+      const [year, month] = lastMonth.split('-').map(Number);
+      const nextMonth = format(addMonths(new Date(year, month - 1), 1), 'yyyy-MM');
+      setMonthsToLoad(prev => [...prev, nextMonth]);
+    }
   };
 
   return {
