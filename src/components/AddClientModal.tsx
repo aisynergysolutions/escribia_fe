@@ -7,6 +7,7 @@ import { Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '../types';
 import { useClients } from '../context/ClientsContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface AddClientModalProps {
   onAddClient: (client: Client) => void;
@@ -24,9 +25,10 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false); // Add this state
   const { toast } = useToast();
   const { addClient } = useClients();
+  const { currentUser } = useAuth();
 
   // Build Tally.so URL dynamically
-  const tallyUrl = `https://tally.so/r/wkXKad?agency=agency1&client=${clientId || 'error'}`;
+  const tallyUrl = `https://tally.so/r/wkXKad?agency=${currentUser?.uid || 'error'}&client=${clientId || 'error'}`;
 
   const handleCopyLink = async () => {
     try {

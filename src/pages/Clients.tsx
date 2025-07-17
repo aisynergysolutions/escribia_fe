@@ -110,11 +110,23 @@ const Clients = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {memoizedClientCards}
-      </div>
+      {/* No clients message */}
+      {!isLoading && clientCards.length === 0 && (
+        <div className="text-center text-gray-500 py-12">
+          <p className="text-lg font-medium">No clients yet</p>
+          <p className="text-sm mt-2">Get started by adding your first client</p>
+        </div>
+      )}
 
-      {!hasResults && searchQuery && (
+      {/* Client cards grid */}
+      {clientCards.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {memoizedClientCards}
+        </div>
+      )}
+
+      {/* No search results message */}
+      {!hasResults && searchQuery && clientCards.length > 0 && (
         <div className="text-center text-gray-500 py-8">
           <p className="text-lg font-medium">No clients found</p>
           <p className="text-sm">Try adjusting your search terms or add a new client</p>
