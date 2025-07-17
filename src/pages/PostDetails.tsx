@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import IdeaHeader from '../components/idea/IdeaHeader';
 import PostEditor, { PostEditorRef } from '../components/idea/PostEditor';
 import IdeaForm from '../components/idea/IdeaForm';
@@ -10,10 +11,15 @@ import HooksSection from '@/components/idea/HooksSection';
 import { usePostEditor } from '../hooks/usePostEditor';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { usePosts } from '@/context/PostsContext';
+import { useAuth } from '@/context/AuthContext';
 
 const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  // Get the agency ID from the current user
+  const agencyId = currentUser?.uid;
 
   // Use the context - add the new functions
   const {
@@ -48,8 +54,8 @@ const PostDetails = () => {
   const [comments, setComments] = useState<CommentThread[]>([]);
   const [hasPoll, setHasPoll] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
-  const [isRegeneratingPost, setIsRegeneratingPost] = useState(false); // Add loading state
-  const [isDeleting, setIsDeleting] = useState(false); // Add delete loading state
+  const [isRegeneratingPost, setIsRegeneratingPost] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Ref to access PostEditor methods
   const postEditorRef = useRef<PostEditorRef>(null);
@@ -76,18 +82,33 @@ const PostDetails = () => {
   }, [post]);
 
   const handleSavePost = async (newText: string) => {
+    if (!agencyId) {
+      console.error('No agency ID available for saving post');
+      return;
+    }
+
     if (clientId && postId) {
-      await saveNewDraft("agency1", clientId, postId, newText, 'Manual save', false);
+      await saveNewDraft(agencyId, clientId, postId, newText, 'Manual save', false);
     }
   };
 
   const handleSaveAIPost = async (newText: string) => {
+    if (!agencyId) {
+      console.error('No agency ID available for saving AI post');
+      return;
+    }
+
     if (clientId && postId) {
-      await saveNewDraft("agency1", clientId, postId, newText, 'AI-generated content', true);
+      await saveNewDraft(agencyId, clientId, postId, newText, 'AI-generated content', true);
     }
   };
 
   const handleEditWithInstructions = async (instructions: string) => {
+    if (!agencyId) {
+      console.error('No agency ID available for editing with instructions');
+      return;
+    }
+
     if (clientId && postId && post?.profile.profileId && instructions.trim()) {
       const currentPostContent = post?.drafts?.[post.drafts.length - 1]?.text || '';
 
@@ -132,8 +153,23 @@ const PostDetails = () => {
       generatedByAI: draft.generatedByAI,
       notes: draft.notes
     })) || [];
-  console.log('Version History:', versionHistory);
 
+  // Show authentication error if no agency ID
+  if (!agencyId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
+            <AlertCircle className="h-5 w-5" />
+            <h3 className="font-semibold">Authentication Required</h3>
+          </div>
+          <p className="text-red-600 text-sm">
+            No agency ID available. Please ensure you are signed in to view post details.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading state
   if (loading) {
@@ -171,6 +207,11 @@ const PostDetails = () => {
   };
 
   const handleSendToAI = async () => {
+    if (!agencyId) {
+      console.error('No agency ID available for regenerating post');
+      return;
+    }
+
     if (!clientId || !postId || !post?.profile.profileId) {
       console.error('Missing required data for regeneration');
       return;
@@ -181,12 +222,12 @@ const PostDetails = () => {
 
       // Step 1: Update the initial idea and objective in Firestore
       console.log('Updating initial idea and objective...');
-      await updateInitialIdea('agency1', clientId, postId, initialIdea, objective);
+      await updateInitialIdea(agencyId, clientId, postId, initialIdea, objective);
 
       // Step 2: Regenerate the post content using the Railway API
       console.log('Regenerating post content...');
       const newPostContent = await regeneratePostFromIdea(
-        'agency1',
+        agencyId,
         clientId,
         postId,
         post.profile.profileId,
@@ -204,11 +245,9 @@ const PostDetails = () => {
         console.log('Post regenerated successfully');
       } else {
         console.error('Failed to regenerate post content');
-        // You might want to show a toast notification here
       }
     } catch (error) {
       console.error('Error during post regeneration:', error);
-      // You might want to show an error toast notification here
     } finally {
       setIsRegeneratingPost(false);
     }
@@ -223,6 +262,11 @@ const PostDetails = () => {
   };
 
   const handleHookSelect = async (index: number) => {
+    if (!agencyId) {
+      console.error('No agency ID available for applying hook');
+      return;
+    }
+
     if (clientId && postId && post?.profile.profileId) {
       const selectedHook = hooks[index];
       const currentPostContent = post?.drafts?.[post.drafts.length - 1]?.text || '';
@@ -249,6 +293,11 @@ const PostDetails = () => {
   };
 
   const handleRestoreVersion = async (versionId: string) => {
+    if (!agencyId) {
+      console.error('No agency ID available for restoring version');
+      return;
+    }
+
     if (clientId && postId) {
       // Find the version by ID
       const version = versionHistory.find(v => v.id === versionId);
@@ -263,13 +312,23 @@ const PostDetails = () => {
   };
 
   const handleRegenerateHooks = async () => {
-    if (clientId && postId && post.profile.profileId) {
+    if (!agencyId) {
+      console.error('No agency ID available for regenerating hooks');
+      return;
+    }
+
+    if (clientId && postId && post?.profile.profileId) {
       await generatePostHooks(clientId, postId, post.profile.profileId);
     }
   };
 
   const handleGenerateInitialHooks = async () => {
-    if (clientId && postId && post.profile.profileId) {
+    if (!agencyId) {
+      console.error('No agency ID available for generating initial hooks');
+      return;
+    }
+
+    if (clientId && postId && post?.profile.profileId) {
       await generatePostHooks(clientId, postId, post.profile.profileId);
     }
   };
@@ -295,11 +354,17 @@ const PostDetails = () => {
   const handlePollStateChange = (pollActive: boolean) => {
     setHasPoll(pollActive);
   };
+
   const handleAddToQueue = () => {
     console.log('Adding post to queue...');
-  }
+  };
 
   const handleDeletePost = async () => {
+    if (!agencyId) {
+      console.error('No agency ID available for deleting post');
+      return;
+    }
+
     if (!clientId || !postId) return;
 
     // Show confirmation dialog
@@ -311,13 +376,12 @@ const PostDetails = () => {
       setIsDeleting(true);
 
       // Delete the post using the context function
-      await deletePost('agency1', clientId, postId);
+      await deletePost(agencyId, clientId, postId);
 
       // Navigate back to posts list
       navigate(`/clients/${clientId}/posts`);
     } catch (error) {
       console.error('Error deleting post:', error);
-      // You might want to show an error toast notification here
       alert('Failed to delete post. Please try again.');
     } finally {
       setIsDeleting(false);
@@ -404,7 +468,7 @@ const PostDetails = () => {
                 onExpandChange={setIsIdeaExpanded}
                 onSendToAI={handleSendToAI}
                 onAddCustomObjective={handleAddCustomObjective}
-                isRegeneratingPost={isRegeneratingPost} // Pass loading state
+                isRegeneratingPost={isRegeneratingPost}
               />
 
               <HooksSection

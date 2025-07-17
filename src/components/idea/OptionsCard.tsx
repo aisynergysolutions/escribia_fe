@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Save } from 'lucide-react';
+import { Save, AlertCircle } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { usePostDetails } from '@/context/PostDetailsContext'; // Change from PostsContext to PostsDetailsContext
+import { usePostDetails } from '@/context/PostDetailsContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface OptionsCardProps {
   useAsTrainingData: boolean;
@@ -21,25 +22,78 @@ const OptionsCard: React.FC<OptionsCardProps> = ({
   onInternalNotesChange
 }) => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
-  const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
-  const { updateInternalNotes, updateTrainAI } = usePostDetails(); // Use PostsDetailsContext
+  const { currentUser } = useAuth();
+  const { updateInternalNotes, updateTrainAI } = usePostDetails();
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingTrainAI, setSavingTrainAI] = useState(false);
 
+  // Get the agency ID from the current user
+  const agencyId = currentUser?.uid;
+
   const handleSaveNotes = async () => {
-    if (!clientId || !postId) return;
+    if (!agencyId) {
+      console.error('No agency ID available for saving notes');
+      return;
+    }
+
+    if (!clientId || !postId) {
+      console.error('Missing clientId or postId');
+      return;
+    }
+
     setSavingNotes(true);
-    await updateInternalNotes(agencyId, clientId, postId, internalNotes);
-    setSavingNotes(false);
+    try {
+      await updateInternalNotes(agencyId, clientId, postId, internalNotes);
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    } finally {
+      setSavingNotes(false);
+    }
   };
 
   const handleTrainAIToggle = async (checked: boolean) => {
     onUseAsTrainingDataChange(checked);
-    if (!clientId || !postId) return;
+    
+    if (!agencyId) {
+      console.error('No agency ID available for updating trainAI');
+      return;
+    }
+
+    if (!clientId || !postId) {
+      console.error('Missing clientId or postId');
+      return;
+    }
+
     setSavingTrainAI(true);
-    await updateTrainAI(agencyId, clientId, postId, checked);
-    setSavingTrainAI(false);
+    try {
+      await updateTrainAI(agencyId, clientId, postId, checked);
+    } catch (error) {
+      console.error('Error updating trainAI:', error);
+    } finally {
+      setSavingTrainAI(false);
+    }
   };
+
+  // Show authentication error if no agency ID
+  if (!agencyId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            Options
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">No agency ID available. Please ensure you are signed in.</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -56,7 +110,10 @@ const OptionsCard: React.FC<OptionsCardProps> = ({
             onCheckedChange={handleTrainAIToggle}
             disabled={savingTrainAI}
           />
-          <Label htmlFor="use-as-training-data">Use as training data</Label>
+          <Label htmlFor="use-as-training-data">
+            Use as training data
+            {savingTrainAI && <span className="ml-2 text-xs text-gray-500">Saving...</span>}
+          </Label>
         </div>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -65,7 +122,7 @@ const OptionsCard: React.FC<OptionsCardProps> = ({
               type="button"
               onClick={handleSaveNotes}
               disabled={savingNotes}
-              className="p-1 rounded hover:bg-gray-100 transition"
+              className="p-1 rounded hover:bg-gray-100 transition disabled:opacity-50"
               title="Save internal notes"
             >
               <Save className={`h-4 w-4 ${savingNotes ? 'animate-spin' : ''}`} />
@@ -77,6 +134,7 @@ const OptionsCard: React.FC<OptionsCardProps> = ({
             value={internalNotes}
             onChange={e => onInternalNotesChange(e.target.value)}
             rows={3}
+            disabled={savingNotes}
           />
         </div>
       </CardContent>

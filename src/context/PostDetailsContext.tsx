@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { doc as firestoreDoc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 // --- Types ---
 export type Draft = {
@@ -90,9 +91,13 @@ export const usePostDetails = () => useContext(PostDetailsContext);
 
 // --- Provider ---
 export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
+    const { currentUser } = useAuth();
     const [post, setPost] = useState<PostDetails | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Get the current agency ID from the authenticated user
+    const agencyId = currentUser?.uid;
 
     // Generate hooks function - moved from api.ts
     const generateHooks = async (
@@ -134,11 +139,17 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const fetchPost = useCallback(async (clientId: string, postId: string) => {
+        if (!agencyId) {
+            console.warn('[PostDetailsContext] No agency ID available, skipping fetch');
+            setError('No agency ID available. Please ensure you are signed in.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
-            console.log('[PostDetailsContext] Fetching post:', clientId, postId);
-            const ref = firestoreDoc(db, 'agencies', 'agency1', 'clients', clientId, 'ideas', postId);
+            console.log('[PostDetailsContext] Fetching post for agency:', agencyId, 'client:', clientId, 'post:', postId);
+            const ref = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
             const snap = await getDoc(ref);
             if (!snap.exists()) throw new Error('Post not found');
             const data = snap.data();
@@ -176,7 +187,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [agencyId]);
 
     // Add this function to the context
     const clearPost = useCallback(() => {
@@ -192,7 +203,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         notes: string = '',
         generatedByAI: boolean = false
     ) => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for saving draft');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Saving new draft for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Get current drafts to determine the next version number
@@ -214,7 +231,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             const updatedDrafts = [...currentDrafts, newDraft];
             await updateDoc(postRef, {
                 drafts: updatedDrafts,
-                // currentDraftText: newText // Also update currentDraftText for compatibility
+                updatedAt: Timestamp.now()
             });
 
             // Update context post if it's the same post
@@ -223,7 +240,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                         ...prev,
                         drafts: updatedDrafts,
-                        // currentDraftText: newText
+                        updatedAt: Timestamp.now()
                     }
                     : prev
             );
@@ -236,8 +253,14 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const generatePostHooks = useCallback(async (clientId: string, postId: string, subClientId: string): Promise<Hook[]> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for generating hooks');
+            return [];
+        }
+
         try {
-            const hooks = await generateHooks('agency1', clientId, postId, subClientId);
+            console.log('[PostDetailsContext] Generating hooks for agency:', agencyId, 'client:', clientId, 'post:', postId);
+            const hooks = await generateHooks(agencyId, clientId, postId, subClientId);
 
             // Update the post state with the new hooks if this is the current post
             if (post && post.id === postId) {
@@ -249,7 +272,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             console.error('Error generating hooks for post:', error);
             return [];
         }
-    }, [post]);
+    }, [post, agencyId]);
 
     // Apply hook function
     const applyHook = async (
@@ -299,13 +322,19 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         postContent: string,
         hookText: string
     ): Promise<string | null> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for applying hook');
+            return null;
+        }
+
         try {
-            return await applyHook('agency1', clientId, postId, subClientId, postContent, hookText);
+            console.log('[PostDetailsContext] Applying hook for agency:', agencyId, 'client:', clientId, 'post:', postId);
+            return await applyHook(agencyId, clientId, postId, subClientId, postContent, hookText);
         } catch (error) {
             console.error('Error applying hook to post:', error);
             return null;
         }
-    }, []);
+    }, [agencyId]);
 
     // Edit post with instructions function
     const editPostWithInstructions = async (
@@ -356,13 +385,19 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         postContent: string,
         instructions: string
     ): Promise<string | null> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for editing post');
+            return null;
+        }
+
         try {
-            return await editPostWithInstructions('agency1', clientId, postId, subClientId, postContent, instructions);
+            console.log('[PostDetailsContext] Editing post with instructions for agency:', agencyId, 'client:', clientId, 'post:', postId);
+            return await editPostWithInstructions(agencyId, clientId, postId, subClientId, postContent, instructions);
         } catch (error) {
             console.error('Error editing post with instructions:', error);
             return null;
         }
-    }, []);
+    }, [agencyId]);
 
     // Partial edit function for selected text
     const editPostPartial = async (
@@ -424,13 +459,19 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         action: string,
         customPrompt?: string
     ): Promise<string | null> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for editing post partial');
+            return null;
+        }
+
         try {
-            return await editPostPartial('agency1', clientId, postId, subClientId, selectedText, postContent, action, customPrompt);
+            console.log('[PostDetailsContext] Editing post partial for agency:', agencyId, 'client:', clientId, 'post:', postId);
+            return await editPostPartial(agencyId, clientId, postId, subClientId, selectedText, postContent, action, customPrompt);
         } catch (error) {
             console.error('Error editing post partial:', error);
             return null;
         }
-    }, []);
+    }, [agencyId]);
 
     const updatePostTitle = useCallback(async (
         agencyId: string,
@@ -438,7 +479,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         postId: string,
         newTitle: string
     ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for updating title');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Updating title for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Update Firestore with the new title
@@ -471,7 +518,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         postId: string,
         newStatus: string
     ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for updating status');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Updating status for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Update Firestore with the new status
@@ -504,7 +557,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         postId: string,
         newNotes: string
     ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for updating notes');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Updating notes for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Update Firestore with the new internal notes
@@ -537,7 +596,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         postId: string,
         trainAI: boolean
     ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for updating trainAI');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Updating trainAI for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Update Firestore with the new trainAI setting
@@ -571,7 +636,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         initialIdeaPrompt: string,
         objective: string
     ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for updating initial idea');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Updating initial idea for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Update Firestore with the new initial idea and objective
@@ -611,7 +682,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         initialIdeaPrompt: string,
         objective: string
     ): Promise<string | null> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for regenerating post');
+            return null;
+        }
+
         try {
+            console.log('[PostDetailsContext] Regenerating post for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
                 method: 'POST',
                 headers: {
@@ -655,7 +732,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         newStatus: string,
         scheduledPostAt: Timestamp
     ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for updating scheduling');
+            throw new Error('No agency ID available');
+        }
+
         try {
+            console.log('[PostDetailsContext] Updating scheduling for agency:', agencyId, 'client:', clientId, 'post:', postId);
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
 
             // Update Firestore with the new status and scheduled time
@@ -683,6 +766,33 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             throw new Error('Failed to update post scheduling');
         }
     }, []);
+
+    // Show authentication error if no agency ID
+    if (!agencyId) {
+        return (
+            <PostDetailsContext.Provider value={{
+                post: null,
+                loading: false,
+                error: 'No agency ID available. Please ensure you are signed in.',
+                fetchPost: async () => { },
+                clearPost: () => { },
+                saveNewDraft: async () => { throw new Error('No agency ID available'); },
+                generatePostHooks: async () => [],
+                applyHook: async () => null,
+                editPostWithInstructions: async () => null,
+                editPostPartial: async () => null,
+                updatePostTitle: async () => { throw new Error('No agency ID available'); },
+                updatePostStatus: async () => { throw new Error('No agency ID available'); },
+                updateInternalNotes: async () => { throw new Error('No agency ID available'); },
+                updateTrainAI: async () => { throw new Error('No agency ID available'); },
+                updateInitialIdea: async () => { throw new Error('No agency ID available'); },
+                regeneratePostFromIdea: async () => null,
+                updatePostScheduling: async () => { throw new Error('No agency ID available'); },
+            }}>
+                {children}
+            </PostDetailsContext.Provider>
+        );
+    }
 
     return (
         <PostDetailsContext.Provider value={{

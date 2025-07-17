@@ -6,7 +6,8 @@ import StatusCard from './StatusCard';
 import EditableTitle from '../EditableTitle';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
-import { usePostDetails } from '@/context/PostDetailsContext'; // Change from PostsContext to PostsDetailsContext
+import { usePostDetails } from '@/context/PostDetailsContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface IdeaHeaderProps {
   clientId: string;
@@ -30,13 +31,14 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   onAddToQueue
 }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // Get agencyId and postId from params or props as needed
-  const agencyId = 'agency1'; // TODO: Replace with real agencyId logic as needed
+  // Get the agency ID from the current user
+  const agencyId = currentUser?.uid;
   const { postId } = useParams<{ postId: string }>();
-  const { updatePostTitle, updatePostStatus } = usePostDetails(); // Use PostsDetailsContext
+  const { updatePostTitle, updatePostStatus } = usePostDetails();
 
   // Helper function to get display title
   const getDisplayTitle = () => {
@@ -50,7 +52,13 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   const handleTitleChange = async (newTitle: string) => {
     onTitleChange(newTitle);
     if (agencyId && clientId && postId) {
-      await updatePostTitle(agencyId, clientId, postId, newTitle);
+      try {
+        await updatePostTitle(agencyId, clientId, postId, newTitle);
+      } catch (error) {
+        console.error('Error updating post title:', error);
+      }
+    } else {
+      console.warn('Missing required data for title update:', { agencyId, clientId, postId });
     }
   };
 
@@ -58,7 +66,13 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   const handleStatusChange = async (newStatus: string) => {
     onStatusChange(newStatus);
     if (agencyId && clientId && postId) {
-      await updatePostStatus(agencyId, clientId, postId, newStatus);
+      try {
+        await updatePostStatus(agencyId, clientId, postId, newStatus);
+      } catch (error) {
+        console.error('Error updating post status:', error);
+      }
+    } else {
+      console.warn('Missing required data for status update:', { agencyId, clientId, postId });
     }
   };
 
@@ -83,6 +97,28 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
     setShowAddToQueueModal(false);
     setShowScheduleModal(true);
   };
+
+  // Show authentication error if no agency ID
+  if (!agencyId) {
+    return (
+      <div className="flex items-center gap-1 py-0 px-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBack}
+          className="flex items-center justify-center rounded-full h-8 w-8 bg-transparent shadow-none border border-gray-100"
+          aria-label="Back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center min-w-0 gap-4">
+          <div className="text-red-600 text-sm">
+            No agency ID available. Please ensure you are signed in.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
