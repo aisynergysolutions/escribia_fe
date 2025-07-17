@@ -2,28 +2,39 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { format } from 'date-fns';
+import { useAuth } from '@/context/AuthContext';
 
 interface ScheduledPost {
   id: string;
   title: string;
   profile: string;
   status: string;
-scheduledPostAt: import('firebase/firestore').Timestamp;
+  scheduledPostAt: import('firebase/firestore').Timestamp;
   clientId: string;
   timeSlot: string;
   scheduledDate: string;
 }
 
 export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) => {
+  const { currentUser } = useAuth();
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
+
   const fetchScheduledPosts = async (targetClientId?: string, targetMonths?: string[]) => {
+    if (!agencyId) {
+      console.warn('[useScheduledPosts] No agency ID available, skipping fetch');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
+      console.log('[useScheduledPosts] Fetching scheduled posts for agency:', agencyId);
       const posts: ScheduledPost[] = [];
       
       if (targetClientId) {
@@ -33,7 +44,7 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
             try {
               const postEventRef = doc(
                 db, 
-                'agencies', 'agency1', 
+                'agencies', agencyId, 
                 'clients', targetClientId, 
                 'postEvents', yearMonth
               );
@@ -67,7 +78,7 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
           // Fallback to fetching all months (old behavior)
           const postEventsRef = collection(
             db, 
-            'agencies', 'agency1', 
+            'agencies', agencyId, 
             'clients', targetClientId, 
             'postEvents'
           );
@@ -96,14 +107,14 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
         }
       } else {
         // Fetch for all clients (for dashboard view)
-        const clientsRef = collection(db, 'agencies', 'agency1', 'clients');
+        const clientsRef = collection(db, 'agencies', agencyId, 'clients');
         const clientsSnapshot = await getDocs(clientsRef);
         
         for (const clientDoc of clientsSnapshot.docs) {
           const clientId = clientDoc.id;
           const postEventsRef = collection(
             db, 
-            'agencies', 'agency1', 
+            'agencies', agencyId, 
             'clients', clientId, 
             'postEvents'
           );
@@ -134,9 +145,10 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
       // Sort by scheduled date
       posts.sort((a, b) => a.scheduledPostAt.seconds - b.scheduledPostAt.seconds);
       
+      console.log('[useScheduledPosts] Fetched scheduled posts:', posts.length);
       setScheduledPosts(posts);
     } catch (err: any) {
-      console.error('Error fetching scheduled posts:', err);
+      console.error('[useScheduledPosts] Error fetching scheduled posts:', err);
       setError(err.message || 'Failed to fetch scheduled posts');
     } finally {
       setLoading(false);
@@ -144,16 +156,16 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
   };
 
   useEffect(() => {
-    if (clientId) {
+    if (clientId && agencyId) {
       fetchScheduledPosts(clientId, monthsToLoad);
     }
-  }, [clientId, monthsToLoad]);
+  }, [clientId, monthsToLoad, agencyId]);
 
   const refetch = useCallback(() => {
-    if (clientId) {
+    if (clientId && agencyId) {
       fetchScheduledPosts(clientId, monthsToLoad);
     }
-  }, [clientId, monthsToLoad]);
+  }, [clientId, monthsToLoad, agencyId]);
 
   return {
     scheduledPosts,

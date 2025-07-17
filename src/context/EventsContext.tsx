@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 export type TimeslotData = {
   predefinedTimeSlots: string[];
@@ -25,13 +26,23 @@ const EventsContext = createContext<EventsContextType>({
 export const useEvents = () => useContext(EventsContext);
 
 export const EventsProvider = ({ children }: { children: ReactNode }) => {
+  const { currentUser } = useAuth();
   const [timeslotData, setTimeslotData] = useState<TimeslotData | null>(null);
   const [loadingTimeslotData, setLoadingTimeslotData] = useState(false);
 
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
+
   const fetchTimeslotData = useCallback(async (clientId: string) => {
+    if (!agencyId) {
+      console.warn('[EventsContext] No agency ID available, skipping fetch');
+      return;
+    }
+
     setLoadingTimeslotData(true);
     try {
-      const timeslotDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', 'timeslots');
+      console.log('[EventsContext] Fetching timeslot data for agency:', agencyId, 'client:', clientId);
+      const timeslotDocRef = doc(db, 'agencies', agencyId, 'clients', clientId, 'postEvents', 'timeslots');
       const timeslotSnap = await getDoc(timeslotDocRef);
 
       if (timeslotSnap.exists()) {
@@ -59,11 +70,17 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
       });
     }
     setLoadingTimeslotData(false);
-  }, []); // Use an empty dependency array to ensure the function reference is stable
+  }, [agencyId]); // Include agencyId in dependency array
 
   const updateTimeslots = useCallback(async (clientId: string, timeslots: string[], days: string[]) => {
+    if (!agencyId) {
+      console.error('[EventsContext] No agency ID available for updating timeslots');
+      return;
+    }
+
     try {
-      const timeslotDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', 'timeslots');
+      console.log('[EventsContext] Updating timeslots for agency:', agencyId, 'client:', clientId);
+      const timeslotDocRef = doc(db, 'agencies', agencyId, 'clients', clientId, 'postEvents', 'timeslots');
       await setDoc(timeslotDocRef, {
         predefinedTimeSlots: timeslots,
         activeDays: days,
@@ -72,7 +89,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('[EventsContext] Error updating timeslots:', error);
     }
-  }, []); // Use an empty dependency array to ensure the function reference is stable
+  }, [agencyId]); // Include agencyId in dependency array
 
   return (
     <EventsContext.Provider

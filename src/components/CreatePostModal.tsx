@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid'; // Import UUID library
-import { ProfileCard, useProfiles } from '@/context/ProfilesContext'; // Import ProfilesContext
-import { TemplateCard, useTemplates } from '@/context/TemplatesContext'; // Import TemplatesContext
+import { v4 as uuidv4 } from 'uuid';
+import { ProfileCard, useProfiles } from '@/context/ProfilesContext';
+import { TemplateCard, useTemplates } from '@/context/TemplatesContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/components
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { usePosts } from '@/context/PostsContext'; // Import PostsContext
+import { usePosts } from '@/context/PostsContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -22,7 +23,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   children
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [postId, setPostId] = useState<string>(''); // State to store the generated UUID
+  const [postId, setPostId] = useState<string>('');
   const [selectedMethod, setSelectedMethod] = useState<string>('text');
   const [ideaText, setIdeaText] = useState('');
   const [selectedObjective, setSelectedObjective] = useState<string>('');
@@ -45,7 +46,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   ]);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [profiles, setProfiles] = useState<ProfileCard[]>([]); // State to store fetched profiles
+  const [profiles, setProfiles] = useState<ProfileCard[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -54,11 +55,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string; }>();
   const { toast } = useToast();
-  const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles(); // Use ProfilesContext
-  const { templates: allTemplates } = useTemplates(); // Use TemplatesContext
-  const { createPost, updatePostInContext } = usePosts(); // Add updatePostInContext
+  const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles();
+  const { templates: allTemplates } = useTemplates();
+  const { createPost, updatePostInContext } = usePosts();
+  const { currentUser } = useAuth();
   const objectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
 
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
 
   useEffect(() => {
     if (isOpen) {
@@ -69,17 +73,22 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       if (clientId) {
         setActiveClientId(clientId);
         fetchProfiles(clientId).then(() => {
-          setProfiles(clientProfiles); // Update local state with fetched profiles
+          setProfiles(clientProfiles);
         });
       }
-
-      // Fetch templates (no .then, no setTemplates)
-      // fetchTemplates();
     }
-    // REMOVE allTemplates from dependencies!
-  }, [isOpen, clientId, fetchProfiles, setActiveClientId]);
+  }, [isOpen, clientId, fetchProfiles, setActiveClientId, clientProfiles]);
 
   const handleCreateFromText = async () => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (ideaText.trim() && clientId && selectedSubClient) {
       try {
         const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
@@ -100,7 +109,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
         // Step 2: Create the post in Firestore (without AI-generated content initially)
         const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
-        await createPost('agency1', clientId, {
+        console.log('[CreatePostModal] Creating post for agency:', agencyId, 'client:', clientId);
+        await createPost(agencyId, clientId, {
           profileId: selectedProfile.id,
           profileName: selectedProfile.profileName,
           profileRole: selectedProfile.role || '',
@@ -119,11 +129,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              agency_id: 'agency1',
+              agency_id: agencyId,
               client_id: clientId,
               subclient_id: selectedProfile.id,
               idea_id: postId,
-              save: true, // This should save to Firestore
+              save: true,
               create_title: true,
               create_hooks: true,
             }),
@@ -147,9 +157,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
         // Step 4: Check if generation was successful and update context
         if (result.success) {
-          // **FIX: Update the context with the AI-generated title**
+          // Update the context with the AI-generated title
           if (result.title) {
-            await updatePostInContext('agency1', clientId, postId, {
+            await updatePostInContext(agencyId, clientId, postId, {
               title: result.title,
               ...(result.post_content && { currentDraftText: result.post_content }),
               ...(result.generatedHooks && { generatedHooks: result.generatedHooks }),
@@ -193,9 +203,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleCreateFromVoice = () => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (clientId && hasRecording && selectedSubClient) {
       const temppostId = `temp-${Date.now()}`;
       const voiceData = {
+        agencyId,
         language: recordingLanguage,
         notes: voiceNotes,
         objective: selectedObjective,
@@ -210,9 +230,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleCreateFromUrl = () => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (urlInput.trim() && clientId && selectedSubClient) {
       const temppostId = `temp-${Date.now()}`;
       const urlData = {
+        agencyId,
         url: urlInput,
         remarks: urlRemarks,
         objective: selectedObjective,
@@ -226,9 +256,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleCreateFromSuggestion = (suggestion: string) => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (clientId && selectedSubClient) {
       const temppostId = `temp-${Date.now()}`;
       const suggestionData = {
+        agencyId,
         initialIdea: suggestion,
         objective: selectedObjective,
         template: selectedTemplate,
@@ -426,7 +466,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <SelectItem value="none">
               <span className="text-muted-foreground">Select a template</span>
             </SelectItem>
-            {/* Use allTemplates from context */}
             {allTemplates.map(template => (
               <SelectItem key={template.id} value={template.id}>
                 {template.templateName}
@@ -439,10 +478,30 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   );
 
   const truncateText = (text: string, maxLength: number = 350) => {
-    // Only truncate if it's extremely long; CSS line clamp does the rest
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
   };
+
+  // Show authentication error if no agency ID
+  if (!agencyId) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-red-600 mb-2">Authentication Required</h3>
+              <p className="text-sm text-gray-600">
+                Please sign in to create posts.
+              </p>
+            </div>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const renderRightPanel = () => {
     switch (selectedMethod) {
@@ -711,7 +770,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       </DialogTrigger>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          {/* Updated Header with larger label and borderless selector */}
           <div className="flex items-center gap-4 pb-4">
             <label className="text-lg font-semibold text-foreground">
               Create Post as:
@@ -771,7 +829,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {/* Header Divider */}
           <Separator className="border-gray-200" />
         </DialogHeader>
 

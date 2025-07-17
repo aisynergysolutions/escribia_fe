@@ -9,7 +9,8 @@ import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
 import { Idea } from '../../types';
 import { formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
-import { usePosts } from '@/context/PostsContext'; // <-- Add this import
+import { usePosts } from '@/context/PostsContext';
+import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface PostsSectionProps {
@@ -37,20 +38,23 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
-  // NEW: Use PostsContext
+  // Use PostsContext and AuthContext
   const { posts, loading, error, fetchPosts, deletePost } = usePosts();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // TODO: Replace with real agencyId logic as needed
-  const agencyId = 'agency1';
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
 
   // Fetch posts when clientId or agencyId changes
   useEffect(() => {
     if (agencyId && clientId) {
+      console.log('[PostsSection] Fetching posts for agency:', agencyId, 'client:', clientId);
       fetchPosts(agencyId, clientId);
+    } else {
+      console.warn('[PostsSection] No agency ID or client ID available, skipping fetch');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agencyId, clientId]);
+  }, [agencyId, clientId, fetchPosts]);
 
   // Load sort preferences from localStorage
   const loadSortPreferences = () => {
@@ -80,11 +84,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   // Replace mockIdeas with posts from context
   const clientIdeas = posts;
-
-  // Get client information
-  // const getClientInfo = (clientId: string) => {
-  //   return mockClients.find(client => client.id === clientId);
-  // };
 
   // Filter and sort posts
   const getFilteredAndSortedPosts = (): typeof posts => {
@@ -181,9 +180,16 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   };
 
   const handleDelete = async (postId: string) => {
+    if (!agencyId) {
+      console.error('[PostsSection] No agency ID available for deleting post');
+      alert('No agency ID available. Please ensure you are signed in.');
+      return;
+    }
+
     if (window.confirm('Are you sure you want to delete this post?')) {
       try {
-        await deletePost('agency1', clientId, postId); // Call deletePost from PostsContext
+        console.log('[PostsSection] Deleting post for agency:', agencyId, 'client:', clientId, 'post:', postId);
+        await deletePost(agencyId, clientId, postId);
         console.log('Post deleted:', postId);
       } catch (error) {
         console.error('Error deleting post:', error);
@@ -208,6 +214,20 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
       setSelectedStatus(status);
     }
   };
+
+  // Show error if no agency ID is available
+  if (!agencyId) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h3 className="text-red-800 font-semibold mb-2">Authentication Required</h3>
+          <p className="text-red-600">
+            No agency ID available. Please ensure you are signed in to view posts.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -343,9 +363,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                       <div className="font-semibold text-gray-900 max-w-xs truncate" title={post.title}>
                         {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
                       </div>
-                      {/* <div>
-                        {post.postId}
-                      </div> */}
                     </TableCell>
                     <TableCell className="py-4 text-gray-600">
                       {post.profile}

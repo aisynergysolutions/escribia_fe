@@ -4,13 +4,14 @@ import { Linkedin, Loader2, AlertCircle } from "lucide-react";
 import { useLinkedin } from "@/context/LinkedinContext";
 import { LinkedInInfo } from "@/context/ProfilesContext";
 import LinkedInStatusModal from "./LinkedInStatusModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface LinkedInConnectionPanelProps {
   style?: React.CSSProperties;
   linkedinInfo: LinkedInInfo;
   profileId: string;
   clientId: string;
-  agencyId?: string;
+  agencyId?: string; // Keep this optional for backward compatibility
 }
 
 const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
@@ -18,14 +19,23 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   linkedinInfo,
   profileId,
   clientId,
-  agencyId = "agency1",
+  agencyId: propAgencyId, // Rename the prop to avoid confusion
 }) => {
+  const { currentUser } = useAuth();
   const { isConnecting, isCheckingStatus, isDisconnecting, connectLinkedIn, checkLinkedInStatus, disconnectLinkedIn, refreshProfile } = useLinkedin();
   const [error, setError] = useState<string | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusData, setStatusData] = useState<any>(null);
 
+  // Use the real agency ID from currentUser, fallback to prop if provided
+  const agencyId = currentUser?.uid || propAgencyId;
+
   const handleConnectClick = async () => {
+    if (!agencyId) {
+      setError('No agency ID available. Please ensure you are signed in.');
+      return;
+    }
+
     try {
       setError(null);
       await connectLinkedIn(profileId, agencyId, clientId);
@@ -36,6 +46,11 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   };
 
   const handleCheckStatus = async () => {
+    if (!agencyId) {
+      setError('No agency ID available. Please ensure you are signed in.');
+      return;
+    }
+
     try {
       setError(null);
       const status = await checkLinkedInStatus(profileId, agencyId, clientId);
@@ -49,12 +64,32 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   };
 
   const handleDisconnect = async () => {
+    if (!agencyId) {
+      setError('No agency ID available. Please ensure you are signed in.');
+      return;
+    }
+
     try {
       setError(null);
       await disconnectLinkedIn(profileId, agencyId, clientId);
     } catch (error) {
       console.error('Failed to disconnect LinkedIn:', error);
       setError('Failed to disconnect LinkedIn. Please try again.');
+    }
+  };
+
+  const handleRefreshProfile = async () => {
+    if (!agencyId) {
+      setError('No agency ID available. Please ensure you are signed in.');
+      return;
+    }
+
+    try {
+      setError(null);
+      await refreshProfile(clientId, agencyId);
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+      setError('Failed to refresh profile. Please try again.');
     }
   };
 
@@ -67,6 +102,22 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
       return dateString;
     }
   };
+
+  // Show error if no agency ID is available
+  if (!agencyId) {
+    return (
+      <div
+        style={style}
+        className="bg-red-50 border border-red-200 rounded-lg px-6 py-4"
+        aria-label="LinkedIn connection error"
+      >
+        <div className="flex items-center gap-2 text-red-600">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">No agency ID available. Please ensure you are signed in.</span>
+        </div>
+      </div>
+    );
+  }
 
   if (linkedinInfo.linkedinConnected) {
     // Connected state - show full LinkedIn info
@@ -168,7 +219,7 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
         <p className="text-xs text-muted-foreground text-center">
           Already connected?
           <button
-            onClick={() => refreshProfile(clientId)}
+            onClick={handleRefreshProfile}
             className="ml-1 text-blue-600 hover:text-blue-800 underline"
             type="button"
           >

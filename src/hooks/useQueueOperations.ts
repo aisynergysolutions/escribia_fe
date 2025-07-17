@@ -1,12 +1,22 @@
-
 import { format, addMonths } from 'date-fns';
 import { mockIdeas } from '../types';
 import { Timestamp, doc, setDoc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 export const useQueueOperations = (refreshQueue: () => void) => {
+  const { currentUser } = useAuth();
+  
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
+
   const handleRemoveFromQueue = async (slotId: string, clientId: string) => {
-    console.log('Remove from queue:', slotId);
+    if (!agencyId) {
+      console.error('[useQueueOperations] No agency ID available for removing from queue');
+      return;
+    }
+
+    console.log('[useQueueOperations] Remove from queue:', slotId, 'for agency:', agencyId);
     
     try {
       // Search through month documents to find and remove the scheduled post
@@ -23,7 +33,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       for (const yearMonth of monthsToCheck) {
         const postEventRef = doc(
           db, 
-          'agencies', 'agency1', 
+          'agencies', agencyId, 
           'clients', clientId, 
           'postEvents', yearMonth
         );
@@ -53,7 +63,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       // Update the post status in the ideas collection back to 'Draft'
       const postRef = doc(
         db,
-        'agencies', 'agency1',
+        'agencies', agencyId,
         'clients', clientId,
         'ideas', slotId
       );
@@ -72,7 +82,12 @@ export const useQueueOperations = (refreshQueue: () => void) => {
   };
 
   const handleEditSlot = async (slotId: string, clientId: string, newDateTime: Date, newTimeSlot: string) => {
-    console.log('Edit slot:', slotId, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'));
+    if (!agencyId) {
+      console.error('[useQueueOperations] No agency ID available for editing slot');
+      return;
+    }
+
+    console.log('[useQueueOperations] Edit slot:', slotId, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'), 'for agency:', agencyId);
     
     try {
       // First, remove the post from its current location (reuse the remove logic)
@@ -91,7 +106,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       for (const yearMonth of monthsToCheck) {
         const postEventRef = doc(
           db, 
-          'agencies', 'agency1', 
+          'agencies', agencyId, 
           'clients', clientId, 
           'postEvents', yearMonth
         );
@@ -141,7 +156,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       // Save to Firestore in the new postEvents collection
       const newPostEventRef = doc(
         db, 
-        'agencies', 'agency1', 
+        'agencies', agencyId, 
         'clients', clientId, 
         'postEvents', newYearMonth
       );
@@ -154,7 +169,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       // Update the post status in the ideas collection
       const postRef = doc(
         db,
-        'agencies', 'agency1',
+        'agencies', agencyId,
         'clients', clientId,
         'ideas', slotId
       );
@@ -173,7 +188,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
   };
 
   const handleMoveToTop = (slotId: string, queueSlots: any[]) => {
-    console.log('Move to top:', slotId);
+    console.log('[useQueueOperations] Move to top:', slotId, 'for agency:', agencyId);
     const earliestPost = queueSlots.filter(slot => slot.id !== slotId)[0];
     if (earliestPost) {
       const newTime = new Date(earliestPost.datetime.getTime() - 30 * 60 * 1000);
@@ -187,7 +202,7 @@ export const useQueueOperations = (refreshQueue: () => void) => {
 
   const handleReschedule = (selectedPost: any, newDateTime: Date) => {
     if (selectedPost) {
-      console.log('Reschedule post:', selectedPost.id, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'));
+      console.log('[useQueueOperations] Reschedule post:', selectedPost.id, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'), 'for agency:', agencyId);
       
       const postIndex = mockIdeas.findIndex(idea => idea.id === selectedPost.id);
       if (postIndex !== -1) {
