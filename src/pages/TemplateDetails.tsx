@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Edit2, Save, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useTemplates } from '@/context/TemplatesContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,10 +46,13 @@ const TemplateDetails = () => {
     templateDetailsLoading,
     templateDetailsError,
     getTemplateDetails,
-    updateTemplate
+    updateTemplate,
+    deleteTemplate
   } = useTemplates();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     templateName: '',
     templateContent: '',
@@ -138,6 +150,29 @@ const TemplateDetails = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!templateDetails) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteTemplate(templateDetails.id);
+      toast({
+        title: "Template Deleted",
+        description: `Template "${templateDetails.templateName}" has been deleted successfully.`,
+      });
+      navigate('/templates');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete template. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   const handleCancel = () => {
     if (templateDetails) {
       setFormData({
@@ -216,10 +251,20 @@ const TemplateDetails = () => {
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit Template
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Template
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -401,6 +446,31 @@ const TemplateDetails = () => {
           </>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the template
+              "{templateDetails?.templateName}" and remove it from your templates library.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
