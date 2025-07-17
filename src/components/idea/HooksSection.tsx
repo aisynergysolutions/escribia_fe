@@ -158,7 +158,7 @@ const HooksSection: React.FC<HooksSectionProps> = ({
                         <p className="pr-2 whitespace-pre-line text-sm">{hook.text}</p>
                         {isSelected && <Badge className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 flex-shrink-0">Selected</Badge>}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Angle: {hook.angle}</p>
+                      {/* <p className="text-xs text-gray-500 mt-1">Angle: {hook.angle}</p> */}
                     </>
                   )}
                 </button>

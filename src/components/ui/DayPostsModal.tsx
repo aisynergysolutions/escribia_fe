@@ -80,9 +80,7 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
             <span>
               {selectedDate && format(selectedDate, 'MMMM d, yyyy')}
             </span>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+
           </DialogTitle>
         </DialogHeader>
 
