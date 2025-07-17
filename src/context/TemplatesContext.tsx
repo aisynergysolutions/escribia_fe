@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useCa
 import { collection, getDocs, setDoc, doc, serverTimestamp, deleteDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Template } from '@/types/interfaces';
+import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 
 export type TemplateCard = {
@@ -70,6 +71,7 @@ const TemplatesContext = createContext<TemplatesContextType>({
 export const useTemplates = () => useContext(TemplatesContext);
 
 export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
+    const { currentUser } = useAuth();
     const [templates, setTemplates] = useState<TemplateCard[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -77,11 +79,20 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
     const [templateDetailsLoading, setTemplateDetailsLoading] = useState(false);
     const [templateDetailsError, setTemplateDetailsError] = useState<string | null>(null);
 
+    // Get the current agency ID from the authenticated user
+    const agencyId = currentUser?.uid;
+
     const fetchTemplates = async () => {
+        if (!agencyId) {
+            console.warn('[TemplatesContext] No agency ID available, skipping fetch');
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
-            const templatesCol = collection(db, 'agencies', 'agency1', 'templates');
+            console.log('[TemplatesContext] Fetching templates for agency:', agencyId);
+            const templatesCol = collection(db, 'agencies', agencyId, 'templates');
             const snapshot = await getDocs(templatesCol);
 
             const templatesList: TemplateCard[] = snapshot.docs.map(doc => {
@@ -98,8 +109,9 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
                     createdAt: data.createdAt || Timestamp.now(),
                 };
             });
+            
+            console.log('[TemplatesContext] Fetched templates:', templatesList.length);
             setTemplates(templatesList);
-            setLoading(false);
         } catch (err: any) {
             console.error('[TemplatesContext] Error fetching templates:', err);
             setError(err.message || 'Failed to fetch templates');
@@ -109,17 +121,24 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const addTemplate = async (templateData: CreateTemplateData): Promise<string | null> => {
+        if (!agencyId) {
+            console.error('[TemplatesContext] No agency ID available for adding template');
+            setError('No agency ID available');
+            return null;
+        }
+
         try {
-            const templateId = uuidv4(); // Use UUID v4 for the template ID
-            const templateDocRef = doc(db, 'agencies', 'agency1', 'templates', templateId);
+            const templateId = uuidv4();
+            const templateDocRef = doc(db, 'agencies', agencyId, 'templates', templateId);
 
             const newTemplate = {
                 ...templateData,
-                agencyId: 'agency1',
+                agencyId: agencyId,
                 usageCount: 0,
                 createdAt: serverTimestamp(),
             };
 
+            console.log('[TemplatesContext] Adding template for agency:', agencyId);
             await setDoc(templateDocRef, newTemplate);
 
             // Update local state
@@ -134,10 +153,17 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateTemplate = async (templateData: UpdateTemplateData) => {
+        if (!agencyId) {
+            console.error('[TemplatesContext] No agency ID available for updating template');
+            setError('No agency ID available');
+            return;
+        }
+
         try {
             const { id, ...updateData } = templateData;
-            const templateDocRef = doc(db, 'agencies', 'agency1', 'templates', id);
+            const templateDocRef = doc(db, 'agencies', agencyId, 'templates', id);
 
+            console.log('[TemplatesContext] Updating template for agency:', agencyId);
             await updateDoc(templateDocRef, {
                 ...updateData,
                 updatedAt: serverTimestamp(),
@@ -157,8 +183,16 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const deleteTemplate = async (id: string) => {
+        if (!agencyId) {
+            console.error('[TemplatesContext] No agency ID available for deleting template');
+            setError('No agency ID available');
+            return;
+        }
+
         try {
-            const templateDocRef = doc(db, 'agencies', 'agency1', 'templates', id);
+            const templateDocRef = doc(db, 'agencies', agencyId, 'templates', id);
+            
+            console.log('[TemplatesContext] Deleting template for agency:', agencyId);
             await deleteDoc(templateDocRef);
 
             // Remove the template from local state without refetching
@@ -175,10 +209,16 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const getTemplateDetails = useCallback(async (templateId: string): Promise<Template | null> => {
+        if (!agencyId) {
+            console.error('[TemplatesContext] No agency ID available for getting template details');
+            setTemplateDetailsError('No agency ID available');
+            return null;
+        }
+
         setTemplateDetailsLoading(true);
         setTemplateDetailsError(null);
         try {
-            const templateDocRef = doc(db, 'agencies', 'agency1', 'templates', templateId);
+            const templateDocRef = doc(db, 'agencies', agencyId, 'templates', templateId);
             const templateSnap = await getDoc(templateDocRef);
 
             if (!templateSnap.exists()) {
@@ -197,13 +237,14 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
                 funnelStage: data.funnelStage || 'TOFU',
                 contentType: data.contentType || '',
                 scope: data.scope || '',
-                agencyId: data.agencyId || 'agency1',
+                agencyId: data.agencyId || agencyId,
                 createdAt: data.createdAt || Timestamp.now(),
                 usageCount: data.usageCount || 0,
                 examplePlaceholders: data.examplePlaceholders || {},
                 tags: data.tags || [],
             };
 
+            console.log('[TemplatesContext] Fetched template details for agency:', agencyId);
             setTemplateDetails(details);
             setTemplateDetailsLoading(false);
             return details;
@@ -214,11 +255,16 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
             console.error('[TemplatesContext] Error fetching template details:', err);
             return null;
         }
-    }, []);
+    }, [agencyId]);
 
     const incrementUsageCount = async (templateId: string) => {
+        if (!agencyId) {
+            console.error('[TemplatesContext] No agency ID available for incrementing usage count');
+            return;
+        }
+
         try {
-            const templateDocRef = doc(db, 'agencies', 'agency1', 'templates', templateId);
+            const templateDocRef = doc(db, 'agencies', agencyId, 'templates', templateId);
             const templateSnap = await getDoc(templateDocRef);
 
             if (templateSnap.exists()) {
@@ -264,9 +310,17 @@ export const TemplatesProvider = ({ children }: { children: ReactNode }) => {
         );
     };
 
+    // Fetch templates when agency ID becomes available
     useEffect(() => {
-        fetchTemplates();
-    }, []);
+        if (agencyId && currentUser?.emailVerified) {
+            console.log('[TemplatesContext] Agency ID available, fetching templates');
+            fetchTemplates();
+        } else {
+            console.log('[TemplatesContext] No agency ID or user not verified, clearing templates');
+            setTemplates([]);
+            setError(null);
+        }
+    }, [agencyId, currentUser?.emailVerified]);
 
     return (
         <TemplatesContext.Provider value={{
