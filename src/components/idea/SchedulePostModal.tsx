@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { usePostDetails } from '@/context/PostDetailsContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface SchedulePostModalProps {
   open: boolean;
@@ -75,6 +76,10 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const minuteInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { post, updatePostScheduling } = usePostDetails();
+  const { currentUser } = useAuth();
+
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
 
   // Generate hours array (00-23)
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -155,7 +160,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   }, [selectedMinute]);
 
   const handleSchedule = async () => {
-    if (!selectedDate || !clientId || !postId) {
+    if (!selectedDate || !clientId || !postId || !agencyId) {
       console.error('[SchedulePostModal] Missing required data for scheduling');
       toast({
         title: "Missing Information",
@@ -196,7 +201,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       // Save to Firestore in the postEvents collection
       const postEventRef = doc(
         db,
-        'agencies', 'agency1',
+        'agencies', agencyId,
         'clients', clientId,
         'postEvents', newYearMonth
       );
@@ -209,7 +214,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       // Update the post status in the ideas collection
       const postRef = doc(
         db,
-        'agencies', 'agency1',
+        'agencies', agencyId,
         'clients', clientId,
         'ideas', postId
       );
@@ -222,10 +227,10 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
       // Update the PostDetailsContext with the new scheduling info
       if (updatePostScheduling) {
-        await updatePostScheduling('agency1', clientId, postId, selectedStatus, Timestamp.fromDate(scheduledDate));
+        await updatePostScheduling(agencyId, clientId, postId, selectedStatus, Timestamp.fromDate(scheduledDate));
       }
 
-      console.log('[SchedulePostModal] Post successfully scheduled:', {
+      console.log('[SchedulePostModal] Post successfully scheduled for agency:', agencyId, {
         postId,
         scheduledDate,
         status: selectedStatus
@@ -243,7 +248,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       onOpenChange(false);
 
     } catch (error) {
-      console.error('[SchedulePostModal] Error scheduling post:', error);
+      console.error('[SchedulePostModal] Error scheduling post for agency:', agencyId, error);
 
       // Show error message
       toast({
@@ -327,6 +332,30 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const handleSeeLess = () => {
     setIsExpanded(false);
   };
+
+  // Show authentication error if no agency ID
+  if (!agencyId) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Authentication Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-6">
+            <p className="text-gray-600 mb-4">
+              Please sign in to schedule posts.
+            </p>
+            <Button onClick={() => onOpenChange(false)} className="w-full">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

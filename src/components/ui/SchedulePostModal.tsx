@@ -6,13 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './label';
 import { Badge } from './badge';
 import { Card } from './card';
-import { Search, Clock, Calendar, User } from 'lucide-react';
+import { Search, Clock, Calendar, User, AlertCircle } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { usePosts, PostCard } from '../../context/PostsContext';
 import { doc, setDoc, collection, getDocs, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Timestamp } from 'firebase/firestore';
 import { usePostDetails } from '../../context/PostDetailsContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface SchedulePostModalProps {
     isOpen: boolean;
@@ -35,6 +36,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 }) => {
     const { posts, fetchPosts, loading } = usePosts();
     const { updatePostScheduling } = usePostDetails();
+    const { currentUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedPostId, setSelectedPostId] = useState<string>('');
@@ -44,12 +46,16 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     const [localDate, setLocalDate] = useState(selectedDate);
     const [localTime, setLocalTime] = useState(selectedTime);
 
+    // Get the current agency ID from the authenticated user
+    const agencyId = currentUser?.uid;
+
     // Fetch posts when modal opens
     useEffect(() => {
-        if (isOpen && clientId) {
-            fetchPosts('agency1', clientId);
+        if (isOpen && clientId && agencyId) {
+            console.log('[SchedulePostModal] Fetching posts for agency:', agencyId, 'client:', clientId);
+            fetchPosts(agencyId, clientId);
         }
-    }, [isOpen, clientId, fetchPosts]);
+    }, [isOpen, clientId, agencyId, fetchPosts]);
 
     // Update local state when props change
     useEffect(() => {
@@ -80,7 +86,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     });
 
     const handleSchedulePost = async () => {
-        if (!selectedPostId) return;
+        if (!selectedPostId || !agencyId) return;
 
         const selectedPost = posts.find(p => p.postId === selectedPostId);
         if (!selectedPost) return;
@@ -111,7 +117,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                 for (const yearMonth of monthsToCheck) {
                     const postEventRef = doc(
                         db,
-                        'agencies', 'agency1',
+                        'agencies', agencyId,
                         'clients', clientId,
                         'postEvents', yearMonth
                     );
@@ -123,7 +129,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                             const data = monthDocSnap.data();
                             // Check if this post exists in this month document
                             if (data[selectedPost.postId]) {
-                                console.log(`Found existing scheduled post in ${yearMonth}, removing it...`);
+                                console.log(`[SchedulePostModal] Found existing scheduled post in ${yearMonth}, removing it...`);
 
                                 // Remove the post from this month document
                                 await updateDoc(postEventRef, {
@@ -134,7 +140,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                             }
                         }
                     } catch (error) {
-                        console.log(`Month document ${yearMonth} doesn't exist or error accessing it, skipping...`);
+                        console.log(`[SchedulePostModal] Month document ${yearMonth} doesn't exist or error accessing it, skipping...`);
                         // Document doesn't exist or error accessing it, continue to next month
                     }
                 }
@@ -155,7 +161,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
             // Save to Firestore in the new postEvents collection
             const newPostEventRef = doc(
                 db,
-                'agencies', 'agency1',
+                'agencies', agencyId,
                 'clients', clientId,
                 'postEvents', newYearMonth
             );
@@ -168,7 +174,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
             // Update the post status in the ideas collection
             const postRef = doc(
                 db,
-                'agencies', 'agency1',
+                'agencies', agencyId,
                 'clients', clientId,
                 'ideas', selectedPost.postId
             );
@@ -181,7 +187,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
             // After successfully updating Firestore, update the PostDetailsContext
             await updatePostScheduling(
-                'agency1',
+                agencyId,
                 clientId,
                 selectedPost.postId,
                 'Scheduled',

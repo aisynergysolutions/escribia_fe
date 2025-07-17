@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Clock, Send, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, Send, ChevronDown, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +12,7 @@ import { format, addMonths, addDays, isSameDay, startOfDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { usePostDetails } from '@/context/PostDetailsContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface AddToQueueModalProps {
   open: boolean;
@@ -70,6 +70,10 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { post, updatePostScheduling } = usePostDetails();
+  const { currentUser } = useAuth();
+
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
 
   // Types for queue slot data
   type QueueSlot = {
@@ -79,14 +83,14 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   };
 
   // Function to find the next five empty slots in the queue
-  const findNextEmptySlot = async (clientId: string): Promise<QueueSlot[]> => {
+  const findNextEmptySlot = async (agencyId: string, clientId: string): Promise<QueueSlot[]> => {
     try {
       // Step 1: Fetch timeslots configuration
-      const timeslotDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', 'timeslots');
+      const timeslotDocRef = doc(db, 'agencies', agencyId, 'clients', clientId, 'postEvents', 'timeslots');
       const timeslotSnap = await getDoc(timeslotDocRef);
 
       if (!timeslotSnap.exists()) {
-        console.log('[AddToQueueModal] No timeslots configuration found');
+        console.log('[AddToQueueModal] No timeslots configuration found for agency:', agencyId);
         return []; // Return empty array if no configuration exists
       }
 
@@ -95,7 +99,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       const predefinedTimeSlots: string[] = timeslotData.predefinedTimeSlots || [];
 
       if (activeDays.length === 0 || predefinedTimeSlots.length === 0) {
-        console.log('[AddToQueueModal] No active days or time slots configured');
+        console.log('[AddToQueueModal] No active days or time slots configured for agency:', agencyId);
         return [];
       }
 
@@ -107,7 +111,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       let monthData: any = null;
 
       // Fetch the current month's data initially
-      const monthDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', currentMonth);
+      const monthDocRef = doc(db, 'agencies', agencyId, 'clients', clientId, 'postEvents', currentMonth);
       const monthSnap = await getDoc(monthDocRef);
       monthData = monthSnap.exists() ? monthSnap.data() : {};
 
@@ -161,7 +165,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
         // If we've moved to a new month, fetch the new month's data
         if (newMonth !== currentMonth) {
           currentMonth = newMonth;
-          const newMonthDocRef = doc(db, 'agencies', 'agency1', 'clients', clientId, 'postEvents', currentMonth);
+          const newMonthDocRef = doc(db, 'agencies', agencyId, 'clients', clientId, 'postEvents', currentMonth);
           const newMonthSnap = await getDoc(newMonthDocRef);
           monthData = newMonthSnap.exists() ? newMonthSnap.data() : {};
         }
@@ -172,23 +176,14 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
         }
       }
 
-      console.log('[AddToQueueModal] Found empty slots:', emptySlots);
+      console.log('[AddToQueueModal] Found empty slots for agency:', agencyId, emptySlots);
       return emptySlots;
 
     } catch (error) {
-      console.error('[AddToQueueModal] Error finding empty slots:', error);
+      console.error('[AddToQueueModal] Error finding empty slots for agency:', agencyId, error);
       return [];
     }
   };
-
-  // Mock suggested times based on user's onboarding preferences
-  const suggestedMainTime = "Tuesday 26, at 9:00 AM";
-  const otherSuggestedTimes = [
-    "Tuesday 26, at 1:00 PM",
-    "Tuesday 26, at 5:00 PM",
-    "Wednesday 27, at 9:00 AM",
-    "Wednesday 27, at 1:00 PM"
-  ];
 
   useEffect(() => {
     if (contentRef.current && open && postContent) {
@@ -257,10 +252,11 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   // Fetch suggested time slots when modal opens
   useEffect(() => {
     const fetchSuggestedSlots = async () => {
-      if (open && clientId) {
+      if (open && clientId && agencyId) {
         setLoadingSlots(true);
         try {
-          const slots = await findNextEmptySlot(clientId);
+          console.log('[AddToQueueModal] Fetching suggested slots for agency:', agencyId, 'client:', clientId);
+          const slots = await findNextEmptySlot(agencyId, clientId);
           setSuggestedSlots(slots);
           setHasTimeslotConfig(slots.length > 0);
         } catch (error) {
@@ -274,10 +270,10 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
     };
 
     fetchSuggestedSlots();
-  }, [open, clientId]);
+  }, [open, clientId, agencyId]);
 
   const handleAddToQueue = async () => {
-    if (!selectedTime || !clientId || !postId) {
+    if (!selectedTime || !clientId || !postId || !agencyId) {
       console.error('[AddToQueueModal] Missing required data for scheduling');
       toast({
         title: "Missing Information",
@@ -321,7 +317,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       // Save to Firestore in the postEvents collection
       const postEventRef = doc(
         db,
-        'agencies', 'agency1',
+        'agencies', agencyId,
         'clients', clientId,
         'postEvents', newYearMonth
       );
@@ -334,7 +330,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       // Update the post status in the ideas collection
       const postRef = doc(
         db,
-        'agencies', 'agency1',
+        'agencies', agencyId,
         'clients', clientId,
         'ideas', postId
       );
@@ -347,10 +343,10 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
 
       // Update the PostDetailsContext with the new scheduling info
       if (updatePostScheduling) {
-        await updatePostScheduling('agency1', clientId, postId, selectedStatus, Timestamp.fromDate(scheduledDateTime));
+        await updatePostScheduling(agencyId, clientId, postId, selectedStatus, Timestamp.fromDate(scheduledDateTime));
       }
 
-      console.log('[AddToQueueModal] Post successfully scheduled:', {
+      console.log('[AddToQueueModal] Post successfully scheduled for agency:', agencyId, {
         postId,
         scheduledDateTime,
         status: selectedStatus
@@ -367,7 +363,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       onOpenChange(false);
 
     } catch (error) {
-      console.error('[AddToQueueModal] Error scheduling post:', error);
+      console.error('[AddToQueueModal] Error scheduling post for agency:', agencyId, error);
 
       // Show error message
       toast({
@@ -392,6 +388,30 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   const handleSeeLess = () => {
     setIsExpanded(false);
   };
+
+  // Show authentication error if no agency ID
+  if (!agencyId) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Authentication Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-6">
+            <p className="text-gray-600 mb-4">
+              Please sign in to add posts to queue.
+            </p>
+            <Button onClick={() => onOpenChange(false)} className="w-full">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -614,11 +634,11 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           </Button>
           <Button
             onClick={handleAddToQueue}
-            disabled={!selectedTime}
+            disabled={!selectedTime || isScheduling}
             className="bg-[#4E46DD] hover:bg-[#453fca]"
           >
             <Send className="w-4 h-4 mr-2" />
-            Add to Queue
+            {isScheduling ? 'Scheduling...' : 'Add to Queue'}
           </Button>
         </div>
       </DialogContent>
