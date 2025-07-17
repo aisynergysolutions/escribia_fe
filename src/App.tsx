@@ -9,14 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ProfileDetailsPage from './pages/ProfileDetails';
 import Landing from './pages/Landing';
 import { AgencyProfileProvider } from '@/context/AgencyProfileContext';
-import { ClientsProvider } from '@/context/ClientsContext'; // <-- import this
-import { ProfilesProvider } from '@/context/ProfilesContext'; // <-- Add this import
+import { ClientsProvider } from '@/context/ClientsContext';
+import { ProfilesProvider } from '@/context/ProfilesContext';
 import { PostsProvider } from "./context/PostsContext";
 import { PostDetailsProvider } from "./context/PostDetailsContext";
-import { TemplatesProvider } from '@/context/TemplatesContext'; // <-- Add this import
-import ProfileDetailsRouter from './components/client/ProfileDetailsRouter'; // <-- Add this import
+import { TemplatesProvider } from '@/context/TemplatesContext';
+import ProfileDetailsRouter from './components/client/ProfileDetailsRouter';
 import { EventsProvider } from "./context/EventsContext";
 import { LinkedinProvider } from '@/context/LinkedinContext';
+import { AuthProvider } from '@/context/AuthContext'; // Add this import
+import ProtectedRoute from '@/components/auth/ProtectedRoute'; // We'll create this
 
 // Lazy load components for code splitting
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -29,6 +31,7 @@ const TemplateDetails = React.lazy(() => import("./pages/TemplateDetails"));
 const Analytics = React.lazy(() => import("./pages/Analytics"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
+const EmailVerification = React.lazy(() => import("./components/auth/EmailVerification"));
 
 const queryClient = new QueryClient();
 
@@ -46,126 +49,133 @@ const PageSkeleton = () => (
 
 function App() {
   return (
-    <AgencyProfileProvider>
-      <ClientsProvider>
-        <TemplatesProvider> {/* <-- Add TemplatesProvider here */}
-          <ProfilesProvider> {/* <-- Wrap here */}
-            <LinkedinProvider>
-              <PostsProvider>
-                <PostDetailsProvider>
-                  <EventsProvider>
-                    <QueryClientProvider client={queryClient}>
-                      <TooltipProvider>
-                        <Toaster />
-                        <Sonner />
-                        <Router>
-                          <div className="min-h-screen bg-gray-50">
-                            <Routes>
-                              <Route path="/landing" element={
-                                <Suspense fallback={<PageSkeleton />}>
-                                  <Landing />
-                                </Suspense>
-                              } />
-                              <Route path="/" element={<MainLayout />}>
-                                <Route index element={
+    <AuthProvider> {/* Wrap everything in AuthProvider */}
+      <AgencyProfileProvider>
+        <ClientsProvider>
+          <TemplatesProvider>
+            <ProfilesProvider>
+              <LinkedinProvider>
+                <PostsProvider>
+                  <PostDetailsProvider>
+                    <EventsProvider>
+                      <QueryClientProvider client={queryClient}>
+                        <TooltipProvider>
+                          <Toaster />
+                          <Sonner />
+                          <Router>
+                            <div className="min-h-screen bg-gray-50">
+                              <Routes>
+                                <Route path="/landing" element={
                                   <Suspense fallback={<PageSkeleton />}>
-                                    <Dashboard />
+                                    <Landing />
                                   </Suspense>
                                 } />
-                                <Route path="clients" element={
+                                <Route path="/" element={
+                                  <ProtectedRoute>
+                                    <MainLayout />
+                                  </ProtectedRoute>
+                                }>
+                                  {/* ...existing protected routes... */}
+                                  <Route index element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <Dashboard />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <Clients />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/posts" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/comments" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/calendar" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/resources" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/analytics" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/settings" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ClientDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/posts/:postId" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <PostDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="clients/:clientId/profiles/:profileId" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <ProfileDetailsRouter />
+                                    </Suspense>
+                                  } />
+                                  <Route path="calendar" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <Calendar />
+                                    </Suspense>
+                                  } />
+                                  <Route path="templates" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <Templates />
+                                    </Suspense>
+                                  } />
+                                  <Route path="templates/:templateId" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <TemplateDetails />
+                                    </Suspense>
+                                  } />
+                                  <Route path="analytics" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <Analytics />
+                                    </Suspense>
+                                  } />
+                                  <Route path="profile" element={
+                                    <Suspense fallback={<PageSkeleton />}>
+                                      <Profile />
+                                    </Suspense>
+                                  } />
+                                </Route>
+                                <Route path="*" element={
                                   <Suspense fallback={<PageSkeleton />}>
-                                    <Clients />
+                                    <NotFound />
                                   </Suspense>
                                 } />
-                                <Route path="clients/:clientId" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/posts" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/comments" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/calendar" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/resources" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/analytics" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/settings" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ClientDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/posts/:postId" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <PostDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="clients/:clientId/profiles/:profileId" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <ProfileDetailsRouter /> {/* <-- Use the router here */}
-                                  </Suspense>
-                                } />
-                                <Route path="calendar" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <Calendar />
-                                  </Suspense>
-                                } />
-                                <Route path="templates" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <Templates />
-                                  </Suspense>
-                                } />
-                                <Route path="templates/:templateId" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <TemplateDetails />
-                                  </Suspense>
-                                } />
-                                <Route path="analytics" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <Analytics />
-                                  </Suspense>
-                                } />
-                                <Route path="profile" element={
-                                  <Suspense fallback={<PageSkeleton />}>
-                                    <Profile />
-                                  </Suspense>
-                                } />
-                              </Route>
-                              <Route path="*" element={
-                                <Suspense fallback={<PageSkeleton />}>
-                                  <NotFound />
-                                </Suspense>
-                              } />
-                            </Routes>
-                          </div>
-                        </Router>
-                      </TooltipProvider>
-                    </QueryClientProvider>
-                  </EventsProvider>
-                </PostDetailsProvider>
-              </PostsProvider>
-            </LinkedinProvider>
-          </ProfilesProvider>
-        </TemplatesProvider> {/* <-- Close TemplatesProvider here */}
-      </ClientsProvider>
-    </AgencyProfileProvider>
+                              </Routes>
+                            </div>
+                          </Router>
+                        </TooltipProvider>
+                      </QueryClientProvider>
+                    </EventsProvider>
+                  </PostDetailsProvider>
+                </PostsProvider>
+              </LinkedinProvider>
+            </ProfilesProvider>
+          </TemplatesProvider>
+        </ClientsProvider>
+      </AgencyProfileProvider>
+    </AuthProvider>
   );
 }
 

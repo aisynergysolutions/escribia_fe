@@ -26,7 +26,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   const { addClient } = useClients();
 
   // Build Tally.so URL dynamically
-  const tallyUrl = `https://tally.so/r/wkXKad?agency=agency1&client=${clientId || 'client_1'}`;
+  const tallyUrl = `https://tally.so/r/wkXKad?agency=agency1&client=${clientId || 'error'}`;
 
   const handleCopyLink = async () => {
     try {
