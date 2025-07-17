@@ -1,16 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import Landing from '@/pages/Landing';
 import EmailVerification from './EmailVerification';
 import AgencyOnboardingForm from './AgencyOnboardingForm';
+import MainLayout from '@/components/layout/MainLayout';
 import { checkAgencyOnboardingStatus } from '@/utils/agencyOnboarding';
 
+// Lazy load components
+const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
+const Clients = React.lazy(() => import("@/pages/Clients"));
+const ClientDetails = React.lazy(() => import("@/pages/ClientDetails"));
+const PostDetails = React.lazy(() => import("@/pages/PostDetails"));
+const Calendar = React.lazy(() => import("@/pages/Calendar"));
+const Templates = React.lazy(() => import("@/pages/Templates"));
+const TemplateDetails = React.lazy(() => import("@/pages/TemplateDetails"));
+const Analytics = React.lazy(() => import("@/pages/Analytics"));
+const Profile = React.lazy(() => import("@/pages/Profile"));
+const NotFound = React.lazy(() => import("@/pages/NotFound"));
+const ProfileDetailsRouter = React.lazy(() => import("@/components/client/ProfileDetailsRouter"));
+
+const PageSkeleton = () => (
+    <div className="space-y-6 p-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-48 w-full rounded-lg" />
+            ))}
+        </div>
+    </div>
+);
+
 interface ProtectedRouteProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = () => {
     const { currentUser, loading } = useAuth();
     const [agencyOnboardingComplete, setAgencyOnboardingComplete] = useState<boolean | null>(null);
 
@@ -36,9 +62,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         );
     }
 
-    // No user - redirect to landing
+    // No user - show landing page
     if (!currentUser) {
-        return <Navigate to="/landing" />;
+        return <Landing />;
     }
 
     // User exists but email not verified - show verification screen
@@ -64,7 +90,97 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
 
     // User authenticated, verified, and onboarded - show protected content
-    return <>{children}</>;
+    return (
+        <Routes>
+            <Route path="/" element={<MainLayout />}>
+                <Route index element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <Dashboard />
+                    </Suspense>
+                } />
+                <Route path="clients" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <Clients />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/posts" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/comments" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/calendar" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/resources" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/analytics" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/settings" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ClientDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/posts/:postId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <PostDetails />
+                    </Suspense>
+                } />
+                <Route path="clients/:clientId/profiles/:profileId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <ProfileDetailsRouter />
+                    </Suspense>
+                } />
+                <Route path="calendar" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <Calendar />
+                    </Suspense>
+                } />
+                <Route path="templates" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <Templates />
+                    </Suspense>
+                } />
+                <Route path="templates/:templateId" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <TemplateDetails />
+                    </Suspense>
+                } />
+                <Route path="analytics" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <Analytics />
+                    </Suspense>
+                } />
+                <Route path="profile" element={
+                    <Suspense fallback={<PageSkeleton />}>
+                        <Profile />
+                    </Suspense>
+                } />
+            </Route>
+            <Route path="*" element={
+                <Suspense fallback={<PageSkeleton />}>
+                    <NotFound />
+                </Suspense>
+            } />
+        </Routes>
+    );
 };
 
 export default ProtectedRoute;

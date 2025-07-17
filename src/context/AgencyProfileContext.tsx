@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 type PaymentHistoryItem = {
   paymentDate: { seconds: number };
@@ -42,8 +43,8 @@ const AgencyProfileContext = createContext<AgencyProfileContextType>({
   profile: null,
   loading: false,
   error: null,
-  fetchProfile: async () => {},
-  updateProfile: async () => {},
+  fetchProfile: async () => { },
+  updateProfile: async () => { },
 });
 
 export const useAgencyProfile = () => useContext(AgencyProfileContext);
@@ -52,6 +53,8 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
   const [profile, setProfile] = useState<AgencyProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { currentUser } = useAuth();
 
   const fetchProfile = async (agencyId: string) => {
     // console.log('[AgencyProfileContext] fetchProfile called with agencyId:', agencyId);
@@ -98,10 +101,10 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
           planId: data.subscription?.planId || '',
           paymentHistory: Array.isArray(data.subscription?.paymentHistory)
             ? data.subscription.paymentHistory.map((item: any) => ({
-                paymentDate: item.paymentDate || { seconds: 0 },
-                amount: item.amount || 0,
-                transactionId: item.transactionId || '',
-              }))
+              paymentDate: item.paymentDate || { seconds: 0 },
+              amount: item.amount || 0,
+              transactionId: item.transactionId || '',
+            }))
             : [],
         },
       };
@@ -168,9 +171,10 @@ export const AgencyProfileProvider = ({ children }: { children: ReactNode }) => 
   };
 
   useEffect(() => {
-    // console.log('[AgencyProfileContext] Provider mounted, calling fetchProfile');
-    fetchProfile('agency1');
-  }, []);
+    if (currentUser && currentUser.emailVerified) {
+      fetchProfile(currentUser.uid);
+    }
+  }, [currentUser]);
 
   return (
     <AgencyProfileContext.Provider value={{ profile, loading, error, fetchProfile, updateProfile }}>

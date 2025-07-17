@@ -24,12 +24,7 @@ const Landing = () => {
   const navigate = useNavigate();
   const { login, signup, currentUser } = useAuth();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (currentUser) {
-      navigate('/');
-    }
-  }, [currentUser, navigate]);
+  // Note: Navigation is handled by the ProtectedRoute component
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
