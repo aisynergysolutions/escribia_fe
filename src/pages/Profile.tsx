@@ -11,15 +11,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, Upload, Plus, MoreHorizontal, User, Mail, Phone, Edit, Check, X } from 'lucide-react';
 import { useAgencyProfile } from '@/context/AgencyProfileContext';
+import { useAuth } from '@/context/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const Profile = () => {
   const { profile, loading, error, updateProfile } = useAgencyProfile();
-  const agencyId = 'agency1'; // Or get dynamically if needed
+  const { currentUser } = useAuth();
+  
+  // Use the current user's UID as the agency ID
+  const agencyId = currentUser?.uid;
 
   // Debug: log when Profile mounts
   useEffect(() => {
     console.log('[Profile] Component mounted');
-  }, []);
+    console.log('[Profile] Current user:', currentUser);
+    console.log('[Profile] Agency ID:', agencyId);
+  }, [currentUser, agencyId]);
 
   // Debug: log when profile, loading, or error changes
   useEffect(() => {
@@ -98,6 +106,11 @@ const Profile = () => {
   };
 
   const handleSave = async (section: 'profile' | 'contact' | 'settings') => {
+    if (!agencyId) {
+      console.error('[Profile] No agency ID available');
+      return;
+    }
+
     setAgencyData(tempData);
     setEditStates(prev => ({ ...prev, [section]: false }));
     console.log(`Saving ${section} changes...`, tempData);
@@ -135,9 +148,13 @@ const Profile = () => {
     setEditStates(prev => ({ ...prev, [section]: false }));
   };
 
-  const handleLogout = () => {
-    console.log('Logging out...');
-    // Add logout functionality here
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('[Profile] User signed out successfully');
+    } catch (error) {
+      console.error('[Profile] Error signing out:', error);
+    }
   };
 
   const handleInviteUser = () => {
@@ -163,6 +180,51 @@ const Profile = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  // Show loading state if we don't have a user yet
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading user information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while fetching profile
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading agency profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+            <h2 className="text-red-800 font-semibold mb-2">Error Loading Profile</h2>
+            <p className="text-red-600 text-sm">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+              variant="outline"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return <div className="space-y-6">
     <div className="flex items-center justify-between">
@@ -240,9 +302,13 @@ const Profile = () => {
                   />
                 ) : (
                   <div className="mt-2 p-3 bg-gray-50 rounded-md">
-                    <a href={agencyData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {agencyData.website}
-                    </a>
+                    {agencyData.website ? (
+                      <a href={agencyData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        {agencyData.website}
+                      </a>
+                    ) : (
+                      <span className="text-gray-500">No website set</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -360,7 +426,7 @@ const Profile = () => {
                     placeholder="+1 (555) 123-4567"
                   />
                 ) : (
-                  <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.phone}</div>
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.phone || 'No phone number set'}</div>
                 )}
               </div>
             </div>
@@ -415,7 +481,9 @@ const Profile = () => {
                   <div className="mt-2 p-3 bg-gray-50 rounded-md">
                     {agencyData.defaultLanguage === 'en' ? 'English' :
                       agencyData.defaultLanguage === 'es' ? 'Spanish' :
-                        agencyData.defaultLanguage === 'fr' ? 'French' : 'German'}
+                        agencyData.defaultLanguage === 'fr' ? 'French' :
+                          agencyData.defaultLanguage === 'de' ? 'German' :
+                            agencyData.defaultLanguage === 'nl' ? 'Dutch' : 'Not set'}
                   </div>
                 )}
               </div>
@@ -438,7 +506,7 @@ const Profile = () => {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.timezone}</div>
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.timezone || 'Not set'}</div>
                 )}
               </div>
 
@@ -461,106 +529,13 @@ const Profile = () => {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.agencySize}</div>
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">{agencyData.agencySize || 'Not set'}</div>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
       </TabsContent>
-
-      {/* <TabsContent value="team" className="space-y-4">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Team Members</span>
-              <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Invite Teammate
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Invite Team Member</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <Label htmlFor="inviteEmail">Email Address</Label>
-                      <Input id="inviteEmail" type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="teammate@company.com" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>Role</Label>
-                      <Select value={inviteRole} onValueChange={setInviteRole}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Member">Member</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                      <Button onClick={handleInviteUser} className="flex-1">
-                        Send Invitation
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsInviteModalOpen(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teamMembers.map(member => <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback>
-                          {member.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{member.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-gray-600">{member.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={member.role === 'Admin' ? 'default' : 'secondary'}>
-                      {member.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>
-                      {member.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>)}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </TabsContent> */}
 
       <TabsContent value="subscription" className="space-y-4">
           <Card className="rounded-2xl shadow-md">
