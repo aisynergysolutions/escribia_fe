@@ -39,16 +39,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
 
   if (!clientDetails) return null;
 
-  // Company profile card
-  // const companyProfile = {
-  //   id: 'company-1',
-  //   name: clientDetails.clientName,
-  //   role: 'Company Account',
-  //   profileImage: clientDetails.profileImageUrl,
-  //   linkedinConnected: true, // Placeholder
-  //   isCompany: true
-  // };
-
   // Map Firestore profiles to card format
   const profileCards = profiles.map(profile => ({
     id: profile.id,
@@ -133,14 +123,20 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
         </div>
 
         {loading ? (
-          <div>Loading profiles...</div>
+          <div className="text-center text-gray-500 py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p>Loading profiles...</p>
+          </div>
         ) : error ? (
-          <div className="text-red-600">Error: {error}</div>
+          <div className="text-center text-red-600 py-8">
+            <p className="text-lg font-medium">Error loading profiles</p>
+            <p className="text-sm mt-2">{error}</p>
+          </div>
         ) : allProfiles.length === 0 ? (
           <div className="text-center text-gray-500 py-12">
-            <User className="h-10 w-10 mx-auto mb-2" />
-            <div className="font-semibold mb-1">No Profiles added yet</div>
-            <div className="text-sm">Add a profile to start posting for this client.</div>
+            <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-lg font-medium mb-2">No profiles yet</p>
+            <p className="text-sm">Add a profile to start posting for this client</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -172,7 +168,6 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
                       {normalizeStatus(profile.status)}
                     </Badge>
                   </div>
-
                 </CardContent>
               </Card>
             ))}

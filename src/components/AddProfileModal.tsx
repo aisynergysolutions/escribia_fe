@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useParams } from 'react-router-dom';
 import { useProfiles } from '@/context/ProfilesContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface AddProfileModalProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
 }) => {
   const { clientId } = useParams<{ clientId: string }>();
   const { addProfile } = useProfiles();
+  const { currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [profileId, setProfileId] = useState('');
@@ -29,15 +31,28 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
+
   // Generate Tally URL based on role, including the "role" parameter
-  const tallyUrl =
+  const tallyUrl = agencyId ? (
     profileType === 'Company Account'
-      ? `https://tally.so/r/wM2YQg?agency=agency1&client=${clientId}&profile=${profileId}&role=company`
+      ? `https://tally.so/r/wM2YQg?agency=${agencyId}&client=${clientId}&profile=${profileId}&role=company`
       : profileType === 'Person'
-        ? `https://tally.so/r/w8VjDO?agency=agency1&client=${clientId}&profile=${profileId}&role=person`
-        : '';
+        ? `https://tally.so/r/w8VjDO?agency=${agencyId}&client=${clientId}&profile=${profileId}&role=person`
+        : ''
+  ) : '';
 
   const handleCopyLink = async () => {
+    if (!tallyUrl) {
+      toast({
+        title: "Error",
+        description: "No onboarding link available. Please ensure you're signed in and have selected a profile type.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(tallyUrl);
       setCopied(true);
@@ -56,26 +71,54 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (!tallyUrl) {
+      toast({
+        title: "Error",
+        description: "No onboarding link available. Please ensure you're signed in and have selected a profile type.",
+        variant: "destructive"
+      });
+      return;
+    }
     window.open(tallyUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleAddProfile = async () => {
     if (!allFieldsFilled) return;
+    
+    if (!agencyId) {
+      toast({
+        title: "Error",
+        description: "No agency ID available. Please ensure you're signed in.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addProfile(clientId, {
         id: profileId,
         profileName,
-        role: profileType === 'Person' ? personRole : 'Company Account', // <-- always "Company Account" for company
-        profileType: profileType === 'Person' ? 'Person' : 'Company',       // <-- always "Company" for company
+        role: profileType === 'Person' ? personRole : 'Company Account',
+        profileType: profileType === 'Person' ? 'Person' : 'Company',
         status: 'Onboarding',
         onboardingLink: tallyUrl,
         createdAt: new Date(),
         clientId,
       });
+      
+      toast({
+        title: "Profile Added",
+        description: `Profile "${profileName}" has been created successfully.`
+      });
+      
       setIsOpen(false);
     } catch (err) {
-      // Optionally show a toast
+      toast({
+        title: "Error",
+        description: "Failed to add profile. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -97,6 +140,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
     profileType &&
     profileId &&
     clientId &&
+    agencyId &&
     (profileType !== 'Person' || personRole.trim());
 
   return (
@@ -109,12 +153,20 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
           <DialogTitle className="text-xl font-semibold">Add New Profile</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
+          {!agencyId && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">
+                <strong>Error:</strong> No agency ID available. Please ensure you're signed in.
+              </p>
+            </div>
+          )}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800 leading-relaxed">
               <strong>How it works:</strong> Create a profile and then connect it to a LinkedIn account to start posting on their behalf. Send your client the link below to help us understand their personality and preferences before onboarding, whether it is a Company profile or an Individual.
             </p>
           </div>
+
           {/* Profile Name Input */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
@@ -127,6 +179,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
               className="w-full"
             />
           </div>
+
           {/* Role Dropdown */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
@@ -142,6 +195,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
               </SelectContent>
             </Select>
           </div>
+
           {/* Person Role Input */}
           {profileType === 'Person' && (
             <div className="space-y-2">
@@ -156,8 +210,9 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
               />
             </div>
           )}
+
           {/* Link Sharing Component */}
-          {profileType && (
+          {profileType && agencyId && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Profile Onboarding Link
@@ -201,6 +256,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
               </Button>
             </div>
           )}
+
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={() => setIsOpen(false)}>

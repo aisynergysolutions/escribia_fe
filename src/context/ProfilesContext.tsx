@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 // --- Types for Person Profile ---
 export type LinkedInProfile = {
@@ -40,9 +41,9 @@ export type ContentProfile = {
   topicsToAvoid: string[];
   emojiUsage: string;
   sampleCTA: string;
-  expertise?: string; // Mark as optional
+  expertise?: string;
   contentLanguage: string;
-  personalStories?: string; // Mark as optional
+  personalStories?: string;
   postLength: string;
   favPosts: string[];
   addHashtags: boolean;
@@ -69,7 +70,7 @@ export type ProfileCard = {
   profileName: string;
   status?: string;
   role?: string;
-  profileType?: string; // Optional, if you want to include profileType
+  profileType?: string;
   onboardingLink?: string;
   createdAt?: Date;
 };
@@ -102,7 +103,7 @@ interface ProfilesContextType {
       id: string;
       profileName: string;
       role: string;
-      profileType?: string; // Optional, if you want to include profileType
+      profileType?: string;
       status: string;
       onboardingLink: string;
       createdAt: Date;
@@ -125,12 +126,16 @@ const ProfilesContext = createContext<ProfilesContextType>({
 
 export const useProfiles = () => useContext(ProfilesContext);
 
-// Move this function outside ProfilesProvider if needed, or just export it here:
-export const getPersonProfile = async (clientId: string, profileId: string): Promise<Profile> => {
+// Helper function to get profile with dynamic agency ID
+export const getPersonProfile = async (agencyId: string, clientId: string, profileId: string): Promise<Profile> => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   const profileRef = doc(
     db,
     'agencies',
-    'agency1',
+    agencyId,
     'clients',
     clientId,
     'subClients',
@@ -147,7 +152,7 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
     joinedDate: data.joinedDate?.seconds ?
       new Date(data.joinedDate.seconds * 1000).toISOString() :
       (data.joinedDate || ''),
-    onboardingLink: data.onboardingLink || '', // Make sure this is included
+    onboardingLink: data.onboardingLink || '',
     id: snap.id,
     linkedin: {
       profileImage: data.linkedin?.profileImage || data.linkedin?.linkedinProfile?.picture || '',
@@ -175,8 +180,8 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
     role: data.role || '',
     createdAt: data.createdAt?.seconds ?
       new Date(data.createdAt.seconds * 1000).toISOString() :
-      (data.createdAt || ''), // Make sure this is included
-    status: data.status || '', // Make sure this is included
+      (data.createdAt || ''),
+    status: data.status || '',
     clientId: data.clientId || '',
     contentProfile: {
       customInstructions: data.contentProfile?.customInstructions || '',
@@ -193,19 +198,23 @@ export const getPersonProfile = async (clientId: string, profileId: string): Pro
       contentLanguage: data.contentProfile?.contentLanguage || '',
       personalStories: data.contentProfile?.personalStories || '',
       postLength: data.contentProfile?.postLength || '',
-      favPosts: data.contentProfile?.favPosts || [], // Make sure this is included
-      addHashtags: !!data.contentProfile?.addHashtags, // Make sure this is included
+      favPosts: data.contentProfile?.favPosts || [],
+      addHashtags: !!data.contentProfile?.addHashtags,
     },
-    contactEmail: data.contactEmail || '', // Make sure this is included
+    contactEmail: data.contactEmail || '',
   };
 };
 
 // Fetch a company profile by clientId and profileId
-export const getCompanyProfile = async (clientId: string, profileId: string): Promise<CompanyProfile> => {
+export const getCompanyProfile = async (agencyId: string, clientId: string, profileId: string): Promise<CompanyProfile> => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   const profileRef = doc(
     db,
     'agencies',
-    'agency1',
+    agencyId,
     'clients',
     clientId,
     'subClients',
@@ -266,14 +275,15 @@ export const getCompanyProfile = async (clientId: string, profileId: string): Pr
       postLength: data.contentProfile?.postLength || '',
       contentPersona: data.contentProfile?.contentPersona || '',
       topicsToAvoid: data.contentProfile?.topicsToAvoid || [],
-      addHashtags: !!data.contentProfile?.addHashtags, // Add this field
+      addHashtags: !!data.contentProfile?.addHashtags,
     },
     location: data.location || '',
   };
 };
 
-// Update functions for profile data
+// Update functions for profile data with dynamic agency ID
 export const updatePersonProfileInfo = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -285,11 +295,15 @@ export const updatePersonProfileInfo = async (
     status?: string;
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -304,6 +318,7 @@ export const updatePersonProfileInfo = async (
 };
 
 export const updatePersonProfileStrategy = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -312,11 +327,15 @@ export const updatePersonProfileStrategy = async (
     expertise?: string;
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -346,6 +365,7 @@ export const updatePersonProfileStrategy = async (
 };
 
 export const updatePersonProfileVoice = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -356,11 +376,15 @@ export const updatePersonProfileVoice = async (
     addHashtags?: boolean;
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -390,6 +414,7 @@ export const updatePersonProfileVoice = async (
 };
 
 export const updatePersonProfileGuidelines = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -401,11 +426,15 @@ export const updatePersonProfileGuidelines = async (
     favPosts?: string[];
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -435,15 +464,20 @@ export const updatePersonProfileGuidelines = async (
 };
 
 export const updatePersonProfileCustomInstructions = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   customInstructions: string
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -472,162 +506,9 @@ export const updatePersonProfileCustomInstructions = async (
   }
 };
 
-export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
-  // Store profiles by clientId
-  const [profilesByClient, setProfilesByClient] = useState<Record<string, ProfileCard[]>>({});
-  const [activeClientId, setActiveClientId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Expose only the profiles for the active client
-  const profiles = activeClientId ? profilesByClient[activeClientId] || [] : [];
-
-  // Fetch only if not cached, unless force is true
-  const fetchProfiles = async (clientId: string, force = false) => {
-    if (!force && profilesByClient[clientId]) {
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const subClientsRef = collection(
-        db,
-        'agencies',
-        'agency1',
-        'clients',
-        clientId,
-        'subClients'
-      );
-      const snapshot = await getDocs(subClientsRef);
-      const fetchedProfiles: ProfileCard[] = snapshot.docs.map(doc => ({
-        id: doc.id,
-        profileName: doc.data().profileName || '',
-        status: doc.data().status || '',
-        role: doc.data().role || '',
-        profileType: doc.data().profileType || '', // Optional, if you want to include profileType
-        onboardingLink: doc.data().onboardingLink || '',
-        createdAt: doc.data().createdAt
-          ? new Date(
-            doc.data().createdAt.seconds
-              ? doc.data().createdAt.seconds * 1000
-              : doc.data().createdAt
-          )
-          : undefined,
-      }));
-      setProfilesByClient(prev => ({
-        ...prev,
-        [clientId]: fetchedProfiles,
-      }));
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch profiles');
-      setProfilesByClient(prev => ({
-        ...prev,
-        [clientId]: [],
-      }));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addProfile = async (
-    clientId: string,
-    profile: {
-      id: string;
-      profileName: string;
-      role: string;
-      profileType?: string; // Optional, if you want to include profileType
-      status: string;
-      onboardingLink: string;
-      createdAt: Date;
-      clientId: string;
-    }
-  ) => {
-    try {
-      const profileRef = doc(
-        db,
-        'agencies',
-        'agency1',
-        'clients',
-        clientId,
-        'subClients',
-        profile.id
-      );
-      await setDoc(profileRef, {
-        profileName: profile.profileName,
-        role: profile.role,
-        profileType: profile.profileType,
-        status: profile.status,
-        onboardingLink: profile.onboardingLink,
-        createdAt: profile.createdAt,
-        clientId: profile.clientId,
-      });
-      // After adding, force refresh for this client
-      await fetchProfiles(clientId, true);
-    } catch (err) {
-      console.error('[ProfilesContext] Error adding profile:', err);
-    }
-  };
-
-  const deleteProfile = async (clientId: string, profileId: string) => {
-    try {
-      const profileRef = doc(
-        db,
-        'agencies',
-        'agency1',
-        'clients',
-        clientId,
-        'subClients',
-        profileId
-      );
-      await deleteDoc(profileRef);
-      // Remove from cache
-      setProfilesByClient(prev => ({
-        ...prev,
-        [clientId]: (prev[clientId] || []).filter(profile => profile.id !== profileId),
-      }));
-    } catch (err) {
-      console.error('[ProfilesContext] Error deleting profile:', err);
-    }
-  };
-
-  return (
-    <ProfilesContext.Provider
-      value={{
-        profiles,
-        loading,
-        error,
-        fetchProfiles,
-        addProfile,
-        setActiveClientId,
-        deleteProfile,
-      }}
-    >
-      {children}
-    </ProfilesContext.Provider>
-  );
-};
-
-export const deletePersonProfile = async (clientId: string, profileId: string) => {
-  try {
-    const profileRef = doc(
-      db,
-      'agencies',
-      'agency1',
-      'clients',
-      clientId,
-      'subClients',
-      profileId
-    );
-    await deleteDoc(profileRef);
-    return true;
-  } catch (error) {
-    console.error('[ProfilesContext] Error deleting profile:', error);
-    throw error;
-  }
-};
-
-// Company profile update functions
+// Company profile update functions with dynamic agency ID
 export const updateCompanyProfileInfo = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -639,11 +520,15 @@ export const updateCompanyProfileInfo = async (
     status?: string;
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -658,6 +543,7 @@ export const updateCompanyProfileInfo = async (
 };
 
 export const updateCompanyProfileBrandStrategy = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -670,11 +556,15 @@ export const updateCompanyProfileBrandStrategy = async (
     addHashtags?: boolean;
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -704,6 +594,7 @@ export const updateCompanyProfileBrandStrategy = async (
 };
 
 export const updateCompanyProfileContentGuidelines = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   updates: {
@@ -714,11 +605,15 @@ export const updateCompanyProfileContentGuidelines = async (
     favPosts?: string[];
   }
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -748,15 +643,20 @@ export const updateCompanyProfileContentGuidelines = async (
 };
 
 export const updateCompanyProfileCustomInstructions = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   customInstructions: string
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -786,15 +686,20 @@ export const updateCompanyProfileCustomInstructions = async (
 };
 
 export const updateCompanyProfileLanguage = async (
+  agencyId: string,
   clientId: string,
   profileId: string,
   contentLanguage: string
 ) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -823,12 +728,39 @@ export const updateCompanyProfileLanguage = async (
   }
 };
 
-export const deleteCompanyProfile = async (clientId: string, profileId: string) => {
+export const deletePersonProfile = async (agencyId: string, clientId: string, profileId: string) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
   try {
     const profileRef = doc(
       db,
       'agencies',
-      'agency1',
+      agencyId,
+      'clients',
+      clientId,
+      'subClients',
+      profileId
+    );
+    await deleteDoc(profileRef);
+    return true;
+  } catch (error) {
+    console.error('[ProfilesContext] Error deleting profile:', error);
+    throw error;
+  }
+};
+
+export const deleteCompanyProfile = async (agencyId: string, clientId: string, profileId: string) => {
+  if (!agencyId) {
+    throw new Error('No agency ID available');
+  }
+
+  try {
+    const profileRef = doc(
+      db,
+      'agencies',
+      agencyId,
       'clients',
       clientId,
       'subClients',
@@ -840,4 +772,168 @@ export const deleteCompanyProfile = async (clientId: string, profileId: string) 
     console.error('[ProfilesContext] Error deleting company profile:', error);
     throw error;
   }
+};
+
+export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
+  const { currentUser } = useAuth();
+  
+  // Store profiles by clientId
+  const [profilesByClient, setProfilesByClient] = useState<Record<string, ProfileCard[]>>({});
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get the current agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
+
+  // Expose only the profiles for the active client
+  const profiles = activeClientId ? profilesByClient[activeClientId] || [] : [];
+
+  // Fetch only if not cached, unless force is true
+  const fetchProfiles = async (clientId: string, force = false) => {
+    if (!agencyId) {
+      console.warn('[ProfilesContext] No agency ID available, skipping fetch');
+      return;
+    }
+
+    if (!force && profilesByClient[clientId]) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('[ProfilesContext] Fetching profiles for agency:', agencyId, 'client:', clientId);
+      const subClientsRef = collection(
+        db,
+        'agencies',
+        agencyId,
+        'clients',
+        clientId,
+        'subClients'
+      );
+      const snapshot = await getDocs(subClientsRef);
+      const fetchedProfiles: ProfileCard[] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        profileName: doc.data().profileName || '',
+        status: doc.data().status || '',
+        role: doc.data().role || '',
+        profileType: doc.data().profileType || '',
+        onboardingLink: doc.data().onboardingLink || '',
+        createdAt: doc.data().createdAt
+          ? new Date(
+            doc.data().createdAt.seconds
+              ? doc.data().createdAt.seconds * 1000
+              : doc.data().createdAt
+          )
+          : undefined,
+      }));
+      
+      console.log('[ProfilesContext] Fetched profiles:', fetchedProfiles.length);
+      setProfilesByClient(prev => ({
+        ...prev,
+        [clientId]: fetchedProfiles,
+      }));
+    } catch (err: any) {
+      console.error('[ProfilesContext] Error fetching profiles:', err);
+      setError(err.message || 'Failed to fetch profiles');
+      setProfilesByClient(prev => ({
+        ...prev,
+        [clientId]: [],
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addProfile = async (
+    clientId: string,
+    profile: {
+      id: string;
+      profileName: string;
+      role: string;
+      profileType?: string;
+      status: string;
+      onboardingLink: string;
+      createdAt: Date;
+      clientId: string;
+    }
+  ) => {
+    if (!agencyId) {
+      console.error('[ProfilesContext] No agency ID available for adding profile');
+      return;
+    }
+
+    try {
+      console.log('[ProfilesContext] Adding profile for agency:', agencyId, 'client:', clientId);
+      const profileRef = doc(
+        db,
+        'agencies',
+        agencyId,
+        'clients',
+        clientId,
+        'subClients',
+        profile.id
+      );
+      await setDoc(profileRef, {
+        profileName: profile.profileName,
+        role: profile.role,
+        profileType: profile.profileType,
+        status: profile.status,
+        onboardingLink: profile.onboardingLink,
+        createdAt: profile.createdAt,
+        clientId: profile.clientId,
+      });
+      // After adding, force refresh for this client
+      await fetchProfiles(clientId, true);
+    } catch (err) {
+      console.error('[ProfilesContext] Error adding profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add profile');
+    }
+  };
+
+  const deleteProfile = async (clientId: string, profileId: string) => {
+    if (!agencyId) {
+      console.error('[ProfilesContext] No agency ID available for deleting profile');
+      return;
+    }
+
+    try {
+      console.log('[ProfilesContext] Deleting profile for agency:', agencyId, 'client:', clientId, 'profile:', profileId);
+      const profileRef = doc(
+        db,
+        'agencies',
+        agencyId,
+        'clients',
+        clientId,
+        'subClients',
+        profileId
+      );
+      await deleteDoc(profileRef);
+      // Remove from cache
+      setProfilesByClient(prev => ({
+        ...prev,
+        [clientId]: (prev[clientId] || []).filter(profile => profile.id !== profileId),
+      }));
+    } catch (err) {
+      console.error('[ProfilesContext] Error deleting profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete profile');
+    }
+  };
+
+  return (
+    <ProfilesContext.Provider
+      value={{
+        profiles,
+        loading,
+        error,
+        fetchProfiles,
+        addProfile,
+        setActiveClientId,
+        deleteProfile,
+      }}
+    >
+      {children}
+    </ProfilesContext.Provider>
+  );
 };

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch'; // Add this import
+import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
@@ -21,9 +21,10 @@ import {
   updatePersonProfileVoice,
   updatePersonProfileGuidelines,
   updatePersonProfileCustomInstructions,
-  useProfiles // Add this import
+  useProfiles
 } from '@/context/ProfilesContext';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
+import { useAuth } from '@/context/AuthContext';
 
 // Use types directly from ProfilesContext
 import type { Profile } from '@/context/ProfilesContext';
@@ -31,9 +32,13 @@ import type { Profile } from '@/context/ProfilesContext';
 const ProfileDetailsPerson: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
   const navigate = useNavigate();
-  const { deleteProfile } = useProfiles(); // Use the context function
+  const { currentUser } = useAuth();
+  const { deleteProfile } = useProfiles();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
+
+  // Get the agency ID from the current user
+  const agencyId = currentUser?.uid;
 
   // Form data states
   const [profileInfoData, setProfileInfoData] = useState({
@@ -63,7 +68,7 @@ const ProfileDetailsPerson: React.FC = () => {
     coreTone: '',
     postLengthValue: 0,
     emojiUsageValue: 0,
-    addHashtags: false, // Add this field
+    addHashtags: false,
   });
 
   const [guidelinesData, setGuidelinesData] = useState({
@@ -72,12 +77,12 @@ const ProfileDetailsPerson: React.FC = () => {
     hookGuidelines: '',
     sampleCTA: '',
     topicsToAvoid: [] as string[],
-    favPosts: [] as string[], // Add this field
+    favPosts: [] as string[],
   });
 
   useEffect(() => {
-    if (clientId && profileId) {
-      getPersonProfile(clientId, profileId).then(fetchedProfile => {
+    if (clientId && profileId && agencyId) {
+      getPersonProfile(agencyId, clientId, profileId).then(fetchedProfile => {
         setProfile(fetchedProfile);
 
         // Populate form data
@@ -108,7 +113,7 @@ const ProfileDetailsPerson: React.FC = () => {
           coreTone: fetchedProfile.contentProfile.coreTones,
           postLengthValue: getPostLengthValue(fetchedProfile.contentProfile.postLength),
           emojiUsageValue: getEmojiUsageValue(fetchedProfile.contentProfile.emojiUsage),
-          addHashtags: fetchedProfile.contentProfile.addHashtags, // Add this field
+          addHashtags: fetchedProfile.contentProfile.addHashtags,
         });
 
         setGuidelinesData({
@@ -117,23 +122,20 @@ const ProfileDetailsPerson: React.FC = () => {
           hookGuidelines: fetchedProfile.contentProfile.hookGuidelines,
           sampleCTA: fetchedProfile.contentProfile.sampleCTA,
           topicsToAvoid: fetchedProfile.contentProfile.topicsToAvoid,
-          favPosts: fetchedProfile.contentProfile.favPosts, // Add this field
+          favPosts: fetchedProfile.contentProfile.favPosts,
         });
       });
     }
-  }, [clientId, profileId]);
+  }, [clientId, profileId, agencyId]);
 
   // Helper functions
   const formatDate = (dateString: string | any) => {
     try {
       if (!dateString) return 'N/A';
-
-      // Handle Firestore timestamp objects
       if (typeof dateString === 'object' && dateString.seconds) {
         const date = new Date(dateString.seconds * 1000);
         return date.toLocaleDateString();
       }
-      // Handle regular date strings
       const date = new Date(dateString);
       return date.toLocaleDateString();
     } catch (error) {
@@ -144,18 +146,14 @@ const ProfileDetailsPerson: React.FC = () => {
   const formatDateForInput = (dateString: string | any) => {
     try {
       if (!dateString) return '';
-
-      // Handle Firestore timestamp objects
       if (typeof dateString === 'object' && dateString.seconds) {
         const date = new Date(dateString.seconds * 1000);
-        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        return date.toISOString().split('T')[0];
       }
-      // Handle ISO date strings
       if (typeof dateString === 'string' && dateString.includes('T')) {
         const date = new Date(dateString);
         return date.toISOString().split('T')[0];
       }
-      // Handle other date strings
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
@@ -210,12 +208,12 @@ const ProfileDetailsPerson: React.FC = () => {
   };
 
   const handleSectionSave = async (section: string) => {
-    if (!clientId || !profileId) return;
+    if (!clientId || !profileId || !agencyId) return;
 
     try {
       switch (section) {
         case 'profileInfo':
-          await updatePersonProfileInfo(clientId, profileId, {
+          await updatePersonProfileInfo(agencyId, clientId, profileId, {
             profileName: profileInfoData.fullName,
             role: profileInfoData.currentRole,
             joinedDate: profileInfoData.joinedDate,
@@ -224,14 +222,13 @@ const ProfileDetailsPerson: React.FC = () => {
             status: profileInfoData.status,
           });
 
-          // Also update custom instructions
           await updatePersonProfileCustomInstructions(
+            agencyId,
             clientId,
             profileId,
             profileInfoData.customInstructions
           );
 
-          // Update local profile state
           if (profile) {
             setProfile({
               ...profile,
@@ -250,13 +247,12 @@ const ProfileDetailsPerson: React.FC = () => {
           break;
 
         case 'strategy':
-          await updatePersonProfileStrategy(clientId, profileId, {
+          await updatePersonProfileStrategy(agencyId, clientId, profileId, {
             primaryGoal: strategyData.primaryGoal,
             audienceFocus: strategyData.audienceFocus,
             expertise: strategyData.expertise,
           });
 
-          // Update local profile state
           if (profile) {
             setProfile({
               ...profile,
@@ -274,7 +270,7 @@ const ProfileDetailsPerson: React.FC = () => {
           const postLengthLabels = ['Super Short (50–90 words)', 'Short (80–130 words)', 'Medium (130–280 words)', 'Long (280–450 words)'];
           const emojiUsageLabels = ['Professional ⚫️', 'Sparingly 👍', 'Moderately 😊', 'Frequently ✨'];
 
-          await updatePersonProfileVoice(clientId, profileId, {
+          await updatePersonProfileVoice(agencyId, clientId, profileId, {
             contentPersona: voiceData.personalBrandPersona,
             coreTones: voiceData.coreTone,
             postLength: postLengthLabels[voiceData.postLengthValue],
@@ -282,7 +278,6 @@ const ProfileDetailsPerson: React.FC = () => {
             addHashtags: voiceData.addHashtags,
           });
 
-          // Update local profile state
           if (profile) {
             setProfile({
               ...profile,
@@ -299,7 +294,7 @@ const ProfileDetailsPerson: React.FC = () => {
           break;
 
         case 'guidelines':
-          await updatePersonProfileGuidelines(clientId, profileId, {
+          await updatePersonProfileGuidelines(agencyId, clientId, profileId, {
             hotTakes: guidelinesData.uniquePOV,
             personalStories: guidelinesData.personalStories,
             hookGuidelines: guidelinesData.hookGuidelines,
@@ -308,7 +303,6 @@ const ProfileDetailsPerson: React.FC = () => {
             favPosts: guidelinesData.favPosts,
           });
 
-          // Update local profile state
           if (profile) {
             setProfile({
               ...profile,
@@ -396,7 +390,7 @@ const ProfileDetailsPerson: React.FC = () => {
     if (!clientId || !profileId) return;
 
     try {
-      await deleteProfile(clientId, profileId); // Use context function
+      await deleteProfile(clientId, profileId);
       console.log('Profile deleted successfully');
       navigate(`/clients/${clientId}/settings`);
     } catch (error) {
@@ -426,7 +420,6 @@ const ProfileDetailsPerson: React.FC = () => {
     }));
   };
 
-  // Add handlers for favorite posts
   const handleAddFavPost = () => {
     setGuidelinesData(prev => ({
       ...prev,
@@ -462,7 +455,8 @@ const ProfileDetailsPerson: React.FC = () => {
           onClick={() => navigate(`/clients/${clientId}/settings`)}
           className="flex items-center justify-center rounded-full h-8 w-8 bg-transparent shadow-none border border-gray-100"
           aria-label="Back"
-        >          <ArrowLeft className="h-4 w-4 mr-2" />
+        >
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -473,7 +467,7 @@ const ProfileDetailsPerson: React.FC = () => {
           </Avatar>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold">{profile.profileName}</h1>
-            <Badge variant="outline" className="">{profile.role}</Badge>
+            <Badge variant="outline">{profile.role}</Badge>
           </div>
         </div>
       </div>
