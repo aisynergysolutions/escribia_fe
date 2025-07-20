@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { usePostDetails } from '@/context/PostDetailsContext';
+import { useAuth } from '@/context/AuthContext';
 import FloatingToolbar from './FloatingToolbar';
 import AIEditToolbar from './AIEditToolbar';
 import AIEditModal from './AIEditModal';
@@ -113,7 +114,8 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { editPostPartial } = usePostDetails();
+  const { editPostPartial, publishPostNow } = usePostDetails();
+  const { currentUser } = useAuth();
   const lastSelection = useRef<Range | null>(null);
 
   // NEW state for comment popover
@@ -557,11 +559,53 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     });
   };
 
-  const handlePostNow = () => {
-    toast({
-      title: "Post Published",
-      description: "Your post has been successfully published to LinkedIn."
+  const handlePostNow = async (status: string) => {
+    console.log('handlePostNow called with:', {
+      status,
+      currentUser: currentUser?.uid,
+      clientId,
+      postId,
+      subClientId
     });
+
+    if (!currentUser?.uid || !clientId || !postId || !subClientId) {
+      toast({
+        title: "Error",
+        description: `Missing required information to publish the post. User ID: ${currentUser?.uid || 'undefined'}, Client ID: ${clientId || 'undefined'}, Post ID: ${postId || 'undefined'}, Profile ID: ${subClientId || 'undefined'}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const result = await publishPostNow(
+        currentUser.uid,
+        clientId,
+        postId,
+        subClientId,
+        currentContent
+      );
+
+      if (result.success) {
+        toast({
+          title: "Post Published",
+          description: result.linkedinPostId
+            ? `Your post has been successfully published to LinkedIn. Post ID: ${result.linkedinPostId}`
+            : "Your post has been successfully published to LinkedIn."
+        });
+      } else {
+        toast({
+          title: "Publication Failed",
+          description: result.error || "An error occurred while publishing your post.",
+          variant: "destructive"
+        });
+        throw new Error(result.error || "Publication failed");
+      }
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      // Re-throw so the modal stays open for retry
+      throw error;
+    }
   };
 
   const handleViewModeToggle = () => {
@@ -818,6 +862,9 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         onOpenChange={setShowPostNowModal}
         postContent={currentContent}
         onPost={handlePostNow}
+        clientId={clientId}
+        postId={postId}
+        subClientId={subClientId}
       />
 
       <VersionHistoryModal
@@ -890,6 +937,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           postedAt={postedAt}
           clientId={clientId}
           postId={postId}
+          subClientId={subClientId}
         />
 
         <div className="pb-4 bg-gray-50">

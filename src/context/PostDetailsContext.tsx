@@ -65,6 +65,7 @@ type PostDetailsContextType = {
     updateInitialIdea: (agencyId: string, clientId: string, postId: string, initialIdeaPrompt: string, objective: string) => Promise<void>;
     regeneratePostFromIdea: (agencyId: string, clientId: string, postId: string, subClientId: string, initialIdeaPrompt: string, objective: string) => Promise<string | null>;
     updatePostScheduling: (agencyId: string, clientId: string, postId: string, newStatus: string, scheduledPostAt: Timestamp) => Promise<void>;
+    publishPostNow: (agencyId: string, clientId: string, postId: string, subClientId: string, content?: string) => Promise<{ success: boolean; linkedinPostId?: string; error?: string }>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -85,6 +86,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     updateInitialIdea: async () => { },
     regeneratePostFromIdea: async () => null,
     updatePostScheduling: async () => { },
+    publishPostNow: async () => ({ success: false, error: 'Not implemented' }),
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -767,6 +769,73 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const publishPostNow = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        subClientId: string,
+        content?: string
+    ): Promise<{ success: boolean; linkedinPostId?: string; error?: string }> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for publishing post');
+            return { success: false, error: 'No agency ID available' };
+        }
+
+        try {
+            console.log('[PostDetailsContext] Publishing post for agency:', agencyId, 'client:', clientId, 'post:', postId);
+
+            const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/publish-now', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agency_id: agencyId,
+                    client_id: clientId,
+                    subclient_id: subClientId,
+                    idea_id: postId,
+                    ...(content && { content })
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API returned error:', response.status, errorText);
+                return { success: false, error: `API error: ${response.status} - ${errorText}` };
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Update context post with the new status and posted timestamp
+                setPost(prev =>
+                    prev && prev.id === postId
+                        ? {
+                            ...prev,
+                            status: 'Posted',
+                            postedAt: Timestamp.now(),
+                            updatedAt: Timestamp.now()
+                        }
+                        : prev
+                );
+
+                console.log('Post published successfully:', {
+                    linkedinPostId: result.linkedin_post_id,
+                    content: result.post_content
+                });
+
+                return {
+                    success: true,
+                    linkedinPostId: result.linkedin_post_id
+                };
+            } else {
+                console.error('API returned error:', result.error);
+                return { success: false, error: result.error };
+            }
+        } catch (error) {
+            console.error('Error publishing post:', error);
+            return { success: false, error: 'Network error occurred while publishing' };
+        }
+    }, []);
+
     // Show authentication error if no agency ID
     if (!agencyId) {
         return (
@@ -788,6 +857,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 updateInitialIdea: async () => { throw new Error('No agency ID available'); },
                 regeneratePostFromIdea: async () => null,
                 updatePostScheduling: async () => { throw new Error('No agency ID available'); },
+                publishPostNow: async () => ({ success: false, error: 'No agency ID available' }),
             }}>
                 {children}
             </PostDetailsContext.Provider>
@@ -812,7 +882,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             updateTrainAI,
             updateInitialIdea,
             regeneratePostFromIdea,
-            updatePostScheduling
+            updatePostScheduling,
+            publishPostNow
         }}>
             {children}
         </PostDetailsContext.Provider>

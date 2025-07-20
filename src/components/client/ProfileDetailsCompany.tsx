@@ -21,18 +21,23 @@ import {
   updateCompanyProfileContentGuidelines,
   updateCompanyProfileCustomInstructions,
   updateCompanyProfileLanguage,
-  useProfiles // Add this import
+  useProfiles
 } from '@/context/ProfilesContext';
 import { Switch } from '../ui/switch';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
+import { useAuth } from '@/context/AuthContext'; // Add this import
 
 const ProfileDetailsCompany: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
   const navigate = useNavigate();
-  const { deleteProfile } = useProfiles(); // Use the context function
+  const { deleteProfile } = useProfiles();
+  const { currentUser } = useAuth(); // Add this to get agencyId
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get the agency ID from the authenticated user
+  const agencyId = currentUser?.uid;
 
   // Form data states
   const [companyInfoData, setCompanyInfoData] = useState({
@@ -98,8 +103,8 @@ const ProfileDetailsCompany: React.FC = () => {
   });
 
   useEffect(() => {
-    if (clientId && profileId) {
-      getCompanyProfile(clientId, profileId).then(fetchedProfile => {
+    if (clientId && profileId && agencyId) {
+      getCompanyProfile(agencyId, clientId, profileId).then(fetchedProfile => {
         setProfile(fetchedProfile);
 
         // Populate form data
@@ -150,7 +155,7 @@ const ProfileDetailsCompany: React.FC = () => {
         setOriginalContentGuidelinesData(contentGuidelines);
       });
     }
-  }, [clientId, profileId]);
+  }, [clientId, profileId, agencyId]);
 
   // Helper functions
   const formatDate = (dateString: string) => {
@@ -247,14 +252,14 @@ const ProfileDetailsCompany: React.FC = () => {
   };
 
   const handleSectionSave = async (section: string) => {
-    if (!clientId || !profileId) return;
+    if (!clientId || !profileId || !agencyId) return;
 
     setIsLoading(true);
     try {
       switch (section) {
         case 'companyInfo':
           // Update basic profile info
-          await updateCompanyProfileInfo(clientId, profileId, {
+          await updateCompanyProfileInfo(agencyId, clientId, profileId, {
             profileName: companyInfoData.companyName,
             role: companyInfoData.role,
             foundationDate: companyInfoData.foundationDate,
@@ -263,17 +268,17 @@ const ProfileDetailsCompany: React.FC = () => {
           });
 
           // Update language separately since it's in contentProfile
-          await updateCompanyProfileLanguage(clientId, profileId, companyInfoData.language);
+          await updateCompanyProfileLanguage(agencyId, clientId, profileId, companyInfoData.language);
 
           // Update custom instructions separately
-          await updateCompanyProfileCustomInstructions(clientId, profileId, companyInfoData.customInstructions);
+          await updateCompanyProfileCustomInstructions(agencyId, clientId, profileId, companyInfoData.customInstructions);
 
           // Update original values
           setOriginalCompanyInfoData({ ...companyInfoData });
           break;
 
         case 'brandStrategy':
-          await updateCompanyProfileBrandStrategy(clientId, profileId, {
+          await updateCompanyProfileBrandStrategy(agencyId, clientId, profileId, {
             primaryGoal: brandStrategyData.primaryGoal,
             audienceFocus: brandStrategyData.audienceFocus,
             contentPersona: brandStrategyData.brandPersona,
@@ -288,7 +293,7 @@ const ProfileDetailsCompany: React.FC = () => {
           break;
 
         case 'contentGuidelines':
-          await updateCompanyProfileContentGuidelines(clientId, profileId, {
+          await updateCompanyProfileContentGuidelines(agencyId, clientId, profileId, {
             hookGuidelines: contentGuidelinesData.hookGuidelines,
             hotTakes: contentGuidelinesData.hotTakes,
             sampleCTA: contentGuidelinesData.sampleCTA,
@@ -302,7 +307,7 @@ const ProfileDetailsCompany: React.FC = () => {
       }
 
       // Refresh profile data
-      const updatedProfile = await getCompanyProfile(clientId, profileId);
+      const updatedProfile = await getCompanyProfile(agencyId, clientId, profileId);
       setProfile(updatedProfile);
 
       setEditingSection(null);

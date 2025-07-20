@@ -5,6 +5,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/context/AuthContext';
+import { usePostDetails } from '@/context/PostDetailsContext';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
@@ -40,6 +43,7 @@ interface EditorToolbarProps {
   // Add clientId for queue logic
   clientId?: string;
   postId?: string;
+  subClientId?: string;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -68,9 +72,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   scheduledPostAt,
   postedAt,
   clientId,
-  postId
+  postId,
+  subClientId
 }) => {
   const isMobile = useIsMobile();
+  const { currentUser } = useAuth();
+  const { publishPostNow } = usePostDetails();
+  const { toast } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -113,12 +121,54 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   };
 
   const handlePostNow = () => {
+    console.log('EditorToolbar handlePostNow called with props:', { clientId, postId, subClientId });
     setShowPostNowModal(true);
   };
 
-  const handlePostNowConfirm = (status: string) => {
-    console.log('Posting now with status:', status);
-    setShowPostNowModal(false);
+  const handlePostNowConfirm = async (status: string) => {
+    if (!currentUser?.uid || !clientId || !postId || !subClientId) {
+      toast({
+        title: "Error",
+        description: `Missing required information to publish the post. User ID: ${currentUser?.uid || 'undefined'}, Client ID: ${clientId || 'undefined'}, Post ID: ${postId || 'undefined'}, Profile ID: ${subClientId || 'undefined'}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const result = await publishPostNow(
+        currentUser.uid,
+        clientId,
+        postId,
+        subClientId,
+        postContent
+      );
+
+      if (result.success) {
+        toast({
+          title: "Post Published",
+          description: result.linkedinPostId
+            ? `Your post has been successfully published to LinkedIn. Post ID: ${result.linkedinPostId}`
+            : "Your post has been successfully published to LinkedIn."
+        });
+        setShowPostNowModal(false);
+      } else {
+        toast({
+          title: "Publication Failed",
+          description: result.error || "An error occurred while publishing your post.",
+          variant: "destructive"
+        });
+        // Keep the modal open for retry
+      }
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      toast({
+        title: "Publication Failed",
+        description: "An unexpected error occurred while publishing your post.",
+        variant: "destructive"
+      });
+      // Keep the modal open for retry
+    }
   };
 
   const handleAddMedia = () => {
@@ -439,6 +489,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onOpenChange={setShowPostNowModal}
         postContent={postContent}
         onPost={handlePostNowConfirm}
+        clientId={clientId}
+        postId={postId}
+        subClientId={subClientId}
       />
 
       <CreatePollModal

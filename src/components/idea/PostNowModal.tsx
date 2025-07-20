@@ -1,54 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ChevronDown } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 interface PostNowModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   postContent: string;
-  onPost: (status: string) => void;
+  onPost: (status: string) => Promise<void>;
+  clientId?: string;
+  postId?: string;
+  subClientId?: string;
 }
-
-const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
-
-const getStatusColor = (status: string) => {
-  const normalizedStatus = status.toLowerCase();
-  switch (normalizedStatus) {
-    case 'posted':
-      return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
-    case 'scheduled':
-      return 'bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800';
-    case 'waitingforapproval':
-    case 'waiting for approval':
-      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800';
-    case 'approved':
-      return 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
-    case 'drafted':
-      return 'bg-purple-100 text-purple-800 hover:bg-purple-100 hover:text-purple-800';
-    case 'needsvisual':
-    case 'needs visual':
-      return 'bg-orange-100 text-orange-800 hover:bg-orange-100 hover:text-orange-800';
-    default:
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800';
-  }
-};
 
 const PostNowModal: React.FC<PostNowModalProps> = ({
   open,
   onOpenChange,
   postContent,
-  onPost
+  onPost,
+  clientId,
+  postId,
+  subClientId
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState('Posted');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (contentRef.current && open && postContent) {
@@ -114,9 +96,28 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
     }
   }, [postContent, open]);
 
-  const handlePost = () => {
-    onPost(selectedStatus);
-    onOpenChange(false);
+  const handlePost = async () => {
+    if (!clientId || !postId || !subClientId) {
+      toast({
+        title: 'Error',
+        description: `Missing required information to publish the post. Client ID: ${clientId || 'undefined'}, Post ID: ${postId || 'undefined'}, Profile ID: ${subClientId || 'undefined'}`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsPublishing(true);
+      // Status will be automatically set to "Posted" by the Railway API
+      await onPost('Posted');
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      // The error toast should be handled by the parent component
+      // but we'll keep the modal open so the user can try again
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleSeeMore = () => {
@@ -224,55 +225,40 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                     <strong>Ready to publish:</strong> Your post will be immediately published to your LinkedIn profile.
                     Make sure you've reviewed the content above.
                   </p>
+                  <p className="text-blue-700 text-xs mt-2">
+                    The post status will be automatically updated to "Posted" after successful publication.
+                  </p>
                 </div>
               </div>
             </ScrollArea>
-          </div>
-
-          {/* Status Selection */}
-          <div className="flex-shrink-0">
-            <Separator className="mb-4" />
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold">Update Status</h3>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <Badge className={`${getStatusColor(selectedStatus)}`}>
-                        {selectedStatus}
-                      </Badge>
-                      <ChevronDown className="h-4 w-4 text-gray-400" />
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56">
-                    {predefinedStatuses.map(status => (
-                      <DropdownMenuItem key={status} onClick={() => setSelectedStatus(status)} className="p-2">
-                        <Badge className={`${getStatusColor(status)} cursor-pointer`}>
-                          {status}
-                        </Badge>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <p className="text-sm text-gray-500">
-                The status will be automatically updated to "{selectedStatus}" when posted.
-              </p>
-            </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPublishing}
+          >
             Cancel
           </Button>
           <Button
             onClick={handlePost}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            disabled={isPublishing}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400"
           >
-            <Send className="w-4 h-4 mr-2" />
-            Post Now
+            {isPublishing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Post Now
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>
