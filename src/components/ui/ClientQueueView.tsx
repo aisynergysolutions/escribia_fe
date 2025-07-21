@@ -13,6 +13,7 @@ import PostSlotCard from './PostSlotCard';
 import { useQueueData, DaySlot } from '../../hooks/useQueueData';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { useQueueOperations } from '../../hooks/useQueueOperations';
+import QueueViewSkeleton from '../../skeletons/QueueViewSkeleton';
 
 interface ClientQueueViewProps {
   clientId: string;
@@ -172,11 +173,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
   }
 
   if (loadingTimeslotData) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-gray-500">Loading timeslot data...</p>
-      </div>
-    );
+    return <QueueViewSkeleton />;
   }
 
   return (
