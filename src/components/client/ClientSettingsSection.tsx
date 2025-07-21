@@ -11,6 +11,7 @@ import { useProfiles } from '../../context/ProfilesContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Copy } from 'lucide-react';
 import OnboardingProfileModal from '../OnboardingProfileModal';
+import ClientSettingsSectionSkeleton from '../../skeletons/ClientSettingsSectionSkeleton';
 
 interface ClientSettingsSectionProps {
   clientId: string;
@@ -123,10 +124,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
         </div>
 
         {loading ? (
-          <div className="text-center text-gray-500 py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p>Loading profiles...</p>
-          </div>
+          <ClientSettingsSectionSkeleton profileCount={6} />
         ) : error ? (
           <div className="text-center text-red-600 py-8">
             <p className="text-lg font-medium">Error loading profiles</p>

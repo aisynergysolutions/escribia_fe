@@ -12,6 +12,7 @@ import { formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
 import { usePosts } from '@/context/PostsContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import PostsSectionSkeleton from '../../skeletons/PostsSectionSkeleton';
 
 interface PostsSectionProps {
   clientId: string;
@@ -231,222 +232,226 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Unified Control Bar */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border">
-        <div className="flex items-center gap-6">
-          {/* Left Side: Status Filter Tabs - Now Scrollable */}
-          <div className="flex-1 relative">
-            <div className="overflow-x-auto scrollbar-hide status-tabs-container">
-              <div className="flex w-max min-w-full">
-                {allowedStatuses.map(status => {
-                  const count = clientIdeas.filter(idea => idea.status === status).length;
-                  const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
-                  const isSelected = selectedStatus === status;
+      {loading ? (
+        <PostsSectionSkeleton rowCount={5} />
+      ) : (
+        <>
+          {/* Unified Control Bar */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <div className="flex items-center gap-6">
+              {/* Left Side: Status Filter Tabs - Now Scrollable */}
+              <div className="flex-1 relative">
+                <div className="overflow-x-auto scrollbar-hide status-tabs-container">
+                  <div className="flex w-max min-w-full">
+                    {allowedStatuses.map(status => {
+                      const count = clientIdeas.filter(idea => idea.status === status).length;
+                      const displayStatus = status === 'Waiting for Approval' ? 'Waiting Approval' : status;
+                      const isSelected = selectedStatus === status;
 
-                  return (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusSelect(status)}
-                      className={`
-                        flex-1 relative group px-4 py-2 mx-1 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap
-                        ${isSelected
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }
-                      `}
-                    >
-                      <span>
-                        {displayStatus} ({count})
-                      </span>
-                      {isSelected && (
-                        <X className="absolute top-1 right-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      )}
-                    </button>
-                  );
-                })}
+                      return (
+                        <button
+                          key={status}
+                          onClick={() => handleStatusSelect(status)}
+                          className={`
+                            flex-1 relative group px-4 py-2 mx-1 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap
+                            ${isSelected
+                              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }
+                          `}
+                        >
+                          <span>
+                            {displayStatus} ({count})
+                          </span>
+                          {isSelected && (
+                            <X className="absolute top-1 right-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Gradient fade for overflow indication */}
+                <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white to-transparent pointer-events-none opacity-0 status-gradient"></div>
+              </div>
+
+              {/* Right Side: Search & Primary Action - Fixed */}
+              <div className="flex items-center gap-4 flex-shrink-0">
+                {/* Search Input - Made narrower */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search posts..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pl-9 h-10 w-48 focus:border-indigo-600 focus:ring-indigo-600"
+                  />
+                </div>
+
+                {/* New Post Button - Icon Only */}
+                <CreatePostModal>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </CreatePostModal>
               </div>
             </div>
-            {/* Gradient fade for overflow indication */}
-            <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white to-transparent pointer-events-none opacity-0 status-gradient"></div>
           </div>
 
-          {/* Right Side: Search & Primary Action - Fixed */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            {/* Search Input - Made narrower */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search posts..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="pl-9 h-10 w-48 focus:border-indigo-600 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* New Post Button - Icon Only */}
-            <CreatePostModal>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
-                <PlusCircle className="h-4 w-4" />
-              </Button>
-            </CreatePostModal>
-          </div>
-        </div>
-      </div>
-
-      {/* Posts Table */}
-      <div className="bg-white rounded-xl shadow-sm border">
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading posts...</div>
-        ) : error ? (
-          <div className="text-center py-12 text-red-500">{error}</div>
-        ) : filteredPosts.length > 0 ? (
-          <TooltipProvider>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50 border-b">
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                    <button
-                      onClick={() => handleColumnSort('title')}
-                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                    >
-                      POST
-                      {getSortIcon('title')}
-                    </button>
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                    <button
-                      onClick={() => handleColumnSort('profile')}
-                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                    >
-                      PROFILE
-                      {getSortIcon('profile')}
-                    </button>
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                    <button
-                      onClick={() => handleColumnSort('status')}
-                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                    >
-                      STATUS
-                      {getSortIcon('status')}
-                    </button>
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                    <button
-                      onClick={() => handleColumnSort('updated')}
-                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                    >
-                      LAST UPDATED
-                      {getSortIcon('updated')}
-                    </button>
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                    <button
-                      onClick={() => handleColumnSort('scheduled')}
-                      className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                    >
-                      SCHEDULED FOR
-                      {getSortIcon('scheduled')}
-                    </button>
-                  </TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPosts.map(post => (
-                  <TableRow
-                    key={post.postId}
-                    className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
-                    onClick={() => navigate(`/clients/${clientId}/posts/${post.postId}`)}
+          {/* Posts Table */}
+          <div className="bg-white rounded-xl shadow-sm border">
+            {error ? (
+              <div className="text-center py-12 text-red-500">{error}</div>
+            ) : filteredPosts.length > 0 ? (
+              <TooltipProvider>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 border-b">
+                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                        <button
+                          onClick={() => handleColumnSort('title')}
+                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                        >
+                          POST
+                          {getSortIcon('title')}
+                        </button>
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                        <button
+                          onClick={() => handleColumnSort('profile')}
+                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                        >
+                          PROFILE
+                          {getSortIcon('profile')}
+                        </button>
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                        <button
+                          onClick={() => handleColumnSort('status')}
+                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                        >
+                          STATUS
+                          {getSortIcon('status')}
+                        </button>
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                        <button
+                          onClick={() => handleColumnSort('updated')}
+                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                        >
+                          LAST UPDATED
+                          {getSortIcon('updated')}
+                        </button>
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                        <button
+                          onClick={() => handleColumnSort('scheduled')}
+                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                        >
+                          SCHEDULED FOR
+                          {getSortIcon('scheduled')}
+                        </button>
+                      </TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPosts.map(post => (
+                      <TableRow
+                        key={post.postId}
+                        className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
+                        onClick={() => navigate(`/clients/${clientId}/posts/${post.postId}`)}
+                      >
+                        <TableCell className="py-4">
+                          <div className="font-semibold text-gray-900 max-w-xs truncate" title={post.title}>
+                            {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 text-gray-600">
+                          {post.profile}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <StatusBadge status={post.status} type="idea" />
+                        </TableCell>
+                        <TableCell className="py-4 text-gray-600">
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {formatRelativeTime(post.updatedAt)}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {formatDateTime(post.updatedAt)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell className="py-4 text-gray-600">
+                          {post.scheduledPostAt.seconds > 0
+                            ? formatRelativeTime(post.scheduledPostAt)
+                            : '—'}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-gray-100"
+                                data-testid="post-actions-btn"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                handleDuplicate(post.postId);
+                              }}>
+                                <Copy className="h-4 w-4 mr-2" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(post.postId);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TooltipProvider>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500">
+                  {searchTerm || selectedStatus
+                    ? "No posts match your filters."
+                    : "No posts found for this client yet."
+                  }
+                </p>
+                {(searchTerm || selectedStatus) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedStatus(null);
+                    }}
+                    className="mt-2"
                   >
-                    <TableCell className="py-4">
-                      <div className="font-semibold text-gray-900 max-w-xs truncate" title={post.title}>
-                        {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 text-gray-600">
-                      {post.profile}
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <StatusBadge status={post.status} type="idea" />
-                    </TableCell>
-                    <TableCell className="py-4 text-gray-600">
-                      <Tooltip>
-                        <TooltipTrigger>
-                          {formatRelativeTime(post.updatedAt)}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {formatDateTime(post.updatedAt)}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell className="py-4 text-gray-600">
-                      {post.scheduledPostAt.seconds > 0
-                        ? formatRelativeTime(post.scheduledPostAt)
-                        : '—'}
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-gray-100"
-                            data-testid="post-actions-btn"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            handleDuplicate(post.postId);
-                          }}>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(post.postId);
-                            }}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TooltipProvider>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">
-              {searchTerm || selectedStatus
-                ? "No posts match your filters."
-                : "No posts found for this client yet."
-              }
-            </p>
-            {(searchTerm || selectedStatus) && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedStatus(null);
-                }}
-                className="mt-2"
-              >
-                Clear Filters
-              </Button>
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };

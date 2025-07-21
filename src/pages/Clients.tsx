@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import ClientCard from '../components/ui/ClientCard';
 import LoadingGrid from '../components/common/LoadingGrid';
 import AddClientModal from '../components/AddClientModal';
+import ClientsSkeleton from '../skeletons/ClientsSkeleton';
 import { useSearchAndFilter } from '../hooks/useSearchAndFilter';
 import { useClients } from '../context/ClientsContext';
 import { ClientCard as ClientCardType } from '../context/ClientsContext';
@@ -72,20 +73,7 @@ const Clients = () => {
   }, [filteredClients]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Clients</h1>
-          <AddClientModal onAddClient={() => { }}>
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add New Client
-            </Button>
-          </AddClientModal>
-        </div>
-        <LoadingGrid count={9} variant="client" />
-      </div>
-    );
+    return <ClientsSkeleton count={9} />;
   }
 
   return (

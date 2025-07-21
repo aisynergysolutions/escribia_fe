@@ -12,6 +12,7 @@ import { usePostEditor } from '../hooks/usePostEditor';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { usePosts } from '@/context/PostsContext';
 import { useAuth } from '@/context/AuthContext';
+import PostDetailsSkeleton from '../skeletons/PostDetailsSkeleton';
 
 const PostDetails = () => {
   const { clientId, postId } = useParams<{ clientId: string; postId: string }>();
@@ -173,11 +174,7 @@ const PostDetails = () => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading post details...</div>
-      </div>
-    );
+    return <PostDetailsSkeleton />;
   }
 
   // Show error state
