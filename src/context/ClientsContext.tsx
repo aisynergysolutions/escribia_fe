@@ -13,32 +13,32 @@ export type ClientCard = {
 };
 
 export type ClientDetails = {
-  id: string;
-  agencyId: string;
-  profileImageUrl?: string;
-  clientName: string;
-  createdAt: string;
-  updatedAt: string;
-  onboarding_link?: string;
-  oneLiner?: string;
-  status: string;
-  hard_facts?: {
-    competitors?: string[];
-    contentGoals?: {
-      brandAwareness?: number;
-      leadGeneration?: number;
-      talentAttraction?: number;
-      thoughtLeadership?: number;
+    id: string;
+    agencyId: string;
+    profileImageUrl?: string;
+    clientName: string;
+    createdAt: string;
+    updatedAt: string;
+    onboarding_link?: string;
+    oneLiner?: string;
+    status: string;
+    hard_facts?: {
+        competitors?: string[];
+        contentGoals?: {
+            brandAwareness?: number;
+            leadGeneration?: number;
+            talentAttraction?: number;
+            thoughtLeadership?: number;
+        };
+        foundationDate?: string;
+        linkedinURL?: string;
+        locationHQ?: string;
+        mainOfferings?: string;
+        mission?: string;
+        siteURL?: string;
+        size?: string;
+        targetAudience?: string;
     };
-    foundationDate?: string;
-    linkedinURL?: string;
-    locationHQ?: string;
-    mainOfferings?: string;
-    mission?: string;
-    siteURL?: string;
-    size?: string;
-    targetAudience?: string;
-  };
 };
 
 type ClientsContextType = {
@@ -53,6 +53,8 @@ type ClientsContextType = {
     }) => Promise<void>;
     deleteClient: (id: string) => Promise<void>;
     getClientDetails: (clientId: string) => Promise<ClientDetails | null>;
+    refreshClientDetails: (clientId: string) => Promise<ClientDetails | null>;
+    clearClientDetails: () => void;
     clientDetails: ClientDetails | null;
     clientDetailsLoading: boolean;
     clientDetailsError: string | null;
@@ -66,6 +68,8 @@ const ClientsContext = createContext<ClientsContextType>({
     addClient: async () => { },
     deleteClient: async () => { },
     getClientDetails: async () => null,
+    refreshClientDetails: async () => null,
+    clearClientDetails: () => { },
     clientDetails: null,
     clientDetailsLoading: false,
     clientDetailsError: null,
@@ -81,6 +85,8 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
     const [clientDetails, setClientDetails] = useState<ClientDetails | null>(null);
     const [clientDetailsLoading, setClientDetailsLoading] = useState(false);
     const [clientDetailsError, setClientDetailsError] = useState<string | null>(null);
+    // Track which client we've loaded to avoid unnecessary refetches
+    const [loadedClientId, setLoadedClientId] = useState<string | null>(null);
 
     // Get the current agency ID from the authenticated user
     const agencyId = currentUser?.uid;
@@ -110,7 +116,7 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
                     onboarding_link: data.onboarding_link || '',
                 };
             });
-            
+
             console.log('[ClientsContext] Fetched clients:', clientsList.length);
             setClients(clientsList);
         } catch (err: any) {
@@ -138,7 +144,7 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const clientDocRef = doc(db, 'agencies', agencyId, 'clients', id);
-            
+
             console.log('[ClientsContext] Adding client for agency:', agencyId);
             await setDoc(clientDocRef, {
                 onboarding_link,
@@ -148,7 +154,7 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
                 agencyId: agencyId,
                 createdAt: serverTimestamp(),
             });
-            
+
             // Re-fetch clients to update UI
             await fetchClients();
         } catch (err: any) {
@@ -166,16 +172,17 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const clientDocRef = doc(db, 'agencies', agencyId, 'clients', id);
-            
+
             console.log('[ClientsContext] Deleting client for agency:', agencyId);
             await deleteDoc(clientDocRef);
-            
+
             // Remove the client from local state without refetching
             setClients(prev => prev.filter(client => client.id !== id));
-            
+
             // Clear client details if it's the same client
             if (clientDetails && clientDetails.id === id) {
                 setClientDetails(null);
+                setLoadedClientId(null);
             }
         } catch (err: any) {
             console.error('[ClientsContext] Error deleting client:', err);
@@ -190,25 +197,38 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
             return null;
         }
 
-        setClientDetailsLoading(true);
+        // If we already have this client's details loaded, return them immediately
+        if (clientDetails && loadedClientId === clientId) {
+            console.log('[ClientsContext] Returning cached client details for:', clientId);
+            return clientDetails;
+        }
+
+        // Only show loading state if we don't have any client details or it's a different client
+        const shouldShowLoading = !clientDetails || loadedClientId !== clientId;
+
+        if (shouldShowLoading) {
+            setClientDetailsLoading(true);
+        }
         setClientDetailsError(null);
+
         try {
             const clientDocPath = `agencies/${agencyId}/clients/${clientId}`;
             console.log('[ClientsContext] Fetching client details from Firestore path:', clientDocPath);
-            
+
             const clientDocRef = doc(db, 'agencies', agencyId, 'clients', clientId);
             const clientSnap = await getDoc(clientDocRef);
-            
+
             if (!clientSnap.exists()) {
                 console.log('[ClientsContext] No client found at:', clientDocPath);
                 setClientDetails(null);
+                setLoadedClientId(null);
                 setClientDetailsLoading(false);
                 return null;
             }
-            
+
             const data = clientSnap.data();
             console.log('[ClientsContext] Firestore client document data:', data);
-            
+
             const details: ClientDetails = {
                 id: clientId,
                 agencyId: data.agencyId || agencyId,
@@ -221,18 +241,87 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
                 status: data.status || '',
                 hard_facts: data.hard_facts || {},
             };
-            
+
             console.log('[ClientsContext] Fetched client details for agency:', agencyId);
             setClientDetails(details);
+            setLoadedClientId(clientId);
             setClientDetailsLoading(false);
             return details;
         } catch (err: any) {
             setClientDetailsError(err.message || 'Failed to fetch client details');
             setClientDetails(null);
+            setLoadedClientId(null);
             setClientDetailsLoading(false);
             console.error('[ClientsContext] Error fetching client details:', err);
             return null;
         }
+    };
+
+    // Force refresh client details (ignores cache)
+    const refreshClientDetails = async (clientId: string): Promise<ClientDetails | null> => {
+        if (!agencyId) {
+            console.error('[ClientsContext] No agency ID available for refreshing client details');
+            setClientDetailsError('No agency ID available');
+            return null;
+        }
+
+        console.log('[ClientsContext] Force refreshing client details for:', clientId);
+
+        // Clear current cache and force reload
+        setLoadedClientId(null);
+        setClientDetails(null);
+        setClientDetailsLoading(true);
+        setClientDetailsError(null);
+
+        try {
+            const clientDocPath = `agencies/${agencyId}/clients/${clientId}`;
+            const clientDocRef = doc(db, 'agencies', agencyId, 'clients', clientId);
+            const clientSnap = await getDoc(clientDocRef);
+
+            if (!clientSnap.exists()) {
+                console.log('[ClientsContext] No client found at:', clientDocPath);
+                setClientDetails(null);
+                setLoadedClientId(null);
+                setClientDetailsLoading(false);
+                return null;
+            }
+
+            const data = clientSnap.data();
+            const details: ClientDetails = {
+                id: clientId,
+                agencyId: data.agencyId || agencyId,
+                profileImageUrl: data.profileImageUrl,
+                clientName: data.clientName || '',
+                createdAt: data.createdAt || '',
+                updatedAt: data.updatedAt || '',
+                onboarding_link: data.onboarding_link,
+                oneLiner: data.oneLiner,
+                status: data.status || '',
+                hard_facts: data.hard_facts || {},
+            };
+
+            console.log('[ClientsContext] Force refreshed client details for agency:', agencyId);
+            setClientDetails(details);
+            setLoadedClientId(clientId);
+            setClientDetailsLoading(false);
+            return details;
+        } catch (err: any) {
+            setClientDetailsError(err.message || 'Failed to refresh client details');
+            setClientDetails(null);
+            setLoadedClientId(null);
+            setClientDetailsLoading(false);
+            console.error('[ClientsContext] Error refreshing client details:', err);
+            return null;
+        }
+    };
+
+    // Clear client details cache (useful when navigating away from client pages)
+    const clearClientDetails = () => {
+        console.log('[ClientsContext] Clearing client details cache');
+        setClientDetails(null);
+        setLoadedClientId(null);
+        setClientDetailsError(null);
+        setClientDetailsLoading(false);
     };
 
     // Fetch clients when agency ID becomes available
@@ -249,16 +338,18 @@ export const ClientsProvider = ({ children }: { children: ReactNode }) => {
 
     return (
         <ClientsContext.Provider value={{
-          clients,
-          loading,
-          error,
-          fetchClients,
-          addClient,
-          deleteClient,
-          getClientDetails,
-          clientDetails,
-          clientDetailsLoading,
-          clientDetailsError,
+            clients,
+            loading,
+            error,
+            fetchClients,
+            addClient,
+            deleteClient,
+            getClientDetails,
+            refreshClientDetails,
+            clearClientDetails,
+            clientDetails,
+            clientDetailsLoading,
+            clientDetailsError,
         }}>
             {children}
         </ClientsContext.Provider>

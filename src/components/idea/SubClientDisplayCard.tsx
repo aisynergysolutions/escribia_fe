@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, User } from 'lucide-react';
+import { Building2, User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,7 @@ const isCompany = subClient.role.toLowerCase().includes('company');
             <AvatarImage src={subClient.profileImage} />
             <AvatarFallback className="bg-indigo-100">
               {isCompany ? (
-                <Building className="h-6 w-6 text-indigo-600" />
+                <Building2 className="h-6 w-6 text-indigo-600" />
               ) : (
                 <User className="h-6 w-6 text-indigo-600" />
               )}

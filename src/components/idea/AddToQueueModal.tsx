@@ -571,7 +571,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                                 : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
                                 }`}
                             >
-                              <div className="font-medium text-sm">{slot.formattedDisplay}</div>
+                              <div className="font-medium text-xs">{slot.formattedDisplay}</div>
                             </button>
                           ))}
                         </div>

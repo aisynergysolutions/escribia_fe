@@ -36,10 +36,16 @@ const ClientSidebar = () => {
 
   // Add this effect to fetch client details when clientId changes
   useEffect(() => {
-    if (clientId && (!clientDetails || clientDetails.id !== clientId)) {
-      getClientDetails(clientId);
+    if (clientId) {
+      // Only fetch if we don't have this client's details loaded
+      if (!clientDetails || clientDetails.id !== clientId) {
+        console.log('[ClientSidebar] Fetching client details for:', clientId);
+        getClientDetails(clientId);
+      } else {
+        console.log('[ClientSidebar] Using cached client details for:', clientId);
+      }
     }
-  }, [clientId, clientDetails, getClientDetails]);
+  }, [clientId, clientDetails?.id, getClientDetails]);
 
   const handleBackToClients = () => {
     navigate('/clients');
@@ -49,7 +55,10 @@ const ClientSidebar = () => {
     navigate(`/clients/${clientId}`);
   };
 
-  if (clientDetailsLoading) {
+  // Only show loading in sidebar if we're loading AND don't have the right client data
+  const shouldShowSidebarLoading = clientDetailsLoading && (!clientDetails || clientDetails.id !== clientId);
+
+  if (shouldShowSidebarLoading) {
     return (
       <div className="w-56 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col justify-center items-center">
         <span className="text-slate-500 text-sm">Loading client...</span>
@@ -80,8 +89,8 @@ const ClientSidebar = () => {
           <Link
             to={fullPath}
             className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-                ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+              ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
               }`}
           >
             <item.icon className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
@@ -173,9 +182,9 @@ const ClientSidebar = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Status</span>
             <span className={`text-xs px-2 py-1 rounded-full ${clientDetails.status === 'active' ? 'bg-green-100 text-green-700' :
-                clientDetails.status === 'onboarding' ? 'bg-blue-100 text-blue-700' :
-                  clientDetails.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
+              clientDetails.status === 'onboarding' ? 'bg-blue-100 text-blue-700' :
+                clientDetails.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-gray-100 text-gray-700'
               }`}>
               {clientDetails.status}
             </span>

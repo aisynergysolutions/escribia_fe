@@ -124,7 +124,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
         </div>
 
         {loading ? (
-          <ClientSettingsSectionSkeleton profileCount={6} />
+          <ClientSettingsSectionSkeleton profileCount={2} />
         ) : error ? (
           <div className="text-center text-red-600 py-8">
             <p className="text-lg font-medium">Error loading profiles</p>

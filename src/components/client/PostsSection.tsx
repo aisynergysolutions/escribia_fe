@@ -431,10 +431,17 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
               <div className="text-center py-12">
                 <p className="text-gray-500">
                   {searchTerm || selectedStatus
-                    ? "No posts match your filters."
-                    : "No posts found for this client yet."
+                  ? "No posts match your filters."
+                  : "No posts found for this client yet."
                   }
                 </p>
+                {!(searchTerm || selectedStatus) && (
+                  <CreatePostModal>
+                  <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Create Post
+                  </Button>
+                  </CreatePostModal>
+                )}
                 {(searchTerm || selectedStatus) && (
                   <Button
                     variant="outline"
