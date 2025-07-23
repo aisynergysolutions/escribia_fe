@@ -25,6 +25,7 @@ import {
 } from '@/context/ProfilesContext';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 import { useAuth } from '@/context/AuthContext';
+import ProfileDetailsPersonSkeleton from '@/skeletons/ProfileDetailsPersonSkeleton';
 
 // Use types directly from ProfilesContext
 import type { Profile } from '@/context/ProfilesContext';
@@ -441,7 +442,7 @@ const ProfileDetailsPerson: React.FC = () => {
     }));
   };
 
-  if (!profile) return <div>Loading...</div>;
+  if (!profile) return <ProfileDetailsPersonSkeleton />;
 
   const { linkedin, contentProfile } = profile;
 

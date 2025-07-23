@@ -52,7 +52,7 @@ const ClientDetails = () => {
   if (clientDetailsLoading) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold">Loading client...</h2>
+        <h2 className="text-2xl font-semibold">Loading client details...</h2>
       </div>
     );
   }

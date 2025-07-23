@@ -26,6 +26,7 @@ import {
 import { Switch } from '../ui/switch';
 import LinkedInConnectionPanel from './LinkedInConnectionPanel';
 import { useAuth } from '@/context/AuthContext'; // Add this import
+import ProfileDetailsCompanySkeleton from '@/skeletons/ProfileDetailsCompanySkeleton';
 
 const ProfileDetailsCompany: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
@@ -389,7 +390,7 @@ const ProfileDetailsCompany: React.FC = () => {
     }));
   };
 
-  if (!profile) return <div>Loading...</div>;
+  if (!profile) return <ProfileDetailsCompanySkeleton />;
 
   const { linkedin, contentProfile } = profile;
 
