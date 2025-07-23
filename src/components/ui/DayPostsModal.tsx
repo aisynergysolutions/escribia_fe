@@ -65,6 +65,9 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
     onSchedulePost();
   };
 
+  // Check if selected date is before today
+  const isDateInPast = selectedDate ? selectedDate < new Date(new Date().setHours(0, 0, 0, 0)) : false;
+
   // Dummy handlers for drag and drop (not used in this modal)
   const handleDragStart = () => { };
   const handleDragOver = () => { };
@@ -115,9 +118,10 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
             onClick={handleSchedulePost}
             className="w-full"
             variant="outline"
+            disabled={isDateInPast}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Schedule a post
+            {isDateInPast ? 'Cannot schedule for past dates' : 'Schedule a post'}
           </Button>
         </div>
       </DialogContent>
