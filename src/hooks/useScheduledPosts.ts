@@ -20,6 +20,7 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [optimisticUpdatesInProgress, setOptimisticUpdatesInProgress] = useState<Set<string>>(new Set());
 
   // Get the current agency ID from the authenticated user
   const agencyId = currentUser?.uid;
@@ -167,11 +168,49 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
     }
   }, [clientId, monthsToLoad, agencyId]);
 
+  // Optimistic update functions
+  const optimisticallyUpdatePost = useCallback((postId: string, updates: Partial<ScheduledPost>) => {
+    setOptimisticUpdatesInProgress(prev => new Set(prev).add(postId));
+    setScheduledPosts(prevPosts => 
+      prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, ...updates }
+          : post
+      )
+    );
+  }, []);
+
+  const optimisticallyRemovePost = useCallback((postId: string) => {
+    setOptimisticUpdatesInProgress(prev => new Set(prev).add(postId));
+    setScheduledPosts(prevPosts => 
+      prevPosts.filter(post => post.id !== postId)
+    );
+  }, []);
+
+  const rollbackOptimisticUpdate = useCallback(() => {
+    // Refetch from database to restore original state
+    setOptimisticUpdatesInProgress(new Set());
+    refetch();
+  }, [refetch]);
+
+  const clearOptimisticUpdate = useCallback((postId: string) => {
+    setOptimisticUpdatesInProgress(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(postId);
+      return newSet;
+    });
+  }, []);
+
   return {
     scheduledPosts,
     loading,
     error,
     fetchScheduledPosts,
-    refetch
+    refetch,
+    optimisticallyUpdatePost,
+    optimisticallyRemovePost,
+    rollbackOptimisticUpdate,
+    clearOptimisticUpdate,
+    optimisticUpdatesInProgress
   };
 };

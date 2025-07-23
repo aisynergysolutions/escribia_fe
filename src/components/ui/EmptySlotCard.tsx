@@ -31,29 +31,26 @@ const EmptySlotCard: React.FC<EmptySlotCardProps> = ({
   };
 
   return (
-    <Card 
-      className={`border-2 border-dashed transition-all cursor-pointer ${
-        isDragOver 
-          ? 'border-blue-500 bg-blue-50/50' 
-          : 'border-gray-300 bg-gray-50/50 hover:bg-gray-100/50'
-      }`}
+    <Card
+      className={`border-2 border-dashed transition-all cursor-pointer ${isDragOver
+        ? 'border-blue-500 bg-blue-50/50'
+        : 'border-gray-300 bg-gray-50/50 hover:bg-gray-100/50'
+        }`}
       onDrop={onDrop}
       onDragOver={handleDragOver}
     >
-      <div className="flex items-center gap-4 px-6 py-4">
+      <div className="flex items-center gap-4 px-6 py-4 " onClick={handleClick}>
         <div className="text-sm font-medium text-gray-400 min-w-[80px]">
           {time}
         </div>
-        
+
         <div className="flex-1">
-          <Button
-            variant="ghost"
-            onClick={handleClick}
-            className="h-auto p-0 text-gray-500 hover:text-gray-700 font-normal"
-          >
+          <div className="text-sm text-gray-500 flex items-center">
+            {/* className="h-auto p-0 text-gray-500 hover:text-gray-700 font-normal" */}
+
             <Plus className="h-4 w-4 mr-2" />
             Schedule for {time}
-          </Button>
+          </div>
         </div>
       </div>
     </Card>

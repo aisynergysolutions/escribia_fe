@@ -40,10 +40,21 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
     updateTimeslots,
     loadMoreDays,
     loadingTimeslotData,
-    isInitialized
+    isInitialized,
+    optimisticallyUpdatePost,
+    optimisticallyRemovePost,
+    rollbackOptimisticUpdate,
+    clearOptimisticUpdate,
+    optimisticUpdatesInProgress,
   } = useQueueData(clientId, hideEmptySlots);
 
-  const { handleRemoveFromQueue, handleEditSlot, handleMoveToTop, handleReschedule } = useQueueOperations(refreshQueue);
+  const { handleRemoveFromQueue, handleEditSlot, handleMoveToTop, handleReschedule } = useQueueOperations(
+    refreshQueue,
+    optimisticallyUpdatePost,
+    optimisticallyRemovePost,
+    rollbackOptimisticUpdate,
+    clearOptimisticUpdate
+  );
 
   // Show timeslot modal automatically if no timeslots are configured
   // Only trigger after loading is complete AND data has been initialized
@@ -64,7 +75,12 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
 
   const { draggedItem, dragOverSlot, handleDragStart, handleDragOver, handleDragEnd, handleDrop } = useDragAndDrop(
     hideEmptySlots,
-    refreshQueue
+    refreshQueue,
+    clientId,
+    {
+      onEditSlot: handleEditSlot,
+      onShowRescheduleModal: showRescheduleModal
+    }
   );
 
   const handlePostClick = (postId: string) => {
@@ -201,13 +217,17 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
 
                     // Handle empty slots
                     if ('isEmpty' in slot && slot.isEmpty) {
+                      const handleEmptySlotDrop = (e: React.DragEvent) => {
+                        handleDrop(e, slot);
+                      };
+
                       return (
                         <EmptySlotCard
                           key={slot.id}
                           time={slot.time}
                           date={slot.datetime}
                           onSchedulePost={handleSchedulePost}
-                          onDrop={(e) => handleDrop(e, slot, showRescheduleModal)}
+                          onDrop={handleEmptySlotDrop}
                           onDragOver={(e) => handleDragOver(e, slot.id)}
                           isDragOver={isDragOver}
                         />
@@ -216,21 +236,27 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
 
                     // Handle regular post slots
                     const queueSlot = slot as any;
+                    const isOptimisticUpdate = optimisticUpdatesInProgress.has(queueSlot.id);
+
+                    const handlePostSlotDrop = (e: React.DragEvent, targetSlot: any) => {
+                      handleDrop(e, targetSlot);
+                    };
 
                     return (
-                      <PostSlotCard
-                        key={queueSlot.id}
-                        slot={queueSlot}
-                        isDragging={isDragging}
-                        onPostClick={handlePostClick}
-                        onEditSlot={handleEditSlotModal}
-                        onRemoveFromQueue={(slotId) => handleRemoveFromQueue(slotId, clientId)}
-                        onMoveToTop={(slotId) => handleMoveToTop(slotId, queueSlots)}
-                        onDragStart={handleDragStart}
-                        onDragOver={handleDragOver}
-                        onDragEnd={handleDragEnd}
-                        onDrop={(e, slot) => handleDrop(e, slot, showRescheduleModal)}
-                      />
+                      <div key={queueSlot.id} className={`transition-opacity ${isOptimisticUpdate ? 'opacity-60' : ''}`}>
+                        <PostSlotCard
+                          slot={queueSlot}
+                          isDragging={isDragging}
+                          onPostClick={handlePostClick}
+                          onEditSlot={handleEditSlotModal}
+                          onRemoveFromQueue={(slotId) => handleRemoveFromQueue(slotId, clientId)}
+                          onMoveToTop={(slotId) => handleMoveToTop(slotId, queueSlots)}
+                          onDragStart={handleDragStart}
+                          onDragOver={handleDragOver}
+                          onDragEnd={handleDragEnd}
+                          onDrop={handlePostSlotDrop}
+                        />
+                      </div>
                     );
                   })}
                 </DayCard>

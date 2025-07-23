@@ -4,7 +4,13 @@ import { Timestamp, doc, setDoc, getDoc, updateDoc, deleteField } from 'firebase
 import { db } from '../lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
-export const useQueueOperations = (refreshQueue: () => void) => {
+export const useQueueOperations = (
+  refreshQueue: () => void,
+  optimisticallyUpdatePost?: (postId: string, updates: any) => void,
+  optimisticallyRemovePost?: (postId: string) => void,
+  rollbackOptimisticUpdate?: () => void,
+  clearOptimisticUpdate?: (postId: string) => void
+) => {
   const { currentUser } = useAuth();
   
   // Get the current agency ID from the authenticated user
@@ -17,6 +23,11 @@ export const useQueueOperations = (refreshQueue: () => void) => {
     }
 
     console.log('[useQueueOperations] Remove from queue:', slotId, 'for agency:', agencyId);
+    
+    // Optimistic update - immediately remove the post from the UI
+    if (optimisticallyRemovePost) {
+      optimisticallyRemovePost(slotId);
+    }
     
     try {
       // Search through month documents to find and remove the scheduled post
@@ -74,10 +85,19 @@ export const useQueueOperations = (refreshQueue: () => void) => {
         updatedAt: Timestamp.now()
       }, { merge: true });
       
+      // Clear optimistic update status
+      if (clearOptimisticUpdate) {
+        clearOptimisticUpdate(slotId);
+      }
+      
       refreshQueue();
       console.log('Post successfully removed from queue');
     } catch (error) {
       console.error('Error removing post from queue:', error);
+      // Rollback optimistic update on error
+      if (rollbackOptimisticUpdate) {
+        rollbackOptimisticUpdate();
+      }
     }
   };
 
@@ -88,6 +108,14 @@ export const useQueueOperations = (refreshQueue: () => void) => {
     }
 
     console.log('[useQueueOperations] Edit slot:', slotId, 'to:', format(newDateTime, 'yyyy-MM-dd HH:mm'), 'for agency:', agencyId);
+    
+    // Optimistic update - immediately update the UI
+    if (optimisticallyUpdatePost) {
+      optimisticallyUpdatePost(slotId, {
+        scheduledPostAt: Timestamp.fromDate(newDateTime),
+        timeSlot: newTimeSlot,
+      });
+    }
     
     try {
       // First, remove the post from its current location (reuse the remove logic)
@@ -138,6 +166,10 @@ export const useQueueOperations = (refreshQueue: () => void) => {
       
       if (!postData) {
         console.error('Could not find the post to reschedule');
+        // Rollback optimistic update
+        if (rollbackOptimisticUpdate) {
+          rollbackOptimisticUpdate();
+        }
         return;
       }
       
@@ -180,10 +212,19 @@ export const useQueueOperations = (refreshQueue: () => void) => {
         updatedAt: Timestamp.now()
       }, { merge: true });
       
+      // Clear optimistic update status
+      if (clearOptimisticUpdate) {
+        clearOptimisticUpdate(slotId);
+      }
+      
       refreshQueue();
       console.log('Post successfully rescheduled to:', newDateTime);
     } catch (error) {
       console.error('Error rescheduling post:', error);
+      // Rollback optimistic update on error
+      if (rollbackOptimisticUpdate) {
+        rollbackOptimisticUpdate();
+      }
     }
   };
 

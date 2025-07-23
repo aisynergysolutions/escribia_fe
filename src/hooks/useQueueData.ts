@@ -39,7 +39,15 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     setMonthsToLoad([currentMonth, nextMonth]);
   }, []);
 
-  const { scheduledPosts, refetch: refetchScheduledPosts } = useScheduledPosts(clientId, monthsToLoad);
+  const { 
+    scheduledPosts, 
+    refetch: refetchScheduledPosts, 
+    optimisticallyUpdatePost, 
+    optimisticallyRemovePost, 
+    rollbackOptimisticUpdate,
+    clearOptimisticUpdate,
+    optimisticUpdatesInProgress
+  } = useScheduledPosts(clientId, monthsToLoad);
 
   // Fetch timeslot data when the clientId changes
   useEffect(() => {
@@ -188,5 +196,10 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     loadingTimeslotData,
     updateTimeslots, // Expose the function
     isInitialized,
+    optimisticallyUpdatePost,
+    optimisticallyRemovePost,
+    rollbackOptimisticUpdate,
+    clearOptimisticUpdate,
+    optimisticUpdatesInProgress,
   };
 };

@@ -58,7 +58,7 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
       onDragOver={(e) => onDragOver(e, slot.id)}
       onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(e, slot)}
-      className={`flex items-center gap-4 px-0 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${isDragging ? 'opacity-50' : ''
+      className={`flex items-center gap-6 p-2 py-3 border border-gray-100 rounded-md last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${isDragging ? 'opacity-50' : ''
         }`}
     >
       <div className="flex flex-col items-center gap-2 min-w-[80px]">
@@ -98,7 +98,7 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 mr-2 text-gray-400 hover:text-gray-600"
+                  className="h-8 w-8 text-gray-400 hover:text-gray-600"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
@@ -110,9 +110,6 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
             <DropdownMenuItem onClick={() => onRemoveFromQueue(slot.id)}>
               Remove from queue
             </DropdownMenuItem>
-            {/* <DropdownMenuItem onClick={() => onMoveToTop(slot.id)}>
-              Move to top
-            </DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
