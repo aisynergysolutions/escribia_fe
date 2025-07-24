@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from './button';
-import { Card } from './card';
 import { mockClients } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useScheduledPosts } from '../../hooks/useScheduledPosts';
+import { useScheduledPostsContext } from '../../context/ScheduledPostsContext';
 import { useQueueOperations } from '../../hooks/useQueueOperations';
 import SchedulePostModal from './SchedulePostModal';
 import DayPostsModal from './DayPostsModal';
@@ -36,7 +35,6 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [selectedPostForReschedule, setSelectedPostForReschedule] = useState<any>(null);
-  const [loadedMonths, setLoadedMonths] = useState<string[]>([]);
   const { clientId: routeClientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
 
@@ -46,43 +44,41 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   // Use external month if provided, otherwise use internal state
   const currentMonth = externalCurrentMonth || internalCurrentMonth;
 
-  // Initialize loaded months with current month only once
-  useEffect(() => {
-    const currentMonthStr = format(new Date(), 'yyyy-MM');
-    setLoadedMonths([currentMonthStr]);
-  }, []); // Empty dependency array to run only once
+  // Use the shared scheduled posts context
+  const {
+    scheduledPosts,
+    loading,
+    loadedMonths,
+    setLoadedMonths,
+    refetch
+  } = useScheduledPostsContext();
 
   // Ensure the current viewing month is always loaded
   useEffect(() => {
     const currentMonthStr = format(currentMonth, 'yyyy-MM');
-    setLoadedMonths(prev => {
-      if (!prev.includes(currentMonthStr)) {
-        return [...prev, currentMonthStr];
+    setLoadedMonths(prevMonths => {
+      if (!prevMonths.includes(currentMonthStr)) {
+        return [...prevMonths, currentMonthStr];
       }
-      return prev;
+      return prevMonths;
     });
-  }, [currentMonth]);
-
-  // Fetch scheduled posts with month-based loading (except for showAllClients)
-  const { scheduledPosts, loading, refetch } = useScheduledPosts(
-    showAllClients ? undefined : clientId,
-    showAllClients ? undefined : loadedMonths
-  );
-
-  // Only refetch when clientId changes, not when refetch function changes
-  useEffect(() => {
-    if (!showAllClients && clientId) {
-      // The refetch will happen automatically when loadedMonths changes via useScheduledPosts
-    }
-  }, [clientId, showAllClients]);
+  }, [currentMonth, setLoadedMonths]);
 
   // Memoize month calculations
   const monthData = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-    return { monthStart, monthEnd, monthDays };
+    // Get the start of the week for the first day of the month (includes padding from previous month)
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // 0 = Sunday
+
+    // Get the end of the week for the last day of the month (includes padding from next month)
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+
+    // Get all days to display in the calendar grid (typically 42 days: 6 weeks × 7 days)
+    const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+    return { monthStart, monthEnd, calendarDays };
   }, [currentMonth]);
 
   const getPostsForDay = useCallback((day: Date) => {
@@ -197,7 +193,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
 
   // Memoize calendar days rendering for better performance
   const calendarDays = useMemo(() => {
-    return monthData.monthDays.map(day => {
+    return monthData.calendarDays.map(day => {
       const postsForDay = getPostsForDay(day);
       const isCurrentMonth = isSameMonth(day, currentMonth);
       const isToday = isSameDay(day, new Date());
@@ -253,25 +249,30 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
         </div>
       );
     });
-  }, [monthData.monthDays, getPostsForDay, currentMonth, handleDayClick, showAllClients, getClientName]);
+  }, [monthData.calendarDays, getPostsForDay, currentMonth, handleDayClick, showAllClients, getClientName]);
 
   return (
     <>
-      <Card className="p-4">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
         {!hideTitle && (
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">
-              {getCalendarTitle()}
-            </h3>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {getCalendarTitle()}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                View and manage your scheduled content
+              </p>
+            </div>
+            <div className="flex items-center gap-0">
+              <Button variant="ghost" size="icon" onClick={goToPreviousMonth}>
+                <ArrowLeft className="h-3 w-3 text-gray-500" />
               </Button>
-              <span className="font-medium min-w-[120px] text-center">
+              <span className="font-medium min-w-[80px] text-center">
                 {format(currentMonth, 'MMMM yyyy')}
               </span>
-              <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                <ChevronRight className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={goToNextMonth}>
+                <ArrowRight className="h-3 w-3 text-gray-500" />
               </Button>
             </div>
           </div>
@@ -289,12 +290,12 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
           {calendarDays}
         </div>
 
-        {scheduledPosts.length === 0 && (
+        {/* {scheduledPosts.length === 0 && (
           <div className="text-center text-gray-500 mt-4 py-8">
             No scheduled posts found
           </div>
-        )}
-      </Card>
+        )} */}
+      </div>
 
       <DayPostsModal
         isOpen={isDayPostsModalOpen}

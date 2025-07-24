@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { useEvents } from '../context/EventsContext';
-import { useScheduledPosts } from './useScheduledPosts';
+import { useScheduledPostsContext } from '../context/ScheduledPostsContext';
 import { mockClients } from '../types';
 
 interface QueueSlot {
@@ -29,25 +29,19 @@ export type DaySlot = QueueSlot | EmptySlot;
 export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const { timeslotData, loadingTimeslotData, fetchTimeslotData, updateTimeslots } = useEvents();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [monthsToLoad, setMonthsToLoad] = useState<string[]>([]);
 
-  // Generate initial months (current month and next month)
-  useEffect(() => {
-    const today = new Date();
-    const currentMonth = format(today, 'yyyy-MM');
-    const nextMonth = format(addMonths(today, 1), 'yyyy-MM');
-    setMonthsToLoad([currentMonth, nextMonth]);
-  }, []);
-
+  // Use the shared scheduled posts context
   const { 
     scheduledPosts, 
+    loadedMonths,
+    loadMoreMonths,
     refetch: refetchScheduledPosts, 
     optimisticallyUpdatePost, 
     optimisticallyRemovePost, 
     rollbackOptimisticUpdate,
     clearOptimisticUpdate,
     optimisticUpdatesInProgress
-  } = useScheduledPosts(clientId, monthsToLoad);
+  } = useScheduledPostsContext();
 
   // Fetch timeslot data when the clientId changes
   useEffect(() => {
@@ -83,16 +77,20 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const dayGroups = useMemo(() => {
     if (!isInitialized || !hasTimeslotsConfigured) return {};
 
-    // Get unique dates that have scheduled posts
-    const scheduledDates = Array.from(new Set(
+    // Get dates that have scheduled posts
+    const datesWithPosts = new Set(
       queueSlots.map(slot => format(slot.datetime, 'yyyy-MM-dd'))
-    ));
+    );
 
-    // Add dates for the loaded months that match active days
+    // Generate ALL dates to display (both scheduled and empty active days)
+    const allDatesToShow = new Set<string>();
     const today = new Date();
     
-    // Generate all days for the loaded months
-    for (const yearMonth of monthsToLoad) {
+    // First, add all dates that have scheduled posts
+    datesWithPosts.forEach(dateStr => allDatesToShow.add(dateStr));
+    
+    // Then, add all active days from loaded months (regardless of posts)
+    for (const yearMonth of loadedMonths) {
       const [year, month] = yearMonth.split('-').map(Number);
       const monthStart = startOfMonth(new Date(year, month - 1));
       const monthEnd = endOfMonth(new Date(year, month - 1));
@@ -105,17 +103,18 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
           
           if (activeDays.includes(dayName)) {
             const dateStr = format(day, 'yyyy-MM-dd');
-            if (!scheduledDates.includes(dateStr)) {
-              scheduledDates.push(dateStr);
-            }
+            allDatesToShow.add(dateStr);
           }
         }
       }
     }
 
+    // Convert to sorted array
+    const scheduledDates = Array.from(allDatesToShow).sort();
+
     const groups: { [key: string]: DaySlot[] } = {};
 
-    scheduledDates.sort().forEach((dateStr: string) => {
+    scheduledDates.forEach((dateStr: string) => {
       const date = new Date(dateStr);
       const dayName = format(date, 'EEEE');
       
@@ -123,12 +122,8 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
         format(slot.datetime, 'yyyy-MM-dd') === dateStr
       );
 
-      // Always include days that have scheduled posts, even if not in activeDays
-      const hasScheduledPosts = slotsForDay.length > 0;
+      // This date is either an active day or has scheduled posts (filtered in collection phase)
       const isActiveDay = activeDays.includes(dayName);
-      
-      // Skip this day only if it has no scheduled posts AND is not an active day
-      if (!hasScheduledPosts && !isActiveDay) return;
 
       groups[dateStr] = [];
 
@@ -141,7 +136,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
       });
 
       // Then, add empty slots for predefined timeslots that don't have posts
-      // But only for active days (don't add empty slots to non-active days)
+      // But only for active days and when not hiding empty slots
       if (!hideEmptySlots && isActiveDay) {
         predefinedTimeSlots.forEach(timeSlot => {
           if (!addedTimes.has(timeSlot)) {
@@ -168,7 +163,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     });
 
     return groups;
-  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, monthsToLoad, isInitialized]);
+  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, loadedMonths, isInitialized]);
 
   const refreshQueue = () => {
     setRefreshKey(prev => prev + 1);
@@ -176,13 +171,8 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   };
 
   const loadMoreDays = () => {
-    // Add the next month to the loaded months
-    const lastMonth = monthsToLoad[monthsToLoad.length - 1];
-    if (lastMonth) {
-      const [year, month] = lastMonth.split('-').map(Number);
-      const nextMonth = format(addMonths(new Date(year, month - 1), 1), 'yyyy-MM');
-      setMonthsToLoad(prev => [...prev, nextMonth]);
-    }
+    // Use the shared context function to load more months
+    loadMoreMonths();
   };
 
   return {

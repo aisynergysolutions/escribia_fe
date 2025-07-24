@@ -76,7 +76,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   return (
     <Badge className={`${getStatusColor(status, type)} ${className}`}>
-      {status}
+      {status.replace(/\b\w/g, c => c.toUpperCase())}
     </Badge>
   );
 };

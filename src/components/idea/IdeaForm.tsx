@@ -1,6 +1,5 @@
 import React from 'react';
 import InitialIdeaSection from './InitialIdeaSection';
-import OptionsCard from './OptionsCard';
 
 interface IdeaFormProps {
   formData: {

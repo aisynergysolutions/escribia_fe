@@ -13,6 +13,7 @@ import StatCard from './StatCard';
 import PostCalendar from './PostCalendar';
 import IdeaCard from './IdeaCard';
 import { useClients } from '../../context/ClientsContext';
+import { ScheduledPostsProvider } from '../../context/ScheduledPostsContext';
 
 interface ClientOverviewProps {
   clientId: string;
@@ -172,11 +173,14 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
             </div>
           </div>
           <div className="p-6">
-            <PostCalendar 
-              hideTitle={true}
-              currentMonth={calendarMonth}
-              onMonthChange={setCalendarMonth}
-            />
+            <ScheduledPostsProvider clientId={clientId}>
+              <PostCalendar
+                hideTitle={true}
+                clientId={clientId}
+                currentMonth={calendarMonth}
+                onMonthChange={setCalendarMonth}
+              />
+            </ScheduledPostsProvider>
           </div>
         </div>
 
@@ -193,7 +197,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
               </Button>
             </Link>
           </div>
-          
+
           <div className="p-6">
             {clientIdeas.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -220,7 +224,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
               View All Comments
             </Button>
           </div>
-          
+
           <div className="divide-y">
             {mockRecentComments.map((comment) => (
               <div key={comment.id} className="p-6">
@@ -231,7 +235,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
                       {comment.author.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="flex-1 space-y-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -242,9 +246,9 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
                       <p className="text-sm text-gray-600 mb-1">{comment.author.title}</p>
                       <p className="text-sm text-gray-500">Commented on: <span className="font-medium">{comment.postTitle}</span></p>
                     </div>
-                    
+
                     <p className="text-gray-800">{comment.content}</p>
-                    
+
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Heart className="h-4 w-4" />
@@ -255,22 +259,22 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
                         <span>{comment.engagement.replies}</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 pt-2">
-                      <Textarea 
+                      <Textarea
                         placeholder="Reply here..."
                         className="flex-1 min-h-[40px] text-sm resize-none"
                         value={replyInputs[comment.id] || ''}
                         onChange={(e) => updateReplyInput(comment.id, e.target.value)}
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleCopyComment(comment.content)}
                               className="text-gray-500 hover:text-gray-700"
@@ -285,8 +289,8 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
 
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleViewPost(comment.postTitle)}
                               className="text-gray-500 hover:text-gray-700"
@@ -301,8 +305,8 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
 
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               className="text-blue-600 border-blue-200 hover:bg-blue-50"
                             >
@@ -314,33 +318,33 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
                             <div className="space-y-2">
                               <h4 className="font-medium text-sm">Choose reply type:</h4>
                               <div className="grid gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="justify-start"
                                   onClick={() => handleSmartReply(comment.id, 'add-value')}
                                 >
                                   Add Value
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="justify-start"
                                   onClick={() => handleSmartReply(comment.id, 'congratulate')}
                                 >
                                   Congratulate
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="justify-start"
                                   onClick={() => handleSmartReply(comment.id, 'agree')}
                                 >
                                   Agree
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="justify-start"
                                   onClick={() => handleSmartReply(comment.id, 'disagree')}
                                 >
@@ -352,7 +356,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
                         </Popover>
                       </div>
 
-                      <Button 
+                      <Button
                         size="sm"
                         className="bg-blue-600 hover:bg-blue-700"
                         onClick={() => {
@@ -372,7 +376,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
               </div>
             ))}
           </div>
-          
+
           {mockRecentComments.length === 0 && (
             <div className="text-center text-gray-500 py-12">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />

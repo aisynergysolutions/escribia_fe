@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 
 interface ScheduledPost {
@@ -25,6 +25,14 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
   // Get the current agency ID from the authenticated user
   const agencyId = currentUser?.uid;
 
+  // Generate default months (current + next) if not provided
+  const defaultMonthsToLoad = useMemo(() => {
+    const today = new Date();
+    const currentMonth = format(today, 'yyyy-MM');
+    const nextMonth = format(addMonths(today, 1), 'yyyy-MM');
+    return [currentMonth, nextMonth];
+  }, []);
+
   const fetchScheduledPosts = async (targetClientId?: string, targetMonths?: string[]) => {
     if (!agencyId) {
       console.warn('[useScheduledPosts] No agency ID available, skipping fetch');
@@ -39,9 +47,10 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
       const posts: ScheduledPost[] = [];
       
       if (targetClientId) {
-        // If specific months are provided, fetch only those months
-        if (targetMonths && targetMonths.length > 0) {
-          for (const yearMonth of targetMonths) {
+        // Use provided months or default to current + next month
+        const monthsToFetch = targetMonths && targetMonths.length > 0 ? targetMonths : defaultMonthsToLoad;
+        
+        for (const yearMonth of monthsToFetch) {
             try {
               const postEventRef = doc(
                 db, 
@@ -75,37 +84,6 @@ export const useScheduledPosts = (clientId?: string, monthsToLoad?: string[]) =>
               console.log(`Month document ${yearMonth} doesn't exist or error accessing it, skipping...`);
             }
           }
-        } else {
-          // Fallback to fetching all months (old behavior)
-          const postEventsRef = collection(
-            db, 
-            'agencies', agencyId, 
-            'clients', targetClientId, 
-            'postEvents'
-          );
-          
-          const postEventsSnapshot = await getDocs(postEventsRef);
-          
-          for (const docSnap of postEventsSnapshot.docs) {
-            const data = docSnap.data();
-            
-            // Each document is a year-month with postId fields
-            Object.entries(data).forEach(([postId, postData]: [string, any]) => {
-              if (postData && typeof postData === 'object' && postData.scheduledPostAt) {
-                posts.push({
-                  id: postId,
-                  title: postData.title || '',
-                  profile: postData.profile || '',
-                  status: postData.status || 'Scheduled',
-                  scheduledPostAt: postData.scheduledPostAt,
-                  clientId: targetClientId,
-                  timeSlot: postData.timeSlot || '',
-                  scheduledDate: postData.scheduledDate || ''
-                });
-              }
-            });
-          }
-        }
       } else {
         // Fetch for all clients (for dashboard view)
         const clientsRef = collection(db, 'agencies', agencyId, 'clients');

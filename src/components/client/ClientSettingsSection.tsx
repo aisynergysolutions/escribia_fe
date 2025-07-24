@@ -113,7 +113,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
 
       {/* Associated Profiles Section */}
       <div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Associated Profiles</h2>
           <AddProfileModal>
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
@@ -124,7 +124,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
         </div>
 
         {loading ? (
-          <ClientSettingsSectionSkeleton profileCount={2} />
+          <ClientSettingsSectionSkeleton profileCount={9} />
         ) : error ? (
           <div className="text-center text-red-600 py-8">
             <p className="text-lg font-medium">Error loading profiles</p>

@@ -58,19 +58,19 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
       onDragOver={(e) => onDragOver(e, slot.id)}
       onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(e, slot)}
-      className={`flex items-center gap-6 p-2 py-3 border border-gray-100 rounded-md last:border-b-0 hover:bg-gray-50 cursor-move transition-colors ${isDragging ? 'opacity-50' : ''
+      className={`flex items-center gap-6 py-3 pr-2 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-move  transition-colors ${isDragging ? 'opacity-50' : ''
         }`}
     >
       <div className="flex flex-col items-center gap-2 min-w-[80px]">
-        <Avatar className="h-8 w-8">
+        {/* <Avatar className="h-8 w-8">
           <AvatarImage src={slot.authorAvatar} alt={slot.authorName} />
           <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold text-xs">
             {slot.authorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'SJ'}
           </AvatarFallback>
-        </Avatar>
-        <div className="text-xs text-gray-500 text-center">
-          {slot.authorName || 'Sarah Johnson'}
-        </div>
+        </Avatar> */}
+        {/* <div className="text-xs text-gray-500 text-center">
+          {slot.authorName || 'No Profile'}
+        </div> */}
         <div className="text-sm font-medium text-gray-500">
           {format(slot.datetime, 'HH:mm')}
         </div>
@@ -84,7 +84,7 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
           {slot.title}
         </h4>
         <p className="text-sm text-gray-600 truncate">
-          {slot.preview}
+          Post for {slot.authorName || 'No Profile'}
         </p>
       </div>
 
