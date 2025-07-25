@@ -27,6 +27,15 @@ interface LinkedInStatusModalProps {
             locale?: string | { language: string; country: string };
             picture?: string;
         };
+        // Company status fields
+        company_info?: {
+            organization_id?: string;
+            organization_urn?: string;
+            company_name?: string;
+            linkedin_url?: string;
+            connected_scopes?: string;
+            expires_at?: string;
+        };
         message?: string;
         connectedAt?: string;
         updatedAt?: string;
@@ -183,7 +192,7 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                                             <div>
                                                 <span className="text-sm text-muted-foreground">Locale:</span>
                                                 <p className="text-sm">
-                                                    {typeof statusData.linkedin_profile.locale === 'object' 
+                                                    {typeof statusData.linkedin_profile.locale === 'object'
                                                         ? `${statusData.linkedin_profile.locale.language}-${statusData.linkedin_profile.locale.country}`
                                                         : statusData.linkedin_profile.locale}
                                                 </p>
@@ -194,12 +203,12 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                                             <div>
                                                 <span className="text-sm text-muted-foreground">Profile Picture:</span>
                                                 <div className="mt-2 flex items-center gap-3">
-                                                    <img 
-                                                        src={statusData.linkedin_profile.picture} 
-                                                        alt="LinkedIn Profile" 
+                                                    <img
+                                                        src={statusData.linkedin_profile.picture}
+                                                        alt="LinkedIn Profile"
                                                         className="w-12 h-12 rounded-full object-cover"
                                                     />
-                                                    <a 
+                                                    <a
                                                         href={statusData.linkedin_profile.picture}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
@@ -208,6 +217,73 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                                                         View Full Size
                                                     </a>
                                                 </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Company Information - for LinkedIn Company connections */}
+                            {statusData.company_info && (
+                                <div className="space-y-3">
+                                    <h4 className="font-medium flex items-center gap-2">
+                                        <Linkedin className="h-4 w-4" />
+                                        Company Details
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 gap-3 pl-6">
+                                        {statusData.company_info.company_name && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Company Name:</span>
+                                                <p className="font-medium">{statusData.company_info.company_name}</p>
+                                            </div>
+                                        )}
+
+                                        {statusData.company_info.organization_id && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Organization ID:</span>
+                                                <p className="text-sm font-mono">{statusData.company_info.organization_id}</p>
+                                            </div>
+                                        )}
+
+                                        {statusData.company_info.organization_urn && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Organization URN:</span>
+                                                <p className="text-sm font-mono break-all">{statusData.company_info.organization_urn}</p>
+                                            </div>
+                                        )}
+
+                                        {statusData.company_info.linkedin_url && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">LinkedIn URL:</span>
+                                                <a
+                                                    href={statusData.company_info.linkedin_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="block text-blue-600 hover:underline break-all"
+                                                >
+                                                    {statusData.company_info.linkedin_url}
+                                                </a>
+                                            </div>
+                                        )}
+
+                                        {statusData.company_info.connected_scopes && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Connected Scopes:</span>
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                    {statusData.company_info.connected_scopes.split(',').map((scope, index) => (
+                                                        <Badge key={index} variant="outline" className="text-xs">
+                                                            {scope.trim()}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {statusData.company_info.expires_at && (
+                                            <div>
+                                                <span className="text-sm text-muted-foreground">Company Access Expires:</span>
+                                                <p className="text-sm font-medium">{formatDate(statusData.company_info.expires_at)}</p>
                                             </div>
                                         )}
                                     </div>
@@ -225,7 +301,7 @@ const LinkedInStatusModal: React.FC<LinkedInStatusModalProps> = ({
                                     <div className="grid grid-cols-1 gap-2 pl-6 text-sm">
                                         {statusData.expires_at && (
                                             <div>
-                                                <span className="text-muted-foreground">Expires At:</span>
+                                                <span className="text-muted-foreground">Connexion expiration:</span>
                                                 <span className="ml-2 font-medium">{formatDate(statusData.expires_at)}</span>
                                             </div>
                                         )}

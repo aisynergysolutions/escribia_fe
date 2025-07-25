@@ -28,6 +28,21 @@ export type LinkedInInfo = {
   connectedAt?: string;
   updatedAt?: string;
   linkedinProfile?: LinkedInProfile;
+  // Company LinkedIn fields
+  linkedinCompanyConnected?: boolean;
+  linkedinCompanyToken?: string;
+  linkedinCompanyExpiryDate?: string | null;
+  linkedinCompanyAccountName?: string;
+  linkedinCompanyProfile?: {
+    organization_id: string;
+    organization_urn: string;
+    company_name: string;
+    linkedin_url: string;
+    connected_scopes: string;
+    expires_at: string;
+  };
+  linkedinCompanyConnectedAt?: string;
+  linkedinCompanyUpdatedAt?: string;
 };
 
 export type ContentProfile = {
@@ -776,7 +791,7 @@ export const deleteCompanyProfile = async (agencyId: string, clientId: string, p
 
 export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
   const { currentUser } = useAuth();
-  
+
   // Store profiles by clientId
   const [profilesByClient, setProfilesByClient] = useState<Record<string, ProfileCard[]>>({});
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -828,7 +843,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
           )
           : undefined,
       }));
-      
+
       console.log('[ProfilesContext] Fetched profiles:', fetchedProfiles.length);
       setProfilesByClient(prev => ({
         ...prev,

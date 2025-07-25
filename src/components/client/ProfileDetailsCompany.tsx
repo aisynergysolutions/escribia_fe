@@ -603,6 +603,7 @@ const ProfileDetailsCompany: React.FC = () => {
                 linkedinInfo={linkedin}
                 profileId={profileId!}
                 clientId={clientId!}
+                profileType="Company"
               />
             </div>
           </div>

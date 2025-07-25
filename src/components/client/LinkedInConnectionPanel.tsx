@@ -12,6 +12,7 @@ interface LinkedInConnectionPanelProps {
   profileId: string;
   clientId: string;
   agencyId?: string; // Keep this optional for backward compatibility
+  profileType?: string; // Add profile type to determine if it's Company or Person
 }
 
 const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
@@ -20,15 +21,55 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
   profileId,
   clientId,
   agencyId: propAgencyId, // Rename the prop to avoid confusion
+  profileType = 'Person', // Default to Person if not specified
 }) => {
   const { currentUser } = useAuth();
-  const { isConnecting, isCheckingStatus, isDisconnecting, connectLinkedIn, checkLinkedInStatus, disconnectLinkedIn, refreshProfile } = useLinkedin();
+  const {
+    isConnecting,
+    isCheckingStatus,
+    isDisconnecting,
+    isConnectingCompany,
+    isCheckingCompanyStatus,
+    isDisconnectingCompany,
+    connectLinkedIn,
+    checkLinkedInStatus,
+    disconnectLinkedIn,
+    connectLinkedInCompany,
+    checkLinkedInCompanyStatus,
+    disconnectLinkedInCompany,
+    refreshProfile
+  } = useLinkedin();
   const [error, setError] = useState<string | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusData, setStatusData] = useState<any>(null);
 
   // Use the real agency ID from currentUser, fallback to prop if provided
   const agencyId = currentUser?.uid || propAgencyId;
+
+  // Determine if this is a company profile
+  const isCompanyProfile = profileType?.toLowerCase() === 'company';
+
+  // Get the appropriate connection status and loading states
+  const isCurrentlyConnecting = isCompanyProfile ? isConnectingCompany : isConnecting;
+  const isCurrentlyCheckingStatus = isCompanyProfile ? isCheckingCompanyStatus : isCheckingStatus;
+  const isCurrentlyDisconnecting = isCompanyProfile ? isDisconnectingCompany : isDisconnecting;
+
+  // Get the appropriate connection status
+  const isConnected = isCompanyProfile
+    ? linkedinInfo.linkedinCompanyConnected
+    : linkedinInfo.linkedinConnected;
+
+  const accountName = isCompanyProfile
+    ? linkedinInfo.linkedinCompanyAccountName || linkedinInfo.linkedinCompanyProfile?.company_name
+    : linkedinInfo.linkedinAccountName || linkedinInfo.linkedinProfile?.name;
+
+  const expiryDate = isCompanyProfile
+    ? linkedinInfo.linkedinCompanyExpiryDate
+    : linkedinInfo.linkedinExpiryDate;
+
+  const connectedAt = isCompanyProfile
+    ? linkedinInfo.linkedinCompanyConnectedAt
+    : linkedinInfo.connectedAt;
 
   const handleConnectClick = async () => {
     if (!agencyId) {
@@ -38,10 +79,14 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
 
     try {
       setError(null);
-      await connectLinkedIn(profileId, agencyId, clientId);
+      if (isCompanyProfile) {
+        await connectLinkedInCompany(profileId, agencyId, clientId);
+      } else {
+        await connectLinkedIn(profileId, agencyId, clientId);
+      }
     } catch (error) {
-      console.error('Failed to connect LinkedIn:', error);
-      setError('Failed to initiate LinkedIn connection. Please try again.');
+      console.error(`Failed to connect LinkedIn ${isCompanyProfile ? 'Company' : ''}:`, error);
+      setError(`Failed to initiate LinkedIn ${isCompanyProfile ? 'Company ' : ''}connection. Please try again.`);
     }
   };
 
@@ -53,13 +98,15 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
 
     try {
       setError(null);
-      const status = await checkLinkedInStatus(profileId, agencyId, clientId);
-      console.log('LinkedIn status:', status);
+      const status = isCompanyProfile
+        ? await checkLinkedInCompanyStatus(profileId, agencyId, clientId)
+        : await checkLinkedInStatus(profileId, agencyId, clientId);
+      console.log(`LinkedIn ${isCompanyProfile ? 'Company ' : ''}status:`, status);
       setStatusData(status);
       setIsStatusModalOpen(true);
     } catch (error) {
-      console.error('Failed to check LinkedIn status:', error);
-      setError('Failed to check LinkedIn status. Please try again.');
+      console.error(`Failed to check LinkedIn ${isCompanyProfile ? 'Company ' : ''}status:`, error);
+      setError(`Failed to check LinkedIn ${isCompanyProfile ? 'Company ' : ''}status. Please try again.`);
     }
   };
 
@@ -71,10 +118,14 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
 
     try {
       setError(null);
-      await disconnectLinkedIn(profileId, agencyId, clientId);
+      if (isCompanyProfile) {
+        await disconnectLinkedInCompany(profileId, agencyId, clientId);
+      } else {
+        await disconnectLinkedIn(profileId, agencyId, clientId);
+      }
     } catch (error) {
-      console.error('Failed to disconnect LinkedIn:', error);
-      setError('Failed to disconnect LinkedIn. Please try again.');
+      console.error(`Failed to disconnect LinkedIn ${isCompanyProfile ? 'Company' : ''}:`, error);
+      setError(`Failed to disconnect LinkedIn ${isCompanyProfile ? 'Company' : ''}. Please try again.`);
     }
   };
 
@@ -119,7 +170,7 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
     );
   }
 
-  if (linkedinInfo.linkedinConnected) {
+  if (isConnected) {
     // Connected state - show full LinkedIn info
     return (
       <>
@@ -127,24 +178,29 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
           style={style}
           className="flex items-center justify-between bg-secondary/70 hover:bg-secondary/90 focus-within:ring-2 focus-within:ring-blue-400 transition rounded-lg px-6 py-3 outline-none"
           tabIndex={0}
-          aria-label="LinkedIn connected"
+          aria-label={`LinkedIn ${isCompanyProfile ? 'Company ' : ''}connected`}
         >
           <div className="flex items-center gap-2">
             <Linkedin className="h-5 w-5 text-[#0A66C2]" />
-            <span className="font-medium text-base mr-3">LinkedIn</span>
+            <span className="font-medium text-base mr-3">
+              LinkedIn {isCompanyProfile ? 'Company' : ''}
+            </span>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="font-semibold">
-                {linkedinInfo.linkedinAccountName || linkedinInfo.linkedinProfile?.name || 'Connected'}
+                {accountName || 'Connected'}
               </span>
             </div>
             <div className="text-xs text-muted-foreground space-x-2">
-              <span>Expires {formatExpiryDate(linkedinInfo.linkedinExpiryDate)}</span>
-              {linkedinInfo.connectedAt && (
-                <span>• Connected {formatExpiryDate(linkedinInfo.connectedAt)}</span>
+              <span>Expires {formatExpiryDate(expiryDate)}</span>
+              {connectedAt && (
+                <span>• Connected {formatExpiryDate(connectedAt)}</span>
               )}
-              {linkedinInfo.linkedinProfile?.email && (
+              {!isCompanyProfile && linkedinInfo.linkedinProfile?.email && (
                 <span>• {linkedinInfo.linkedinProfile.email}</span>
+              )}
+              {isCompanyProfile && linkedinInfo.linkedinCompanyProfile?.linkedin_url && (
+                <span>• {linkedinInfo.linkedinCompanyProfile.linkedin_url}</span>
               )}
             </div>
           </div>
@@ -153,25 +209,25 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
               className="text-xs text-blue-700 underline underline-offset-2 hover:text-blue-900"
               onClick={handleConnectClick}
               type="button"
-              disabled={isConnecting}
+              disabled={isCurrentlyConnecting}
             >
-              {isConnecting ? 'Reconnecting...' : 'Reconnect'}
+              {isCurrentlyConnecting ? 'Reconnecting...' : 'Reconnect'}
             </button>
             <button
               className="text-xs text-gray-600 underline underline-offset-2 hover:text-gray-800"
               onClick={handleCheckStatus}
               type="button"
-              disabled={isCheckingStatus}
+              disabled={isCurrentlyCheckingStatus}
             >
-              {isCheckingStatus ? 'Checking...' : 'Check Status'}
+              {isCurrentlyCheckingStatus ? 'Checking...' : 'Check Status'}
             </button>
             <button
               className="text-xs text-red-600 underline underline-offset-2 hover:text-red-800"
               onClick={handleDisconnect}
               type="button"
-              disabled={isDisconnecting}
+              disabled={isCurrentlyDisconnecting}
             >
-              {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
+              {isCurrentlyDisconnecting ? 'Disconnecting...' : 'Disconnect'}
             </button>
           </div>
         </div>
@@ -181,7 +237,7 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
           isOpen={isStatusModalOpen}
           onClose={() => setIsStatusModalOpen(false)}
           statusData={statusData}
-          isLoading={isCheckingStatus}
+          isLoading={isCurrentlyCheckingStatus}
         />
       </>
     );
@@ -192,21 +248,24 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
     <div
       style={style}
       className="bg-secondary/70 hover:bg-secondary/90 transition rounded-lg px-6 py-4"
-      aria-label="LinkedIn not connected"
+      aria-label={`LinkedIn ${isCompanyProfile ? 'Company ' : ''}not connected`}
     >
       <div className="flex flex-col items-center space-y-3">
         <Button
           onClick={handleConnectClick}
           type="button"
-          disabled={isConnecting}
+          disabled={isCurrentlyConnecting}
           className="flex items-center gap-2 bg-[#0A66C2] hover:bg-[#004182] text-white border-0"
         >
-          {isConnecting ? (
+          {isCurrentlyConnecting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Linkedin className="h-4 w-4" />
           )}
-          {isConnecting ? 'Connecting...' : 'Connect LinkedIn'}
+          {isCurrentlyConnecting
+            ? `Connecting ${isCompanyProfile ? 'Company' : ''}...`
+            : `Connect LinkedIn ${isCompanyProfile ? 'Company' : ''}`
+          }
         </Button>
 
         {error && (

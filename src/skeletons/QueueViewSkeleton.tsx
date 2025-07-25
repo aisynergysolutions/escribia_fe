@@ -7,13 +7,13 @@ const QueueViewSkeleton: React.FC = () => {
             {/* Header Skeleton */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <div className="h-8 w-20 bg-gray-200 rounded animate-pulse mb-2"></div>
-                    <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="h-4 w-44 bg-gray-200 rounded animate-pulse"></div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="h-8 w-40 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-44 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-36 bg-gray-200 rounded animate-pulse"></div>
                 </div>
             </div>
 
@@ -21,9 +21,9 @@ const QueueViewSkeleton: React.FC = () => {
             <div className="space-y-4">
                 {[...Array(3)].map((_, dayIndex) => (
                     <Card key={dayIndex} className="bg-white border border-gray-200 p-6">
-                        {/* Day Header Skeleton */}
+                        {/* Day Header Skeleton with emoji */}
                         <div className="mb-4">
-                            <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="h-5 w-48 bg-gray-200 rounded animate-pulse"></div>
                         </div>
 
                         {/* Post Slots Skeleton */}
@@ -31,20 +31,26 @@ const QueueViewSkeleton: React.FC = () => {
                             {[...Array(3)].map((_, slotIndex) => (
                                 <div
                                     key={slotIndex}
-                                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+                                    className="flex items-center gap-6 py-3 pr-2 border border-gray-100 rounded-lg"
                                 >
-                                    {/* Time Skeleton */}
-                                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse flex-shrink-0"></div>
-
-                                    {/* Post Content Skeleton */}
-                                    <div className="flex-1 space-y-2">
-                                        <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
-                                        <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                                    {/* Time Column Skeleton */}
+                                    <div className="min-w-[80px]">
+                                        <div className="h-5 w-14 bg-gray-200 rounded animate-pulse"></div>
                                     </div>
 
-                                    {/* Actions Skeleton */}
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                                    {/* Post Content Skeleton */}
+                                    <div className="flex-1 min-w-0 space-y-2">
+                                        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                                        <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                                    </div>
+
+                                    {/* Badge Skeleton */}
+                                    <div className="flex-shrink-0">
+                                        <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                                    </div>
+
+                                    {/* Actions Dropdown Skeleton */}
+                                    <div className="flex-shrink-0">
                                         <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
                                     </div>
                                 </div>

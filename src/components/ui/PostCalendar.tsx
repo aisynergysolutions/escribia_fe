@@ -5,6 +5,7 @@ import { Button } from './button';
 import { mockClients } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useScheduledPostsContext } from '../../context/ScheduledPostsContext';
+import { useScheduledPosts } from '../../hooks/useScheduledPosts';
 import { useQueueOperations } from '../../hooks/useQueueOperations';
 import SchedulePostModal from './SchedulePostModal';
 import DayPostsModal from './DayPostsModal';
@@ -238,7 +239,8 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
                     </div>
                     {showAllClients && (
                       <div className="truncate text-xs mt-0.5 text-blue-600 font-medium">
-                        {getClientName(postsForDay[0].clientId)}
+                        {/* <span className="text-gray-500">For </span> */}
+                        {postsForDay[0].profile || 'Unknown Profile'}
                       </div>
                     )}
                   </div>

@@ -1,15 +1,16 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
   Calendar,
-  BarChart3, 
+  BarChart3,
   LogOut
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useAgencyProfile } from '@/context/AgencyProfileContext';
 
 const navItems = [
   { title: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -22,6 +23,7 @@ const navItems = [
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { profile } = useAgencyProfile();
 
   const handleLogout = () => {
     console.log('Logging out...');
@@ -39,18 +41,17 @@ const Sidebar = () => {
       <nav className="flex-1 p-4">
         <ul className="space-y-3">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path || 
+            const isActive = location.pathname === item.path ||
               (item.path !== '/' && location.pathname.startsWith(item.path));
-            
+
             return (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
+                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <item.icon className="mr-3 h-5 w-5" strokeWidth={1.5} />
                   <span>{item.title}</span>
@@ -68,14 +69,18 @@ const Sidebar = () => {
           className="flex items-center w-full p-3 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt="Admin User" />
+            <AvatarImage src={profile?.photoUrl || ""} alt={profile?.mainAdminName || "Admin User"} />
             <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
-              A
+              {profile?.mainAdminName ? profile.mainAdminName.charAt(0).toUpperCase() : 'A'}
             </AvatarFallback>
           </Avatar>
           <div className="ml-3 min-w-0 flex-1 text-left">
-            <div className="text-sm font-medium text-gray-900 truncate">Admin User</div>
-            <div className="text-xs text-gray-500 truncate">admin@acme.com</div>
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {profile?.mainAdminName || 'Admin User'}
+            </div>
+            <div className="text-xs text-gray-500 truncate">
+              {profile?.primaryContactEmail || 'admin@agency.com'}
+            </div>
           </div>
         </Link>
       </div>

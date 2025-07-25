@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { format, addMonths } from 'date-fns';
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, Timestamp } from 'firebase/firestore';
 
 interface ScheduledPost {
     id: string;
@@ -118,6 +118,41 @@ export const ScheduledPostsProvider: React.FC<ScheduledPostsProviderProps> = ({
                         console.log(`Month document ${yearMonth} doesn't exist or error accessing it, skipping...`);
                     }
                 }
+            } else {
+                // Fetch for all clients (for dashboard view)
+                const clientsRef = collection(db, 'agencies', agencyId, 'clients');
+                const clientsSnapshot = await getDocs(clientsRef);
+
+                for (const clientDoc of clientsSnapshot.docs) {
+                    const currentClientId = clientDoc.id;
+                    const postEventsRef = collection(
+                        db,
+                        'agencies', agencyId,
+                        'clients', currentClientId,
+                        'postEvents'
+                    );
+
+                    const postEventsSnapshot = await getDocs(postEventsRef);
+
+                    for (const docSnap of postEventsSnapshot.docs) {
+                        const data = docSnap.data();
+
+                        Object.entries(data).forEach(([postId, postData]: [string, any]) => {
+                            if (postData && typeof postData === 'object' && postData.scheduledPostAt) {
+                                posts.push({
+                                    id: postId,
+                                    title: postData.title || '',
+                                    profile: postData.profile || '',
+                                    status: postData.status || 'Scheduled',
+                                    scheduledPostAt: postData.scheduledPostAt,
+                                    clientId: currentClientId,
+                                    timeSlot: postData.timeSlot || '',
+                                    scheduledDate: postData.scheduledDate || ''
+                                });
+                            }
+                        });
+                    }
+                }
             }
 
             // Sort by scheduled date
@@ -134,14 +169,24 @@ export const ScheduledPostsProvider: React.FC<ScheduledPostsProviderProps> = ({
     }, [agencyId, defaultMonthsToLoad]);
 
     useEffect(() => {
-        if (clientId && agencyId && loadedMonths.length > 0) {
-            fetchScheduledPosts(clientId, loadedMonths);
+        if (agencyId) {
+            if (clientId && loadedMonths.length > 0) {
+                // Fetch for specific client with loaded months
+                fetchScheduledPosts(clientId, loadedMonths);
+            } else if (!clientId) {
+                // Fetch for all clients (dashboard/calendar view)
+                fetchScheduledPosts();
+            }
         }
     }, [clientId, loadedMonths, agencyId, fetchScheduledPosts]);
 
     const refetch = useCallback(() => {
-        if (clientId && agencyId && loadedMonths.length > 0) {
-            fetchScheduledPosts(clientId, loadedMonths);
+        if (agencyId) {
+            if (clientId && loadedMonths.length > 0) {
+                fetchScheduledPosts(clientId, loadedMonths);
+            } else if (!clientId) {
+                fetchScheduledPosts();
+            }
         }
     }, [clientId, loadedMonths, agencyId, fetchScheduledPosts]);
 

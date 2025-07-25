@@ -652,6 +652,7 @@ const ProfileDetailsPerson: React.FC = () => {
                 linkedinInfo={linkedin}
                 profileId={profileId!}
                 clientId={clientId!}
+                profileType="Person"
               />
             </div>
           </div>

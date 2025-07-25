@@ -4,6 +4,7 @@ import { LineChart, TrendingUp, Users } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
 import IdeaCard from '../components/ui/IdeaCard';
 import PostCalendar from '../components/ui/PostCalendar';
+import { ScheduledPostsProvider } from '../context/ScheduledPostsContext';
 import { mockAgency, mockIdeas } from '../types';
 
 const Dashboard = () => {
@@ -32,7 +33,7 @@ const Dashboard = () => {
           Welcome back, {mockAgency.agencyName}—here's your content overview.
         </h1>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Posts Generated This Month" value={stats.postsGenerated} icon={<LineChart className="h-5 w-5" />} />
         <StatCard title="Clients Managed" value={stats.clientsManaged} icon={<Users className="h-5 w-5" />} />
@@ -42,9 +43,11 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="self-start">
-          <PostCalendar />
+          <ScheduledPostsProvider>
+            <PostCalendar showAllClients={true} />
+          </ScheduledPostsProvider>
         </div>
-        
+
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Recent Activity</h2>
           <div className="space-y-4">
