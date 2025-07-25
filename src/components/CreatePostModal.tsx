@@ -187,7 +187,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           });
           setIsRefreshing(false);
           // Delete firestore document if generation failed
-          // await deletePost(agencyId, clientId, postId);
+          await deletePost(agencyId, clientId, postId);
           return;
         }
       } catch (error) {
