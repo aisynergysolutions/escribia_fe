@@ -57,7 +57,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { toast } = useToast();
   const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles();
   const { templates: allTemplates } = useTemplates();
-  const { createPost, updatePostInContext } = usePosts();
+  const { createPost, updatePostInContext, deletePost } = usePosts();
   const { currentUser } = useAuth();
   const objectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
 
@@ -186,6 +186,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             variant: 'destructive',
           });
           setIsRefreshing(false);
+          // Delete firestore document if generation failed
+          // await deletePost(agencyId, clientId, postId);
           return;
         }
       } catch (error) {
