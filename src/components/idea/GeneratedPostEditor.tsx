@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { useAuth } from '@/context/AuthContext';
 import FloatingToolbar from './FloatingToolbar';
@@ -114,7 +116,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { editPostPartial, publishPostNow } = usePostDetails();
+  const { editPostPartial, publishPostNow, uploadPostImages, removePostImage, removeAllPostImages, updatePostImages, post } = usePostDetails();
   const { currentUser } = useAuth();
   const lastSelection = useRef<Range | null>(null);
 
@@ -123,6 +125,11 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [editingMedia, setEditingMedia] = useState<MediaFile[] | null>(null);
   const [showMediaUploadModal, setShowMediaUploadModal] = useState(false);
+
+  // Loading states for media operations
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isRemovingMedia, setIsRemovingMedia] = useState(false);
+  const [isLoadingInitialImages, setIsLoadingInitialImages] = useState(false);
 
   // Initialize undo/redo functionality
   const {
@@ -655,107 +662,202 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   };
 
   // NEW: Direct media upload handlers for the dropzone
-  const handleDirectFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDirectFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || !currentUser?.uid || !clientId || !postId) return;
 
     const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
 
-    newFiles.forEach(file => {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid file type",
-          description: "Only image files are allowed.",
-          variant: "destructive"
+    try {
+      const mediaFilesToProcess: MediaFile[] = [];
+
+      for (const file of newFiles) {
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file type",
+            description: "Only image files are allowed.",
+            variant: "destructive"
+          });
+          continue;
+        }
+
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        await new Promise((resolve) => {
+          img.onload = () => {
+            const isVertical = img.height > img.width;
+            const mediaFile: MediaFile = {
+              id: `media-${Date.now()}-${Math.random()}`,
+              file,
+              url,
+              isVertical
+            };
+            mediaFilesToProcess.push(mediaFile);
+            resolve(void 0);
+          };
+          img.src = url;
         });
-        return;
       }
 
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        const isVertical = img.height > img.width;
-        const mediaFile: MediaFile = {
-          id: `media-${Date.now()}-${Math.random()}`,
-          file,
-          url,
-          isVertical
-        };
+      if (mediaFilesToProcess.length > 0) {
+        await handleUploadMedia(mediaFilesToProcess);
 
-        setMediaFiles(prev => [...prev, mediaFile]);
-        setPollData(null); // Clear poll when adding media
-        if (onPollStateChange) {
-          onPollStateChange(false);
-        }
-      };
-      img.src = url;
-    });
-
-    toast({
-      title: "Media Added",
-      description: `${newFiles.length} image${newFiles.length > 1 ? 's' : ''} added to your post.`
-    });
+        // Clean up blob URLs after successful upload
+        mediaFilesToProcess.forEach(mediaFile => {
+          URL.revokeObjectURL(mediaFile.url);
+        });
+      }
+    } catch (error) {
+      console.error('Error processing direct file upload:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDirectFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDirectFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
-    if (!files) return;
+    if (!files || !currentUser?.uid || !clientId || !postId) return;
 
     const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
 
-    newFiles.forEach(file => {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid file type",
-          description: "Only image files are allowed.",
-          variant: "destructive"
+    try {
+      const mediaFilesToProcess: MediaFile[] = [];
+
+      for (const file of newFiles) {
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file type",
+            description: "Only image files are allowed.",
+            variant: "destructive"
+          });
+          continue;
+        }
+
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        await new Promise((resolve) => {
+          img.onload = () => {
+            const isVertical = img.height > img.width;
+            const mediaFile: MediaFile = {
+              id: `media-${Date.now()}-${Math.random()}`,
+              file,
+              url,
+              isVertical
+            };
+            mediaFilesToProcess.push(mediaFile);
+            resolve(void 0);
+          };
+          img.src = url;
         });
-        return;
       }
 
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        const isVertical = img.height > img.width;
-        const mediaFile: MediaFile = {
-          id: `media-${Date.now()}-${Math.random()}`,
-          file,
-          url,
-          isVertical
-        };
+      if (mediaFilesToProcess.length > 0) {
+        await handleUploadMedia(mediaFilesToProcess);
 
-        setMediaFiles(prev => [...prev, mediaFile]);
-        setPollData(null); // Clear poll when adding media
-        if (onPollStateChange) {
-          onPollStateChange(false);
-        }
-      };
-      img.src = url;
-    });
-
-    toast({
-      title: "Media Added",
-      description: `${newFiles.length} image${newFiles.length > 1 ? 's' : ''} added to your post.`
-    });
+        // Clean up blob URLs after successful upload
+        mediaFilesToProcess.forEach(mediaFile => {
+          URL.revokeObjectURL(mediaFile.url);
+        });
+      }
+    } catch (error) {
+      console.error('Error processing direct file drop:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDirectDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
   };
 
-  const handleUploadMedia = (newMediaFiles: MediaFile[]) => {
-    setMediaFiles(newMediaFiles);
-    setPollData(null); // Clear poll when adding media
-    setEditingMedia(null); // Clear editing state
-    // Notify parent about poll state change when clearing poll
-    if (onPollStateChange) {
-      onPollStateChange(false);
+  const handleUploadMedia = async (newMediaFiles: MediaFile[]) => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      toast({
+        title: "Upload Failed",
+        description: "Missing required information for upload.",
+        variant: "destructive"
+      });
+      return;
     }
-    toast({
-      title: "Media Added",
-      description: `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} added to your post.`
-    });
+
+    try {
+      setIsUploadingMedia(true); // Start loading
+
+      const isEditing = editingMedia && editingMedia.length > 0;
+
+      // Extract File objects from MediaFile objects that have blob URLs (new files)
+      const filesToUpload = newMediaFiles.filter(mediaFile =>
+        mediaFile.url.startsWith('blob:')
+      ).map(mediaFile => mediaFile.file);
+
+      // Get already uploaded files (Firebase URLs)  
+      const existingUrls = newMediaFiles.filter(mediaFile =>
+        !mediaFile.url.startsWith('blob:')
+      ).map(mediaFile => mediaFile.url);
+
+      let uploadedUrls: string[] = [];
+
+      // Upload new files if any
+      if (filesToUpload.length > 0) {
+        uploadedUrls = await uploadPostImages(currentUser.uid, clientId, postId, filesToUpload, false);
+      }
+
+      // Combine existing URLs with newly uploaded URLs
+      const allUrls = [...existingUrls, ...uploadedUrls];
+
+      // If we're editing, update all images at once
+      if (isEditing) {
+        await updatePostImages(currentUser.uid, clientId, postId, allUrls);
+      }
+
+      // Update local state with MediaFile objects that have Firebase URLs
+      const updatedMediaFiles: MediaFile[] = [];
+      let uploadIndex = 0;
+
+      newMediaFiles.forEach((mediaFile) => {
+        if (mediaFile.url.startsWith('blob:')) {
+          // This was a new file that got uploaded
+          updatedMediaFiles.push({
+            ...mediaFile,
+            url: uploadedUrls[uploadIndex]
+          });
+          uploadIndex++;
+        } else {
+          // This was already a Firebase URL
+          updatedMediaFiles.push(mediaFile);
+        }
+      });
+
+      setMediaFiles(updatedMediaFiles);
+      setPollData(null); // Clear poll when adding media
+      setEditingMedia(null); // Clear editing state
+
+      // Notify parent about poll state change when clearing poll
+      if (onPollStateChange) {
+        onPollStateChange(false);
+      }
+
+      toast({
+        title: isEditing ? "Media Updated" : "Media Uploaded",
+        description: `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} ${isEditing ? 'updated' : 'uploaded'} successfully.`
+      });
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingMedia(false); // End loading
+    }
   };
 
   const handleEditMedia = () => {
@@ -765,17 +867,46 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     }
   };
 
-  const handleRemoveMedia = () => {
-    // Cleanup URLs
-    mediaFiles.forEach(file => {
-      URL.revokeObjectURL(file.url);
-    });
-    setMediaFiles([]);
-    setEditingMedia(null);
-    toast({
-      title: "Media Removed",
-      description: "Media has been removed from your post."
-    });
+  const handleRemoveMedia = async () => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      toast({
+        title: "Remove Failed",
+        description: "Missing required information for removal.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsRemovingMedia(true); // Start loading
+
+      // Use the bulk remove function for better efficiency
+      await removeAllPostImages(currentUser.uid, clientId, postId);
+
+      // Cleanup local blob URLs (if any)
+      mediaFiles.forEach(file => {
+        if (file.url.startsWith('blob:')) {
+          URL.revokeObjectURL(file.url);
+        }
+      });
+
+      setMediaFiles([]);
+      setEditingMedia(null);
+
+      toast({
+        title: "Media Removed",
+        description: "All media has been removed from your post."
+      });
+    } catch (error) {
+      console.error('Error removing media:', error);
+      toast({
+        title: "Remove Failed",
+        description: "Failed to remove media. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRemovingMedia(false); // End loading
+    }
   };
 
   const handleOpenMediaModal = () => {
@@ -814,6 +945,58 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   useEffect(() => {
     setHasMedia(mediaFiles.length > 0);
   }, [mediaFiles]);
+
+  // Initialize media files from post data
+  useEffect(() => {
+    if (post?.images && post.images.length > 0) {
+      // Only set loading state if we haven't loaded these specific images yet
+      const currentImageUrls = mediaFiles.map(file => file.url);
+      const postImageUrls = post.images;
+      const imagesChanged = JSON.stringify(currentImageUrls.sort()) !== JSON.stringify(postImageUrls.sort());
+
+      if (imagesChanged) {
+        setIsLoadingInitialImages(true);
+
+        // Load images and detect their orientation
+        const loadImagePromises = post.images.map((url, index) => {
+          return new Promise<MediaFile>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const isVertical = img.height > img.width;
+              resolve({
+                id: `loaded-${index}-${Date.now()}`,
+                file: new File([], `image-${index}`, { type: 'image/jpeg' }), // Placeholder file
+                url: url,
+                isVertical: isVertical
+              });
+            };
+            img.onerror = () => {
+              // If image fails to load, still create a MediaFile object with default orientation
+              resolve({
+                id: `loaded-${index}-${Date.now()}`,
+                file: new File([], `image-${index}`, { type: 'image/jpeg' }),
+                url: url,
+                isVertical: false // Default to horizontal if load fails
+              });
+            };
+            img.src = url;
+          });
+        });
+
+        // Wait for all images to load or fail
+        Promise.all(loadImagePromises).then((loadedMediaFiles) => {
+          setMediaFiles(loadedMediaFiles);
+          setIsLoadingInitialImages(false);
+        });
+      }
+    } else {
+      // Clear media files and loading state if post has no images
+      if (mediaFiles.length > 0 || isLoadingInitialImages) {
+        setMediaFiles([]);
+        setIsLoadingInitialImages(false);
+      }
+    }
+  }, [post?.images, mediaFiles, isLoadingInitialImages]);
 
   // Get the dynamic width class based on view mode (matching EditorContainer)
   const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
@@ -986,12 +1169,62 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
             </div>
           )}
 
+          {/* Initial image loading indicator when no media is shown yet */}
+          {isLoadingInitialImages && mediaFiles.length === 0 && post?.images && post.images.length > 0 && (
+            <div className={`${maxWidthClass} mx-auto mt-4`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Loading images...</span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    disabled
+                  >
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    disabled
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="border rounded-lg bg-gray-50 h-64 relative">
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                    <span className="text-sm text-gray-600">Loading images...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Upload loading indicator when no media is shown yet */}
+          {isUploadingMedia && mediaFiles.length === 0 && (
+            <div className={`${maxWidthClass} mx-auto mt-4`}>
+              <div className="border rounded-lg bg-gray-50 p-8 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <span className="text-sm text-gray-600">Uploading images...</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {mediaFiles.length > 0 && (
             <MediaPreview
               mediaFiles={mediaFiles}
               onRemove={handleRemoveMedia}
               onEdit={handleEditMedia}
               viewMode={viewMode}
+              isUploading={isUploadingMedia}
+              isRemoving={isRemovingMedia}
+              isLoadingInitial={isLoadingInitialImages}
             />
           )}
 

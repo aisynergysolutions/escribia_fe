@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { doc as firestoreDoc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
 
 // --- Types ---
@@ -45,6 +46,7 @@ export type PostDetails = {
     profile: Profile;
     generatedHooks: Hook[];
     drafts: Draft[];
+    images: string[]; // Array of Firebase Storage URLs
 };
 
 type PostDetailsContextType = {
@@ -66,6 +68,10 @@ type PostDetailsContextType = {
     regeneratePostFromIdea: (agencyId: string, clientId: string, postId: string, subClientId: string, initialIdeaPrompt: string, objective: string) => Promise<string | null>;
     updatePostScheduling: (agencyId: string, clientId: string, postId: string, newStatus: string, scheduledPostAt: Timestamp) => Promise<void>;
     publishPostNow: (agencyId: string, clientId: string, postId: string, subClientId: string, content?: string) => Promise<{ success: boolean; linkedinPostId?: string; error?: string }>;
+    uploadPostImages: (agencyId: string, clientId: string, postId: string, files: File[], replace?: boolean) => Promise<string[]>;
+    removePostImage: (agencyId: string, clientId: string, postId: string, imageUrl: string) => Promise<void>;
+    removeAllPostImages: (agencyId: string, clientId: string, postId: string) => Promise<void>;
+    updatePostImages: (agencyId: string, clientId: string, postId: string, imageUrls: string[]) => Promise<void>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -87,6 +93,10 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     regeneratePostFromIdea: async () => null,
     updatePostScheduling: async () => { },
     publishPostNow: async () => ({ success: false, error: 'Not implemented' }),
+    uploadPostImages: async () => [],
+    removePostImage: async () => { },
+    removeAllPostImages: async () => { },
+    updatePostImages: async () => { },
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -180,6 +190,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 },
                 generatedHooks: (data.generatedHooks || []) as Hook[],
                 drafts: (data.drafts || []) as Draft[],
+                images: (data.images || []) as string[], // Default to empty array if not present
             };
             setPost(postDetails);
         } catch (e: any) {
@@ -836,6 +847,228 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    // Image management functions
+    const uploadPostImages = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        files: File[],
+        replace: boolean = false
+    ): Promise<string[]> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            // If replacing, we need to delete old images from storage first
+            if (replace && post?.images && post.images.length > 0) {
+                console.log('Deleting old images before uploading new ones...');
+                for (const oldImageUrl of post.images) {
+                    try {
+                        // Extract storage path from Firebase download URL and delete
+                        const url = new URL(oldImageUrl);
+                        if (url.hostname === 'firebasestorage.googleapis.com') {
+                            const pathMatch = url.pathname.match(/\/o\/(.+?)(\?|$)/);
+                            if (pathMatch) {
+                                const storagePath = decodeURIComponent(pathMatch[1]);
+                                const storageRef = ref(storage, storagePath);
+                                await deleteObject(storageRef);
+                                console.log('Deleted old image from storage:', storagePath);
+                            }
+                        }
+                    } catch (deleteError) {
+                        console.warn('Failed to delete old image:', oldImageUrl, deleteError);
+                        // Continue with other images even if one fails
+                    }
+                }
+            }
+
+            const uploadPromises = files.map(async (file) => {
+                // Create a unique filename with timestamp
+                const timestamp = Date.now();
+                const fileName = `${agencyId}/${clientId}/${postId}/${timestamp}_${file.name}`;
+                const storageRef = ref(storage, `post-images/${fileName}`);
+                
+                // Upload file to Firebase Storage
+                const snapshot = await uploadBytes(storageRef, file);
+                
+                // Get download URL
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                return downloadURL;
+            });
+
+            const uploadedUrls = await Promise.all(uploadPromises);
+
+            // Update the post in Firestore with new image URLs
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            const currentImages = post?.images || [];
+            const updatedImages = replace ? uploadedUrls : [...currentImages, ...uploadedUrls];
+            
+            await updateDoc(postRef, {
+                images: updatedImages,
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                images: updatedImages,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Images uploaded successfully:', uploadedUrls);
+            return uploadedUrls;
+        } catch (error) {
+            console.error('Error uploading images:', error);
+            throw error;
+        }
+    }, [post]);
+
+    const removePostImage = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        imageUrl: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            // Extract storage path from Firebase download URL and delete from Firebase Storage
+            try {
+                // Firebase download URLs have this format: 
+                // https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{path}?alt=media&token={token}
+                // We need to extract the path between /o/ and ?alt=media
+                const url = new URL(imageUrl);
+                if (url.hostname === 'firebasestorage.googleapis.com') {
+                    const pathMatch = url.pathname.match(/\/o\/(.+?)(\?|$)/);
+                    if (pathMatch) {
+                        // Decode the URL-encoded path
+                        const storagePath = decodeURIComponent(pathMatch[1]);
+                        const storageRef = ref(storage, storagePath);
+                        await deleteObject(storageRef);
+                        console.log('Successfully deleted from Firebase Storage:', storagePath);
+                    } else {
+                        console.warn('Could not extract storage path from URL:', imageUrl);
+                    }
+                } else {
+                    console.warn('URL is not a Firebase Storage URL:', imageUrl);
+                }
+            } catch (storageError) {
+                console.warn('Could not delete from storage (file may not exist):', storageError);
+                // Continue with Firestore update even if storage deletion fails
+            }
+
+            // Update the post in Firestore
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            const currentImages = post?.images || [];
+            const updatedImages = currentImages.filter(url => url !== imageUrl);
+            
+            await updateDoc(postRef, {
+                images: updatedImages,
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                images: updatedImages,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Image removed successfully:', imageUrl);
+        } catch (error) {
+            console.error('Error removing image:', error);
+            throw error;
+        }
+    }, [post]);
+
+    const removeAllPostImages = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const currentImages = post?.images || [];
+            
+            // Delete all images from Firebase Storage
+            for (const imageUrl of currentImages) {
+                try {
+                    // Extract storage path from Firebase download URL and delete
+                    const url = new URL(imageUrl);
+                    if (url.hostname === 'firebasestorage.googleapis.com') {
+                        const pathMatch = url.pathname.match(/\/o\/(.+?)(\?|$)/);
+                        if (pathMatch) {
+                            const storagePath = decodeURIComponent(pathMatch[1]);
+                            const storageRef = ref(storage, storagePath);
+                            await deleteObject(storageRef);
+                            console.log('Successfully deleted from Firebase Storage:', storagePath);
+                        }
+                    }
+                } catch (deleteError) {
+                    console.warn('Failed to delete image from storage:', imageUrl, deleteError);
+                    // Continue with other images even if one fails
+                }
+            }
+
+            // Clear images array in Firestore
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            await updateDoc(postRef, {
+                images: [],
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                images: [],
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('All images removed successfully');
+        } catch (error) {
+            console.error('Error removing all images:', error);
+            throw error;
+        }
+    }, [post]);
+
+    const updatePostImages = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        imageUrls: string[]
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            
+            await updateDoc(postRef, {
+                images: imageUrls,
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                images: imageUrls,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Images updated successfully:', imageUrls);
+        } catch (error) {
+            console.error('Error updating images:', error);
+            throw error;
+        }
+    }, []);
+
     // Show authentication error if no agency ID
     if (!agencyId) {
         return (
@@ -858,6 +1091,10 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 regeneratePostFromIdea: async () => null,
                 updatePostScheduling: async () => { throw new Error('No agency ID available'); },
                 publishPostNow: async () => ({ success: false, error: 'No agency ID available' }),
+                uploadPostImages: async () => { throw new Error('No agency ID available'); },
+                removePostImage: async () => { throw new Error('No agency ID available'); },
+                removeAllPostImages: async () => { throw new Error('No agency ID available'); },
+                updatePostImages: async () => { throw new Error('No agency ID available'); },
             }}>
                 {children}
             </PostDetailsContext.Provider>
@@ -883,7 +1120,11 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             updateInitialIdea,
             regeneratePostFromIdea,
             updatePostScheduling,
-            publishPostNow
+            publishPostNow,
+            uploadPostImages,
+            removePostImage,
+            removeAllPostImages,
+            updatePostImages
         }}>
             {children}
         </PostDetailsContext.Provider>

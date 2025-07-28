@@ -1018,7 +1018,7 @@ const ProfileDetailsPerson: React.FC = () => {
                 rows={2}
               />
             ) : (
-              <blockquote className="mt-2 border-l-4 border-primary pl-4 py-2 bg-muted/50 rounded-r-md">
+              <blockquote className="mt-2 border-l-2 border-primary pl-4 py-2 bg-muted/50 rounded-r-md">
                 <p className="text-sm italic">"{guidelinesData.sampleCTA}"</p>
               </blockquote>
             )}

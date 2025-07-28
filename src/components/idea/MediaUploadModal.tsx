@@ -1,8 +1,8 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, X, GripVertical } from 'lucide-react';
+import { Upload, X, GripVertical, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface MediaFile {
@@ -15,7 +15,7 @@ export interface MediaFile {
 interface MediaUploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUploadMedia: (files: MediaFile[]) => void;
+  onUploadMedia: (files: MediaFile[]) => Promise<void>;
   editingMedia?: MediaFile[];
 }
 
@@ -27,15 +27,24 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 }) => {
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>(editingMedia);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Sync local state with editingMedia prop when modal opens or editingMedia changes
+  useEffect(() => {
+    if (open) {
+      setMediaFiles(editingMedia);
+      setIsProcessing(false); // Reset processing state when modal opens
+    }
+  }, [open, editingMedia]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
     const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
-    
+
     newFiles.forEach(file => {
       if (!file.type.startsWith('image/')) {
         toast({
@@ -56,7 +65,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
           url,
           isVertical
         };
-        
+
         setMediaFiles(prev => [...prev, mediaFile]);
       };
       img.src = url;
@@ -84,14 +93,14 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 
   const handleDragOver = (event: React.DragEvent, index: number) => {
     event.preventDefault();
-    
+
     if (draggedIndex === null || draggedIndex === index) return;
 
     const newFiles = [...mediaFiles];
     const draggedFile = newFiles[draggedIndex];
     newFiles.splice(draggedIndex, 1);
     newFiles.splice(index, 0, draggedFile);
-    
+
     setMediaFiles(newFiles);
     setDraggedIndex(index);
   };
@@ -100,9 +109,14 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     setDraggedIndex(null);
   };
 
-  const handleDone = () => {
-    onUploadMedia(mediaFiles);
-    onOpenChange(false);
+  const handleDone = async () => {
+    setIsProcessing(true);
+    try {
+      await onUploadMedia(mediaFiles);
+      onOpenChange(false);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleCancel = () => {
@@ -122,10 +136,10 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         <DialogHeader>
           <DialogTitle>Add media to your post</DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto space-y-4">
           {/* Upload Area */}
-          <div 
+          <div
             className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -166,12 +180,12 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                       alt={`Upload ${index + 1}`}
                       className="w-full h-24 object-cover"
                     />
-                    
+
                     {/* Drag Handle */}
                     <div className="absolute top-2 left-2 bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <GripVertical className="h-3 w-3 text-white" />
                     </div>
-                    
+
                     {/* Remove Button */}
                     <button
                       onClick={() => handleRemoveFile(mediaFile.id)}
@@ -179,7 +193,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                     >
                       <X className="h-3 w-3" />
                     </button>
-                    
+
                     {/* Index Badge */}
                     <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
                       {index + 1}
@@ -187,7 +201,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   </div>
                 ))}
               </div>
-              
+
               <p className="text-xs text-gray-500">
                 Drag images to reorder them. The first image determines the layout.
               </p>
@@ -196,14 +210,25 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isProcessing}
+          >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleDone}
-            disabled={mediaFiles.length === 0}
+            disabled={mediaFiles.length === 0 || isProcessing}
           >
-            Done
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Processing...
+              </>
+            ) : (
+              'Done'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
