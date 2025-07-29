@@ -32,6 +32,12 @@ export type Profile = {
     profileRole: string;
 };
 
+export type Poll = {
+    question: string;
+    options: string[];
+    duration: string;
+};
+
 export type PostDetails = {
     id: string;
     title: string;
@@ -47,6 +53,7 @@ export type PostDetails = {
     generatedHooks: Hook[];
     drafts: Draft[];
     images: string[]; // Array of Firebase Storage URLs
+    poll?: Poll; // Optional poll data
 };
 
 type PostDetailsContextType = {
@@ -72,6 +79,9 @@ type PostDetailsContextType = {
     removePostImage: (agencyId: string, clientId: string, postId: string, imageUrl: string) => Promise<void>;
     removeAllPostImages: (agencyId: string, clientId: string, postId: string) => Promise<void>;
     updatePostImages: (agencyId: string, clientId: string, postId: string, imageUrls: string[]) => Promise<void>;
+    createPostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
+    updatePostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
+    removePostPoll: (agencyId: string, clientId: string, postId: string) => Promise<void>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -97,6 +107,9 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     removePostImage: async () => { },
     removeAllPostImages: async () => { },
     updatePostImages: async () => { },
+    createPostPoll: async () => { },
+    updatePostPoll: async () => { },
+    removePostPoll: async () => { },
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -190,7 +203,12 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 },
                 generatedHooks: (data.generatedHooks || []) as Hook[],
                 drafts: (data.drafts || []) as Draft[],
-                images: (data.images || []) as string[], // Default to empty array if not present
+                images: (data.images || []) as string[],
+                poll: data.poll ? {
+                    question: data.poll.question,
+                    options: data.poll.options,
+                    duration: data.poll.duration
+                } as Poll : undefined, // Add this line!
             };
             setPost(postDetails);
         } catch (e: any) {
@@ -888,10 +906,10 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 const timestamp = Date.now();
                 const fileName = `${agencyId}/${clientId}/${postId}/${timestamp}_${file.name}`;
                 const storageRef = ref(storage, `post-images/${fileName}`);
-                
+
                 // Upload file to Firebase Storage
                 const snapshot = await uploadBytes(storageRef, file);
-                
+
                 // Get download URL
                 const downloadURL = await getDownloadURL(snapshot.ref);
                 return downloadURL;
@@ -903,7 +921,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
             const currentImages = post?.images || [];
             const updatedImages = replace ? uploadedUrls : [...currentImages, ...uploadedUrls];
-            
+
             await updateDoc(postRef, {
                 images: updatedImages,
                 updatedAt: Timestamp.now()
@@ -964,7 +982,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
             const currentImages = post?.images || [];
             const updatedImages = currentImages.filter(url => url !== imageUrl);
-            
+
             await updateDoc(postRef, {
                 images: updatedImages,
                 updatedAt: Timestamp.now()
@@ -995,7 +1013,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const currentImages = post?.images || [];
-            
+
             // Delete all images from Firebase Storage
             for (const imageUrl of currentImages) {
                 try {
@@ -1049,7 +1067,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
-            
+
             await updateDoc(postRef, {
                 images: imageUrls,
                 updatedAt: Timestamp.now()
@@ -1065,6 +1083,110 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             console.log('Images updated successfully:', imageUrls);
         } catch (error) {
             console.error('Error updating images:', error);
+            throw error;
+        }
+    }, []);
+
+    // Poll management functions
+    const createPostPoll = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        poll: Poll
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            await updateDoc(postRef, {
+                poll: {
+                    question: poll.question,
+                    options: poll.options,
+                    duration: poll.duration
+                },
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                poll: poll,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Poll created successfully:', poll);
+        } catch (error) {
+            console.error('Error creating poll:', error);
+            throw error;
+        }
+    }, []);
+
+    const updatePostPoll = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        poll: Poll
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            await updateDoc(postRef, {
+                poll: {
+                    question: poll.question,
+                    options: poll.options,
+                    duration: poll.duration
+                },
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                poll: poll,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Poll updated successfully:', poll);
+        } catch (error) {
+            console.error('Error updating poll:', error);
+            throw error;
+        }
+    }, []);
+
+    const removePostPoll = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            await updateDoc(postRef, {
+                poll: null, // Remove the poll field
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                poll: undefined,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Poll removed successfully');
+        } catch (error) {
+            console.error('Error removing poll:', error);
             throw error;
         }
     }, []);
@@ -1095,6 +1217,9 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 removePostImage: async () => { throw new Error('No agency ID available'); },
                 removeAllPostImages: async () => { throw new Error('No agency ID available'); },
                 updatePostImages: async () => { throw new Error('No agency ID available'); },
+                createPostPoll: async () => { throw new Error('No agency ID available'); },
+                updatePostPoll: async () => { throw new Error('No agency ID available'); },
+                removePostPoll: async () => { throw new Error('No agency ID available'); },
             }}>
                 {children}
             </PostDetailsContext.Provider>
@@ -1124,7 +1249,10 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             uploadPostImages,
             removePostImage,
             removeAllPostImages,
-            updatePostImages
+            updatePostImages,
+            createPostPoll,
+            updatePostPoll,
+            removePostPoll
         }}>
             {children}
         </PostDetailsContext.Provider>

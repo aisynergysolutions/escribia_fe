@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, X, GripVertical, Loader2 } from 'lucide-react';
+import { Upload, X, GripVertical, Loader2, Eye, Delete, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface MediaFile {
@@ -28,6 +28,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>(editingMedia);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -36,6 +37,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     if (open) {
       setMediaFiles(editingMedia);
       setIsProcessing(false); // Reset processing state when modal opens
+      setPreviewImage(null); // Reset preview state when modal opens
     }
   }, [open, editingMedia]);
 
@@ -108,6 +110,28 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   const handleDragEnd = () => {
     setDraggedIndex(null);
   };
+
+  const handlePreviewImage = (url: string) => {
+    setPreviewImage(url);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewImage(null);
+  };
+
+  // Handle keyboard shortcuts for preview modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && previewImage) {
+        handleClosePreview();
+      }
+    };
+
+    if (previewImage) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [previewImage]);
 
   const handleDone = async () => {
     setIsProcessing(true);
@@ -186,12 +210,26 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                       <GripVertical className="h-3 w-3 text-white" />
                     </div>
 
+                    {/* Preview Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePreviewImage(mediaFile.url);
+                      }}
+                      className="absolute top-2 left-8 bg-black/50 hover:bg-black/70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Eye className="h-3 w-3 text-white" />
+                    </button>
+
                     {/* Remove Button */}
                     <button
-                      onClick={() => handleRemoveFile(mediaFile.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(mediaFile.id);
+                      }}
                       className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
                     >
-                      <X className="h-3 w-3" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
 
                     {/* Index Badge */}
@@ -232,6 +270,31 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <Dialog open={!!previewImage} onOpenChange={handleClosePreview}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="w-full h-auto max-h-[85vh] object-contain"
+              />
+              <button
+                onClick={handleClosePreview}
+                className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 transition-colors backdrop-blur-sm"
+                title="Close preview (Esc)"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="absolute bottom-4 left-4 bg-black/50 text-white text-sm px-3 py-1 rounded backdrop-blur-sm">
+                Full size preview
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 };

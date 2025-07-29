@@ -18,7 +18,7 @@ import VersionHistoryModal from './VersionHistoryModal';
 import PollPreview from './PollPreview';
 import CreatePollModal from './CreatePollModal';
 import { CommentThread } from './CommentsPanel';
-import { PollData } from './CreatePollModal';
+import { Poll } from '@/context/PostDetailsContext';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import MediaPreview from './MediaPreview';
 import MediaUploadModal, { MediaFile } from './MediaUploadModal';
@@ -110,13 +110,13 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('desktop');
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
-  const [pollData, setPollData] = useState<PollData | null>(null);
+  const [pollData, setPollData] = useState<Poll | null>(null);
   const [hasMedia, setHasMedia] = useState(false);
-  const [editingPoll, setEditingPoll] = useState<PollData | null>(null);
+  const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { editPostPartial, publishPostNow, uploadPostImages, removePostImage, removeAllPostImages, updatePostImages, post } = usePostDetails();
+  const { editPostPartial, publishPostNow, uploadPostImages, removePostImage, removeAllPostImages, updatePostImages, createPostPoll, updatePostPoll, removePostPoll, post } = usePostDetails();
   const { currentUser } = useAuth();
   const lastSelection = useRef<Range | null>(null);
 
@@ -130,6 +130,11 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isRemovingMedia, setIsRemovingMedia] = useState(false);
   const [isLoadingInitialImages, setIsLoadingInitialImages] = useState(false);
+
+  // Loading states for poll operations
+  const [isCreatingPoll, setIsCreatingPoll] = useState(false);
+  const [isUpdatingPoll, setIsUpdatingPoll] = useState(false);
+  const [isRemovingPoll, setIsRemovingPoll] = useState(false);
 
   // Initialize undo/redo functionality
   const {
@@ -627,18 +632,65 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     });
   };
 
-  const handleAddPoll = (newPollData: PollData) => {
-    setPollData(newPollData);
-    setHasMedia(false); // Clear media when adding poll
-    setEditingPoll(null); // Clear editing state
-    // Notify parent about poll state change
-    if (onPollStateChange) {
-      onPollStateChange(true);
+  const handleAddPoll = async (newPollData: Poll) => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to create poll.",
+        variant: "destructive"
+      });
+      return;
     }
-    toast({
-      title: "Poll Added",
-      description: "Poll has been added to your post."
-    });
+
+    // Determine if we're creating or updating
+    const isEditing = !!editingPoll;
+    const loadingSetter = isEditing ? setIsUpdatingPoll : setIsCreatingPoll;
+
+    try {
+      loadingSetter(true);
+
+      // If we're editing an existing poll, update it; otherwise create new
+      if (isEditing) {
+        await updatePostPoll(currentUser.uid, clientId, postId, newPollData);
+        // toast({
+        //   title: "Poll Updated",
+        //   description: "Poll has been updated successfully."
+        // });
+      } else {
+        await createPostPoll(currentUser.uid, clientId, postId, newPollData);
+        // toast({
+        //   title: "Poll Added",
+        //   description: "Poll has been added to your post."
+        // });
+      }
+
+      setPollData(newPollData);
+
+      // Clear media when adding poll and remove from Firebase if it exists
+      if (mediaFiles.length > 0) {
+        try {
+          await removeAllPostImages(currentUser.uid, clientId, postId);
+        } catch (error) {
+          console.error('Error removing images when adding poll:', error);
+        }
+      }
+      setMediaFiles([]);
+      setHasMedia(false);
+      setEditingPoll(null); // Clear editing state
+      // Notify parent about poll state change
+      if (onPollStateChange) {
+        onPollStateChange(true);
+      }
+    } catch (error) {
+      console.error('Error with poll operation:', error);
+      toast({
+        title: "Error",
+        description: `Failed to ${isEditing ? 'update' : 'create'} poll. Please try again.`,
+        variant: "destructive"
+      });
+    } finally {
+      loadingSetter(false);
+    }
   };
 
   const handleEditPoll = () => {
@@ -648,17 +700,39 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     }
   };
 
-  const handleRemovePoll = () => {
-    setPollData(null);
-    setEditingPoll(null);
-    // Notify parent about poll state change
-    if (onPollStateChange) {
-      onPollStateChange(false);
+  const handleRemovePoll = async () => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to remove poll.",
+        variant: "destructive"
+      });
+      return;
     }
-    toast({
-      title: "Poll Removed",
-      description: "Poll has been removed from your post."
-    });
+
+    try {
+      setIsRemovingPoll(true);
+      await removePostPoll(currentUser.uid, clientId, postId);
+      setPollData(null);
+      setEditingPoll(null);
+      // Notify parent about poll state change
+      if (onPollStateChange) {
+        onPollStateChange(false);
+      }
+      // toast({
+      //   title: "Poll Removed",
+      //   description: "Poll has been removed from your post."
+      // });
+    } catch (error) {
+      console.error('Error removing poll:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove poll. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRemovingPoll(false);
+    }
   };
 
   // NEW: Direct media upload handlers for the dropzone
@@ -836,7 +910,16 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       });
 
       setMediaFiles(updatedMediaFiles);
-      setPollData(null); // Clear poll when adding media
+
+      // Clear poll when adding media and remove from Firebase if it exists
+      if (pollData) {
+        try {
+          await removePostPoll(currentUser.uid, clientId, postId);
+        } catch (error) {
+          console.error('Error removing poll when adding media:', error);
+        }
+      }
+      setPollData(null);
       setEditingMedia(null); // Clear editing state
 
       // Notify parent about poll state change when clearing poll
@@ -952,7 +1035,8 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       // Only set loading state if we haven't loaded these specific images yet
       const currentImageUrls = mediaFiles.map(file => file.url);
       const postImageUrls = post.images;
-      const imagesChanged = JSON.stringify(currentImageUrls.sort()) !== JSON.stringify(postImageUrls.sort());
+      // Compare arrays WITHOUT sorting to preserve order changes
+      const imagesChanged = JSON.stringify(currentImageUrls) !== JSON.stringify(postImageUrls);
 
       if (imagesChanged) {
         setIsLoadingInitialImages(true);
@@ -997,6 +1081,15 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       }
     }
   }, [post?.images, mediaFiles, isLoadingInitialImages]);
+
+  // Initialize poll data from post data
+  useEffect(() => {
+    if (post?.poll) {
+      setPollData(post.poll);
+    } else {
+      setPollData(null);
+    }
+  }, [post?.poll]);
 
   // Get the dynamic width class based on view mode (matching EditorContainer)
   const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
@@ -1234,6 +1327,8 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
               onRemove={handleRemovePoll}
               onEdit={handleEditPoll}
               viewMode={viewMode}
+              isUpdating={isUpdatingPoll}
+              isRemoving={isRemovingPoll}
             />
           )}
         </div>
