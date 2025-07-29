@@ -831,6 +831,17 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
           (doc.data().createdAt || ''),
         onboardingLink: doc.data().onboardingLink || '',
         profileType: doc.data().profileType || '',
+        // Add LinkedIn info for status determination
+        linkedin: doc.data().linkedin ? {
+          profileImage: doc.data().linkedin.profileImage || '',
+          linkedinAccountName: doc.data().linkedin.linkedinAccountName || '',
+          linkedinName: doc.data().linkedin.linkedinName || '',
+          linkedinConnected: !!doc.data().linkedin.linkedinConnected,
+          linkedinExpiryDate: doc.data().linkedin.linkedinExpiryDate || null,
+          linkedinToken: doc.data().linkedin.linkedinToken || '',
+          connectedAt: doc.data().linkedin.connectedAt || '',
+          updatedAt: doc.data().linkedin.updatedAt || '',
+        } : undefined,
       }));
 
       console.log('[ProfilesContext] Fetched profiles:', fetchedProfiles.length);

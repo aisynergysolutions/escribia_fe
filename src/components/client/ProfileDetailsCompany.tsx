@@ -282,6 +282,8 @@ const ProfileDetailsCompany: React.FC = () => {
             profileName: companyInfoData.companyName,
             role: companyInfoData.role,
             status: profile?.status,
+            // Preserve existing LinkedIn info
+            linkedin: profile?.linkedin,
           });
           break;
 

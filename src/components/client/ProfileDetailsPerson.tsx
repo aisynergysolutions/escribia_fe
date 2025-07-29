@@ -250,6 +250,8 @@ const ProfileDetailsPerson: React.FC = () => {
               profileName: profileInfoData.fullName,
               role: profileInfoData.currentRole,
               status: profileInfoData.status,
+              // Preserve existing LinkedIn info
+              linkedin: profile.linkedin,
             });
           }
           break;

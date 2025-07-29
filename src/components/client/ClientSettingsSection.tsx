@@ -60,9 +60,9 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
     role: profile.role,
     profileType: profile.profileType || '', // Optional, if you want to include profileType
     profileImageUrl: '', // Add if you store images
-    linkedinConnected: profile.status === 'connected',
+    linkedinConnected: profile.linkedin?.linkedinConnected || false,
     isCompany: false,
-    status: profile.status || 'Not connected',
+    status: profile.linkedin?.linkedinConnected ? 'Connected' : 'Not connected',
     onboardingLink: profile.onboardingLink || '',
   }));
 
