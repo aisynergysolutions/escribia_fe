@@ -34,7 +34,7 @@ const ProfileDetailsPerson: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { deleteProfile } = useProfiles();
+  const { deleteProfile, updateProfileInCache } = useProfiles();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
@@ -90,40 +90,40 @@ const ProfileDetailsPerson: React.FC = () => {
         setProfileInfoData({
           fullName: fetchedProfile.profileName,
           currentRole: fetchedProfile.role,
-          joinedDate: formatDateForInput(fetchedProfile.joinedDate),
-          operatingLocation: fetchedProfile.location,
-          linkedinUrl: `https://linkedin.com/in/${fetchedProfile.linkedin.linkedinName}`,
-          language: fetchedProfile.contentProfile.contentLanguage,
-          customInstructions: fetchedProfile.contentProfile.customInstructions,
-          contactEmail: fetchedProfile.contactEmail,
+          joinedDate: formatDateForInput(fetchedProfile.joinedDate || ''),
+          operatingLocation: fetchedProfile.location || '',
+          linkedinUrl: `https://linkedin.com/in/${fetchedProfile.linkedin?.linkedinName || ''}`,
+          language: fetchedProfile.contentProfile?.contentLanguage || '',
+          customInstructions: fetchedProfile.contentProfile?.customInstructions || '',
+          contactEmail: fetchedProfile.contactEmail || '',
           onboardingLink: fetchedProfile.onboardingLink,
           status: fetchedProfile.status,
-          profileType: fetchedProfile.profileType,
+          profileType: fetchedProfile.profileType || '',
           createdAt: fetchedProfile.createdAt,
           clientId: fetchedProfile.clientId,
         });
 
         setStrategyData({
-          primaryGoal: fetchedProfile.contentProfile.primaryGoal,
-          audienceFocus: fetchedProfile.contentProfile.audienceFocus,
-          expertise: fetchedProfile.contentProfile.expertise || '',
+          primaryGoal: fetchedProfile.contentProfile?.primaryGoal || '',
+          audienceFocus: fetchedProfile.contentProfile?.audienceFocus || '',
+          expertise: fetchedProfile.contentProfile?.expertise || '',
         });
 
         setVoiceData({
-          personalBrandPersona: fetchedProfile.contentProfile.contentPersona,
-          coreTone: fetchedProfile.contentProfile.coreTones,
-          postLengthValue: getPostLengthValue(fetchedProfile.contentProfile.postLength),
-          emojiUsageValue: getEmojiUsageValue(fetchedProfile.contentProfile.emojiUsage),
-          addHashtags: fetchedProfile.contentProfile.addHashtags,
+          personalBrandPersona: fetchedProfile.contentProfile?.contentPersona || '',
+          coreTone: fetchedProfile.contentProfile?.coreTones || '',
+          postLengthValue: getPostLengthValue(fetchedProfile.contentProfile?.postLength || ''),
+          emojiUsageValue: getEmojiUsageValue(fetchedProfile.contentProfile?.emojiUsage || ''),
+          addHashtags: fetchedProfile.contentProfile?.addHashtags || false,
         });
 
         setGuidelinesData({
-          uniquePOV: fetchedProfile.contentProfile.hotTakes,
-          personalStories: fetchedProfile.contentProfile.personalStories,
-          hookGuidelines: fetchedProfile.contentProfile.hookGuidelines,
-          sampleCTA: fetchedProfile.contentProfile.sampleCTA,
-          topicsToAvoid: fetchedProfile.contentProfile.topicsToAvoid,
-          favPosts: fetchedProfile.contentProfile.favPosts,
+          uniquePOV: fetchedProfile.contentProfile?.hotTakes || '',
+          personalStories: fetchedProfile.contentProfile?.personalStories || '',
+          hookGuidelines: fetchedProfile.contentProfile?.hookGuidelines || '',
+          sampleCTA: fetchedProfile.contentProfile?.sampleCTA || '',
+          topicsToAvoid: fetchedProfile.contentProfile?.topicsToAvoid || [],
+          favPosts: fetchedProfile.contentProfile?.favPosts || [],
         });
       });
     }
@@ -244,6 +244,13 @@ const ProfileDetailsPerson: React.FC = () => {
                 customInstructions: profileInfoData.customInstructions,
               }
             });
+
+            // Update the cache so ClientSettingsSection shows updated data
+            updateProfileInCache(clientId, profileId, {
+              profileName: profileInfoData.fullName,
+              role: profileInfoData.currentRole,
+              status: profileInfoData.status,
+            });
           }
           break;
 
@@ -257,6 +264,16 @@ const ProfileDetailsPerson: React.FC = () => {
           if (profile) {
             setProfile({
               ...profile,
+              contentProfile: {
+                ...profile.contentProfile,
+                primaryGoal: strategyData.primaryGoal,
+                audienceFocus: strategyData.audienceFocus,
+                expertise: strategyData.expertise,
+              }
+            });
+
+            // Update cache - role might be updated based on expertise
+            updateProfileInCache(clientId, profileId, {
               contentProfile: {
                 ...profile.contentProfile,
                 primaryGoal: strategyData.primaryGoal,
@@ -291,6 +308,18 @@ const ProfileDetailsPerson: React.FC = () => {
                 addHashtags: voiceData.addHashtags,
               }
             });
+
+            // Update cache
+            updateProfileInCache(clientId, profileId, {
+              contentProfile: {
+                ...profile.contentProfile,
+                contentPersona: voiceData.personalBrandPersona,
+                coreTones: voiceData.coreTone,
+                postLength: postLengthLabels[voiceData.postLengthValue],
+                emojiUsage: emojiUsageLabels[voiceData.emojiUsageValue],
+                addHashtags: voiceData.addHashtags,
+              }
+            });
           }
           break;
 
@@ -307,6 +336,19 @@ const ProfileDetailsPerson: React.FC = () => {
           if (profile) {
             setProfile({
               ...profile,
+              contentProfile: {
+                ...profile.contentProfile,
+                hotTakes: guidelinesData.uniquePOV,
+                personalStories: guidelinesData.personalStories,
+                hookGuidelines: guidelinesData.hookGuidelines,
+                sampleCTA: guidelinesData.sampleCTA,
+                topicsToAvoid: guidelinesData.topicsToAvoid,
+                favPosts: guidelinesData.favPosts,
+              }
+            });
+
+            // Update cache
+            updateProfileInCache(clientId, profileId, {
               contentProfile: {
                 ...profile.contentProfile,
                 hotTakes: guidelinesData.uniquePOV,

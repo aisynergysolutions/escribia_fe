@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ProfileCard, useProfiles } from '@/context/ProfilesContext';
+import { Profile, useProfiles } from '@/context/ProfilesContext';
 import { TemplateCard, useTemplates } from '@/context/TemplatesContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2 } from 'lucide-react';
@@ -46,7 +46,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   ]);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [profiles, setProfiles] = useState<ProfileCard[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);

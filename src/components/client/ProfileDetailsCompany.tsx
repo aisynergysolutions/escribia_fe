@@ -31,7 +31,7 @@ import ProfileDetailsCompanySkeleton from '@/skeletons/ProfileDetailsCompanySkel
 const ProfileDetailsCompany: React.FC = () => {
   const { clientId, profileId } = useParams<{ clientId: string; profileId: string }>();
   const navigate = useNavigate();
-  const { deleteProfile } = useProfiles();
+  const { deleteProfile, updateProfileInCache } = useProfiles();
   const { currentUser } = useAuth(); // Add this to get agencyId
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [editingSection, setEditingSection] = useState<string | null>(null);
@@ -113,37 +113,37 @@ const ProfileDetailsCompany: React.FC = () => {
           companyName: fetchedProfile.profileName,
           role: fetchedProfile.role,
           foundationDate: fetchedProfile.foundationDate || '',
-          location: fetchedProfile.location,
-          contactEmail: fetchedProfile.contactEmail,
-          linkedinUrl: `https://linkedin.com/company/${fetchedProfile.linkedin.linkedinName}`,
-          language: fetchedProfile.contentProfile.contentLanguage,
-          customInstructions: fetchedProfile.contentProfile.customInstructions,
+          location: fetchedProfile.location || '',
+          contactEmail: fetchedProfile.contactEmail || '',
+          linkedinUrl: `https://linkedin.com/company/${fetchedProfile.linkedin?.linkedinName || ''}`,
+          language: fetchedProfile.contentProfile?.contentLanguage || '',
+          customInstructions: fetchedProfile.contentProfile?.customInstructions || '',
         };
 
         const brandStrategy = {
-          primaryGoal: fetchedProfile.contentProfile.primaryGoal,
-          audienceFocus: fetchedProfile.contentProfile.audienceFocus,
-          brandPersona: getValidBrandPersona(fetchedProfile.contentProfile.contentPersona),
-          coreTone: getValidCoreTone(fetchedProfile.contentProfile.coreTones),
-          postLengthValue: getPostLengthValue(fetchedProfile.contentProfile.postLength),
-          emojiUsageValue: getEmojiUsageValue(fetchedProfile.contentProfile.emojiUsage),
-          addHashtags: fetchedProfile.contentProfile.addHashtags,
+          primaryGoal: fetchedProfile.contentProfile?.primaryGoal || '',
+          audienceFocus: fetchedProfile.contentProfile?.audienceFocus || '',
+          brandPersona: getValidBrandPersona(fetchedProfile.contentProfile?.contentPersona || ''),
+          coreTone: getValidCoreTone(fetchedProfile.contentProfile?.coreTones || ''),
+          postLengthValue: getPostLengthValue(fetchedProfile.contentProfile?.postLength || ''),
+          emojiUsageValue: getEmojiUsageValue(fetchedProfile.contentProfile?.emojiUsage || ''),
+          addHashtags: fetchedProfile.contentProfile?.addHashtags || false,
         };
 
         // Debug log to check values
         console.log('Brand Strategy Data:', {
-          originalPersona: fetchedProfile.contentProfile.contentPersona,
+          originalPersona: fetchedProfile.contentProfile?.contentPersona,
           cleanedPersona: brandStrategy.brandPersona,
-          originalCoreTone: fetchedProfile.contentProfile.coreTones,
+          originalCoreTone: fetchedProfile.contentProfile?.coreTones,
           cleanedCoreTone: brandStrategy.coreTone
         });
 
         const contentGuidelines = {
-          hookGuidelines: fetchedProfile.contentProfile.hookGuidelines,
-          hotTakes: fetchedProfile.contentProfile.hotTakes,
-          sampleCTA: fetchedProfile.contentProfile.sampleCTA,
-          topicsToAvoid: fetchedProfile.contentProfile.topicsToAvoid,
-          favPosts: fetchedProfile.contentProfile.favPosts,
+          hookGuidelines: fetchedProfile.contentProfile?.hookGuidelines || '',
+          hotTakes: fetchedProfile.contentProfile?.hotTakes || '',
+          sampleCTA: fetchedProfile.contentProfile?.sampleCTA || '',
+          topicsToAvoid: fetchedProfile.contentProfile?.topicsToAvoid || [],
+          favPosts: fetchedProfile.contentProfile?.favPosts || [],
         };
 
         setCompanyInfoData(companyInfo);
@@ -276,6 +276,13 @@ const ProfileDetailsCompany: React.FC = () => {
 
           // Update original values
           setOriginalCompanyInfoData({ ...companyInfoData });
+
+          // Update cache so ClientSettingsSection shows updated data
+          updateProfileInCache(clientId, profileId, {
+            profileName: companyInfoData.companyName,
+            role: companyInfoData.role,
+            status: profile?.status,
+          });
           break;
 
         case 'brandStrategy':
@@ -291,6 +298,20 @@ const ProfileDetailsCompany: React.FC = () => {
 
           // Update original values
           setOriginalBrandStrategyData({ ...brandStrategyData });
+
+          // Update cache
+          updateProfileInCache(clientId, profileId, {
+            contentProfile: {
+              ...profile?.contentProfile,
+              primaryGoal: brandStrategyData.primaryGoal,
+              audienceFocus: brandStrategyData.audienceFocus,
+              contentPersona: brandStrategyData.brandPersona,
+              coreTones: brandStrategyData.coreTone,
+              postLength: getPostLengthLabel(brandStrategyData.postLengthValue),
+              emojiUsage: getEmojiUsageLabel(brandStrategyData.emojiUsageValue),
+              addHashtags: brandStrategyData.addHashtags,
+            }
+          });
           break;
 
         case 'contentGuidelines':
@@ -304,12 +325,20 @@ const ProfileDetailsCompany: React.FC = () => {
 
           // Update original values
           setOriginalContentGuidelinesData({ ...contentGuidelinesData });
+
+          // Update cache
+          updateProfileInCache(clientId, profileId, {
+            contentProfile: {
+              ...profile?.contentProfile,
+              hookGuidelines: contentGuidelinesData.hookGuidelines,
+              hotTakes: contentGuidelinesData.hotTakes,
+              sampleCTA: contentGuidelinesData.sampleCTA,
+              topicsToAvoid: contentGuidelinesData.topicsToAvoid,
+              favPosts: contentGuidelinesData.favPosts,
+            }
+          });
           break;
       }
-
-      // Refresh profile data
-      const updatedProfile = await getCompanyProfile(agencyId, clientId, profileId);
-      setProfile(updatedProfile);
 
       setEditingSection(null);
     } catch (error) {

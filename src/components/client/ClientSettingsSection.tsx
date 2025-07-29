@@ -17,6 +17,19 @@ interface ClientSettingsSectionProps {
   clientId: string;
 }
 
+// Local interface for UI display
+interface ProfileCardDisplay {
+  id: string;
+  name: string;
+  role?: string;
+  profileType?: string;
+  profileImageUrl: string;
+  linkedinConnected: boolean;
+  isCompany: boolean;
+  status: string;
+  onboardingLink: string;
+}
+
 const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
   clientId
 }) => {
@@ -40,8 +53,8 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
 
   if (!clientDetails) return null;
 
-  // Map Firestore profiles to card format
-  const profileCards = profiles.map(profile => ({
+  // Map Firestore profiles to card format for display
+  const profileCards: ProfileCardDisplay[] = profiles.map(profile => ({
     id: profile.id,
     name: profile.profileName,
     role: profile.role,
@@ -54,7 +67,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
   }));
 
   // Combine company profile with sub-profiles
-  const allProfiles = [...profileCards];
+  const allProfiles: ProfileCardDisplay[] = [...profileCards];
 
   const handleProfileClick = (profileId: string) => {
     const profile = allProfiles.find(p => p.id === profileId);

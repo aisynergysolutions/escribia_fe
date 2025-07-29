@@ -65,29 +65,19 @@ export type ContentProfile = {
 };
 
 export type Profile = {
-  profileType: string;
-  location: string;
-  profileName: string;
-  joinedDate: string;
-  onboardingLink: string;
   id: string;
-  linkedin: LinkedInInfo;
-  role: string;
-  createdAt: string;
+  profileName: string;
   status: string;
+  role: string;
   clientId: string;
-  contentProfile: ContentProfile;
-  contactEmail: string;
-};
-
-export type ProfileCard = {
-  id: string;
-  profileName: string;
-  status?: string;
-  role?: string;
+  createdAt: string;
+  onboardingLink: string;
   profileType?: string;
-  onboardingLink?: string;
-  createdAt?: Date;
+  location?: string;
+  joinedDate?: string;
+  linkedin?: LinkedInInfo;
+  contentProfile?: ContentProfile;
+  contactEmail?: string;
 };
 
 export type CompanyProfile = {
@@ -108,7 +98,7 @@ export type CompanyProfile = {
 };
 
 interface ProfilesContextType {
-  profiles: ProfileCard[];
+  profiles: Profile[];
   loading: boolean;
   error: string | null;
   fetchProfiles: (clientId: string, force?: boolean) => Promise<void>;
@@ -127,6 +117,7 @@ interface ProfilesContextType {
   ) => Promise<void>;
   deleteProfile: (clientId: string, profileId: string) => Promise<void>;
   setActiveClientId: (clientId: string) => void;
+  updateProfileInCache: (clientId: string, profileId: string, updates: Partial<Profile>) => void;
 }
 
 const ProfilesContext = createContext<ProfilesContextType>({
@@ -137,6 +128,7 @@ const ProfilesContext = createContext<ProfilesContextType>({
   addProfile: async () => { },
   deleteProfile: async () => { },
   setActiveClientId: () => { },
+  updateProfileInCache: () => { },
 });
 
 export const useProfiles = () => useContext(ProfilesContext);
@@ -161,14 +153,20 @@ export const getPersonProfile = async (agencyId: string, clientId: string, profi
   const data = snap.data();
 
   return {
+    id: snap.id,
+    profileName: data.profileName || '',
+    status: data.status || '',
+    role: data.role || '',
+    clientId: data.clientId || '',
+    createdAt: data.createdAt?.seconds ?
+      new Date(data.createdAt.seconds * 1000).toISOString() :
+      (data.createdAt || ''),
+    onboardingLink: data.onboardingLink || '',
     profileType: data.profileType || '',
     location: data.location || '',
-    profileName: data.profileName || '',
     joinedDate: data.joinedDate?.seconds ?
       new Date(data.joinedDate.seconds * 1000).toISOString() :
       (data.joinedDate || ''),
-    onboardingLink: data.onboardingLink || '',
-    id: snap.id,
     linkedin: {
       profileImage: data.linkedin?.profileImage || data.linkedin?.linkedinProfile?.picture || '',
       linkedinAccountName: data.linkedin?.linkedinAccountName || data.linkedin?.linkedinProfile?.name || '',
@@ -192,12 +190,6 @@ export const getPersonProfile = async (agencyId: string, clientId: string, profi
         linkedinUserId: data.linkedin.linkedinProfile.linkedinUserId || '',
       } : undefined,
     },
-    role: data.role || '',
-    createdAt: data.createdAt?.seconds ?
-      new Date(data.createdAt.seconds * 1000).toISOString() :
-      (data.createdAt || ''),
-    status: data.status || '',
-    clientId: data.clientId || '',
     contentProfile: {
       customInstructions: data.contentProfile?.customInstructions || '',
       hookGuidelines: data.contentProfile?.hookGuidelines || '',
@@ -793,7 +785,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
   const { currentUser } = useAuth();
 
   // Store profiles by clientId
-  const [profilesByClient, setProfilesByClient] = useState<Record<string, ProfileCard[]>>({});
+  const [profilesByClient, setProfilesByClient] = useState<Record<string, Profile[]>>({});
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -828,20 +820,17 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
         'subClients'
       );
       const snapshot = await getDocs(subClientsRef);
-      const fetchedProfiles: ProfileCard[] = snapshot.docs.map(doc => ({
+      const fetchedProfiles: Profile[] = snapshot.docs.map(doc => ({
         id: doc.id,
         profileName: doc.data().profileName || '',
         status: doc.data().status || '',
         role: doc.data().role || '',
-        profileType: doc.data().profileType || '',
+        clientId: doc.data().clientId || '',
+        createdAt: doc.data().createdAt?.seconds ?
+          new Date(doc.data().createdAt.seconds * 1000).toISOString() :
+          (doc.data().createdAt || ''),
         onboardingLink: doc.data().onboardingLink || '',
-        createdAt: doc.data().createdAt
-          ? new Date(
-            doc.data().createdAt.seconds
-              ? doc.data().createdAt.seconds * 1000
-              : doc.data().createdAt
-          )
-          : undefined,
+        profileType: doc.data().profileType || '',
       }));
 
       console.log('[ProfilesContext] Fetched profiles:', fetchedProfiles.length);
@@ -936,6 +925,16 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateProfileInCache = (clientId: string, profileId: string, updates: Partial<Profile>) => {
+    console.log('[ProfilesContext] Updating profile in cache:', { clientId, profileId, updates });
+    setProfilesByClient(prev => ({
+      ...prev,
+      [clientId]: (prev[clientId] || []).map(profile =>
+        profile.id === profileId ? { ...profile, ...updates } : profile
+      ),
+    }));
+  };
+
   return (
     <ProfilesContext.Provider
       value={{
@@ -946,6 +945,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
         addProfile,
         setActiveClientId,
         deleteProfile,
+        updateProfileInCache,
       }}
     >
       {children}
