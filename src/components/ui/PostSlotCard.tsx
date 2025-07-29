@@ -24,6 +24,7 @@ interface QueueSlot {
   clientAvatar?: string;
   authorName?: string;
   authorAvatar?: string;
+  message?: string; // Add message field for error posts
 }
 
 interface PostSlotCardProps {
@@ -37,6 +38,7 @@ interface PostSlotCardProps {
   onDragOver: (e: React.DragEvent, slotId: string) => void;
   onDragEnd: () => void;
   onDrop: (e: React.DragEvent, slot: QueueSlot) => void;
+  onViewErrorDetails?: (postId: string) => void; // Optional prop for error details
 }
 
 const PostSlotCard: React.FC<PostSlotCardProps> = ({
@@ -49,7 +51,8 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
   onDragStart,
   onDragOver,
   onDragEnd,
-  onDrop
+  onDrop,
+  onViewErrorDetails
 }) => {
   return (
     <div
@@ -88,28 +91,53 @@ const PostSlotCard: React.FC<PostSlotCardProps> = ({
         </p>
       </div>
 
-      <Badge variant="secondary" className="flex-shrink-0">
+      <Badge
+        variant={slot.status === 'Posted' ? 'default' : slot.status === 'Error' ? 'destructive' : 'secondary'}
+        className={`flex-shrink-0 ${slot.status === 'Posted'
+          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+          : slot.status === 'Error'
+            ? 'bg-red-100 text-red-800 hover:bg-red-200'
+            : ''
+          }`}
+      >
         {slot.status}
       </Badge>
 
       <div className="flex-shrink-0">
         <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-gray-600"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEditSlot(slot.id)}>
-              Edit slot
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemoveFromQueue(slot.id)}>
-              Remove from queue
-            </DropdownMenuItem>
+            {slot.status === 'Posted' ? (
+              <DropdownMenuItem onClick={() => onPostClick(slot.id)}>
+                View post details
+              </DropdownMenuItem>
+            ) : slot.status === 'Error' ? (
+              <>
+                <DropdownMenuItem onClick={() => onViewErrorDetails ? onViewErrorDetails(slot.id) : onPostClick(slot.id)}>
+                  View error details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEditSlot(slot.id)}>
+                  Reschedule post
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem onClick={() => onEditSlot(slot.id)}>
+                  Edit slot
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onRemoveFromQueue(slot.id)}>
+                  Remove from queue
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -22,7 +22,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ clientId }) => {
   return (
     <ScheduledPostsProvider clientId={clientId}>
       <div className="space-y-6">
-        <Tabs defaultValue="queue" className="w-full">
+        <Tabs defaultValue="calendar" className="w-full">
           <div className="flex justify-center mb-6">
             <TabsList className="grid w-fit grid-cols-2">
               <TabsTrigger value="calendar">Calendar</TabsTrigger>

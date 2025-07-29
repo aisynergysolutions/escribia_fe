@@ -15,6 +15,7 @@ interface QueueSlot {
   clientAvatar?: string;
   authorName?: string;
   authorAvatar?: string;
+  message?: string; // Add message field for error posts
 }
 
 interface EmptySlot {
@@ -54,23 +55,27 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const hasTimeslotsConfigured = isInitialized && predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
 
   // Get scheduled posts for this client (from Firestore via useScheduledPosts)
+  // Filter out posted posts - queue should only show scheduled posts
   const queueSlots = useMemo(() => {
     const client = mockClients.find(c => c.id === clientId);
 
-    return scheduledPosts.map(post => ({
-      id: post.id,
-      datetime: new Date(post.scheduledPostAt.seconds * 1000),
-      title: post.title,
-      preview: post.title.length > 60 ? 
-        post.title.substring(0, 60) + '...' : 
-        post.title,
-      status: post.status,
-      clientId: post.clientId,
-      clientName: client?.clientName || 'Unknown Client',
-      clientAvatar: client?.profileImage,
-      authorName: post.profile || 'Unknown Profile', // Use the actual profile name from Firestore
-      authorAvatar: undefined // Will use fallback
-    })).sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
+    return scheduledPosts
+      .filter(post => post.status !== 'Posted') // Only show scheduled posts in queue
+      .map(post => ({
+        id: post.id,
+        datetime: new Date(post.scheduledPostAt.seconds * 1000),
+        title: post.title,
+        preview: post.title.length > 60 ? 
+          post.title.substring(0, 60) + '...' : 
+          post.title,
+        status: post.status,
+        clientId: post.clientId,
+        clientName: client?.clientName || 'Unknown Client',
+        clientAvatar: client?.profileImage,
+        authorName: post.profile || 'Unknown Profile', // Use the actual profile name from Firestore
+        authorAvatar: undefined, // Will use fallback
+        message: post.message // Add message field for error posts
+      })).sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
   }, [scheduledPosts, clientId, refreshKey]);
 
   // Group slots by day with empty placeholders
@@ -85,6 +90,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     // Generate ALL dates to display (both scheduled and empty active days)
     const allDatesToShow = new Set<string>();
     const today = new Date();
+    const todayDateStr = format(today, 'yyyy-MM-dd');
     
     // First, add all dates that have scheduled posts
     datesWithPosts.forEach(dateStr => allDatesToShow.add(dateStr));
@@ -97,12 +103,12 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
       const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
       
       for (const day of monthDays) {
-        // Only include days from today onwards
-        if (day >= today) {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        // Only include days from today onwards (compare as date strings)
+        if (dateStr >= todayDateStr) {
           const dayName = format(day, 'EEEE');
           
           if (activeDays.includes(dayName)) {
-            const dateStr = format(day, 'yyyy-MM-dd');
             allDatesToShow.add(dateStr);
           }
         }

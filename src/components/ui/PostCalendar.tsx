@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, SquareCheckBig, ChevronLeft, ChevronRight, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from './button';
 import { mockClients } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -51,6 +51,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
     loading,
     loadedMonths,
     setLoadedMonths,
+    loadPreviousMonths,
     refetch
   } = useScheduledPostsContext();
 
@@ -71,10 +72,10 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
     const monthEnd = endOfMonth(currentMonth);
 
     // Get the start of the week for the first day of the month (includes padding from previous month)
-    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // 0 = Sunday
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 }); // 1 = Monday
 
     // Get the end of the week for the last day of the month (includes padding from next month)
-    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
     // Get all days to display in the calendar grid (typically 42 days: 6 weeks × 7 days)
     const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
@@ -133,13 +134,19 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
 
   const goToPreviousMonth = useCallback(() => {
     const newMonth = subMonths(currentMonth, 1);
+    const newMonthStr = format(newMonth, 'yyyy-MM');
+
+    // Load previous month data if not already loaded
+    if (!loadedMonths.includes(newMonthStr)) {
+      loadPreviousMonths();
+    }
 
     if (onMonthChange) {
       onMonthChange(newMonth);
     } else {
       setInternalCurrentMonth(newMonth);
     }
-  }, [currentMonth, onMonthChange]);
+  }, [currentMonth, onMonthChange, loadedMonths, loadPreviousMonths]);
 
   const goToNextMonth = useCallback(() => {
     const newMonth = addMonths(currentMonth, 1);
@@ -215,35 +222,98 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
             {postsForDay.length > 0 && (
               <div>
                 {postsForDay.length > 1 ? (
-                  <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Clock className="h-3 w-3 flex-shrink-0" />
-                      <span className="font-medium">
-                        {postsForDay.length} posts
-                      </span>
-                    </div>
-                    <div className="text-xs">
-                      Click to view
-                    </div>
+                  <div>
+                    {/* Group posts by status and display separate indicators */}
+                    {(() => {
+                      const scheduledPosts = postsForDay.filter(p => p.status !== 'Posted' && p.status !== 'Error');
+                      const postedPosts = postsForDay.filter(p => p.status === 'Posted');
+                      const errorPosts = postsForDay.filter(p => p.status === 'Error');
+
+                      return (
+                        <>
+                          {scheduledPosts.length > 0 && (
+                            <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded mb-1">
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 flex-shrink-0" />
+                                <span className="font-medium">
+                                  {scheduledPosts.length} scheduled
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {postedPosts.length > 0 && (
+                            <div className="bg-green-100 text-green-800 text-xs p-1 rounded mb-1">
+                              <div className="flex items-center gap-1">
+                                <SquareCheckBig className="h-3 w-3 flex-shrink-0" />
+                                <span className="font-medium">
+                                  {postedPosts.length} posted
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {errorPosts.length > 0 && (
+                            <div className="bg-red-100 text-red-800 text-xs p-1 rounded">
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                                <span className="font-medium">
+                                  {errorPosts.length} failed
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 ) : (
-                  <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Clock className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">
-                        {format(new Date(postsForDay[0].scheduledPostAt!.seconds * 1000), 'HH:mm')}
-                      </span>
-                    </div>
-                    <div className="truncate text-xs font-medium">
-                      {postsForDay[0].title}
-                    </div>
-                    {showAllClients && (
-                      <div className="truncate text-xs mt-0.5 text-blue-600 font-medium">
-                        {/* <span className="text-gray-500">For </span> */}
-                        {postsForDay[0].profile || 'Unknown Profile'}
+                  (() => {
+                    const post = postsForDay[0];
+                    const isPosted = post.status === 'Posted';
+                    const isError = post.status === 'Error';
+
+                    let bgColor, textColor, profileTextColor, icon;
+
+                    if (isError) {
+                      bgColor = 'bg-red-100';
+                      textColor = 'text-red-800';
+                      profileTextColor = 'text-red-600';
+                      icon = <AlertTriangle className="h-3 w-3 flex-shrink-0" />;
+                    } else if (isPosted) {
+                      bgColor = 'bg-green-100';
+                      textColor = 'text-green-800';
+                      profileTextColor = 'text-green-600';
+                      icon = <SquareCheckBig className="h-3 w-3 flex-shrink-0" />;
+                    } else {
+                      bgColor = 'bg-blue-100';
+                      textColor = 'text-blue-800';
+                      profileTextColor = 'text-blue-600';
+                      icon = <Clock className="h-3 w-3 flex-shrink-0" />;
+                    }
+
+                    return (
+                      <div className={`${bgColor} ${textColor} text-xs p-1 rounded`} title={isError ? post.message : undefined}>
+                        <div className="flex items-center gap-1 mb-0">
+                          {icon}
+                          <span className="truncate">
+                            {format(new Date(post.scheduledPostAt!.seconds * 1000), 'HH:mm')}
+                          </span>
+                        </div>
+                        <div className="truncate text-xs font-medium">
+                          {post.title}
+                        </div>
+                        {isError && post.message && (
+                          <div className="truncate text-xs mt-0.5 text-red-500">
+                            {post.message}
+                          </div>
+                        )}
+                        {showAllClients && (
+                          <div className={`truncate text-xs mt-0.5 ${profileTextColor} font-medium`}>
+                            {post.profile || 'Unknown Profile'}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()
                 )}
               </div>
             )}
@@ -281,7 +351,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
         )}
 
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
             <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
               {day}
             </div>

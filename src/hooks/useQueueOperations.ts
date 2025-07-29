@@ -182,6 +182,7 @@ export const useQueueOperations = (
         scheduledPostAt: Timestamp.fromDate(newDateTime),
         scheduledDate: newDateTime.toISOString(),
         timeSlot: newTimeSlot,
+        status: 'Scheduled', // Reset status to Scheduled when rescheduling
         updatedAt: Timestamp.now()
       };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
 import { Button } from './button';
 import { Input } from './input';
@@ -7,7 +7,7 @@ import { Label } from './label';
 import { Badge } from './badge';
 import { Card } from './card';
 import { Search, Clock, Calendar, User, AlertCircle } from 'lucide-react';
-import { format, addMonths } from 'date-fns';
+import { format, addMonths, addMinutes, isSameDay, isAfter, isBefore } from 'date-fns';
 import { usePosts, PostCard } from '../../context/PostsContext';
 import { doc, setDoc, collection, getDocs, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -49,6 +49,42 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     // Get the current agency ID from the authenticated user
     const agencyId = currentUser?.uid;
 
+    // Calculate minimum allowed date and time
+    const now = new Date();
+    const minDateTime = addMinutes(now, 6);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Memoize validation logic
+    const validation = useMemo(() => {
+        if (!localTime) return { isValid: false, errorMessage: 'Please select a time' };
+
+        // Check if date is in the past
+        const selectedDateOnly = new Date(localDate);
+        selectedDateOnly.setHours(0, 0, 0, 0);
+
+        if (isBefore(selectedDateOnly, today)) {
+            return { isValid: false, errorMessage: 'Cannot schedule for past dates' };
+        }
+
+        // Create the full datetime for validation
+        const [hours, minutes] = localTime.split(':').map(Number);
+        const selectedDateTime = new Date(localDate);
+        selectedDateTime.setHours(hours, minutes + 1, 0, 0);
+
+        // If it's today, check if time is at least 6 minutes from now
+        if (isSameDay(selectedDateTime, now)) {
+            if (isBefore(selectedDateTime, minDateTime)) {
+                return {
+                    isValid: false,
+                    errorMessage: `Time must be at least ${format(minDateTime, 'HH:mm')} (6 minutes from now)`
+                };
+            }
+        }
+
+        return { isValid: true, errorMessage: '' };
+    }, [localDate, localTime, minDateTime, today, now]);
+
     // Fetch posts when modal opens
     useEffect(() => {
         if (isOpen && clientId && agencyId) {
@@ -86,7 +122,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     });
 
     const handleSchedulePost = async () => {
-        if (!selectedPostId || !agencyId) return;
+        if (!validation.isValid || !selectedPostId || !agencyId) return;
 
         const selectedPost = posts.find(p => p.postId === selectedPostId);
         if (!selectedPost) return;
@@ -244,6 +280,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                                     type="date"
                                     value={format(localDate, 'yyyy-MM-dd')}
                                     onChange={(e) => setLocalDate(new Date(e.target.value))}
+                                    min={format(today, 'yyyy-MM-dd')}
                                     className="mt-1"
                                 />
                             </div>
@@ -254,10 +291,23 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                                     type="time"
                                     value={localTime}
                                     onChange={(e) => setLocalTime(e.target.value)}
+                                    min={isSameDay(localDate, now) ? format(minDateTime, 'HH:mm') : undefined}
                                     className="mt-1"
                                 />
                             </div>
                         </div>
+
+                        {/* Validation error message */}
+                        {!validation.isValid && localTime && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+                                <div className="flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4 text-red-600" />
+                                    <p className="text-sm text-red-700">
+                                        {validation.errorMessage}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </Card>
 
                     {/* Search Bar and Status Filter - Same Row */}
@@ -347,7 +397,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                     <div className="flex gap-3 pt-2 border-t">
                         <Button
                             onClick={handleSchedulePost}
-                            disabled={!selectedPostId || !localTime || isScheduling}
+                            disabled={!selectedPostId || !validation.isValid || isScheduling}
                             className="flex-1"
                         >
                             {isScheduling ? 'Scheduling...' : 'Schedule this post'}

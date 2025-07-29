@@ -1,12 +1,13 @@
 
-import React from 'react';
-import { format } from 'date-fns';
+import React, { useState } from 'react';
+import { format, addMinutes, isSameDay, isBefore } from 'date-fns';
 import { X, Plus, Clock, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
 import { Button } from './button';
 import { mockClients } from '../../types';
 import PostSlotCard from './PostSlotCard';
 import { TooltipProvider } from './tooltip';
+import ErrorDetailsModal from './ErrorDetailsModal';
 
 interface DayPostsModalProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
   onRemoveFromQueue,
   showAllClients = false
 }) => {
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [selectedErrorPost, setSelectedErrorPost] = useState<any>(null);
+
   const getClientName = (clientId: string) => {
     const client = mockClients.find(c => c.id === clientId);
     return client?.clientName || 'Unknown Client';
@@ -57,7 +61,8 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
       clientName: client?.clientName || 'Unknown Client',
       clientAvatar: client?.profileImage,
       authorName: post.profile || 'Unknown Profile',
-      authorAvatar: undefined
+      authorAvatar: undefined,
+      message: post.message // Add message field for error posts
     };
   });
 
@@ -65,8 +70,41 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
     onSchedulePost();
   };
 
-  // Check if selected date is before today
-  const isDateInPast = selectedDate ? selectedDate < new Date(new Date().setHours(0, 0, 0, 0)) : false;
+  // Create a wrapper function to handle post clicks
+  const handlePostClick = (postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (post) {
+      // If it's an error post, show error details modal instead of navigating
+      if (post.status === 'Error') {
+        setSelectedErrorPost(post);
+        setIsErrorModalOpen(true);
+      } else {
+        onPostClick(post);
+      }
+    }
+  };
+
+  const handleViewErrorDetails = (postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (post && post.status === 'Error') {
+      setSelectedErrorPost(post);
+      setIsErrorModalOpen(true);
+    }
+  };
+
+  const handleCloseErrorModal = () => {
+    setIsErrorModalOpen(false);
+    setSelectedErrorPost(null);
+  };
+
+  // Check if selected date is before today or if it's today but too late to schedule
+  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const minDateTime = addMinutes(now, 6);
+
+  const isDateInPast = selectedDate ? isBefore(selectedDate, today) : false;
+  const isTodayButTooLate = selectedDate && isSameDay(selectedDate, now) && now >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 50); // If it's after 23:50, can't schedule 6 minutes ahead
 
   // Dummy handlers for drag and drop (not used in this modal)
   const handleDragStart = () => { };
@@ -94,7 +132,7 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
                 key={slot.id}
                 slot={slot}
                 isDragging={false}
-                onPostClick={onPostClick}
+                onPostClick={handlePostClick}
                 onEditSlot={onEditSlot}
                 onRemoveFromQueue={onRemoveFromQueue}
                 onMoveToTop={handleMoveToTop}
@@ -102,6 +140,7 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
                 onDrop={handleDrop}
+                onViewErrorDetails={handleViewErrorDetails}
               />
             ))}
           </TooltipProvider>
@@ -118,13 +157,24 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
             onClick={handleSchedulePost}
             className="w-full"
             variant="outline"
-            disabled={isDateInPast}
+            disabled={isDateInPast || isTodayButTooLate}
           >
             <Plus className="h-4 w-4 mr-2" />
-            {isDateInPast ? 'Cannot schedule for past dates' : 'Schedule a post'}
+            {isDateInPast
+              ? 'Cannot schedule for past dates'
+              : isTodayButTooLate
+                ? 'Too late to schedule for today'
+                : 'Schedule a post'}
           </Button>
         </div>
       </DialogContent>
+
+      <ErrorDetailsModal
+        isOpen={isErrorModalOpen}
+        onClose={handleCloseErrorModal}
+        errorMessage={selectedErrorPost?.message || ''}
+        postTitle={selectedErrorPost?.title || ''}
+      />
     </Dialog>
   );
 };
