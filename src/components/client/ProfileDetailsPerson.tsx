@@ -663,7 +663,19 @@ const ProfileDetailsPerson: React.FC = () => {
               </div>
               <div>
                 <Label>Status</Label>
-                <p className="text-sm mt-1">{profile.status}</p>
+                <p className="text-sm mt-1">
+                  {profile.linkedin?.linkedinConnected ? (
+                    <span className="flex items-center gap-2 text-green-600 font-medium">
+                      <span className="h-2 w-2 bg-green-500 rounded-full"></span>
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2 text-gray-500">
+                      <span className="h-2 w-2 bg-gray-400 rounded-full"></span>
+                      Not Connected
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </div>

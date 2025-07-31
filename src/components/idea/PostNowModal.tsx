@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import MediaPreview from './MediaPreview';
+import { MediaFile } from './MediaUploadModal';
+import { Poll } from '@/context/PostDetailsContext';
 
 interface PostNowModalProps {
   open: boolean;
@@ -14,6 +17,8 @@ interface PostNowModalProps {
   clientId?: string;
   postId?: string;
   subClientId?: string;
+  mediaFiles?: MediaFile[];
+  pollData?: Poll | null;
 }
 
 const PostNowModal: React.FC<PostNowModalProps> = ({
@@ -23,7 +28,9 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
   onPost,
   clientId,
   postId,
-  subClientId
+  subClientId,
+  mediaFiles = [],
+  pollData
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
@@ -128,6 +135,62 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
     setIsExpanded(false);
   };
 
+  const renderMediaPreview = () => {
+    if (!mediaFiles || mediaFiles.length === 0) return null;
+
+    return (
+      <div className="mb-4">
+        <MediaPreview
+          mediaFiles={mediaFiles}
+          onRemove={() => { }} // Disabled in preview mode
+          onEdit={() => { }} // Disabled in preview mode
+          viewMode="desktop"
+          isUploading={false}
+          isRemoving={false}
+          isLoadingInitial={false}
+        />
+      </div>
+    );
+  };
+
+  const renderPollPreview = () => {
+    if (!pollData) return null;
+
+    return (
+      <div className="mb-4">
+        <div className="border rounded-lg p-4 border-gray-200 bg-white">
+          <div className="space-y-4">
+            <div className="font-medium text-gray-900">
+              {pollData.question}
+            </div>
+            <div className="text-sm text-gray-600">
+              You can see how people vote. <span className="text-blue-600 cursor-pointer">Learn More</span>
+            </div>
+
+            <div className="space-y-2">
+              {pollData.options.map((option, index) => (
+                <div
+                  key={index}
+                  className="border border-blue-500 rounded-full py-3 px-4 text-center text-blue-600 cursor-pointer hover:bg-blue-50 transition-colors"
+                >
+                  {option}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>0 votes</span>
+              <span>•</span>
+              <span>1w left</span>
+              <span>•</span>
+              <span className="text-blue-600 cursor-pointer">View results</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
@@ -203,6 +266,12 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                         <Separator className="mb-4" />
                       )}
                     </div>
+
+                    {/* Media Preview */}
+                    {renderMediaPreview()}
+
+                    {/* Poll Preview */}
+                    {renderPollPreview()}
                   </div>
 
                   {/* Simulated engagement */}

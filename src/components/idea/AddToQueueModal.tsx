@@ -11,8 +11,10 @@ import { db } from '@/lib/firebase';
 import { format, addMonths, addDays, isSameDay, startOfDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { usePostDetails } from '@/context/PostDetailsContext';
+import { usePostDetails, Poll } from '@/context/PostDetailsContext';
 import { useAuth } from '@/context/AuthContext';
+import MediaPreview from './MediaPreview';
+import { MediaFile } from './MediaUploadModal';
 
 interface AddToQueueModalProps {
   open: boolean;
@@ -22,6 +24,8 @@ interface AddToQueueModalProps {
   onOpenScheduleModal: () => void;
   clientId?: string;
   postId?: string;
+  mediaFiles?: MediaFile[];
+  pollData?: Poll | null;
 }
 
 const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
@@ -55,7 +59,9 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
   onAddToQueue,
   onOpenScheduleModal,
   clientId,
-  postId
+  postId,
+  mediaFiles = [],
+  pollData
 }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
@@ -389,6 +395,62 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
     setIsExpanded(false);
   };
 
+  const renderMediaPreview = () => {
+    if (!mediaFiles || mediaFiles.length === 0) return null;
+
+    return (
+      <div className="mb-4">
+        <MediaPreview
+          mediaFiles={mediaFiles}
+          onRemove={() => { }} // Disabled in preview mode
+          onEdit={() => { }} // Disabled in preview mode
+          viewMode="desktop"
+          isUploading={false}
+          isRemoving={false}
+          isLoadingInitial={false}
+        />
+      </div>
+    );
+  };
+
+  const renderPollPreview = () => {
+    if (!pollData) return null;
+
+    return (
+      <div className="mb-4">
+        <div className="border rounded-lg p-4 border-gray-200 bg-white">
+          <div className="space-y-4">
+            <div className="font-medium text-gray-900">
+              {pollData.question}
+            </div>
+            <div className="text-sm text-gray-600">
+              You can see how people vote. <span className="text-blue-600 cursor-pointer">Learn More</span>
+            </div>
+
+            <div className="space-y-2">
+              {pollData.options.map((option, index) => (
+                <div
+                  key={index}
+                  className="border border-blue-500 rounded-full py-3 px-4 text-center text-blue-600 cursor-pointer hover:bg-blue-50 transition-colors"
+                >
+                  {option}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>0 votes</span>
+              <span>•</span>
+              <span>1w left</span>
+              <span>•</span>
+              <span className="text-blue-600 cursor-pointer">View results</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Show authentication error if no agency ID
   if (!agencyId) {
     return (
@@ -494,6 +556,12 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                         <Separator className="mb-4" />
                       )}
                     </div>
+
+                    {/* Media Preview */}
+                    {renderMediaPreview()}
+
+                    {/* Poll Preview */}
+                    {renderPollPreview()}
                   </div>
                 </div>
               </div>

@@ -3,14 +3,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Eye, Smartphone, Monitor, Sun, Moon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { PollData } from './CreatePollModal';
+import { Poll } from '@/context/PostDetailsContext';
 import { MediaFile } from './MediaUploadModal';
 
 interface PostPreviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   postContent: string;
-  pollData?: PollData | null;
+  pollData?: Poll | null;
   mediaFiles?: MediaFile[];
 }
 
@@ -92,80 +92,106 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
   const renderMediaPreview = () => {
     if (!mediaFiles || mediaFiles.length === 0) return null;
 
-    const firstImage = mediaFiles[0];
-    const remainingImages = mediaFiles.slice(1, 4);
-    const extraCount = Math.max(0, mediaFiles.length - 4);
-    const isVerticalLayout = firstImage.isVertical;
+    const hasVideo = mediaFiles.some(f => f.type === 'video');
+    const videoFile = hasVideo ? mediaFiles.find(f => f.type === 'video') : null;
 
     return (
       <div className="mb-4">
         <div className="border rounded-lg overflow-hidden bg-gray-50">
-          {isVerticalLayout ? (
-            <div className="flex h-64">
-              <div className="flex-1">
-                <img
-                  src={firstImage.url}
-                  alt="Main image"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {remainingImages.length > 0 && (
-                <div className="w-32 flex flex-col">
-                  {remainingImages.map((image, index) => (
-                    <div
-                      key={image.id}
-                      className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-b border-white' : ''}`}
-                    >
-                      <img
-                        src={image.url}
-                        alt={`Image ${index + 2}`}
-                        className="w-full h-full object-cover"
-                      />
-                      {index === remainingImages.length - 1 && extraCount > 0 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <span className="text-white font-semibold text-lg">
-                            +{extraCount}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+          {hasVideo && videoFile ? (
+            /* Video Preview */
+            <div className="relative">
+              <video
+                src={videoFile.url}
+                className="w-full h-64 object-cover"
+                controls
+                preload="metadata"
+              />
+              {/* Video duration badge */}
+              {videoFile.duration && (
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                  {Math.floor(videoFile.duration / 60)}:{String(Math.floor(videoFile.duration % 60)).padStart(2, '0')}
                 </div>
               )}
             </div>
           ) : (
-            <div className="space-y-0">
-              <div className="h-48">
-                <img
-                  src={firstImage.url}
-                  alt="Main image"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {remainingImages.length > 0 && (
-                <div className="flex h-16">
-                  {remainingImages.map((image, index) => (
-                    <div
-                      key={image.id}
-                      className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-r border-white' : ''}`}
-                    >
-                      <img
-                        src={image.url}
-                        alt={`Image ${index + 2}`}
-                        className="w-full h-full object-cover"
-                      />
-                      {index === remainingImages.length - 1 && extraCount > 0 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
-                            +{extraCount}
-                          </span>
+            /* Image Grid */
+            (() => {
+              const firstImage = mediaFiles[0];
+              const remainingImages = mediaFiles.slice(1, 4);
+              const extraCount = Math.max(0, mediaFiles.length - 4);
+              const isVerticalLayout = firstImage.isVertical;
+
+              return isVerticalLayout ? (
+                /* Vertical Layout: Main image on left, others on right */
+                <div className="flex h-64">
+                  <div className="flex-1">
+                    <img
+                      src={firstImage.url}
+                      alt="Main image"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {remainingImages.length > 0 && (
+                    <div className="w-32 flex flex-col">
+                      {remainingImages.map((image, index) => (
+                        <div
+                          key={image.id}
+                          className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-b border-white' : ''}`}
+                        >
+                          <img
+                            src={image.url}
+                            alt={`Image ${index + 2}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {index === remainingImages.length - 1 && extraCount > 0 && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <span className="text-white font-semibold text-lg">
+                                +{extraCount}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
+              ) : (
+                /* Horizontal Layout: Main image on top, others below */
+                <div className="space-y-0">
+                  <div className="h-48">
+                    <img
+                      src={firstImage.url}
+                      alt="Main image"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {remainingImages.length > 0 && (
+                    <div className="flex h-16">
+                      {remainingImages.map((image, index) => (
+                        <div
+                          key={image.id}
+                          className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-r border-white' : ''}`}
+                        >
+                          <img
+                            src={image.url}
+                            alt={`Image ${index + 2}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {index === remainingImages.length - 1 && extraCount > 0 && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <span className="text-white font-semibold text-sm">
+                                +{extraCount}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           )}
         </div>
       </div>

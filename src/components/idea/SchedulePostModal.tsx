@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Calendar, Clock, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { format } from 'date-fns';
+import { format, addMinutes, isSameDay, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { usePostDetails } from '@/context/PostDetailsContext';
+import { usePostDetails, Poll } from '@/context/PostDetailsContext';
 import { useAuth } from '@/context/AuthContext';
+import MediaPreview from './MediaPreview';
+import { MediaFile } from './MediaUploadModal';
 
 interface SchedulePostModalProps {
   open: boolean;
@@ -24,6 +26,8 @@ interface SchedulePostModalProps {
   onSchedule: (date: Date, time: string, status: string) => void;
   clientId?: string;
   postId?: string;
+  mediaFiles?: MediaFile[];
+  pollData?: Poll | null;
 }
 
 const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
@@ -56,7 +60,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   postContent,
   onSchedule,
   clientId,
-  postId
+  postId,
+  mediaFiles = [],
+  pollData
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedHour, setSelectedHour] = useState<number>(9);
@@ -80,6 +86,48 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
   // Get the current agency ID from the authenticated user
   const agencyId = currentUser?.uid;
+
+  // Calculate minimum allowed date and time
+  const now = new Date();
+  const minDateTime = addMinutes(now, 6);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Memoize validation logic
+  const validation = useMemo(() => {
+    if (!selectedDate) return { isValid: false, errorMessage: 'Please select a date' };
+
+    // Check if date is in the past
+    const selectedDateOnly = new Date(selectedDate);
+    selectedDateOnly.setHours(0, 0, 0, 0);
+
+    if (isBefore(selectedDateOnly, today)) {
+      return { isValid: false, errorMessage: 'Cannot schedule for past dates' };
+    }
+
+    // Create the full datetime for validation
+    let hours = selectedHour;
+    if (!isAM && hours !== 12) {
+      hours += 12;
+    } else if (isAM && hours === 12) {
+      hours = 0;
+    }
+
+    const selectedDateTime = new Date(selectedDate);
+    selectedDateTime.setHours(hours, selectedMinute + 1, 0, 0);
+
+    // If it's today, check if time is at least 6 minutes from now
+    if (isSameDay(selectedDateTime, now)) {
+      if (isBefore(selectedDateTime, minDateTime)) {
+        return {
+          isValid: false,
+          errorMessage: `Time must be at least ${format(minDateTime, 'HH:mm')} (6 minutes from now)`
+        };
+      }
+    }
+
+    return { isValid: true, errorMessage: '' };
+  }, [selectedDate, selectedHour, selectedMinute, isAM, minDateTime, today, now]);
 
   // Generate hours array (00-23)
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -165,6 +213,16 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       toast({
         title: "Missing Information",
         description: "Please select a date and time, and ensure all required data is available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check validation
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid Schedule Time",
+        description: validation.errorMessage,
         variant: "destructive",
       });
       return;
@@ -333,6 +391,62 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     setIsExpanded(false);
   };
 
+  const renderMediaPreview = () => {
+    if (!mediaFiles || mediaFiles.length === 0) return null;
+
+    return (
+      <div className="mb-4">
+        <MediaPreview
+          mediaFiles={mediaFiles}
+          onRemove={() => { }} // Disabled in preview mode
+          onEdit={() => { }} // Disabled in preview mode
+          viewMode="desktop"
+          isUploading={false}
+          isRemoving={false}
+          isLoadingInitial={false}
+        />
+      </div>
+    );
+  };
+
+  const renderPollPreview = () => {
+    if (!pollData) return null;
+
+    return (
+      <div className="mb-4">
+        <div className="border rounded-lg p-4 border-gray-200 bg-white">
+          <div className="space-y-4">
+            <div className="font-medium text-gray-900">
+              {pollData.question}
+            </div>
+            <div className="text-sm text-gray-600">
+              You can see how people vote. <span className="text-blue-600 cursor-pointer">Learn More</span>
+            </div>
+
+            <div className="space-y-2">
+              {pollData.options.map((option, index) => (
+                <div
+                  key={index}
+                  className="border border-blue-500 rounded-full py-3 px-4 text-center text-blue-600 cursor-pointer hover:bg-blue-50 transition-colors"
+                >
+                  {option}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>0 votes</span>
+              <span>•</span>
+              <span>1w left</span>
+              <span>•</span>
+              <span className="text-blue-600 cursor-pointer">View results</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Show authentication error if no agency ID
   if (!agencyId) {
     return (
@@ -438,6 +552,12 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                         <Separator className="mb-4" />
                       )}
                     </div>
+
+                    {/* Media Preview */}
+                    {renderMediaPreview()}
+
+                    {/* Poll Preview */}
+                    {renderPollPreview()}
                   </div>
                 </div>
               </div>
@@ -470,7 +590,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => isBefore(date, today)}
                       initialFocus
                       className="pointer-events-auto"
                     />
@@ -591,6 +711,18 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                 </div>
               </div>
 
+              {/* Validation error message */}
+              {!validation.isValid && selectedDate && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <p className="text-sm text-red-700">
+                      {validation.errorMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <Separator />
 
               {/* Status Selection */}
@@ -632,7 +764,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           </Button>
           <Button
             onClick={handleSchedule}
-            disabled={!selectedDate || isScheduling}
+            disabled={!selectedDate || !validation.isValid || isScheduling}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             <Calendar className="w-4 h-4 mr-2" />

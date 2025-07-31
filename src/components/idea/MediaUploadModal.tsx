@@ -10,6 +10,9 @@ export interface MediaFile {
   file: File;
   url: string;
   isVertical: boolean;
+  type: 'image' | 'video';
+  duration?: number; // For videos, in seconds
+  thumbnail?: string; // Thumbnail URL for videos
 }
 
 interface MediaUploadModalProps {
@@ -45,33 +48,90 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     const files = event.target.files;
     if (!files) return;
 
-    const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+    const firstFile = files[0];
+    const isVideo = firstFile.type.startsWith('video/');
+    const isImage = firstFile.type.startsWith('image/');
 
-    newFiles.forEach(file => {
-      if (!file.type.startsWith('image/')) {
+    // Check if user is trying to mix video and images
+    if (mediaFiles.length > 0) {
+      const hasVideo = mediaFiles.some(f => f.type === 'video');
+      const hasImages = mediaFiles.some(f => f.type === 'image');
+
+      if ((hasVideo && isImage) || (hasImages && isVideo)) {
         toast({
-          title: "Invalid file type",
-          description: "Only image files are allowed.",
+          title: "Mixed media not allowed",
+          description: "You can upload either 1 video OR up to 14 images, not both.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    if (isVideo) {
+      // Only allow one video
+      if (mediaFiles.length > 0) {
+        toast({
+          title: "Only one video allowed",
+          description: "You can upload only one video per post.",
           variant: "destructive"
         });
         return;
       }
 
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        const isVertical = img.height > img.width;
+      const url = URL.createObjectURL(firstFile);
+      const video = document.createElement('video');
+      video.onloadedmetadata = () => {
+        const isVertical = video.videoHeight > video.videoWidth;
         const mediaFile: MediaFile = {
           id: `media-${Date.now()}-${Math.random()}`,
-          file,
+          file: firstFile,
           url,
-          isVertical
+          isVertical,
+          type: 'video',
+          duration: video.duration
         };
 
-        setMediaFiles(prev => [...prev, mediaFile]);
+        setMediaFiles([mediaFile]); // Replace any existing files
       };
-      img.src = url;
-    });
+      video.src = url;
+    } else if (isImage) {
+      // Handle multiple images (up to 14 total)
+      const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+
+      newFiles.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file type",
+            description: "Upload either images or videos.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          const isVertical = img.height > img.width;
+          const mediaFile: MediaFile = {
+            id: `media-${Date.now()}-${Math.random()}`,
+            file,
+            url,
+            isVertical,
+            type: 'image'
+          };
+
+          setMediaFiles(prev => [...prev, mediaFile]);
+        };
+        img.src = url;
+      });
+    } else {
+      toast({
+        title: "Invalid file type",
+        description: "Only image and video files are allowed.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Reset input
     if (fileInputRef.current) {
@@ -133,7 +193,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     }
   }, [previewImage]);
 
-  const handleDone = async () => {
+  const handleApply = async () => {
     setIsProcessing(true);
     try {
       await onUploadMedia(mediaFiles);
@@ -169,46 +229,68 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
           >
             <Upload className="h-8 w-8 mx-auto mb-4 text-gray-400" />
             <p className="text-sm text-gray-600 mb-2">
-              Click to upload images or drag and drop
+              Click to upload images/videos or drag and drop
             </p>
             <p className="text-xs text-gray-500">
-              Up to {14 - mediaFiles.length} more images allowed
+              {mediaFiles.length === 0
+                ? "Upload 1 video OR up to 14 images"
+                : mediaFiles[0]?.type === 'video'
+                  ? "1 video uploaded"
+                  : `Up to ${14 - mediaFiles.length} more images allowed`
+              }
             </p>
             <input
               ref={fileInputRef}
               type="file"
-              multiple
-              accept="image/*"
+              multiple={mediaFiles.length === 0 || (mediaFiles[0]?.type === 'image')}
+              accept="image/*,video/*"
               onChange={handleFileSelect}
               className="hidden"
-              disabled={mediaFiles.length >= 14}
+              disabled={mediaFiles.length >= 14 || (mediaFiles.length > 0 && mediaFiles[0]?.type === 'video')}
             />
           </div>
 
           {/* Media Grid */}
           {mediaFiles.length > 0 && (
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Uploaded Images ({mediaFiles.length}/14)</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <h4 className="font-medium text-sm">
+                {mediaFiles[0]?.type === 'video'
+                  ? `Uploaded Video (${mediaFiles.length}/1)`
+                  : `Uploaded Images (${mediaFiles.length}/14)`
+                }
+              </h4>
+              <div className={mediaFiles[0]?.type === 'video' ? "space-y-3" : "grid grid-cols-2 gap-3"}>
                 {mediaFiles.map((mediaFile, index) => (
                   <div
                     key={mediaFile.id}
-                    className="relative group border rounded-lg overflow-hidden cursor-move"
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
+                    className={`relative group border rounded-lg overflow-hidden ${mediaFiles[0]?.type === 'video' ? 'w-full' : 'cursor-move'
+                      }`}
+                    draggable={mediaFile.type === 'image'}
+                    onDragStart={() => mediaFile.type === 'image' && handleDragStart(index)}
+                    onDragOver={(e) => mediaFile.type === 'image' && handleDragOver(e, index)}
+                    onDragEnd={() => mediaFile.type === 'image' && handleDragEnd()}
                   >
-                    <img
-                      src={mediaFile.url}
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-24 object-cover"
-                    />
+                    {mediaFile.type === 'video' ? (
+                      <video
+                        src={mediaFile.url}
+                        className="w-full h-48 object-cover"
+                        muted
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={mediaFile.url}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-24 object-cover"
+                      />
+                    )}
 
-                    {/* Drag Handle */}
-                    <div className="absolute top-2 left-2 bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <GripVertical className="h-3 w-3 text-white" />
-                    </div>
+                    {/* Drag Handle - only for images */}
+                    {mediaFile.type === 'image' && (
+                      <div className="absolute top-2 left-2 bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GripVertical className="h-3 w-3 text-white" />
+                      </div>
+                    )}
 
                     {/* Preview Button */}
                     <button
@@ -216,7 +298,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                         e.stopPropagation();
                         handlePreviewImage(mediaFile.url);
                       }}
-                      className="absolute top-2 left-8 bg-black/50 hover:bg-black/70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className={`absolute ${mediaFile.type === 'image' ? 'top-2 left-8' : 'top-2 left-2'} bg-black/50 hover:bg-black/70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity`}
                     >
                       <Eye className="h-3 w-3 text-white" />
                     </button>
@@ -232,16 +314,27 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                       <Trash2 className="h-3 w-3" />
                     </button>
 
-                    {/* Index Badge */}
-                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                      {index + 1}
-                    </div>
+                    {/* Index Badge - only for images, duration for videos */}
+                    {mediaFile.type === 'video' ? (
+                      mediaFile.duration && (
+                        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                          {Math.floor(mediaFile.duration / 60)}:{String(Math.floor(mediaFile.duration % 60)).padStart(2, '0')}
+                        </div>
+                      )
+                    ) : (
+                      <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
               <p className="text-xs text-gray-500">
-                Drag images to reorder them. The first image determines the layout.
+                {mediaFiles[0]?.type === 'video'
+                  ? "Video preview - click the eye icon to view full screen."
+                  : "Drag images to reorder them. The first image determines the layout."
+                }
               </p>
             </div>
           )}
@@ -256,8 +349,8 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
             Cancel
           </Button>
           <Button
-            onClick={handleDone}
-            disabled={mediaFiles.length === 0 || isProcessing}
+            onClick={handleApply}
+            disabled={isProcessing}
           >
             {isProcessing ? (
               <>
@@ -265,22 +358,33 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 Processing...
               </>
             ) : (
-              'Done'
+              'Apply'
             )}
           </Button>
         </DialogFooter>
       </DialogContent>
 
-      {/* Image Preview Modal */}
+      {/* Image/Video Preview Modal */}
       {previewImage && (
         <Dialog open={!!previewImage} onOpenChange={handleClosePreview}>
           <DialogContent className="max-w-4xl max-h-[90vh] p-0">
             <div className="relative bg-black rounded-lg overflow-hidden">
-              <img
-                src={previewImage}
-                alt="Preview"
-                className="w-full h-auto max-h-[85vh] object-contain"
-              />
+              {/* Determine if preview is video or image based on file extension or media type */}
+              {previewImage.includes('.mp4') || previewImage.includes('.mov') || previewImage.includes('.webm') ||
+                mediaFiles.find(f => f.url === previewImage)?.type === 'video' ? (
+                <video
+                  src={previewImage}
+                  controls
+                  className="w-full h-auto max-h-[85vh] object-contain"
+                  autoPlay
+                />
+              ) : (
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  className="w-full h-auto max-h-[85vh] object-contain"
+                />
+              )}
               <button
                 onClick={handleClosePreview}
                 className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 transition-colors backdrop-blur-sm"
@@ -289,7 +393,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 <X className="h-4 w-4" />
               </button>
               <div className="absolute bottom-4 left-4 bg-black/50 text-white text-sm px-3 py-1 rounded backdrop-blur-sm">
-                Full size preview
+                {mediaFiles.find(f => f.url === previewImage)?.type === 'video' ? 'Video preview' : 'Full size preview'}
               </div>
             </div>
           </DialogContent>

@@ -429,6 +429,7 @@ const PostDetails = () => {
             postStatus={post?.status}
             scheduledPostAt={post?.scheduledPostAt}
             postedAt={post?.postedAt}
+            linkedinPostUrl={post?.linkedinPostUrl}
           />
         </div>
 

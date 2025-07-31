@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3 } from 'lucide-react';
+import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -12,7 +12,9 @@ import { format } from 'date-fns';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
-import CreatePollModal, { PollData } from './CreatePollModal';
+import CreatePollModal from './CreatePollModal';
+import { Poll } from '@/context/PostDetailsContext';
+import { MediaFile } from './MediaUploadModal';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -32,7 +34,7 @@ interface EditorToolbarProps {
   showCommentsPanel?: boolean;
   activeFormats?: string[];
   postContent?: string;
-  onAddPoll?: (pollData: PollData) => void;
+  onAddPoll?: (pollData: Poll) => void;
   hasPoll?: boolean;
   hasMedia?: boolean;
   onAddMedia?: () => void;
@@ -40,10 +42,14 @@ interface EditorToolbarProps {
   postStatus?: string;
   scheduledPostAt?: import('firebase/firestore').Timestamp;
   postedAt?: import('firebase/firestore').Timestamp;
+  linkedinPostUrl?: string;
   // Add clientId for queue logic
   clientId?: string;
   postId?: string;
   subClientId?: string;
+  // Add media and poll data for previews
+  mediaFiles?: MediaFile[];
+  pollData?: Poll | null;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -71,9 +77,12 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   postStatus,
   scheduledPostAt,
   postedAt,
+  linkedinPostUrl,
   clientId,
   postId,
-  subClientId
+  subClientId,
+  mediaFiles = [],
+  pollData
 }) => {
   const isMobile = useIsMobile();
   const { currentUser } = useAuth();
@@ -181,7 +190,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     setShowCreatePollModal(true);
   };
 
-  const handleCreatePoll = (pollData: PollData) => {
+  const handleCreatePoll = (pollData: Poll) => {
     if (onAddPoll) {
       onAddPoll(pollData);
     }
@@ -375,6 +384,23 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     {formatPostedDateTime()}
                   </span>
                 </div>
+                {linkedinPostUrl && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(linkedinPostUrl, '_blank')}
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                      >
+                        <Link className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View on LinkedIn</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             ) : isScheduled ? (
               // Show scheduled info with modify options
@@ -389,7 +415,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0"
                     >
@@ -473,6 +499,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onOpenScheduleModal={handleOpenScheduleModal}
         clientId={clientId}
         postId={postId}
+        mediaFiles={mediaFiles}
+        pollData={pollData}
       />
 
       <SchedulePostModal
@@ -482,6 +510,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         onSchedule={handleScheduleConfirm}
         clientId={clientId}
         postId={postId}
+        mediaFiles={mediaFiles}
+        pollData={pollData}
       />
 
       <PostNowModal
@@ -492,6 +522,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         clientId={clientId}
         postId={postId}
         subClientId={subClientId}
+        mediaFiles={mediaFiles}
+        pollData={pollData}
       />
 
       <CreatePollModal

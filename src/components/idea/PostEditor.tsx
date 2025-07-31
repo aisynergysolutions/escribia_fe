@@ -38,6 +38,7 @@ interface PostEditorProps {
   postStatus?: string;
   scheduledPostAt?: import('firebase/firestore').Timestamp;
   postedAt?: import('firebase/firestore').Timestamp;
+  linkedinPostUrl?: string; // New prop for LinkedIn post URL
 }
 
 const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
@@ -57,6 +58,7 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
   postStatus,
   scheduledPostAt,
   postedAt,
+  linkedinPostUrl
 }, ref) => {
   const generatedPostEditorRef = React.useRef<any>(null);
 
@@ -94,6 +96,7 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
       postStatus={postStatus}
       scheduledPostAt={scheduledPostAt}
       postedAt={postedAt}
+      linkedinPostUrl={linkedinPostUrl}
     />
   );
 });

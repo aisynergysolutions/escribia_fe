@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { doc as firestoreDoc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc as firestoreDoc, getDoc, Timestamp, updateDoc, deleteField } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
@@ -48,11 +48,13 @@ export type PostDetails = {
     createdAt: Timestamp;
     scheduledPostAt?: Timestamp;
     postedAt?: Timestamp;
+    linkedinPostUrl?: string; // Optional URL for LinkedIn post
     initialIdea: InitialIdea;
     profile: Profile;
     generatedHooks: Hook[];
     drafts: Draft[];
     images: string[]; // Array of Firebase Storage URLs
+    video?: string; // Optional video Firebase Storage URL
     poll?: Poll; // Optional poll data
 };
 
@@ -79,6 +81,8 @@ type PostDetailsContextType = {
     removePostImage: (agencyId: string, clientId: string, postId: string, imageUrl: string) => Promise<void>;
     removeAllPostImages: (agencyId: string, clientId: string, postId: string) => Promise<void>;
     updatePostImages: (agencyId: string, clientId: string, postId: string, imageUrls: string[]) => Promise<void>;
+    updatePostVideo: (agencyId: string, clientId: string, postId: string, videoUrl?: string) => Promise<void>;
+    uploadPostVideo: (agencyId: string, clientId: string, postId: string, file: File) => Promise<string>;
     createPostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
     updatePostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
     removePostPoll: (agencyId: string, clientId: string, postId: string) => Promise<void>;
@@ -107,6 +111,8 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     removePostImage: async () => { },
     removeAllPostImages: async () => { },
     updatePostImages: async () => { },
+    updatePostVideo: async () => { },
+    uploadPostVideo: async () => '',
     createPostPoll: async () => { },
     updatePostPoll: async () => { },
     removePostPoll: async () => { },
@@ -179,6 +185,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             if (!snap.exists()) throw new Error('Post not found');
             const data = snap.data();
 
+            console.log('📥 Firebase data fetched:', {
+                hasImages: !!(data.images && data.images.length > 0),
+                hasVideo: !!data.video,
+                'data.images': data.images,
+                'data.video': data.video
+            });
+
             // Map Firestore data to our types
             const postDetails: PostDetails = {
                 id: snap.id,
@@ -190,6 +203,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 createdAt: data.createdAt,
                 scheduledPostAt: data.scheduledPostAt,
                 postedAt: data.postedAt,
+                linkedinPostUrl: data.linkedinPostUrl, // Optional URL for LinkedIn post
                 initialIdea: {
                     objective: data.objective,
                     initialIdeaPrompt: data.initialIdeaPrompt,
@@ -204,6 +218,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 generatedHooks: (data.generatedHooks || []) as Hook[],
                 drafts: (data.drafts || []) as Draft[],
                 images: (data.images || []) as string[],
+                video: data.video as string | undefined, // Add video field mapping
                 poll: data.poll ? {
                     question: data.poll.question,
                     options: data.poll.options,
@@ -841,7 +856,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                             ...prev,
                             status: 'Posted',
                             postedAt: Timestamp.now(),
-                            updatedAt: Timestamp.now()
+                            updatedAt: Timestamp.now(),
+                            linkedinPostUrl: result.linkedin_post_url // Optional URL for LinkedIn post
                         }
                         : prev
                 );
@@ -1087,6 +1103,96 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const updatePostVideo = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        videoUrl?: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            const updateData: any = {
+                updatedAt: Timestamp.now()
+            };
+
+            // Set video URL or remove the field if videoUrl is undefined/null
+            if (videoUrl) {
+                updateData.video = videoUrl;
+            } else {
+                updateData.video = deleteField();
+            }
+
+            await updateDoc(postRef, updateData);
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                video: videoUrl,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Video updated successfully:', videoUrl);
+        } catch (error) {
+            console.error('Error updating video:', error);
+            throw error;
+        }
+    }, []);
+
+    const uploadPostVideo = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        file: File
+    ): Promise<string> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            // Create a unique filename with timestamp
+            const timestamp = Date.now();
+            const fileName = `${agencyId}/${clientId}/${postId}/${timestamp}_${file.name}`;
+            const storageRef = ref(storage, `post-videos/${fileName}`);
+
+            // Upload file to Firebase Storage
+            const snapshot = await uploadBytes(storageRef, file);
+
+            // Get download URL
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            // Update the video field directly (without touching images array)
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            await updateDoc(postRef, {
+                video: downloadURL,
+                updatedAt: Timestamp.now()
+            });
+
+            console.log('🎥 Video stored in Firebase:', {
+                videoUrl: downloadURL,
+                field: 'video',
+                imagesArrayUntouched: true
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                video: downloadURL,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('Video uploaded successfully:', downloadURL);
+            return downloadURL;
+        } catch (error) {
+            console.error('Error uploading video:', error);
+            throw error;
+        }
+    }, []);
+
     // Poll management functions
     const createPostPoll = useCallback(async (
         agencyId: string,
@@ -1217,6 +1323,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 removePostImage: async () => { throw new Error('No agency ID available'); },
                 removeAllPostImages: async () => { throw new Error('No agency ID available'); },
                 updatePostImages: async () => { throw new Error('No agency ID available'); },
+                updatePostVideo: async () => { throw new Error('No agency ID available'); },
+                uploadPostVideo: async () => { throw new Error('No agency ID available'); },
                 createPostPoll: async () => { throw new Error('No agency ID available'); },
                 updatePostPoll: async () => { throw new Error('No agency ID available'); },
                 removePostPoll: async () => { throw new Error('No agency ID available'); },
@@ -1250,6 +1358,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             removePostImage,
             removeAllPostImages,
             updatePostImages,
+            updatePostVideo,
+            uploadPostVideo,
             createPostPoll,
             updatePostPoll,
             removePostPoll

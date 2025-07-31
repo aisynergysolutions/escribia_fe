@@ -25,12 +25,8 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
 }) => {
   if (mediaFiles.length === 0) return null;
 
-  const firstImage = mediaFiles[0];
-  const remainingImages = mediaFiles.slice(1, 4);
-  const extraCount = Math.max(0, mediaFiles.length - 4);
-
-  // Determine layout based on first image orientation
-  const isVerticalLayout = firstImage.isVertical;
+  const hasVideo = mediaFiles.some(f => f.type === 'video');
+  const videoFile = hasVideo ? mediaFiles.find(f => f.type === 'video') : null;
 
   // Use the same centering approach as EditorContainer
   const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
@@ -40,9 +36,9 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
       {/* Header with controls */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-gray-600">
-          {isLoadingInitial ? 'Loading images...' :
-            isUploading ? 'Uploading...' :
-              `${mediaFiles.length} image${mediaFiles.length > 1 ? 's' : ''}`}
+          {isLoadingInitial ? (hasVideo ? 'Loading video...' : 'Loading images...') :
+            isUploading ? (hasVideo ? 'Uploading video...' : 'Uploading images...') :
+              hasVideo ? 'Video' : `${mediaFiles.length} image${mediaFiles.length > 1 ? 's' : ''}`}
         </span>
         <div className="flex gap-1">
           <Button
@@ -74,7 +70,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
         </div>
       </div>
 
-      {/* Media Grid */}
+      {/* Media Display */}
       <div className="border rounded-lg overflow-hidden bg-gray-50 relative">
         {/* Loading overlay */}
         {(isUploading || isRemoving || isLoadingInitial) && (
@@ -82,92 +78,118 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
               <span className="text-sm text-gray-600">
-                {isLoadingInitial ? 'Loading images...' :
-                  isUploading ? 'Uploading images...' :
-                    'Removing images...'}
+                {isLoadingInitial ? (hasVideo ? 'Loading video...' : 'Loading images...') :
+                  isUploading ? (hasVideo ? 'Uploading video...' : 'Uploading images...') :
+                    (hasVideo ? 'Removing video...' : 'Removing images...')}
               </span>
             </div>
           </div>
         )}
 
-        {isVerticalLayout ? (
-          /* Vertical Layout: Main image on left, others on right */
-          <div className="flex h-64">
-            {/* Main Image */}
-            <div className="flex-1">
-              <img
-                src={firstImage.url}
-                alt="Main image"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Side Images */}
-            {remainingImages.length > 0 && (
-              <div className="w-32 flex flex-col">
-                {remainingImages.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-b border-white' : ''}`}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`Image ${index + 2}`}
-                      className="w-full h-full object-cover"
-                    />
-
-                    {/* Extra count overlay on last image */}
-                    {index === remainingImages.length - 1 && extraCount > 0 && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white font-semibold text-lg">
-                          +{extraCount}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+        {hasVideo && videoFile ? (
+          /* Video Preview */
+          <div className="relative">
+            <video
+              src={videoFile.url}
+              className="w-full h-64 object-cover"
+              controls
+              preload="metadata"
+            />
+            {/* Video duration badge */}
+            {videoFile.duration && (
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                {Math.floor(videoFile.duration / 60)}:{String(Math.floor(videoFile.duration % 60)).padStart(2, '0')}
               </div>
             )}
           </div>
         ) : (
-          /* Horizontal Layout: Main image on top, others below */
-          <div className="space-y-0">
-            {/* Main Image */}
-            <div className="h-48">
-              <img
-                src={firstImage.url}
-                alt="Main image"
-                className="w-full h-full object-cover"
-              />
-            </div>
+          /* Image Grid */
+          (() => {
+            const firstImage = mediaFiles[0];
+            const remainingImages = mediaFiles.slice(1, 4);
+            const extraCount = Math.max(0, mediaFiles.length - 4);
+            const isVerticalLayout = firstImage.isVertical;
 
-            {/* Bottom Images */}
-            {remainingImages.length > 0 && (
-              <div className="flex h-16">
-                {remainingImages.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-r border-white' : ''}`}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`Image ${index + 2}`}
-                      className="w-full h-full object-cover"
-                    />
+            return isVerticalLayout ? (
+              /* Vertical Layout: Main image on left, others on right */
+              <div className="flex h-64">
+                {/* Main Image */}
+                <div className="flex-1">
+                  <img
+                    src={firstImage.url}
+                    alt="Main image"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
-                    {/* Extra count overlay on last image */}
-                    {index === remainingImages.length - 1 && extraCount > 0 && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white font-semibold text-sm">
-                          +{extraCount}
-                        </span>
+                {/* Side Images */}
+                {remainingImages.length > 0 && (
+                  <div className="w-32 flex flex-col">
+                    {remainingImages.map((image, index) => (
+                      <div
+                        key={image.id}
+                        className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-b border-white' : ''}`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`Image ${index + 2}`}
+                          className="w-full h-full object-cover"
+                        />
+
+                        {/* Extra count overlay on last image */}
+                        {index === remainingImages.length - 1 && extraCount > 0 && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <span className="text-white font-semibold text-lg">
+                              +{extraCount}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
+            ) : (
+              /* Horizontal Layout: Main image on top, others below */
+              <div className="space-y-0">
+                {/* Main Image */}
+                <div className="h-48">
+                  <img
+                    src={firstImage.url}
+                    alt="Main image"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Bottom Images */}
+                {remainingImages.length > 0 && (
+                  <div className="flex h-16">
+                    {remainingImages.map((image, index) => (
+                      <div
+                        key={image.id}
+                        className={`relative flex-1 ${index < remainingImages.length - 1 ? 'border-r border-white' : ''}`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`Image ${index + 2}`}
+                          className="w-full h-full object-cover"
+                        />
+
+                        {/* Extra count overlay on last image */}
+                        {index === remainingImages.length - 1 && extraCount > 0 && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              +{extraCount}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()
         )}
       </div>
     </div>

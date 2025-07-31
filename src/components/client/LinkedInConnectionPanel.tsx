@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Linkedin, Loader2, AlertCircle } from "lucide-react";
+import { Linkedin, Loader2, AlertCircle, CheckCheck, Check } from "lucide-react";
 import { useLinkedin } from "@/context/LinkedinContext";
 import { LinkedInInfo } from "@/context/ProfilesContext";
 import LinkedInStatusModal from "./LinkedInStatusModal";
@@ -56,19 +56,19 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
 
   // Get the appropriate connection status
   const isConnected = isCompanyProfile
-    ? linkedinInfo.linkedinCompanyConnected
+    ? (linkedinInfo.linkedinCompanyConnected || linkedinInfo.linkedinConnected)
     : linkedinInfo.linkedinConnected;
 
   const accountName = isCompanyProfile
-    ? linkedinInfo.linkedinCompanyAccountName || linkedinInfo.linkedinCompanyProfile?.company_name
-    : linkedinInfo.linkedinAccountName || linkedinInfo.linkedinProfile?.name;
+    ? (linkedinInfo.linkedinCompanyAccountName || linkedinInfo.linkedinCompanyProfile?.company_name || linkedinInfo.linkedinAccountName)
+    : (linkedinInfo.linkedinAccountName || linkedinInfo.linkedinProfile?.name);
 
   const expiryDate = isCompanyProfile
-    ? linkedinInfo.linkedinCompanyExpiryDate
+    ? (linkedinInfo.linkedinCompanyExpiryDate || linkedinInfo.linkedinExpiryDate)
     : linkedinInfo.linkedinExpiryDate;
 
   const connectedAt = isCompanyProfile
-    ? linkedinInfo.linkedinCompanyConnectedAt
+    ? (linkedinInfo.linkedinCompanyConnectedAt || linkedinInfo.connectedAt)
     : linkedinInfo.connectedAt;
 
   const handleConnectClick = async () => {
@@ -186,22 +186,23 @@ const LinkedInConnectionPanel: React.FC<LinkedInConnectionPanelProps> = ({
               LinkedIn {isCompanyProfile ? 'Company' : ''}
             </span>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <Check className="h-4 w-4 text-green-500" />
               <span className="font-semibold">
                 {accountName || 'Connected'}
               </span>
             </div>
             <div className="text-xs text-muted-foreground space-x-2">
-              <span>Expires {formatExpiryDate(expiryDate)}</span>
-              {connectedAt && (
+              {/* <span>Expires {formatExpiryDate(expiryDate)}</span> */}
+              {/* {connectedAt && (
                 <span>• Connected {formatExpiryDate(connectedAt)}</span>
-              )}
+              )} */}
               {!isCompanyProfile && linkedinInfo.linkedinProfile?.email && (
                 <span>• {linkedinInfo.linkedinProfile.email}</span>
               )}
               {isCompanyProfile && linkedinInfo.linkedinCompanyProfile?.linkedin_url && (
                 <span>• {linkedinInfo.linkedinCompanyProfile.linkedin_url}</span>
               )}
+              
             </div>
           </div>
           <div className="flex items-center gap-4">

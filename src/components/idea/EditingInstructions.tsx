@@ -23,21 +23,21 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
   isLoading = false
 }) => {
   return (
-    <div className="border-t bg-gray-50">
+    <div className="border-t bg-gray-50 rounded-b-md">
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
         <Button variant="ghost" size="sm" onClick={onToggleChatBox} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
           <MessageSquare className="h-4 w-4" />
           {showChatBox ? 'Hide' : 'Show'} editing instructions
         </Button>
 
-        <Button variant="ghost" size="sm" onClick={onRegeneratePost} className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+        {/* <Button variant="ghost" size="sm" onClick={onRegeneratePost} className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
           <Sparkles className="h-4 w-4" />
           Regenerate with AI
-        </Button>
+        </Button> */}
       </div>
 
       {showChatBox && (
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 rounded-b-md">
           <div className="flex gap-3">
             <textarea
               value={editingInstructions}

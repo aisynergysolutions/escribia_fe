@@ -58,6 +58,7 @@ interface GeneratedPostEditorProps {
   postStatus?: string;
   scheduledPostAt?: import('firebase/firestore').Timestamp;
   postedAt?: import('firebase/firestore').Timestamp;
+  linkedinPostUrl?: string;
 }
 
 export interface GeneratedPostEditorRef {
@@ -87,7 +88,8 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   onSaveAI,
   postStatus,
   scheduledPostAt,
-  postedAt
+  postedAt,
+  linkedinPostUrl
 }, ref) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -116,7 +118,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { editPostPartial, publishPostNow, uploadPostImages, removePostImage, removeAllPostImages, updatePostImages, createPostPoll, updatePostPoll, removePostPoll, post } = usePostDetails();
+  const { editPostPartial, publishPostNow, uploadPostImages, uploadPostVideo, removePostImage, removeAllPostImages, updatePostImages, updatePostVideo, createPostPoll, updatePostPoll, removePostPoll, post } = usePostDetails();
   const { currentUser } = useAuth();
   const lastSelection = useRef<Range | null>(null);
 
@@ -740,37 +742,96 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     const files = event.target.files;
     if (!files || !currentUser?.uid || !clientId || !postId) return;
 
-    const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+    const firstFile = files[0];
+    const isVideo = firstFile.type.startsWith('video/');
+    const isImage = firstFile.type.startsWith('image/');
+
+    // Check if user is trying to mix video and images
+    if (mediaFiles.length > 0) {
+      const hasVideo = mediaFiles.some(f => f.type === 'video');
+      const hasImages = mediaFiles.some(f => f.type === 'image');
+
+      if ((hasVideo && isImage) || (hasImages && isVideo)) {
+        toast({
+          title: "Mixed media not allowed",
+          description: "You can upload either 1 video OR up to 14 images, not both.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
 
     try {
       const mediaFilesToProcess: MediaFile[] = [];
 
-      for (const file of newFiles) {
-        if (!file.type.startsWith('image/')) {
+      if (isVideo) {
+        // Only allow one video
+        if (mediaFiles.length > 0) {
           toast({
-            title: "Invalid file type",
-            description: "Only image files are allowed.",
+            title: "Only one video allowed",
+            description: "You can upload only one video per post.",
             variant: "destructive"
           });
-          continue;
+          return;
         }
 
-        const url = URL.createObjectURL(file);
-        const img = new Image();
+        const url = URL.createObjectURL(firstFile);
+        const video = document.createElement('video');
         await new Promise((resolve) => {
-          img.onload = () => {
-            const isVertical = img.height > img.width;
+          video.onloadedmetadata = () => {
+            const isVertical = video.videoHeight > video.videoWidth;
             const mediaFile: MediaFile = {
               id: `media-${Date.now()}-${Math.random()}`,
-              file,
+              file: firstFile,
               url,
-              isVertical
+              isVertical,
+              type: 'video',
+              duration: video.duration
             };
             mediaFilesToProcess.push(mediaFile);
             resolve(void 0);
           };
-          img.src = url;
+          video.src = url;
         });
+      } else if (isImage) {
+        // Handle multiple images (up to 14 total)
+        const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+
+        for (const file of newFiles) {
+          if (!file.type.startsWith('image/')) {
+            toast({
+              title: "Invalid file type",
+              description: "Upload either images or videos.",
+              variant: "destructive"
+            });
+            continue;
+          }
+
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          await new Promise((resolve) => {
+            img.onload = () => {
+              const isVertical = img.height > img.width;
+              const mediaFile: MediaFile = {
+                id: `media-${Date.now()}-${Math.random()}`,
+                file,
+                url,
+                isVertical,
+                type: 'image'
+              };
+              mediaFilesToProcess.push(mediaFile);
+              resolve(void 0);
+            };
+            img.src = url;
+          });
+        }
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Only image and video files are allowed.",
+          variant: "destructive"
+        });
+        return;
       }
 
       if (mediaFilesToProcess.length > 0) {
@@ -796,37 +857,96 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     const files = event.dataTransfer.files;
     if (!files || !currentUser?.uid || !clientId || !postId) return;
 
-    const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+    const firstFile = files[0];
+    const isVideo = firstFile.type.startsWith('video/');
+    const isImage = firstFile.type.startsWith('image/');
+
+    // Check if user is trying to mix video and images
+    if (mediaFiles.length > 0) {
+      const hasVideo = mediaFiles.some(f => f.type === 'video');
+      const hasImages = mediaFiles.some(f => f.type === 'image');
+
+      if ((hasVideo && isImage) || (hasImages && isVideo)) {
+        toast({
+          title: "Mixed media not allowed",
+          description: "You can upload either 1 video OR up to 14 images, not both.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
 
     try {
       const mediaFilesToProcess: MediaFile[] = [];
 
-      for (const file of newFiles) {
-        if (!file.type.startsWith('image/')) {
+      if (isVideo) {
+        // Only allow one video
+        if (mediaFiles.length > 0) {
           toast({
-            title: "Invalid file type",
-            description: "Only image files are allowed.",
+            title: "Only one video allowed",
+            description: "You can upload only one video per post.",
             variant: "destructive"
           });
-          continue;
+          return;
         }
 
-        const url = URL.createObjectURL(file);
-        const img = new Image();
+        const url = URL.createObjectURL(firstFile);
+        const video = document.createElement('video');
         await new Promise((resolve) => {
-          img.onload = () => {
-            const isVertical = img.height > img.width;
+          video.onloadedmetadata = () => {
+            const isVertical = video.videoHeight > video.videoWidth;
             const mediaFile: MediaFile = {
               id: `media-${Date.now()}-${Math.random()}`,
-              file,
+              file: firstFile,
               url,
-              isVertical
+              isVertical,
+              type: 'video',
+              duration: video.duration
             };
             mediaFilesToProcess.push(mediaFile);
             resolve(void 0);
           };
-          img.src = url;
+          video.src = url;
         });
+      } else if (isImage) {
+        // Handle multiple images (up to 14 total)
+        const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
+
+        for (const file of newFiles) {
+          if (!file.type.startsWith('image/')) {
+            toast({
+              title: "Invalid file type",
+              description: "Upload either images or videos.",
+              variant: "destructive"
+            });
+            continue;
+          }
+
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          await new Promise((resolve) => {
+            img.onload = () => {
+              const isVertical = img.height > img.width;
+              const mediaFile: MediaFile = {
+                id: `media-${Date.now()}-${Math.random()}`,
+                file,
+                url,
+                isVertical,
+                type: 'image'
+              };
+              mediaFilesToProcess.push(mediaFile);
+              resolve(void 0);
+            };
+            img.src = url;
+          });
+        }
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Only image and video files are allowed.",
+          variant: "destructive"
+        });
+        return;
       }
 
       if (mediaFilesToProcess.length > 0) {
@@ -865,51 +985,84 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       setIsUploadingMedia(true); // Start loading
 
       const isEditing = editingMedia && editingMedia.length > 0;
+      const uploadHasVideo = newMediaFiles.some(f => f.type === 'video');
+      const uploadHasImages = newMediaFiles.some(f => f.type === 'image');
 
-      // Extract File objects from MediaFile objects that have blob URLs (new files)
-      const filesToUpload = newMediaFiles.filter(mediaFile =>
-        mediaFile.url.startsWith('blob:')
-      ).map(mediaFile => mediaFile.file);
-
-      // Get already uploaded files (Firebase URLs)  
-      const existingUrls = newMediaFiles.filter(mediaFile =>
-        !mediaFile.url.startsWith('blob:')
-      ).map(mediaFile => mediaFile.url);
-
-      let uploadedUrls: string[] = [];
-
-      // Upload new files if any
-      if (filesToUpload.length > 0) {
-        uploadedUrls = await uploadPostImages(currentUser.uid, clientId, postId, filesToUpload, false);
+      if (uploadHasVideo && uploadHasImages) {
+        toast({
+          title: "Mixed media not allowed",
+          description: "You can upload either 1 video OR up to 14 images, not both.",
+          variant: "destructive"
+        });
+        return;
       }
 
-      // Combine existing URLs with newly uploaded URLs
-      const allUrls = [...existingUrls, ...uploadedUrls];
+      if (uploadHasVideo) {
+        // Handle video upload (single video)
+        const videoFile = newMediaFiles.find(f => f.type === 'video');
+        if (!videoFile) return;
 
-      // If we're editing, update all images at once
-      if (isEditing) {
-        await updatePostImages(currentUser.uid, clientId, postId, allUrls);
-      }
+        if (videoFile.url.startsWith('blob:')) {
+          // Upload new video to Firebase Storage (directly to video field, not images array)
+          const uploadedVideoUrl = await uploadPostVideo(currentUser.uid, clientId, postId, videoFile.file);
 
-      // Update local state with MediaFile objects that have Firebase URLs
-      const updatedMediaFiles: MediaFile[] = [];
-      let uploadIndex = 0;
-
-      newMediaFiles.forEach((mediaFile) => {
-        if (mediaFile.url.startsWith('blob:')) {
-          // This was a new file that got uploaded
-          updatedMediaFiles.push({
-            ...mediaFile,
-            url: uploadedUrls[uploadIndex]
-          });
-          uploadIndex++;
+          // Update local state with Firebase URL
+          const updatedVideoFile: MediaFile = {
+            ...videoFile,
+            url: uploadedVideoUrl
+          };
+          setMediaFiles([updatedVideoFile]);
         } else {
-          // This was already a Firebase URL
-          updatedMediaFiles.push(mediaFile);
+          // Video already uploaded, just update state
+          setMediaFiles([videoFile]);
         }
-      });
+      } else {
+        // Handle image upload (multiple images)
+        // Extract File objects from MediaFile objects that have blob URLs (new files)
+        const filesToUpload = newMediaFiles.filter(mediaFile =>
+          mediaFile.url.startsWith('blob:') && mediaFile.type === 'image'
+        ).map(mediaFile => mediaFile.file);
 
-      setMediaFiles(updatedMediaFiles);
+        // Get already uploaded files (Firebase URLs)  
+        const existingUrls = newMediaFiles.filter(mediaFile =>
+          !mediaFile.url.startsWith('blob:') && mediaFile.type === 'image'
+        ).map(mediaFile => mediaFile.url);
+
+        let uploadedUrls: string[] = [];
+
+        // Upload new files if any
+        if (filesToUpload.length > 0) {
+          uploadedUrls = await uploadPostImages(currentUser.uid, clientId, postId, filesToUpload, false);
+        }
+
+        // Combine existing URLs with newly uploaded URLs
+        const allUrls = [...existingUrls, ...uploadedUrls];
+
+        // If we're editing, update all images at once
+        if (isEditing) {
+          await updatePostImages(currentUser.uid, clientId, postId, allUrls);
+        }
+
+        // Update local state with MediaFile objects that have Firebase URLs
+        const updatedMediaFiles: MediaFile[] = [];
+        let uploadIndex = 0;
+
+        newMediaFiles.forEach((mediaFile) => {
+          if (mediaFile.url.startsWith('blob:')) {
+            // This was a new file that got uploaded
+            updatedMediaFiles.push({
+              ...mediaFile,
+              url: uploadedUrls[uploadIndex]
+            });
+            uploadIndex++;
+          } else {
+            // This was already a Firebase URL
+            updatedMediaFiles.push(mediaFile);
+          }
+        });
+
+        setMediaFiles(updatedMediaFiles);
+      }
 
       // Clear poll when adding media and remove from Firebase if it exists
       if (pollData) {
@@ -927,15 +1080,19 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         onPollStateChange(false);
       }
 
+      const successHasVideo = newMediaFiles.some(f => f.type === 'video');
+
       toast({
         title: isEditing ? "Media Updated" : "Media Uploaded",
-        description: `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} ${isEditing ? 'updated' : 'uploaded'} successfully.`
+        description: successHasVideo
+          ? "Video uploaded successfully."
+          : `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} ${isEditing ? 'updated' : 'uploaded'} successfully.`
       });
     } catch (error) {
       console.error('Error uploading media:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload images. Please try again.",
+        description: newMediaFiles.some(f => f.type === 'video') ? "Failed to upload video. Please try again." : "Failed to upload images. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -963,8 +1120,18 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     try {
       setIsRemovingMedia(true); // Start loading
 
-      // Use the bulk remove function for better efficiency
-      await removeAllPostImages(currentUser.uid, clientId, postId);
+      const hasVideo = mediaFiles.some(f => f.type === 'video');
+      const hasImages = mediaFiles.some(f => f.type === 'image');
+
+      // Remove video if exists
+      if (hasVideo) {
+        await updatePostVideo(currentUser.uid, clientId, postId, undefined); // This will delete the video field
+      }
+
+      // Remove images if exists
+      if (hasImages) {
+        await removeAllPostImages(currentUser.uid, clientId, postId);
+      }
 
       // Cleanup local blob URLs (if any)
       mediaFiles.forEach(file => {
@@ -993,8 +1160,14 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   };
 
   const handleOpenMediaModal = () => {
-    setEditingMedia(mediaFiles.length > 0 ? mediaFiles : null);
-    setShowMediaUploadModal(true);
+    // If no media exists, directly open file picker
+    if (mediaFiles.length === 0) {
+      document.getElementById('direct-file-upload')?.click();
+    } else {
+      // If media exists, open the modal for editing
+      setEditingMedia(mediaFiles);
+      setShowMediaUploadModal(true);
+    }
   };
 
   useEffect(() => {
@@ -1031,56 +1204,107 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
 
   // Initialize media files from post data
   useEffect(() => {
-    if (post?.images && post.images.length > 0) {
-      // Only set loading state if we haven't loaded these specific images yet
-      const currentImageUrls = mediaFiles.map(file => file.url);
-      const postImageUrls = post.images;
-      // Compare arrays WITHOUT sorting to preserve order changes
-      const imagesChanged = JSON.stringify(currentImageUrls) !== JSON.stringify(postImageUrls);
+    const hasPostImages = post?.images && post.images.length > 0;
+    const hasPostVideo = post?.video && post.video.length > 0;
 
-      if (imagesChanged) {
-        setIsLoadingInitialImages(true);
+    console.log('📊 Media initialization:', {
+      hasPostImages,
+      hasPostVideo,
+      'post?.images': post?.images,
+      'post?.video': post?.video,
+      'current mediaFiles': mediaFiles.map(f => ({ url: f.url, type: f.type }))
+    });
 
-        // Load images and detect their orientation
-        const loadImagePromises = post.images.map((url, index) => {
+    // Create arrays of current URLs to compare
+    const currentVideoUrl = mediaFiles.find(f => f.type === 'video')?.url;
+    const currentImageUrls = mediaFiles.filter(f => f.type === 'image').map(f => f.url);
+
+    // Check if media has changed
+    const videoChanged = (hasPostVideo && currentVideoUrl !== post.video) || (!hasPostVideo && currentVideoUrl);
+    const imagesChanged = hasPostImages && (JSON.stringify(currentImageUrls) !== JSON.stringify(post.images));
+
+    console.log('🔄 Change detection:', { videoChanged, imagesChanged });
+
+    if (videoChanged || imagesChanged || (!hasPostImages && !hasPostVideo && mediaFiles.length > 0)) {
+      console.log('🚀 Starting media load...');
+      setIsLoadingInitialImages(true);
+
+      const loadPromises: Promise<MediaFile>[] = [];
+
+      // Load video if exists
+      if (hasPostVideo) {
+        const videoPromise = new Promise<MediaFile>((resolve) => {
+          const video = document.createElement('video');
+          video.onloadedmetadata = () => {
+            const isVertical = video.videoHeight > video.videoWidth;
+            resolve({
+              id: `loaded-video-${Date.now()}`,
+              file: new File([], 'video', { type: 'video/mp4' }), // Placeholder file
+              url: post.video!,
+              isVertical: isVertical,
+              type: 'video',
+              duration: video.duration
+            });
+          };
+          video.onerror = () => {
+            // If video fails to load, still create a MediaFile object with defaults
+            resolve({
+              id: `loaded-video-${Date.now()}`,
+              file: new File([], 'video', { type: 'video/mp4' }),
+              url: post.video!,
+              isVertical: false,
+              type: 'video'
+            });
+          };
+          video.src = post.video!;
+        });
+        loadPromises.push(videoPromise);
+      }
+
+      // Load images if exists
+      if (hasPostImages) {
+        const imagePromises = post.images.map((url, index) => {
           return new Promise<MediaFile>((resolve) => {
             const img = new Image();
             img.onload = () => {
               const isVertical = img.height > img.width;
               resolve({
-                id: `loaded-${index}-${Date.now()}`,
+                id: `loaded-image-${index}-${Date.now()}`,
                 file: new File([], `image-${index}`, { type: 'image/jpeg' }), // Placeholder file
                 url: url,
-                isVertical: isVertical
+                isVertical: isVertical,
+                type: 'image'
               });
             };
             img.onerror = () => {
               // If image fails to load, still create a MediaFile object with default orientation
               resolve({
-                id: `loaded-${index}-${Date.now()}`,
+                id: `loaded-image-${index}-${Date.now()}`,
                 file: new File([], `image-${index}`, { type: 'image/jpeg' }),
                 url: url,
-                isVertical: false // Default to horizontal if load fails
+                isVertical: false, // Default to horizontal if load fails
+                type: 'image'
               });
             };
             img.src = url;
           });
         });
+        loadPromises.push(...imagePromises);
+      }
 
-        // Wait for all images to load or fail
-        Promise.all(loadImagePromises).then((loadedMediaFiles) => {
+      // Wait for all media to load or fail
+      if (loadPromises.length > 0) {
+        Promise.all(loadPromises).then((loadedMediaFiles) => {
           setMediaFiles(loadedMediaFiles);
           setIsLoadingInitialImages(false);
         });
-      }
-    } else {
-      // Clear media files and loading state if post has no images
-      if (mediaFiles.length > 0 || isLoadingInitialImages) {
+      } else {
+        // No media to load, clear state
         setMediaFiles([]);
         setIsLoadingInitialImages(false);
       }
     }
-  }, [post?.images, mediaFiles, isLoadingInitialImages]);
+  }, [post?.images, post?.video, mediaFiles, isLoadingInitialImages]);
 
   // Initialize poll data from post data
   useEffect(() => {
@@ -1211,9 +1435,12 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           postStatus={postStatus}
           scheduledPostAt={scheduledPostAt}
           postedAt={postedAt}
+          linkedinPostUrl={linkedinPostUrl}
           clientId={clientId}
           postId={postId}
           subClientId={subClientId}
+          mediaFiles={mediaFiles}
+          pollData={pollData}
         />
 
         <div className="pb-4 bg-gray-50">
@@ -1248,12 +1475,13 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
                   <svg className="h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="text-sm text-gray-600">Add media to your post</p>
+                  <p className="text-sm text-gray-600">Add images or video to your post</p>
+                  <p className="text-xs text-gray-500 mt-1">Upload up to 14 images or 1 video</p>
                 </div>
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleDirectFileUpload}
                   className="hidden"
                   id="direct-file-upload"
@@ -1303,7 +1531,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
               <div className="border rounded-lg bg-gray-50 p-8 text-center">
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                  <span className="text-sm text-gray-600">Uploading images...</span>
+                  <span className="text-sm text-gray-600">Uploading media...</span>
                 </div>
               </div>
             </div>
