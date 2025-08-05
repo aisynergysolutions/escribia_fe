@@ -181,7 +181,38 @@ const PostDetails = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Error loading post: {error}</div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
+            <AlertCircle className="h-5 w-5" />
+            <h3 className="font-semibold">Post Not Found</h3>
+          </div>
+          <p className="text-red-600 text-sm">
+            The post could not be retrieved. It may have been deleted or is no longer available.
+          </p>
+          <div className="mt-4 flex flex-row gap-2 justify-center items-center">
+            {clientId && (
+              <>
+          <Link to={`/clients/${clientId}/posts`}>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+              Go back to posts list
+            </button>
+          </Link>
+          <Link to={`/clients/${clientId}/calendar`}>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+              Go to calendar
+            </button>
+          </Link>
+              </>
+            )}
+            {!clientId && (
+              <Link to="/clients">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+            Go back to clients
+          </button>
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

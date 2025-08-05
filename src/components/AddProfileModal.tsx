@@ -37,9 +37,9 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
   // Generate Tally URL based on role, including the "role" parameter
   const tallyUrl = agencyId ? (
     profileType === 'Company Account'
-      ? `https://tally.so/r/wM2YQg?agency=${agencyId}&client=${clientId}&profile=${profileId}&role=company`
+      ? `https://tally.so/r/wM2YQg?agency=${agencyId}&client=${clientId}&profile=${profileId}&role=company&client_name=${encodeURIComponent(profileName || 'Could not find profile name')}`
       : profileType === 'Person'
-        ? `https://tally.so/r/w8VjDO?agency=${agencyId}&client=${clientId}&profile=${profileId}&role=person`
+        ? `https://tally.so/r/w8VjDO?agency=${agencyId}&client=${clientId}&profile=${profileId}&role=person&client_name=${encodeURIComponent(profileName || 'Could not find profile name')}`
         : ''
   ) : '';
 
@@ -84,7 +84,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
 
   const handleAddProfile = async () => {
     if (!allFieldsFilled) return;
-    
+
     if (!agencyId) {
       toast({
         title: "Error",
@@ -106,12 +106,12 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
         createdAt: new Date(),
         clientId,
       });
-      
+
       toast({
         title: "Profile Added",
         description: `Profile "${profileName}" has been created successfully.`
       });
-      
+
       setIsOpen(false);
     } catch (err) {
       toast({

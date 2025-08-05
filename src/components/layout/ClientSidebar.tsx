@@ -22,9 +22,9 @@ const clientNavItems = [
   { title: 'Overview', path: '', icon: LayoutDashboard, group: 'main' },
   { title: 'Posts', path: '/posts', icon: FileText, group: 'content' },
   { title: 'Calendar', path: '/calendar', icon: Calendar, group: 'content' },
-  { title: 'Comments', path: '/comments', icon: MessageCircle, group: 'content' },
-  { title: 'Resources', path: '/resources', icon: FolderOpen, group: 'management' },
-  { title: 'Analytics', path: '/analytics', icon: BarChart3, group: 'management' },
+  // { title: 'Comments', path: '/comments', icon: MessageCircle, group: 'content' },
+  // { title: 'Resources', path: '/resources', icon: FolderOpen, group: 'management' },
+  // { title: 'Analytics', path: '/analytics', icon: BarChart3, group: 'management' },
   { title: 'Profiles', path: '/settings', icon: Users, group: 'management' }
 ];
 

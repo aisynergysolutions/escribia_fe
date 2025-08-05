@@ -329,7 +329,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <TooltipProvider>
           {/* Right-Aligned Finalize Zone */}
           <div className="flex gap-2">
-            <Tooltip>
+            {/* <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant={showCommentsPanel ? "default" : "outline"}
@@ -346,7 +346,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
               <TooltipContent>
                 <p>Show Comments</p>
               </TooltipContent>
-            </Tooltip>
+            </Tooltip> */}
 
             {/* View Mode Toggle Button */}
             <Tooltip>

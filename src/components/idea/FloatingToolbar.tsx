@@ -137,7 +137,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         </PopoverContent>
       </Popover>
       <div className="w-px h-6 bg-gray-300 mx-1" />
-      <Button
+      {/* <Button
         variant="ghost"
         size="sm"
         onClick={onComment}
@@ -145,7 +145,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         title="Add a comment"
       >
         <MessageSquare className="h-4 w-4 text-blue-600" />
-      </Button>
+      </Button> */}
       <Button
         variant="ghost"
         size="sm"

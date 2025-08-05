@@ -561,7 +561,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const handleRegeneratePost = () => {
     toast({
       title: "Regenerating Post",
-      description: "AI is generating a new version of your post..."
+      description: "We are rolling out this feature Thank you!"
     });
     onRegenerateWithInstructions();
   };

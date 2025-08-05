@@ -199,14 +199,47 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       generatedHooks?: any[];
     }
   ): Promise<void> => {
-    const key: PostsCacheKey = `${agencyId}_${clientId}`;
+    try {
+      // First, update Firestore with the new data
+      const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+      const firestoreUpdates: any = {
+        updatedAt: new Date().toISOString()
+      };
 
-    // Update the cache
-    setPostsCache(prev => {
-      if (!prev[key]) return prev;
-      return {
-        ...prev,
-        [key]: prev[key].map(post =>
+      if (updates.title) {
+        firestoreUpdates.title = updates.title;
+      }
+      if (updates.currentDraftText) {
+        firestoreUpdates.currentDraftText = updates.currentDraftText;
+      }
+      if (updates.generatedHooks) {
+        firestoreUpdates.generatedHooks = updates.generatedHooks;
+      }
+
+      await setDoc(postRef, firestoreUpdates, { merge: true });
+
+      // Then update the local cache
+      const key: PostsCacheKey = `${agencyId}_${clientId}`;
+
+      setPostsCache(prev => {
+        if (!prev[key]) return prev;
+        return {
+          ...prev,
+          [key]: prev[key].map(post =>
+            post.postId === postId
+              ? {
+                ...post,
+                ...(updates.title && { title: updates.title }),
+                updatedAt: Timestamp.now()
+              }
+              : post
+          ),
+        };
+      });
+
+      // Update the current posts if we're viewing this client
+      if (currentKey === key) {
+        setPosts(prev => prev.map(post =>
           post.postId === postId
             ? {
               ...post,
@@ -214,21 +247,11 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
               updatedAt: Timestamp.now()
             }
             : post
-        ),
-      };
-    });
-
-    // Update the current posts if we're viewing this client
-    if (currentKey === key) {
-      setPosts(prev => prev.map(post =>
-        post.postId === postId
-          ? {
-            ...post,
-            ...(updates.title && { title: updates.title }),
-            updatedAt: Timestamp.now()
-          }
-          : post
-      ));
+        ));
+      }
+    } catch (error) {
+      console.error('[PostsContext] Error updating post in context:', error);
+      throw new Error('Failed to update post');
     }
   };
 

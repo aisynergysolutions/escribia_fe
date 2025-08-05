@@ -61,7 +61,41 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ clientId }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      {/* Coming Soon Overlay */}
+      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
+        <div className="text-center p-8 max-w-md mx-auto">
+          <div className="mb-4">
+            <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <RefreshCw className="h-8 w-8 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">AI-Powered Commenting</h3>
+            <p className="text-gray-600 mb-4">Coming Soon</p>
+          </div>
+          <div className="text-sm text-gray-700 space-y-2">
+            <p className="font-medium">This feature will enable you to:</p>
+            <ul className="text-left space-y-1 mt-3">
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Use AI to craft meaningful comments on LinkedIn posts
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Get AI recommendations for high-impact engagement opportunities
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Generate strategic comments and reactions tailored to your business
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Identify the best posts to engage with for maximum visibility
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Comment Opportunities</h2>
@@ -77,9 +111,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ clientId }) => {
 
       <div className="space-y-6">
         {mockLinkedInPosts.map(post => (
-          <CommentCard 
-            key={post.id} 
-            post={post} 
+          <CommentCard
+            key={post.id}
+            post={post}
             aiGeneratedComment={`Great insights on ${post.content.slice(0, 50)}... As someone working in ${client?.industry}, I'd love to share our experience with similar implementations. We've found that...`}
             onRewrite={guidelines => handleRewrite(post.id, guidelines)}
             onPost={comment => handlePost(post.id, comment)}

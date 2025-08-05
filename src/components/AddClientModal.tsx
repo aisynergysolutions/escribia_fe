@@ -28,7 +28,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   const { currentUser } = useAuth();
 
   // Build Tally.so URL dynamically
-  const tallyUrl = `https://tally.so/r/wkXKad?agency=${currentUser?.uid || 'error'}&client=${clientId || 'error'}`;
+  const tallyUrl = `https://tally.so/r/wkXKad?agency=${currentUser?.uid || 'error'}&client=${clientId || 'error'}&client_name=${encodeURIComponent(clientName || 'error')}`;
 
   const handleCopyLink = async () => {
     try {
@@ -114,14 +114,14 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Add New Client</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Instructional Text */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800 leading-relaxed">
-              <strong>How it works:</strong> First, enter your client's name and click "Add New Client" to create their profile. 
-              Then, share the onboarding link with your client so they can provide detailed information about their company, 
-              brand, and preferences. Once they complete the onboarding form, you'll be able to start generating personalized 
+              <strong>How it works:</strong> First, enter your client's name and click "Add New Client" to create their profile.
+              Then, share the onboarding link with your client so they can provide detailed information about their company,
+              brand, and preferences. Once they complete the onboarding form, you'll be able to start generating personalized
               content for them.
             </p>
           </div>
@@ -148,16 +148,16 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               Share this link with your client to complete their onboarding
             </p>
             <div className="relative">
-              <Input 
-                value={tallyUrl} 
-                readOnly 
-                className="pr-32 bg-gray-50 border-gray-200 text-gray-700 cursor-default" 
+              <Input
+                value={tallyUrl}
+                readOnly
+                className="pr-32 bg-gray-50 border-gray-200 text-gray-700 cursor-default"
               />
-              <Button 
-                type="button" 
-                variant="secondary" 
-                size="sm" 
-                onClick={handleCopyLink} 
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleCopyLink}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 px-3"
               >
                 {copied ? (
@@ -173,9 +173,9 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 )}
               </Button>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleOpenForm}
               className="w-full mt-2"
             >
@@ -189,7 +189,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleAddClient}
               className="bg-indigo-600 hover:bg-indigo-700"
               disabled={!clientName.trim() || isSubmitting}
