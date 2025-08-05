@@ -1348,6 +1348,11 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         postContent={currentContent}
         pollData={pollData}
         mediaFiles={mediaFiles}
+        profileData={post?.profile ? {
+          id: post.profile.profileId,
+          role: post.profile.profileRole,
+          imageUrl: post.profile.imageUrl
+        } : undefined}
       />
 
       <SchedulePostModal

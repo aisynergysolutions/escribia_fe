@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, User, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import MediaPreview from './MediaPreview';
 import { MediaFile } from './MediaUploadModal';
-import { Poll } from '@/context/PostDetailsContext';
+import { Poll, usePostDetails } from '@/context/PostDetailsContext';
 
 interface PostNowModalProps {
   open: boolean;
@@ -19,6 +20,11 @@ interface PostNowModalProps {
   subClientId?: string;
   mediaFiles?: MediaFile[];
   pollData?: Poll | null;
+  profileData?: {
+    name: string;
+    role: string;
+    profileImage?: string;
+  };
 }
 
 const PostNowModal: React.FC<PostNowModalProps> = ({
@@ -30,7 +36,8 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
   postId,
   subClientId,
   mediaFiles = [],
-  pollData
+  pollData,
+  profileData
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
@@ -38,6 +45,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { post } = usePostDetails();
 
   useEffect(() => {
     if (contentRef.current && open && postContent) {
@@ -209,9 +217,18 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={profileData?.profileImage || post?.profile?.imageUrl} />
+                        <AvatarFallback className="bg-gray-300">
+                          {profileData?.role?.toLowerCase().includes('company') ? (
+                            <Building2 className="h-6 w-6 text-gray-600" />
+                          ) : (
+                            <User className="h-6 w-6 text-gray-600" />
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
-                        <div className="font-semibold text-gray-900">Your Name</div>
+                        <div className="font-semibold text-gray-900">{profileData?.name || post?.profile?.profileName || 'Your Profile'}</div>
                         <div className="text-sm text-gray-500">Publishing now...</div>
                       </div>
                     </div>

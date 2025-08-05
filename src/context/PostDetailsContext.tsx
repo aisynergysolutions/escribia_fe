@@ -30,6 +30,7 @@ export type Profile = {
     profileId: string;
     profileName: string;
     profileRole: string;
+    imageUrl?: string; // Optional profile image URL
 };
 
 export type Poll = {
@@ -192,6 +193,23 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 'data.video': data.video
             });
 
+            // Fetch the profile data to get the LinkedIn picture
+            let profileImageUrl = data.imageUrl; // Default to existing imageUrl
+            if (data.profileId) {
+                try {
+                    const profileRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'subClients', data.profileId);
+                    const profileSnap = await getDoc(profileRef);
+                    if (profileSnap.exists()) {
+                        const profileData = profileSnap.data();
+                        // Use linkedinPicture from profile if available
+                        profileImageUrl = profileData.linkedin?.linkedinPicture || data.imageUrl;
+                    }
+                } catch (profileError) {
+                    console.warn('[PostDetailsContext] Could not fetch profile data:', profileError);
+                    // Continue with existing imageUrl
+                }
+            }
+
             // Map Firestore data to our types
             const postDetails: PostDetails = {
                 id: snap.id,
@@ -214,6 +232,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     profileId: data.profileId,
                     profileName: data.profileName,
                     profileRole: data.profileRole,
+                    imageUrl: profileImageUrl, // Use the fetched LinkedIn picture
                 },
                 generatedHooks: (data.generatedHooks || []) as Hook[],
                 drafts: (data.drafts || []) as Draft[],

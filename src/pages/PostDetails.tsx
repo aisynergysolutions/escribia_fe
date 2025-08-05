@@ -192,23 +192,23 @@ const PostDetails = () => {
           <div className="mt-4 flex flex-row gap-2 justify-center items-center">
             {clientId && (
               <>
-          <Link to={`/clients/${clientId}/posts`}>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-              Go back to posts list
-            </button>
-          </Link>
-          <Link to={`/clients/${clientId}/calendar`}>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-              Go to calendar
-            </button>
-          </Link>
+                <Link to={`/clients/${clientId}/posts`}>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                    Go back to posts list
+                  </button>
+                </Link>
+                <Link to={`/clients/${clientId}/calendar`}>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                    Go to calendar
+                  </button>
+                </Link>
               </>
             )}
             {!clientId && (
               <Link to="/clients">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-            Go back to clients
-          </button>
+                <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                  Go back to clients
+                </button>
               </Link>
             )}
           </div>
@@ -473,7 +473,7 @@ const PostDetails = () => {
                 subClient={{
                   name: post?.profile.profileName || 'No Profile',
                   role: post?.profile.profileRole || '',
-                  profileImage: undefined
+                  profileImage: post?.profile.imageUrl || undefined
                 }}
               />
               <IdeaForm

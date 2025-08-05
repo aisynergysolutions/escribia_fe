@@ -86,7 +86,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const { currentUser } = useAuth();
-  const { publishPostNow } = usePostDetails();
+  const { publishPostNow, post } = usePostDetails();
   const { toast } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
@@ -501,6 +501,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         postId={postId}
         mediaFiles={mediaFiles}
         pollData={pollData}
+        profileData={post?.profile ? {
+          name: post.profile.profileName,
+          role: post.profile.profileRole,
+          profileImage: post.profile.imageUrl
+        } : undefined}
       />
 
       <SchedulePostModal
@@ -512,6 +517,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         postId={postId}
         mediaFiles={mediaFiles}
         pollData={pollData}
+        profileData={post?.profile ? {
+          name: post.profile.profileName,
+          role: post.profile.profileRole,
+          profileImage: post.profile.imageUrl
+        } : undefined}
       />
 
       <PostNowModal
@@ -524,6 +534,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         subClientId={subClientId}
         mediaFiles={mediaFiles}
         pollData={pollData}
+        profileData={post?.profile ? {
+          name: post.profile.profileName,
+          role: post.profile.profileRole,
+          profileImage: post.profile.imageUrl
+        } : undefined}
       />
 
       <CreatePollModal

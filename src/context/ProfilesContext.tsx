@@ -25,6 +25,7 @@ export type LinkedInInfo = {
   linkedinConnected: boolean;
   linkedinExpiryDate: string | null;
   linkedinToken: string;
+  linkedinPicture?: string; // Add linkedinPicture field
   connectedAt?: string;
   updatedAt?: string;
   linkedinProfile?: LinkedInProfile;
@@ -174,6 +175,7 @@ export const getPersonProfile = async (agencyId: string, clientId: string, profi
       linkedinConnected: !!data.linkedin?.linkedinConnected,
       linkedinExpiryDate: data.linkedin?.linkedinExpiryDate || null,
       linkedinToken: data.linkedin?.linkedinToken || data.linkedin?.linkedinProfile?.linkedinToken || '',
+      linkedinPicture: data.linkedin?.linkedinPicture || '', // Map linkedinPicture field
       connectedAt: data.linkedin?.connectedAt || '',
       updatedAt: data.linkedin?.updatedAt || '',
       linkedinProfile: data.linkedin?.linkedinProfile ? {
@@ -247,6 +249,7 @@ export const getCompanyProfile = async (agencyId: string, clientId: string, prof
       linkedinConnected: false, // For companies, use company-specific fields
       linkedinExpiryDate: null,
       linkedinToken: '',
+      linkedinPicture: data.linkedin?.linkedinPicture || '', // Map linkedinPicture field for companies too
       connectedAt: data.linkedin?.connectedAt || '',
       updatedAt: data.linkedin?.lastUpdated || data.linkedin?.updatedAt || '',
       // Company LinkedIn fields - map the actual company data
@@ -841,6 +844,7 @@ export const ProfilesProvider = ({ children }: { children: ReactNode }) => {
           linkedinConnected: !!doc.data().linkedin.linkedinConnected,
           linkedinExpiryDate: doc.data().linkedin.linkedinExpiryDate || null,
           linkedinToken: doc.data().linkedin.linkedinToken || '',
+          linkedinPicture: doc.data().linkedin.linkedinPicture || '', // Add linkedinPicture mapping
           connectedAt: doc.data().linkedin.connectedAt || '',
           updatedAt: doc.data().linkedin.updatedAt || '',
         } : undefined,

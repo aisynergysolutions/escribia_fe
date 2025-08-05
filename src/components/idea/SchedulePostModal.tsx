@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Calendar, Clock, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, ChevronUp, AlertCircle, User, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, addMinutes, isSameDay, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
@@ -28,6 +29,11 @@ interface SchedulePostModalProps {
   postId?: string;
   mediaFiles?: MediaFile[];
   pollData?: Poll | null;
+  profileData?: {
+    name: string;
+    role: string;
+    profileImage?: string;
+  };
 }
 
 const predefinedStatuses = ['Drafted', 'Needs Visual', 'Waiting for Approval', 'Approved', 'Scheduled', 'Posted'];
@@ -62,7 +68,8 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   clientId,
   postId,
   mediaFiles = [],
-  pollData
+  pollData,
+  profileData
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedHour, setSelectedHour] = useState<number>(9);
@@ -490,9 +497,18 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={profileData?.profileImage || post?.profile?.imageUrl} />
+                        <AvatarFallback className="bg-gray-300">
+                          {profileData?.role?.toLowerCase().includes('company') ? (
+                            <Building2 className="h-6 w-6 text-gray-600" />
+                          ) : (
+                            <User className="h-6 w-6 text-gray-600" />
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
-                        <div className="font-semibold text-gray-900">Your Name</div>
+                        <div className="font-semibold text-gray-900">{profileData?.name || post?.profile?.profileName || 'Your Profile'}</div>
                         <div className="text-sm text-gray-500">
                           {selectedDate
                             ? `Scheduled for ${format(selectedDate, 'MMM d, yyyy')} at ${formatDisplayTime()}`

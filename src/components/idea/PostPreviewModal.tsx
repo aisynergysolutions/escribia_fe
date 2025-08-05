@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Eye, Smartphone, Monitor, Sun, Moon, X } from 'lucide-react';
+import { Eye, Smartphone, Monitor, Sun, Moon, X, User, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Poll } from '@/context/PostDetailsContext';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Poll, usePostDetails } from '@/context/PostDetailsContext';
 import { MediaFile } from './MediaUploadModal';
 
 interface PostPreviewModalProps {
@@ -12,6 +13,11 @@ interface PostPreviewModalProps {
   postContent: string;
   pollData?: Poll | null;
   mediaFiles?: MediaFile[];
+  profileData?: {
+    id: string;
+    role: string;
+    imageUrl?: string;
+  };
 }
 
 const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
@@ -19,7 +25,8 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
   onOpenChange,
   postContent,
   pollData,
-  mediaFiles = []
+  mediaFiles = [],
+  profileData
 }) => {
   const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -27,6 +34,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
+  const { post } = usePostDetails();
 
   useEffect(() => {
     if (contentRef.current) {
@@ -250,15 +258,6 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
           {/* Device Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
-              variant={deviceType === 'mobile' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setDeviceType('mobile')}
-              className="gap-2"
-            >
-              <Smartphone className="h-4 w-4" />
-              Mobile
-            </Button>
-            <Button
               variant={deviceType === 'desktop' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setDeviceType('desktop')}
@@ -266,6 +265,15 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             >
               <Monitor className="h-4 w-4" />
               Desktop
+            </Button>
+            <Button
+              variant={deviceType === 'mobile' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setDeviceType('mobile')}
+              className="gap-2"
+            >
+              <Smartphone className="h-4 w-4" />
+              Mobile
             </Button>
           </div>
 
@@ -305,13 +313,22 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
               {/* LinkedIn Header */}
               <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={profileData?.imageUrl} alt="Profile" />
+                    <AvatarFallback>
+                      {profileData?.role === 'COMPANY' ? (
+                        <Building2 className="h-6 w-6" />
+                      ) : (
+                        <User className="h-6 w-6" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <div className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      Your Name
+                      {post?.profile?.profileName || 'Your Profile'}
                     </div>
                     <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                      13 days ago
+                      14 days ago
                     </div>
                   </div>
                 </div>
