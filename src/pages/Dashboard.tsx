@@ -28,11 +28,11 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <h1 className="font-bold text-gray-900 text-xl">
           Welcome back, {mockAgency.agencyName}—here's your content overview.
         </h1>
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Posts Generated This Month" value={stats.postsGenerated} icon={<LineChart className="h-5 w-5" />} />
@@ -41,20 +41,20 @@ const Dashboard = () => {
         <StatCard title="Current Plan" value={stats.planId} description={`Expires: ${stats.planExpiry}`} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start"> */}
         <div className="self-start">
           <ScheduledPostsProvider>
             <PostCalendar showAllClients={true} />
           </ScheduledPostsProvider>
         </div>
 
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Recent Activity</h2>
           <div className="space-y-4">
             {memoizedIdeaCards}
           </div>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
     </div>
   );
 };

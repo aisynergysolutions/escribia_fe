@@ -543,7 +543,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       case 'voice':
         return (
-          <div className="space-y-6 animate-fade-in">
+          <div className="relative space-y-1 animate-fade-in">
+            {/* Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-xs flex items-center justify-center">
+              <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                <div className="w-16 h-16 bg-[#4F46E5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mic className="w-8 h-8 text-[#4F46E5]" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Voice recording functionality is currently in development and will be available soon.
+                </p>
+              </div>
+            </div>
+
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -647,7 +660,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       case 'url':
         return (
-          <div className="space-y-6 animate-fade-in">
+          <div className="relative space-y-6 animate-fade-in">
+            {/* Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+              <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                <div className="w-16 h-16 bg-[#4F46E5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Youtube className="w-8 h-8 text-[#4F46E5]" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  URL content generation functionality is currently in development and will be available soon.
+                </p>
+              </div>
+            </div>
+
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -686,7 +712,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       case 'suggestions':
         return (
-          <div className="h-full flex flex-col animate-fade-in">
+          <div className="relative h-full flex flex-col animate-fade-in">
+            {/* Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+              <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                <div className="w-16 h-16 bg-[#4F46E5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-[#4F46E5]" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  AI-powered post suggestions functionality is currently in development and will be available soon.
+                </p>
+              </div>
+            </div>
+
             <div className="relative h-full">
               {/* Floating Refresh Button */}
               <button

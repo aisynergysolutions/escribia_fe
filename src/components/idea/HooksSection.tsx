@@ -124,7 +124,7 @@ const HooksSection: React.FC<HooksSectionProps> = ({
         {isGeneratingInitial ? (
           <div className="w-full p-8 rounded-md border border-dashed text-center flex flex-col items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin mb-2 text-muted-foreground" />
-            <p className="text-muted-foreground">Generating hooks...</p>
+            <p className="text-muted-foreground">Generating additional hooks...</p>
           </div>
         ) : hooks.length === 0 ? (
           <div className="w-full p-3 rounded-md border border-dashed text-center flex items-center justify-center h-[68px]">

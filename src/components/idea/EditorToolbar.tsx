@@ -156,9 +156,22 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       if (result.success) {
         toast({
           title: "Post Published",
-          description: result.linkedinPostId
-            ? `Your post has been successfully published to LinkedIn. Post ID: ${result.linkedinPostId}`
-            : "Your post has been successfully published to LinkedIn."
+          description: result.linkedinPostId ? (
+            <span>
+              Post successfully published. You can see it{' '}
+              <a
+          href={`https://www.linkedin.com/feed/update/${result.linkedinPostId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 underline"
+              >
+          here
+              </a>
+              !
+            </span>
+          ) : (
+            "Your post has been successfully published to LinkedIn."
+          ),
         });
         setShowPostNowModal(false);
       } else {
