@@ -3,42 +3,13 @@ import { doc as firestoreDoc, getDoc, Timestamp, updateDoc, deleteField } from '
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
+import { usePosts } from '@/context/PostsContext';
+import { Post, Draft, Hook, InitialIdea, Profile, Poll, postDetailsToPost } from '@/types/post';
 
-// --- Types ---
-export type Draft = {
-    text: string;
-    createdAt: Timestamp; // Firestore Timestamp
-    version: number;
-    generatedByAI: boolean;
-    notes: string;
-};
+// Keep these types for backward compatibility during migration
+export type { Draft, Hook, InitialIdea, Profile, Poll };
 
-export type Hook = {
-    text: string;
-    selected: boolean;
-    angle: string;
-};
-
-export type InitialIdea = {
-    objective: string;
-    initialIdeaPrompt: string;
-    templateUsedId: string;
-    templateUsedName: string;
-};
-
-export type Profile = {
-    profileId: string;
-    profileName: string;
-    profileRole: string;
-    imageUrl?: string; // Optional profile image URL
-};
-
-export type Poll = {
-    question: string;
-    options: string[];
-    duration: string;
-};
-
+// Legacy type for backward compatibility
 export type PostDetails = {
     id: string;
     title: string;
@@ -49,18 +20,18 @@ export type PostDetails = {
     createdAt: Timestamp;
     scheduledPostAt?: Timestamp;
     postedAt?: Timestamp;
-    linkedinPostUrl?: string; // Optional URL for LinkedIn post
+    linkedinPostUrl?: string;
     initialIdea: InitialIdea;
     profile: Profile;
     generatedHooks: Hook[];
     drafts: Draft[];
-    images: string[]; // Array of Firebase Storage URLs
-    video?: string; // Optional video Firebase Storage URL
-    poll?: Poll; // Optional poll data
+    images: string[];
+    video?: string;
+    poll?: Poll;
 };
 
 type PostDetailsContextType = {
-    post: PostDetails | null;
+    post: Post | null;
     loading: boolean;
     error: string | null;
     fetchPost: (clientId: string, postId: string) => Promise<void>;
@@ -124,7 +95,8 @@ export const usePostDetails = () => useContext(PostDetailsContext);
 // --- Provider ---
 export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
     const { currentUser } = useAuth();
-    const [post, setPost] = useState<PostDetails | null>(null);
+    const { updatePostInCache } = usePosts();
+    const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -210,41 +182,43 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
 
-            // Map Firestore data to our types
-            const postDetails: PostDetails = {
+            // Map Firestore data to unified Post type
+            const postData: Post = {
                 id: snap.id,
+                postId: snap.id,
                 title: data.title,
                 status: data.status,
-                internalNotes: data.internalNotes,
-                trainAI: data.trainAI,
                 updatedAt: data.updatedAt,
                 createdAt: data.createdAt,
                 scheduledPostAt: data.scheduledPostAt,
                 postedAt: data.postedAt,
-                linkedinPostUrl: data.linkedinPostUrl, // Optional URL for LinkedIn post
+                linkedinPostUrl: data.linkedinPostUrl,
+                internalNotes: data.internalNotes,
+                trainAI: data.trainAI,
+                profile: {
+                    profileId: data.profileId,
+                    profileName: data.profileName,
+                    profileRole: data.profileRole,
+                    imageUrl: profileImageUrl,
+                },
+                profileId: data.profileId,
                 initialIdea: {
                     objective: data.objective,
                     initialIdeaPrompt: data.initialIdeaPrompt,
                     templateUsedId: data.templateUsedId,
                     templateUsedName: data.templateUsedName,
                 },
-                profile: {
-                    profileId: data.profileId,
-                    profileName: data.profileName,
-                    profileRole: data.profileRole,
-                    imageUrl: profileImageUrl, // Use the fetched LinkedIn picture
-                },
                 generatedHooks: (data.generatedHooks || []) as Hook[],
                 drafts: (data.drafts || []) as Draft[],
                 images: (data.images || []) as string[],
-                video: data.video as string | undefined, // Add video field mapping
+                video: data.video as string | undefined,
                 poll: data.poll ? {
                     question: data.poll.question,
                     options: data.poll.options,
                     duration: data.poll.duration
-                } as Poll : undefined, // Add this line!
+                } as Poll : undefined,
             };
-            setPost(postDetails);
+            setPost(postData);
         } catch (e: any) {
             setError(e.message || 'Unknown error');
             console.error('[PostDetailsContext] Error fetching post:', e);
@@ -570,6 +544,13 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     : prev
             );
 
+            // Update PostsContext cache to keep it in sync
+            try {
+                updatePostInCache(agencyId, clientId, postId, { title: newTitle });
+            } catch (cacheError) {
+                console.warn('Failed to update PostsContext cache, but main update succeeded:', cacheError);
+            }
+
             console.log('Post title updated successfully:', newTitle);
         } catch (error) {
             console.error('Error updating post title:', error);
@@ -608,6 +589,15 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     }
                     : prev
             );
+
+            // Update PostsContext cache to keep it in sync
+            try {
+                updatePostInCache(agencyId, clientId, postId, {
+                    status: newStatus
+                });
+            } catch (cacheError) {
+                console.warn('Failed to update PostsContext cache, but main update succeeded:', cacheError);
+            }
 
             console.log('Post status updated successfully:', newStatus);
         } catch (error) {
@@ -825,6 +815,16 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     : prev
             );
 
+            // Update PostsContext cache to keep it in sync
+            try {
+                updatePostInCache(agencyId, clientId, postId, {
+                    status: newStatus,
+                    scheduledPostAt: scheduledPostAt
+                });
+            } catch (cacheError) {
+                console.warn('Failed to update PostsContext cache, but main update succeeded:', cacheError);
+            }
+
             console.log('Post scheduling updated successfully:', { newStatus, scheduledPostAt });
         } catch (error) {
             console.error('Error updating post scheduling:', error);
@@ -880,6 +880,15 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                         }
                         : prev
                 );
+
+                // Update PostsContext cache to keep it in sync
+                try {
+                    updatePostInCache(agencyId, clientId, postId, {
+                        status: 'Posted'
+                    });
+                } catch (cacheError) {
+                    console.warn('Failed to update PostsContext cache, but post was published successfully:', cacheError);
+                }
 
                 console.log('Post published successfully:', {
                     linkedinPostId: result.linkedin_post_id,

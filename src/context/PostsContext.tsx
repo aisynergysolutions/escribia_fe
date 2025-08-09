@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { collection, getDocs, doc as firestoreDoc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Post, PostListFields } from '@/types/post';
 
+// Keep PostCard for backward compatibility during migration
 export type PostCard = {
   title: string;
   profile: string;
@@ -14,14 +16,14 @@ export type PostCard = {
 type PostsCacheKey = `${string}_${string}`; // agencyId_clientId
 
 type PostsCache = {
-  [key in PostsCacheKey]: PostCard[];
+  [key in PostsCacheKey]: Post[];
 };
 
 type PostsContextType = {
-  posts: PostCard[];
+  posts: Post[];
   loading: boolean;
   error: string | null;
-  fetchPosts: (agencyId: string, clientId: string) => Promise<void>;
+  fetchPosts: (agencyId: string, clientId: string, detailed?: boolean) => Promise<void>;
   createPost: (
     agencyId: string,
     clientId: string,
@@ -47,8 +49,20 @@ type PostsContextType = {
       title?: string;
       currentDraftText?: string;
       generatedHooks?: any[];
+      status?: string;
+      scheduledPostAt?: Timestamp;
     }
   ) => Promise<void>;
+  updatePostInCache: (
+    agencyId: string,
+    clientId: string,
+    postId: string,
+    updates: {
+      title?: string;
+      status?: string;
+      scheduledPostAt?: Timestamp;
+    }
+  ) => void;
 };
 
 const PostsContext = createContext<PostsContextType>({
@@ -59,6 +73,7 @@ const PostsContext = createContext<PostsContextType>({
   createPost: async () => { },
   deletePost: async () => { },
   updatePostInContext: async () => { },
+  updatePostInCache: () => { },
 });
 
 export const usePosts = () => useContext(PostsContext);
@@ -66,12 +81,12 @@ export const usePosts = () => useContext(PostsContext);
 export const PostsProvider = ({ children }: { children: ReactNode }) => {
   const [postsCache, setPostsCache] = useState<PostsCache>({});
   const [currentKey, setCurrentKey] = useState<PostsCacheKey | null>(null);
-  const [posts, setPosts] = useState<PostCard[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch all posts (ideas) for a given agency and client, with caching
-  const fetchPosts = async (agencyId: string, clientId: string) => {
+  const fetchPosts = async (agencyId: string, clientId: string, detailed: boolean = false) => {
     const key: PostsCacheKey = `${agencyId}_${clientId}`;
     setCurrentKey(key);
 
@@ -88,17 +103,54 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
     try {
       const ideasCol = collection(db, 'agencies', agencyId, 'clients', clientId, 'ideas');
       const snapshot = await getDocs(ideasCol);
-      const postsList: PostCard[] = snapshot.docs.map(docSnap => {
+      const postsList: Post[] = snapshot.docs.map(docSnap => {
         const data = docSnap.data();
-        return {
+
+        // Create unified Post object (lightweight for list view)
+        const post: Post = {
+          id: docSnap.id,
+          postId: data.postId || docSnap.id,
           title: data.title || 'Untitled Post',
-          profile: data.profile || data.profileName || '',
           status: data.status || '',
           updatedAt: data.updatedAt || Timestamp.now(),
-          scheduledPostAt: data.scheduledPostAt || Timestamp.fromMillis(0),
-          postId: data.postId || docSnap.id,
+          profile: data.profile || data.profileName || '', // Simple string for list view
           profileId: data.profileId || data.subClientId || '',
+          scheduledPostAt: data.scheduledPostAt || Timestamp.fromMillis(0),
         };
+
+        // Add detailed fields if requested
+        if (detailed) {
+          post.createdAt = data.createdAt;
+          post.postedAt = data.postedAt;
+          post.linkedinPostUrl = data.linkedinPostUrl;
+          post.internalNotes = data.internalNotes;
+          post.trainAI = data.trainAI;
+
+          // Convert profile to detailed object
+          if (data.profileId && data.profileName) {
+            post.profile = {
+              profileId: data.profileId,
+              profileName: data.profileName,
+              profileRole: data.profileRole || '',
+              imageUrl: data.imageUrl,
+            };
+          }
+
+          post.initialIdea = data.objective || data.initialIdeaPrompt ? {
+            objective: data.objective || '',
+            initialIdeaPrompt: data.initialIdeaPrompt || '',
+            templateUsedId: data.templateUsedId || '',
+            templateUsedName: data.templateUsedName || '',
+          } : undefined;
+
+          post.generatedHooks = data.generatedHooks || [];
+          post.drafts = data.drafts || [];
+          post.images = data.images || [];
+          post.video = data.video;
+          post.poll = data.poll;
+        }
+
+        return post;
       });
       setPostsCache(prev => ({ ...prev, [key]: postsList }));
       setPosts(postsList);
@@ -136,7 +188,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<void> => {
     try {
       const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
-      const newPost = {
+      const newPostFirestore = {
         profileId: postData.profileId,
         profileName: postData.profileName,
         profileRole: postData.profileRole,
@@ -157,29 +209,30 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         trainAI: false,
       };
 
-      await setDoc(postRef, newPost);
+      await setDoc(postRef, newPostFirestore);
 
       // **FIX: Update the context cache immediately**
       const key: PostsCacheKey = `${agencyId}_${clientId}`;
-      const newPostCard: PostCard = {
-        // Use the provided title or fallback to initialIdeaPrompt
+      const newPostContext: Post = {
+        id: postId,
+        postId: postId,
         title: postData.title || postData.initialIdeaPrompt,
         profile: postData.profileName,
+        profileId: postData.profileId,
         status: postData.status || 'Drafted',
         updatedAt: Timestamp.now(),
         scheduledPostAt: Timestamp.fromMillis(0),
-        postId: postId, // Use the explicit postId
       };
 
       // Update the cache
       setPostsCache(prev => ({
         ...prev,
-        [key]: [...(prev[key] || []), newPostCard],
+        [key]: [...(prev[key] || []), newPostContext],
       }));
 
       // Update the current posts if we're viewing this client
       if (currentKey === key) {
-        setPosts(prev => [...prev, newPostCard]);
+        setPosts(prev => [...prev, newPostContext]);
       }
 
     } catch (err) {
@@ -197,6 +250,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       title?: string;
       currentDraftText?: string;
       generatedHooks?: any[];
+      status?: string;
+      scheduledPostAt?: Timestamp;
     }
   ): Promise<void> => {
     try {
@@ -215,6 +270,12 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       if (updates.generatedHooks) {
         firestoreUpdates.generatedHooks = updates.generatedHooks;
       }
+      if (updates.status) {
+        firestoreUpdates.status = updates.status;
+      }
+      if (updates.scheduledPostAt) {
+        firestoreUpdates.scheduledPostAt = updates.scheduledPostAt;
+      }
 
       await setDoc(postRef, firestoreUpdates, { merge: true });
 
@@ -230,6 +291,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
               ? {
                 ...post,
                 ...(updates.title && { title: updates.title }),
+                ...(updates.status && { status: updates.status }),
+                ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
                 updatedAt: Timestamp.now()
               }
               : post
@@ -244,6 +307,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
             ? {
               ...post,
               ...(updates.title && { title: updates.title }),
+              ...(updates.status && { status: updates.status }),
+              ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
               updatedAt: Timestamp.now()
             }
             : post
@@ -276,6 +341,53 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Cache-only update function (doesn't touch Firestore)
+  const updatePostInCache = (
+    agencyId: string,
+    clientId: string,
+    postId: string,
+    updates: {
+      title?: string;
+      status?: string;
+      scheduledPostAt?: Timestamp;
+    }
+  ): void => {
+    const key: PostsCacheKey = `${agencyId}_${clientId}`;
+
+    setPostsCache(prev => {
+      if (!prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: prev[key].map(post =>
+          post.postId === postId
+            ? {
+              ...post,
+              ...(updates.title && { title: updates.title }),
+              ...(updates.status && { status: updates.status }),
+              ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
+              updatedAt: Timestamp.now()
+            }
+            : post
+        ),
+      };
+    });
+
+    // Update the current posts if we're viewing this client
+    if (currentKey === key) {
+      setPosts(prev => prev.map(post =>
+        post.postId === postId
+          ? {
+            ...post,
+            ...(updates.title && { title: updates.title }),
+            ...(updates.status && { status: updates.status }),
+            ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
+            updatedAt: Timestamp.now()
+          }
+          : post
+      ));
+    }
+  };
+
   return (
     <PostsContext.Provider
       value={{
@@ -285,7 +397,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         fetchPosts,
         createPost,
         deletePost,
-        updatePostInContext, // Add this to the context
+        updatePostInContext,
+        updatePostInCache,
       }}
     >
       {children}

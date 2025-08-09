@@ -8,6 +8,7 @@ import CommentsPanel, { CommentThread } from '../components/idea/CommentsPanel';
 import SubClientDisplayCard from '../components/idea/SubClientDisplayCard';
 import OptionsCard from '@/components/idea/OptionsCard';
 import HooksSection from '@/components/idea/HooksSection';
+import { getProfileId, getProfileName, getProfileRole, getProfileImageUrl } from '@/types/post';
 import { usePostEditor } from '../hooks/usePostEditor';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { usePosts } from '@/context/PostsContext';
@@ -72,9 +73,9 @@ const PostDetails = () => {
   useEffect(() => {
     if (post) {
       setTitle(post.title || '');
-      setInitialIdea(post.initialIdea.initialIdeaPrompt || '');
-      setObjective(post.initialIdea.objective || '');
-      setTemplate(post.initialIdea.templateUsedId || 'none');
+      setInitialIdea(post.initialIdea?.initialIdeaPrompt || '');
+      setObjective(post.initialIdea?.objective || '');
+      setTemplate(post.initialIdea?.templateUsedId || 'none');
       setStatus(post.status || 'Idea');
       setFormInternalNotes(post.internalNotes || '');
       setUseAsTrainingData(post.trainAI || false);
@@ -110,13 +111,13 @@ const PostDetails = () => {
       return;
     }
 
-    if (clientId && postId && post?.profile.profileId && instructions.trim()) {
+    if (clientId && postId && post && getProfileId(post) && instructions.trim()) {
       const currentPostContent = post?.drafts?.[post.drafts.length - 1]?.text || '';
 
       const editedContent = await editPostWithInstructions(
         clientId,
         postId,
-        post.profile.profileId,
+        getProfileId(post),
         currentPostContent,
         instructions
       );
@@ -217,6 +218,11 @@ const PostDetails = () => {
     );
   }
 
+  // Show loading state if post is not yet loaded
+  if (!post && !error) {
+    return <PostDetailsSkeleton />;
+  }
+
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
   };
@@ -240,7 +246,7 @@ const PostDetails = () => {
       return;
     }
 
-    if (!clientId || !postId || !post?.profile.profileId) {
+    if (!clientId || !postId || !getProfileId(post)) {
       console.error('Missing required data for regeneration');
       return;
     }
@@ -258,7 +264,7 @@ const PostDetails = () => {
         agencyId,
         clientId,
         postId,
-        post.profile.profileId,
+        getProfileId(post),
         initialIdea,
         objective
       );
@@ -295,14 +301,14 @@ const PostDetails = () => {
       return;
     }
 
-    if (clientId && postId && post?.profile.profileId) {
+    if (clientId && postId && post && getProfileId(post)) {
       const selectedHook = hooks[index];
       const currentPostContent = post?.drafts?.[post.drafts.length - 1]?.text || '';
 
       const newPostContent = await applyHook(
         clientId,
         postId,
-        post.profile.profileId,
+        getProfileId(post),
         currentPostContent,
         selectedHook.text
       );
@@ -345,8 +351,8 @@ const PostDetails = () => {
       return;
     }
 
-    if (clientId && postId && post?.profile.profileId) {
-      await generatePostHooks(clientId, postId, post.profile.profileId);
+    if (clientId && postId && post && getProfileId(post)) {
+      await generatePostHooks(clientId, postId, getProfileId(post));
     }
   };
 
@@ -356,8 +362,8 @@ const PostDetails = () => {
       return;
     }
 
-    if (clientId && postId && post?.profile.profileId) {
-      await generatePostHooks(clientId, postId, post.profile.profileId);
+    if (clientId && postId && post && getProfileId(post)) {
+      await generatePostHooks(clientId, postId, getProfileId(post));
     }
   };
 
@@ -455,7 +461,7 @@ const PostDetails = () => {
             isRegeneratingWithInstructions={postEditor.isSaving}
             clientId={clientId}
             postId={postId}
-            subClientId={post?.profile.profileId}
+            subClientId={getProfileId(post)}
             onSaveAI={handleSaveAIPost}
             postStatus={post?.status}
             scheduledPostAt={post?.scheduledPostAt}
@@ -471,9 +477,9 @@ const PostDetails = () => {
             <>
               <SubClientDisplayCard
                 subClient={{
-                  name: post?.profile.profileName || 'No Profile',
-                  role: post?.profile.profileRole || '',
-                  profileImage: post?.profile.imageUrl || undefined
+                  name: getProfileName(post) || 'No Profile',
+                  role: getProfileRole(post) || '',
+                  profileImage: getProfileImageUrl(post) || undefined
                 }}
               />
               <IdeaForm

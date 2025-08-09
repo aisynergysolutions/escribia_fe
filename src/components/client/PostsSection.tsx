@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
+import { Post, getProfileName } from '@/types/post';
 import { Idea } from '../../types';
 import { formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
 import { usePosts } from '@/context/PostsContext';
@@ -125,7 +126,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             comparison = a.status.localeCompare(b.status);
             break;
           case 'profile':
-            comparison = a.profile.localeCompare(b.profile);
+            comparison = getProfileName(a).localeCompare(getProfileName(b));
             break;
           default:
             comparison = a.updatedAt.seconds - b.updatedAt.seconds;
@@ -368,7 +369,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 text-gray-600">
-                          {post.profile}
+                          {getProfileName(post)}
                         </TableCell>
                         <TableCell className="py-4">
                           <StatusBadge status={post.status} type="idea" />
@@ -431,15 +432,15 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
               <div className="text-center py-12">
                 <p className="text-gray-500">
                   {searchTerm || selectedStatus
-                  ? "No posts match your filters."
-                  : "No posts found for this client yet."
+                    ? "No posts match your filters."
+                    : "No posts found for this client yet."
                   }
                 </p>
                 {!(searchTerm || selectedStatus) && (
                   <CreatePostModal>
-                  <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white">
-                    Create Post
-                  </Button>
+                    <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white">
+                      Create Post
+                    </Button>
                   </CreatePostModal>
                 )}
                 {(searchTerm || selectedStatus) && (

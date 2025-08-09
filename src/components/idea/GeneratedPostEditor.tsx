@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getProfileId, getProfileRole, getProfileImageUrl } from '@/types/post';
 import { Button } from '@/components/ui/button';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { useAuth } from '@/context/AuthContext';
@@ -1348,10 +1349,10 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         postContent={currentContent}
         pollData={pollData}
         mediaFiles={mediaFiles}
-        profileData={post?.profile ? {
-          id: post.profile.profileId,
-          role: post.profile.profileRole,
-          imageUrl: post.profile.imageUrl
+        profileData={post ? {
+          id: getProfileId(post),
+          role: getProfileRole(post),
+          imageUrl: getProfileImageUrl(post)
         } : undefined}
       />
 

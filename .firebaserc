@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "licc-e4dd5"
-  }
+  },
+  "targets": {
+    "licc-e4dd5": {
+      "hosting": {
+        "staging": [
+          "escribia-staging"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

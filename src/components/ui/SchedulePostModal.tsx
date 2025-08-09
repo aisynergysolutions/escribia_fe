@@ -14,6 +14,7 @@ import { db } from '../../lib/firebase';
 import { Timestamp } from 'firebase/firestore';
 import { usePostDetails } from '../../context/PostDetailsContext';
 import { useAuth } from '../../context/AuthContext';
+import { getProfileName } from '../../types/post';
 
 interface SchedulePostModalProps {
     isOpen: boolean;
@@ -111,7 +112,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     // Filter posts based on search term and status
     const filteredPosts = posts.filter(post => {
         const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.profile.toLowerCase().includes(searchTerm.toLowerCase());
+            getProfileName(post).toLowerCase().includes(searchTerm.toLowerCase());
         // const matchesStatus = !statusFilter || statusFilter === 'all' || post.status === statusFilter;
         const matchesStatus = true; // Always show all statuses in this modal
         // Only show posts that are not already scheduled
@@ -185,7 +186,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
             // Prepare the post event data for the new schedule
             const postEventData = {
                 title: selectedPost.title,
-                profile: selectedPost.profile,
+                profile: getProfileName(selectedPost),
                 status: 'Scheduled',
                 updatedAt: selectedPost.updatedAt,
                 scheduledPostAt: Timestamp.fromDate(scheduledDateTime),
@@ -380,7 +381,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                                         <div className="flex items-center justify-between w-full">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <User className="h-4 w-4" />
-                                                <span>{post.profile}</span>
+                                                <span>{getProfileName(post)}</span>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                                 <Clock className="h-3 w-3" />

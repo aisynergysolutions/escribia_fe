@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/context/AuthContext';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { useToast } from '@/hooks/use-toast';
+import { getProfileName, getProfileRole, getProfileImageUrl } from '@/types/post';
 import { format } from 'date-fns';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
@@ -160,12 +161,12 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             <span>
               Post successfully published. You can see it{' '}
               <a
-          href={`https://www.linkedin.com/feed/update/${result.linkedinPostId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline"
+                href={`https://www.linkedin.com/feed/update/${result.linkedinPostId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
               >
-          here
+                here
               </a>
               !
             </span>
@@ -514,10 +515,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         postId={postId}
         mediaFiles={mediaFiles}
         pollData={pollData}
-        profileData={post?.profile ? {
-          name: post.profile.profileName,
-          role: post.profile.profileRole,
-          profileImage: post.profile.imageUrl
+        profileData={post ? {
+          name: getProfileName(post),
+          role: getProfileRole(post),
+          profileImage: getProfileImageUrl(post)
         } : undefined}
       />
 
@@ -530,10 +531,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         postId={postId}
         mediaFiles={mediaFiles}
         pollData={pollData}
-        profileData={post?.profile ? {
-          name: post.profile.profileName,
-          role: post.profile.profileRole,
-          profileImage: post.profile.imageUrl
+        profileData={post ? {
+          name: getProfileName(post),
+          role: getProfileRole(post),
+          profileImage: getProfileImageUrl(post)
         } : undefined}
       />
 
@@ -547,10 +548,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         subClientId={subClientId}
         mediaFiles={mediaFiles}
         pollData={pollData}
-        profileData={post?.profile ? {
-          name: post.profile.profileName,
-          role: post.profile.profileRole,
-          profileImage: post.profile.imageUrl
+        profileData={post ? {
+          name: getProfileName(post),
+          role: getProfileRole(post),
+          profileImage: getProfileImageUrl(post)
         } : undefined}
       />
 
