@@ -1,7 +1,7 @@
 {
   "hosting": [
     {
-      "site": "escribia-staging",
+      "target": "staging",
       "public": "dist",
       "ignore": [
         "firebase.json",

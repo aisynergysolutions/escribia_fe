@@ -57,37 +57,15 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
             </CardTitle>
             <div className="flex items-center gap-2 flex-shrink-0">
               <StatusBadge status={idea.status} type="idea" />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                    onClick={handleMenuClick}
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Duplicate
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col pb-3">
           <p className="text-sm text-gray-600 line-clamp-3 flex-1">
-            {idea.currentDraftText}
+            {idea.drafts && idea.drafts.length > 0 
+              ? idea.drafts[idea.drafts.length - 1].text 
+              : idea.currentDraftText || idea.initialIdeaPrompt || 'No content available'
+            }
           </p>
         </CardContent>
         <CardFooter className="pt-0 text-xs text-gray-500 flex justify-between flex-shrink-0">
@@ -95,53 +73,14 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
             <Clock className="w-3 h-3 mr-1" />
             {formatCardDate(idea.updatedAt)}
           </div>
-          {idea.scheduledPostAt && (
+          {/* {idea.scheduledPostAt && (
             <div className="flex items-center">
               <Calendar className="w-3 h-3 mr-1" />
               Scheduled {formatCardDate(idea.scheduledPostAt, '')}
             </div>
-          )}
+          )} */}
         </CardFooter>
       </Card>
-
-      {/* Duplicate Confirmation Dialog */}
-      <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Duplicate Idea</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to duplicate "{idea.title}"? This will create a copy of the idea with all its content.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDuplicate}>
-              Duplicate
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Idea</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{idea.title}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 });

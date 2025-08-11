@@ -7,6 +7,9 @@
       "hosting": {
         "staging": [
           "escribia-staging"
+        ],
+        "prod": [
+          "licc-e4dd5"
         ]
       }
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,11 +9,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { FileText, Calendar, TrendingUp, Eye, MessageCircle, Heart, Share2, Sparkles, Copy, Send, MoreHorizontal, Clock, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, addMonths, subMonths } from 'date-fns';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import StatCard from './StatCard';
 import PostCalendar from './PostCalendar';
 import IdeaCard from './IdeaCard';
 import { useClients } from '../../context/ClientsContext';
+import { useAuth } from '../../context/AuthContext';
 import { ScheduledPostsProvider } from '../../context/ScheduledPostsContext';
+import { Idea } from '@/types/interfaces';
 
 interface ClientOverviewProps {
   clientId: string;
@@ -62,12 +66,66 @@ const mockRecentComments = [
 const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [recentPosts, setRecentPosts] = useState<Idea[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
 
   // Get client details from context
   const { clientDetails, clientDetailsLoading } = useClients();
+  const { currentUser } = useAuth();
 
-  // TODO: Replace with Firestore ideas fetch in the future
-  const clientIdeas: any[] = []; // Placeholder for ideas, implement fetching if needed
+  // Fetch recent posts from Firebase
+  const fetchRecentPosts = async () => {
+    if (!currentUser?.uid || !clientId) return;
+
+    setPostsLoading(true);
+    setPostsError(null);
+
+    try {
+      const ideasRef = collection(db, 'agencies', currentUser.uid, 'clients', clientId, 'ideas');
+      const recentPostsQuery = query(
+        ideasRef,
+        orderBy('updatedAt', 'desc'),
+        limit(3)
+      );
+
+      const snapshot = await getDocs(recentPostsQuery);
+      const posts: Idea[] = snapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        return {
+          id: doc.id,
+          title: data.title || 'Untitled Post',
+          status: data.status || 'Drafted',
+          updatedAt: data.updatedAt,
+          createdAt: data.createdAt,
+          // Required Idea fields
+          clientId: clientId,
+          subClientId: data.profileId || data.subClientId,
+          initialIdeaPrompt: data.initialIdeaPrompt || '',
+          currentDraftText: data.currentDraftText || '',
+          objective: data.objective || '',
+          templateUsedId: data.templateUsedId || '',
+          scheduledPostAt: data.scheduledPostAt,
+          generatedHooks: data.generatedHooks || [],
+          drafts: data.drafts || [],
+          internalNotes: data.internalNotes || '',
+        };
+      });
+
+      setRecentPosts(posts);
+    } catch (error) {
+      console.error('Error fetching recent posts:', error);
+      setPostsError('Failed to load recent posts');
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  // Fetch posts when component mounts or dependencies change
+  useEffect(() => {
+    fetchRecentPosts();
+  }, [currentUser?.uid, clientId]);
 
   if (clientDetailsLoading) {
     return <div className="text-center py-12">Loading client...</div>;
@@ -77,9 +135,9 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
     return <div>Client not found</div>;
   }
 
-  // Calculate statistics - removed totalPosts
-  const publishedPosts = clientIdeas.filter(idea => idea.status === 'Published').length;
-  const scheduledPosts = clientIdeas.filter(idea => idea.status === 'Scheduled').length;
+  // Calculate statistics using the fetched posts
+  const publishedPosts = recentPosts.filter(idea => idea.status === 'Published').length;
+  const scheduledPosts = recentPosts.filter(idea => idea.status === 'Scheduled').length;
 
   // Mock engagement data - in real app this would come from LinkedIn API
   const avgViews = 1250;
@@ -199,9 +257,28 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
           </div>
 
           <div className="p-6">
-            {clientIdeas.length > 0 ? (
+            {postsLoading ? (
+              <div className="text-center py-6">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-500">Loading recent posts...</span>
+                </div>
+              </div>
+            ) : postsError ? (
+              <div className="text-center py-6">
+                <p className="text-red-500 mb-2">{postsError}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchRecentPosts}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : recentPosts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {clientIdeas.slice(0, 3).map((idea) => (
+                {recentPosts.map((idea) => (
                   <IdeaCard key={idea.id} idea={idea} />
                 ))}
               </div>
