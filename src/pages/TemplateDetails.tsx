@@ -423,7 +423,7 @@ const TemplateDetails = () => {
 
                 <div>
                   <h4 className="font-medium text-gray-900 mb-1">Scope</h4>
-                  <p className="text-gray-600">{templateDetails.scope}</p>
+                  {templateDetails.scope.charAt(0).toUpperCase() + templateDetails.scope.slice(1)}
                 </div>
 
                 <div>

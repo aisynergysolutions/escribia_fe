@@ -153,19 +153,26 @@ const DayPostsModal: React.FC<DayPostsModalProps> = ({
         )}
 
         <div className="border-t pt-4">
-          <Button
-            onClick={handleSchedulePost}
-            className="w-full"
-            variant="outline"
-            disabled={isDateInPast || isTodayButTooLate}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {isDateInPast
-              ? 'Cannot schedule for past dates'
-              : isTodayButTooLate
-                ? 'Too late to schedule for today'
-                : 'Schedule a post'}
-          </Button>
+          {!showAllClients && (
+            <Button
+              onClick={handleSchedulePost}
+              className="w-full"
+              variant="outline"
+              disabled={isDateInPast || isTodayButTooLate}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {isDateInPast
+                ? 'Cannot schedule for past dates'
+                : isTodayButTooLate
+                  ? 'Too late to schedule for today'
+                  : 'Schedule a post'}
+            </Button>
+          )}
+          {showAllClients && (
+            <div className="text-center text-muted-foreground text-sm py-2">
+              To schedule a post, please visit the specific client's calendar
+            </div>
+          )}
         </div>
       </DialogContent>
 

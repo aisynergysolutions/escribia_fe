@@ -105,9 +105,13 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
   }, []);
 
   const handleSchedulePostFromDay = useCallback(() => {
+    // Don't allow scheduling from agency-wide calendar
+    if (showAllClients) {
+      return;
+    }
     setIsDayPostsModalOpen(false);
     setIsScheduleModalOpen(true);
-  }, []);
+  }, [showAllClients]);
 
   const handleScheduleModalClose = useCallback(() => {
     setIsScheduleModalOpen(false);
@@ -382,7 +386,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
       />
 
       <SchedulePostModal
-        isOpen={isScheduleModalOpen}
+        isOpen={isScheduleModalOpen && !showAllClients}
         onClose={handleScheduleModalClose}
         selectedDate={selectedDate || new Date()}
         selectedTime="" // Default time when opened from calendar
