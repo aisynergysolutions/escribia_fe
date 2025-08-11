@@ -27,6 +27,50 @@ interface SchedulePostModalProps {
 
 const POST_STATUSES = ['Draft', 'In Review', 'Approved', 'Scheduled'] as const;
 
+// Safe date formatting utility to handle various timestamp formats
+const formatPostDate = (timestamp: any): string => {
+    try {
+        let date: Date;
+
+        // Handle Firestore Timestamp with seconds property
+        if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+            date = new Date(timestamp.seconds * 1000);
+        }
+        // Handle Firestore Timestamp with toDate method
+        else if (timestamp && typeof timestamp === 'object' && typeof timestamp.toDate === 'function') {
+            date = timestamp.toDate();
+        }
+        // Handle regular Date object
+        else if (timestamp instanceof Date) {
+            date = timestamp;
+        }
+        // Handle timestamp as number (milliseconds)
+        else if (typeof timestamp === 'number') {
+            date = new Date(timestamp);
+        }
+        // Handle timestamp as string
+        else if (typeof timestamp === 'string') {
+            date = new Date(timestamp);
+        }
+        // Fallback to current date if timestamp is invalid
+        else {
+            console.warn('Invalid timestamp format:', timestamp);
+            return 'Recently';
+        }
+
+        // Check if the resulting date is valid
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid date created from timestamp:', timestamp);
+            return 'Recently';
+        }
+
+        return format(date, 'MMM d, yyyy');
+    } catch (error) {
+        console.error('Error formatting post date:', error, timestamp);
+        return 'Recently';
+    }
+};
+
 const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     isOpen,
     onClose,
@@ -385,7 +429,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                                 <Clock className="h-3 w-3" />
-                                                <span>Updated {format(new Date(post.updatedAt.seconds * 1000), 'MMM d, yyyy')}</span>
+                                                <span>Updated {formatPostDate(post.updatedAt)}</span>
                                             </div>
                                         </div>
                                     </div>
