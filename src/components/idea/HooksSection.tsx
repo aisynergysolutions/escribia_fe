@@ -62,6 +62,9 @@ const HooksSection: React.FC<HooksSectionProps> = ({
   }, [hooks.length]);
 
   const handleHookClick = async (index: number) => {
+    // Don't do anything if this hook is already selected
+    if (selectedHookIndex === index) return;
+
     if (loadingHookIndex !== null || isRegenerating || isGeneratingInitial) return;
     setLoadingHookIndex(index);
     setErrorHook(null);
@@ -142,24 +145,27 @@ const HooksSection: React.FC<HooksSectionProps> = ({
                 <button
                   onClick={() => handleHookClick(index)}
                   disabled={isLoading || isDisabled}
-                  className={`w-full p-3 rounded-md border text-left transition-all 
+                  className={`w-full p-3 rounded-md border text-left transition-all relative
                       focus-visible:outline-none focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-[#4F46E5]/20 focus-visible:ring-offset-2
                       hover:border-[#4F46E5]
                       ${isLoading || isDisabled ? 'cursor-wait' : ''}
-                      ${isSelected && !isLoading ? 'border-[#4F46E5] bg-[#4F46E5]/10' : ''}`}
+                      ${isSelected && !isLoading ? 'border-[#4F46E5] bg-[#4F46E5]/10' : ''}
+                      ${loadingHookIndex !== null && !isLoading ? 'opacity-50' : ''}`}
                 >
-                  {isLoading ? (
-                    <div className="flex justify-center items-center h-[42px]">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-start">
-                        <p className="pr-2 whitespace-pre-line text-sm">{hook.text}</p>
-                        {isSelected && <Badge className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 flex-shrink-0">Selected</Badge>}
+                  <div className="flex justify-between items-start">
+                    <p className="pr-2 whitespace-pre-line text-sm">{hook.text}</p>
+                    {isSelected && !isLoading && <Badge className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 flex-shrink-0">Selected</Badge>}
+                  </div>
+                  {/* <p className="text-xs text-gray-500 mt-1">Angle: {hook.angle}</p> */}
+
+                  {/* Applying overlay */}
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-md flex items-center justify-center">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm font-medium">Applying...</span>
                       </div>
-                      {/* <p className="text-xs text-gray-500 mt-1">Angle: {hook.angle}</p> */}
-                    </>
+                    </div>
                   )}
                 </button>
                 {isError && <p className="text-sm text-destructive mt-1.5 px-1">{errorHook.message}</p>}

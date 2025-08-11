@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { format, addMonths, addDays, isSameDay, startOfDay } from 'date-fns';
@@ -272,6 +273,11 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           const slots = await findNextEmptySlot(agencyId, clientId);
           setSuggestedSlots(slots);
           setHasTimeslotConfig(slots.length > 0);
+
+          // Automatically preselect the first recommended timeslot
+          if (slots.length > 0) {
+            setSelectedTime(slots[0].formattedDisplay);
+          }
         } catch (error) {
           console.error('[AddToQueueModal] Error fetching suggested slots:', error);
           setSuggestedSlots([]);
@@ -318,7 +324,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
       // Prepare the post event data for scheduling
       const postEventData = {
         title: post?.title || '',
-        profile: post?.profile?.profileName || '',
+        profile: typeof post?.profile === 'object' ? post.profile.profileName : (post?.profile || ''),
         status: selectedStatus,
         updatedAt: Timestamp.now(),
         scheduledPostAt: Timestamp.fromDate(scheduledDateTime),
@@ -497,12 +503,12 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           <div className="flex flex-col min-h-0">
             <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Post Preview</h3>
             <ScrollArea className="flex-1">
-              <div className="pr-0">
+              <div className="pr-4">
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src={profileData?.profileImage || post?.profile?.imageUrl} />
+                        <AvatarImage src={profileData?.profileImage || (typeof post?.profile === 'object' ? post.profile.imageUrl : undefined)} />
                         <AvatarFallback className="bg-gray-300">
                           {profileData?.role?.toLowerCase().includes('company') ? (
                             <Building2 className="h-6 w-6 text-gray-600" />
@@ -512,7 +518,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-semibold text-gray-900">{profileData?.name || post?.profile?.profileName || 'Your Profile'}</div>
+                        <div className="font-semibold text-gray-900">{profileData?.name || (typeof post?.profile === 'object' ? post.profile.profileName : post?.profile) || 'Your Profile'}</div>
                         <div className="text-sm text-gray-500">
                           {selectedTime
                             ? `Queued for ${selectedTime}`
@@ -592,8 +598,37 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
               {/* Suggested Posting Time */}
               <div>
                 {loadingSlots ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-gray-500">Finding the best time slots...</div>
+                  <div className="space-y-4">
+                    {/* Recommended time skeleton */}
+                    <div className="mb-4">
+                      <Skeleton className="h-4 w-48 mb-2" />
+                      <div className="p-4 rounded-lg border-2 border-gray-200 bg-white">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <div className="flex-1 space-y-1">
+                            <Skeleton className="h-4 w-48" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Other suggested times skeleton */}
+                    <div className="mb-4">
+                      <Skeleton className="h-4 w-36 mb-2" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {Array.from({ length: 4 }).map((_, index) => (
+                          <div key={index} className="p-3 rounded-lg border border-gray-200 bg-white">
+                            <Skeleton className="h-3 w-full" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom time skeleton */}
+                    <div>
+                      <Skeleton className="h-10 w-full rounded-lg" />
+                    </div>
                   </div>
                 ) : !hasTimeslotConfig || suggestedSlots.length === 0 ? (
                   <div className="text-center py-8">

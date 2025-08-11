@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3, Link } from 'lucide-react';
+import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3, Link, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -14,6 +14,7 @@ import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
 import CreatePollModal from './CreatePollModal';
+import CancelScheduleModal from './CancelScheduleModal';
 import { Poll } from '@/context/PostDetailsContext';
 import { MediaFile } from './MediaUploadModal';
 
@@ -87,13 +88,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const { currentUser } = useAuth();
-  const { publishPostNow, post } = usePostDetails();
+  const { publishPostNow, post, cancelPostSchedule } = usePostDetails();
   const { toast } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPostNowModal, setShowPostNowModal] = useState(false);
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
+  const [showCancelScheduleModal, setShowCancelScheduleModal] = useState(false);
 
   // Check if the post is scheduled or posted
   const isScheduled = postStatus === 'Scheduled' && scheduledPostAt && scheduledPostAt.seconds > 0;
@@ -191,6 +193,39 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         variant: "destructive"
       });
       // Keep the modal open for retry
+    }
+  };
+
+  const handleCancelSchedule = () => {
+    setShowCancelScheduleModal(true);
+  };
+
+  const handleCancelScheduleConfirm = async () => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to cancel the schedule.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await cancelPostSchedule(currentUser.uid, clientId, postId);
+
+      toast({
+        title: "Schedule Cancelled",
+        description: "The post schedule has been successfully cancelled and the post is now in draft status.",
+      });
+
+      setShowCancelScheduleModal(false);
+    } catch (error) {
+      console.error('Error cancelling schedule:', error);
+      toast({
+        title: "Cancellation Failed",
+        description: "There was an error cancelling the schedule. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -436,7 +471,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-32">
+                  <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem onClick={handleOpenScheduleModal} className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       Reschedule
@@ -444,6 +479,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <DropdownMenuItem onClick={handlePostNow} className="flex items-center gap-2">
                       <Send className="h-4 w-4" />
                       Post Now
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCancelSchedule} className="flex items-center gap-2 text-red-600">
+                      <X className="h-4 w-4" />
+                      Cancel Schedule
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -559,6 +598,15 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         open={showCreatePollModal}
         onOpenChange={setShowCreatePollModal}
         onCreatePoll={handleCreatePoll}
+      />
+
+      <CancelScheduleModal
+        open={showCancelScheduleModal}
+        onOpenChange={setShowCancelScheduleModal}
+        clientId={clientId}
+        postId={postId}
+        scheduledPostAt={scheduledPostAt}
+        onCancelConfirm={handleCancelScheduleConfirm}
       />
     </>
   );

@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { useAuth } from '@/context/AuthContext';
 import { usePosts } from '@/context/PostsContext';
 import { Post, Draft, Hook, InitialIdea, Profile, Poll, postDetailsToPost } from '@/types/post';
+import { format } from 'date-fns';
 
 // Keep these types for backward compatibility during migration
 export type { Draft, Hook, InitialIdea, Profile, Poll };
@@ -48,6 +49,7 @@ type PostDetailsContextType = {
     updateInitialIdea: (agencyId: string, clientId: string, postId: string, initialIdeaPrompt: string, objective: string) => Promise<void>;
     regeneratePostFromIdea: (agencyId: string, clientId: string, postId: string, subClientId: string, initialIdeaPrompt: string, objective: string) => Promise<string | null>;
     updatePostScheduling: (agencyId: string, clientId: string, postId: string, newStatus: string, scheduledPostAt: Timestamp) => Promise<void>;
+    cancelPostSchedule: (agencyId: string, clientId: string, postId: string) => Promise<void>;
     publishPostNow: (agencyId: string, clientId: string, postId: string, subClientId: string, content?: string) => Promise<{ success: boolean; linkedinPostId?: string; error?: string }>;
     uploadPostImages: (agencyId: string, clientId: string, postId: string, files: File[], replace?: boolean) => Promise<string[]>;
     removePostImage: (agencyId: string, clientId: string, postId: string, imageUrl: string) => Promise<void>;
@@ -78,6 +80,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     updateInitialIdea: async () => { },
     regeneratePostFromIdea: async () => null,
     updatePostScheduling: async () => { },
+    cancelPostSchedule: async () => { },
     publishPostNow: async () => ({ success: false, error: 'Not implemented' }),
     uploadPostImages: async () => [],
     removePostImage: async () => { },
@@ -832,6 +835,88 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const cancelPostSchedule = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            console.error('[PostDetailsContext] No agency ID available for cancelling schedule');
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            console.log('[PostDetailsContext] Cancelling schedule for agency:', agencyId, 'client:', clientId, 'post:', postId);
+
+            // Get the current post to find the scheduled date
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            const postDoc = await getDoc(postRef);
+
+            if (!postDoc.exists()) {
+                throw new Error('Post not found');
+            }
+
+            const postData = postDoc.data();
+            const scheduledPostAt = postData.scheduledPostAt;
+
+            // 1. Remove from postEvents collection if scheduled
+            if (scheduledPostAt) {
+                const scheduledDate = new Date(scheduledPostAt.seconds * 1000);
+                const yearMonth = format(scheduledDate, 'yyyy-MM');
+
+                const postEventRef = firestoreDoc(
+                    db,
+                    'agencies', agencyId,
+                    'clients', clientId,
+                    'postEvents', yearMonth
+                );
+
+                // Get the current document and remove this specific post
+                const postEventDoc = await getDoc(postEventRef);
+
+                if (postEventDoc.exists()) {
+                    await updateDoc(postEventRef, {
+                        [postId]: deleteField()
+                    });
+                }
+            }
+
+            // 2. Update the post in the ideas collection
+            await updateDoc(postRef, {
+                status: 'Drafted', // Reset to drafted status
+                scheduledPostAt: deleteField(), // Remove the scheduled date
+                updatedAt: Timestamp.now()
+            });
+
+            // Update context post if it's the same post
+            setPost(prev =>
+                prev && prev.id === postId
+                    ? {
+                        ...prev,
+                        status: 'Drafted',
+                        scheduledPostAt: undefined,
+                        updatedAt: Timestamp.now()
+                    }
+                    : prev
+            );
+
+            // Update PostsContext cache to keep it in sync
+            try {
+                updatePostInCache(agencyId, clientId, postId, {
+                    status: 'Drafted',
+                    scheduledPostAt: undefined
+                });
+            } catch (cacheError) {
+                console.warn('Failed to update PostsContext cache, but main update succeeded:', cacheError);
+            }
+
+            console.log('Post schedule cancelled successfully for post:', postId);
+        } catch (error) {
+            console.error('Error cancelling post schedule:', error);
+            throw new Error('Failed to cancel post schedule');
+        }
+    }, []);
+
     const publishPostNow = useCallback(async (
         agencyId: string,
         clientId: string,
@@ -1346,6 +1431,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 updateInitialIdea: async () => { throw new Error('No agency ID available'); },
                 regeneratePostFromIdea: async () => null,
                 updatePostScheduling: async () => { throw new Error('No agency ID available'); },
+                cancelPostSchedule: async () => { throw new Error('No agency ID available'); },
                 publishPostNow: async () => ({ success: false, error: 'No agency ID available' }),
                 uploadPostImages: async () => { throw new Error('No agency ID available'); },
                 removePostImage: async () => { throw new Error('No agency ID available'); },
@@ -1381,6 +1467,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             updateInitialIdea,
             regeneratePostFromIdea,
             updatePostScheduling,
+            cancelPostSchedule,
             publishPostNow,
             uploadPostImages,
             removePostImage,

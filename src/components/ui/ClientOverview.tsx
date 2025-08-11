@@ -92,7 +92,7 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
       const snapshot = await getDocs(recentPostsQuery);
       const posts: Idea[] = snapshot.docs.map(doc => {
         const data = doc.data();
-        
+
         return {
           id: doc.id,
           title: data.title || 'Untitled Post',
@@ -267,9 +267,9 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
             ) : postsError ? (
               <div className="text-center py-6">
                 <p className="text-red-500 mb-2">{postsError}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={fetchRecentPosts}
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >

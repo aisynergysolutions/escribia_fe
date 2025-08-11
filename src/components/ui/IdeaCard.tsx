@@ -46,7 +46,7 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
 
   return (
     <>
-      <Card 
+      <Card
         className="rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
         onClick={handleClick}
       >
@@ -62,8 +62,8 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
         </CardHeader>
         <CardContent className="flex-1 flex flex-col pb-3">
           <p className="text-sm text-gray-600 line-clamp-3 flex-1">
-            {idea.drafts && idea.drafts.length > 0 
-              ? idea.drafts[idea.drafts.length - 1].text 
+            {idea.drafts && idea.drafts.length > 0
+              ? idea.drafts[idea.drafts.length - 1].text
               : idea.currentDraftText || idea.initialIdeaPrompt || 'No content available'
             }
           </p>
