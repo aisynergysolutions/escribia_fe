@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getProfileId, getProfileRole, getProfileImageUrl } from '@/types/post';
+import { getProfileId, getProfileRole, getProfileImageUrl, getProfileName } from '@/types/post';
 import { Button } from '@/components/ui/button';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { useAuth } from '@/context/AuthContext';
@@ -60,6 +60,9 @@ interface GeneratedPostEditorProps {
   scheduledPostAt?: import('firebase/firestore').Timestamp;
   postedAt?: import('firebase/firestore').Timestamp;
   linkedinPostUrl?: string;
+  // Add prop for regenerating from initial idea
+  onRegenerateFromIdea?: () => void;
+  isRegeneratingPost?: boolean;
 }
 
 export interface GeneratedPostEditorRef {
@@ -90,7 +93,9 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   postStatus,
   scheduledPostAt,
   postedAt,
-  linkedinPostUrl
+  linkedinPostUrl,
+  onRegenerateFromIdea,
+  isRegeneratingPost = false
 }, ref) => {
   const [toolbarPosition, setToolbarPosition] = useState({
     top: 0,
@@ -172,7 +177,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     const paddingTop = 24; // Container's padding-top where text actually starts
 
     // Use different widths based on view mode
-    const containerWidth = viewMode === 'mobile' ? 272 : 504; // Effective content width (excluding padding)
+    const containerWidth = viewMode === 'mobile' ? 380 : 555; // Effective content width (excluding padding)
 
     // Create a temporary element to measure line count
     const tempDiv = document.createElement('div');
@@ -560,11 +565,14 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   };
 
   const handleRegeneratePost = () => {
-    toast({
-      title: "Regenerating Post",
-      description: "We are rolling out this feature Thank you!"
-    });
-    onRegenerateWithInstructions();
+    if (onRegenerateFromIdea) {
+      onRegenerateFromIdea();
+    } else {
+      toast({
+        title: "Regenerating Post",
+        description: "We are rolling out this feature Thank you!"
+      });
+    }
   };
 
   const handleSchedule = (date: Date, time: string) => {
@@ -1390,6 +1398,12 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           })}`
         }))}
         onRestore={handleRestoreVersion}
+        profileData={post ? {
+          id: getProfileId(post),
+          role: getProfileRole(post),
+          imageUrl: getProfileImageUrl(post),
+          profileName: getProfileName(post)
+        } : undefined}
       />
 
       <CreatePollModal
@@ -1575,6 +1589,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           onRegeneratePost={handleRegeneratePost}
           onRegenerateWithInstructions={onRegenerateWithInstructions}
           isLoading={isRegeneratingWithInstructions}
+          isRegeneratingPost={isRegeneratingPost}
         />
       </div>
 

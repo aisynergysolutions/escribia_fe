@@ -39,6 +39,9 @@ interface PostEditorProps {
   scheduledPostAt?: import('firebase/firestore').Timestamp;
   postedAt?: import('firebase/firestore').Timestamp;
   linkedinPostUrl?: string; // New prop for LinkedIn post URL
+  // Add prop for regenerating from initial idea
+  onRegenerateFromIdea?: () => void;
+  isRegeneratingPost?: boolean;
 }
 
 const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
@@ -58,7 +61,9 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
   postStatus,
   scheduledPostAt,
   postedAt,
-  linkedinPostUrl
+  linkedinPostUrl,
+  onRegenerateFromIdea,
+  isRegeneratingPost = false
 }, ref) => {
   const generatedPostEditorRef = React.useRef<any>(null);
 
@@ -97,6 +102,8 @@ const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(({
       scheduledPostAt={scheduledPostAt}
       postedAt={postedAt}
       linkedinPostUrl={linkedinPostUrl}
+      onRegenerateFromIdea={onRegenerateFromIdea}
+      isRegeneratingPost={isRegeneratingPost}
     />
   );
 });

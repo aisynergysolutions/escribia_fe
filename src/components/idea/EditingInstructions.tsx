@@ -11,6 +11,7 @@ interface EditingInstructionsProps {
   onRegeneratePost: () => void;
   onRegenerateWithInstructions: () => void;
   isLoading?: boolean;
+  isRegeneratingPost?: boolean;
 }
 
 const EditingInstructions: React.FC<EditingInstructionsProps> = ({
@@ -20,7 +21,8 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
   onEditingInstructionsChange,
   onRegeneratePost,
   onRegenerateWithInstructions,
-  isLoading = false
+  isLoading = false,
+  isRegeneratingPost = false
 }) => {
   return (
     <div className="border-t bg-gray-50 rounded-b-md">
@@ -30,9 +32,18 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
           {showChatBox ? 'Hide' : 'Show'} editing instructions
         </Button>
 
-        <Button variant="ghost" size="sm" onClick={onRegeneratePost} className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
-          <Sparkles className="h-4 w-4" />
-          Regenerate with AI
+        <Button variant="ghost" size="sm" onClick={onRegeneratePost} className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" disabled={isRegeneratingPost}>
+          {isRegeneratingPost ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Regenerating...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Regenerate with AI
+            </>
+          )}
         </Button>
       </div>
 

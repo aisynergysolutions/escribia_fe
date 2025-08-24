@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Copy, Check, Trash2, Loader2 } from 'lucide-react';
+import { Copy, Check, Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProfiles } from '@/context/ProfilesContext';
 import { useParams } from 'react-router-dom';
@@ -68,6 +68,10 @@ const OnboardingProfileModal: React.FC<OnboardingProfileModalProps> = ({
     }
   };
 
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -118,6 +122,22 @@ const OnboardingProfileModal: React.FC<OnboardingProfileModalProps> = ({
               </Button>
             </div>
           </div>
+
+          {/* Refresh Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-700 leading-relaxed">
+              Think the form has already been completed?{' '}
+              <button
+                onClick={handleRefresh}
+                className="inline-flex items-center text-blue-800 hover:text-blue-900 font-medium underline underline-offset-2 hover:no-underline transition-all duration-200"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Click here to refresh the page
+              </button>
+              {' '}and check for updates.
+            </p>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex justify-between pt-4 border-t">
             <Button

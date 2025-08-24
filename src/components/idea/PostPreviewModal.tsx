@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Eye, Smartphone, Monitor, Sun, Moon, X, User, Building2 } from 'lucide-react';
+import { Eye, Smartphone, Monitor, Sun, Moon, User, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -30,62 +30,67 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
 }) => {
   const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [isExpanded, setIsExpanded] = useState(false); // Default to collapsed
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   const { post } = usePostDetails();
 
   useEffect(() => {
-    if (contentRef.current) {
-      // Strip HTML tags for text measurement
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = postContent;
-      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+    // Add a small delay to ensure the DOM has rendered
+    const timeoutId = setTimeout(() => {
+      if (contentRef.current) {
+        // Strip HTML tags for text measurement
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = postContent;
+        const plainText = tempDiv.textContent || tempDiv.innerText || '';
 
-      // Create a temporary element to measure text
-      const measuringDiv = document.createElement('div');
-      measuringDiv.style.visibility = 'hidden';
-      measuringDiv.style.position = 'absolute';
-      measuringDiv.style.width = contentRef.current.offsetWidth + 'px';
-      measuringDiv.style.fontSize = '14px';
-      measuringDiv.style.lineHeight = '1.5';
-      measuringDiv.style.fontFamily = window.getComputedStyle(contentRef.current).fontFamily;
-      measuringDiv.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
-      document.body.appendChild(measuringDiv);
+        // Create a temporary element to measure text
+        const measuringDiv = document.createElement('div');
+        measuringDiv.style.visibility = 'hidden';
+        measuringDiv.style.position = 'absolute';
+        measuringDiv.style.width = contentRef.current.offsetWidth + 'px';
+        measuringDiv.style.fontSize = '14px';
+        measuringDiv.style.lineHeight = '1.5';
+        measuringDiv.style.fontFamily = window.getComputedStyle(contentRef.current).fontFamily;
+        measuringDiv.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
+        document.body.appendChild(measuringDiv);
 
-      // Calculate how much text fits in 3 lines
-      const lineHeight = 21; // 14px * 1.5 line-height
-      const maxHeight = lineHeight * 3;
+        // Calculate how much text fits in 3 lines
+        const lineHeight = 21; // 14px * 1.5 line-height
+        const maxHeight = lineHeight * 3;
 
-      let truncateAt = plainText.length;
-      let testText = plainText;
+        let truncateAt = plainText.length;
+        let testText = plainText;
 
-      while (testText.length > 0) {
-        measuringDiv.textContent = testText + '...more';
-        if (measuringDiv.offsetHeight <= maxHeight) {
-          truncateAt = testText.length;
-          break;
+        while (testText.length > 0) {
+          measuringDiv.textContent = testText + '...more';
+          if (measuringDiv.offsetHeight <= maxHeight) {
+            truncateAt = testText.length;
+            break;
+          }
+          testText = testText.substring(0, testText.length - 10);
         }
-        testText = testText.substring(0, testText.length - 10);
+
+        document.body.removeChild(measuringDiv);
+
+        if (truncateAt < plainText.length) {
+          setShouldShowMore(true);
+          setTruncatedContent(plainText.substring(0, truncateAt));
+        } else {
+          setShouldShowMore(false);
+          setTruncatedContent(plainText);
+        }
       }
+    }, 100); // Small delay to ensure DOM is ready
 
-      document.body.removeChild(measuringDiv);
+    return () => clearTimeout(timeoutId);
+  }, [postContent, deviceType, theme, open]); // Added open dependency
 
-      if (truncateAt < plainText.length) {
-        setShouldShowMore(true);
-        setTruncatedContent(plainText.substring(0, truncateAt));
-      } else {
-        setShouldShowMore(false);
-        setTruncatedContent(plainText);
-      }
-    }
-  }, [postContent, deviceType]);
-
-  // Reset to collapsed when modal opens
+  // Reset to expanded when modal opens
   useEffect(() => {
     if (open) {
-      setIsExpanded(false);
+      setIsExpanded(true);
     }
   }, [open]);
 
@@ -305,7 +310,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
           <div className="flex items-start justify-center p-6 min-h-full">
             <div
               className={`
-                ${deviceType === 'mobile' ? 'w-[375px]' : 'w-full max-w-[600px]'} 
+                ${deviceType === 'mobile' ? 'w-[380px]' : 'w-[555px]'} 
                 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} 
                 rounded-lg shadow-lg border
               `}
@@ -325,7 +330,9 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                   </Avatar>
                   <div>
                     <div className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      {post?.profile?.profileName || 'Your Profile'}
+                      {(post?.profile && typeof post.profile === 'object' && 'profileName' in post.profile)
+                        ? post.profile.profileName
+                        : 'Your Profile'}
                     </div>
                     <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                       14 days ago
@@ -349,8 +356,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                             {' '}
                             <button
                               onClick={handleSeeLess}
-                              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                                }`}
+                              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
                             >
                               See less
                             </button>
@@ -364,8 +370,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                             {truncatedContent}
                             <button
                               onClick={handleSeeMore}
-                              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                                }`}
+                              className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
                             >
                               ...more
                             </button>
@@ -376,6 +381,18 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                       </div>
                     )}
                   </div>
+
+                  {/* LinkedIn 3-line breakline indicator - show when expanded AND content is longer than 3 lines */}
+                  {isExpanded && shouldShowMore && (
+                    <div
+                      className="absolute left-0 right-0 border-t-2 border-dashed border-orange-400 opacity-70"
+                      style={{
+                        top: `${21 * 3}px`, // 3 lines * line-height
+                        zIndex: 10
+                      }}
+                      title="LinkedIn shows only the first 3 lines in feeds"
+                    />
+                  )}
                 </div>
 
                 {/* Media Preview - Always visible */}
@@ -405,8 +422,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                   {['Like', 'Comment', 'Share', 'Send'].map((action) => (
                     <button
                       key={action}
-                      className={`flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
                       <span className="text-sm">{action}</span>
                     </button>

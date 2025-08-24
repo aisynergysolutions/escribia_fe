@@ -62,7 +62,7 @@ const ClientSettingsSection: React.FC<ClientSettingsSectionProps> = ({
     profileImageUrl: profile.linkedin?.linkedinPicture || '', // Use linkedinPicture from Firestore
     linkedinConnected: profile.linkedin?.linkedinConnected || false,
     isCompany: false,
-    status: profile.linkedin?.linkedinConnected ? 'Connected' : 'Not connected',
+    status: profile.linkedin?.linkedinConnected ? 'Connected' : profile.status || 'Not connected',
     onboardingLink: profile.onboardingLink || '',
   }));
 

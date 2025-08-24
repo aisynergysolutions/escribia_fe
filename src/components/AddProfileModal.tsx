@@ -27,7 +27,6 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
   const [profileId, setProfileId] = useState('');
   const [profileName, setProfileName] = useState('');
   const [profileType, setprofileType] = useState<'Company Account' | 'Person' | ''>('');
-  const [personRole, setPersonRole] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -99,7 +98,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
       await addProfile(clientId, {
         id: profileId,
         profileName,
-        role: profileType === 'Person' ? personRole : 'Company Account',
+        role: profileType === 'Person' ? 'Person' : 'Company Account',
         profileType: profileType === 'Person' ? 'Person' : 'Company',
         status: 'Onboarding',
         onboardingLink: tallyUrl,
@@ -131,7 +130,6 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
       setProfileId(uuidv4());
       setProfileName('');
       setprofileType('');
-      setPersonRole('');
     }
   };
 
@@ -140,8 +138,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
     profileType &&
     profileId &&
     clientId &&
-    agencyId &&
-    (profileType !== 'Person' || personRole.trim());
+    agencyId;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -195,21 +192,6 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Person Role Input */}
-          {profileType === 'Person' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Person Role
-              </label>
-              <Input
-                value={personRole}
-                onChange={e => setPersonRole(e.target.value)}
-                placeholder="CEO, COO, etc..."
-                className="w-full"
-              />
-            </div>
-          )}
 
           {/* Link Sharing Component */}
           {profileType && agencyId && (

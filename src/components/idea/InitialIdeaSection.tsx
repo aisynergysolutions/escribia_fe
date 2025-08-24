@@ -125,7 +125,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
             <Button
               onClick={onSendToAI}
               className="w-full bg-indigo-600 hover:bg-indigo-700"
-              disabled={isRegeneratingPost || !initialIdea.trim() || !objective} // Disable if loading or missing data
+              disabled={isRegeneratingPost || !initialIdea.trim()} // Disable if loading or missing data
             >
               {isRegeneratingPost ? (
                 <>

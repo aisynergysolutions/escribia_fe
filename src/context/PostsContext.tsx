@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { collection, getDocs, doc as firestoreDoc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc as firestoreDoc, setDoc, deleteDoc, Timestamp, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, PostListFields } from '@/types/post';
+import { v4 as uuidv4 } from 'uuid';
 
 // Keep PostCard for backward compatibility during migration
 export type PostCard = {
@@ -40,6 +41,7 @@ type PostsContextType = {
     },
     postId: string
   ) => Promise<void>;
+  duplicatePost: (agencyId: string, clientId: string, postId: string) => Promise<string>;
   deletePost: (agencyId: string, clientId: string, postId: string) => Promise<void>;
   updatePostInContext: (
     agencyId: string,
@@ -71,6 +73,7 @@ const PostsContext = createContext<PostsContextType>({
   error: null,
   fetchPosts: async () => { },
   createPost: async () => { },
+  duplicatePost: async () => { throw new Error('Not implemented'); },
   deletePost: async () => { },
   updatePostInContext: async () => { },
   updatePostInCache: () => { },
@@ -320,6 +323,77 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Duplicate an existing post with a new ID
+  const duplicatePost = async (agencyId: string, clientId: string, postId: string): Promise<string> => {
+    try {
+      // First, fetch the complete post data from Firestore
+      const originalPostRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+      const originalPostSnap = await getDoc(originalPostRef);
+
+      if (!originalPostSnap.exists()) {
+        throw new Error('Original post not found');
+      }
+
+      const originalData = originalPostSnap.data();
+
+      // Generate a new unique ID for the duplicated post
+      const newPostId = uuidv4();
+
+      // Create a clean copy of the original data, excluding problematic fields
+      const {
+        linkedinPostUrl,
+        postedAt,
+        ...cleanOriginalData
+      } = originalData;
+
+      // Create the duplicated post data with only the fields we want
+      const duplicatedPostData = {
+        ...cleanOriginalData,
+        postId: newPostId,
+        title: `Copy of ${originalData.title || 'Untitled Post'}`,
+        status: 'Drafted', // Reset status to drafted
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        scheduledPostAt: Timestamp.fromMillis(0), // Reset scheduling
+      };
+
+      // Save the duplicated post to Firestore
+      const newPostRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', newPostId);
+      await setDoc(newPostRef, duplicatedPostData);
+
+      // Update the context cache immediately
+      const key: PostsCacheKey = `${agencyId}_${clientId}`;
+      const newPostContext: Post = {
+        id: newPostId,
+        postId: newPostId,
+        title: `Copy of ${originalData.title || 'Untitled Post'}`,
+        profile: originalData.profileName || originalData.profile || '',
+        profileId: originalData.profileId || '',
+        status: 'Drafted',
+        updatedAt: Timestamp.now(),
+        scheduledPostAt: Timestamp.fromMillis(0),
+      };
+
+      // Update the cache
+      setPostsCache(prev => ({
+        ...prev,
+        [key]: [...(prev[key] || []), newPostContext],
+      }));
+
+      // Update the current posts if we're viewing this client
+      if (currentKey === key) {
+        setPosts(prev => [...prev, newPostContext]);
+      }
+
+      console.log('[PostsContext] Post duplicated successfully:', newPostId);
+      return newPostId;
+
+    } catch (err) {
+      console.error('[PostsContext] Error duplicating post:', err);
+      throw new Error('Failed to duplicate post');
+    }
+  };
+
   const deletePost = async (agencyId: string, clientId: string, postId: string): Promise<void> => {
     try {
       const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
@@ -396,6 +470,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         error,
         fetchPosts,
         createPost,
+        duplicatePost,
         deletePost,
         updatePostInContext,
         updatePostInCache,

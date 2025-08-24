@@ -467,6 +467,8 @@ const PostDetails = () => {
             scheduledPostAt={post?.scheduledPostAt}
             postedAt={post?.postedAt}
             linkedinPostUrl={post?.linkedinPostUrl}
+            onRegenerateFromIdea={handleSendToAI}
+            isRegeneratingPost={isRegeneratingPost}
           />
         </div>
 

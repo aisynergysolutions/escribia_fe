@@ -8,12 +8,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import StatusBadge from '../common/StatusBadge';
 import CreatePostModal from '../CreatePostModal';
 import { Post, getProfileName } from '@/types/post';
-import { Idea } from '../../types';
-import { formatDateTime, formatRelativeTime } from '../../utils/dateUtils';
 import { usePosts } from '@/context/PostsContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import PostsSectionSkeleton from '../../skeletons/PostsSectionSkeleton';
+import { formatRelativeTime, formatDateTime } from '@/utils/dateUtils';
+import PostsSectionSkeleton from '@/skeletons/PostsSectionSkeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface PostsSectionProps {
   clientId: string;
@@ -41,9 +41,10 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
   // Use PostsContext and AuthContext
-  const { posts, loading, error, fetchPosts, deletePost } = usePosts();
+  const { posts, loading, error, fetchPosts, deletePost, duplicatePost } = usePosts();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Get the current agency ID from the authenticated user
   const agencyId = currentUser?.uid;
@@ -177,14 +178,45 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     return null;
   };
 
-  const handleDuplicate = (postId: string) => {
-    console.log('Duplicating post:', postId);
+  const handleDuplicate = async (postId: string) => {
+    if (!agencyId) {
+      console.error('[PostsSection] No agency ID available for duplicating post');
+      toast({
+        title: "Authentication Error",
+        description: "No agency ID available. Please ensure you are signed in.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('[PostsSection] Duplicating post for agency:', agencyId, 'client:', clientId, 'post:', postId);
+      const newPostId = await duplicatePost(agencyId, clientId, postId);
+      console.log('Post duplicated successfully. New post ID:', newPostId);
+
+      toast({
+        title: "Post Duplicated",
+        description: "The post has been successfully duplicated and added to your posts list.",
+      });
+
+    } catch (error) {
+      console.error('Error duplicating post:', error);
+      toast({
+        title: "Duplication Failed",
+        description: "Failed to duplicate the post. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = async (postId: string) => {
     if (!agencyId) {
       console.error('[PostsSection] No agency ID available for deleting post');
-      alert('No agency ID available. Please ensure you are signed in.');
+      toast({
+        title: "Authentication Error",
+        description: "No agency ID available. Please ensure you are signed in.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -193,16 +225,24 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         console.log('[PostsSection] Deleting post for agency:', agencyId, 'client:', clientId, 'post:', postId);
         await deletePost(agencyId, clientId, postId);
         console.log('Post deleted:', postId);
+        toast({
+          title: "Post Deleted",
+          description: "The post has been successfully deleted.",
+        });
       } catch (error) {
         console.error('Error deleting post:', error);
-        alert('Failed to delete the post. Please try again.');
+        toast({
+          title: "Deletion Failed",
+          description: "Failed to delete the post. Please try again.",
+          variant: "destructive"
+        });
       }
     }
   };
 
-  const getScheduledDate = (idea: Idea) => {
-    if (idea.status === 'Scheduled' || idea.status === 'Posted') {
-      return formatRelativeTime(idea.createdAt);
+  const getScheduledDate = (post: Post) => {
+    if (post.status === 'Scheduled' || post.status === 'Posted') {
+      return formatRelativeTime(post.updatedAt);
     }
     return '—';
   };
@@ -403,10 +443,12 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                handleDuplicate(post.postId);
-                              }}>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDuplicate(post.postId);
+                                }}
+                              >
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
                               </DropdownMenuItem>
