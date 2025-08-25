@@ -481,17 +481,20 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+        <DialogHeader className="flex-shrink-0 pb-6">
+          <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+            <Calendar className="h-6 w-6" />
             Schedule Post
           </DialogTitle>
+          <p className="text-sm text-gray-600 mt-2">
+            Choose when to publish your post and set its status
+          </p>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Post Preview - Left Column with Independent Scroll */}
           <div className="flex flex-col min-h-0">
-            <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Post Preview</h3>
+            <h4 className="text-base font-medium mb-4 flex-shrink-0 text-gray-700">Post Preview</h4>
             <ScrollArea className="flex-1">
               <div className="pr-4">
                 <div className="bg-white rounded-lg border shadow-sm">
@@ -582,7 +585,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
           {/* Scheduling Interface - Right Column */}
           <div className="flex flex-col min-h-0">
-            <h3 className="text-lg font-semibold mb-4 flex-shrink-0">Choose Date & Time</h3>
+            <h4 className="text-base font-medium mb-4 flex-shrink-0 text-gray-700">Date & Time Settings</h4>
 
             <div className="flex-1 overflow-y-auto space-y-6">
               {/* Date Selection */}
@@ -744,7 +747,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
               {/* Status Selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold">Update Status</h3>
+                  <h5 className="text-sm font-medium text-gray-700">Post Status</h5>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">

@@ -55,12 +55,21 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
   const hasTimeslotsConfigured = isInitialized && predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
 
   // Get scheduled posts for this client (from Firestore via useScheduledPosts)
-  // Filter out posted posts - queue should only show scheduled posts
+  // Filter out posted posts and past posts - queue should only show scheduled posts for today or future
   const queueSlots = useMemo(() => {
     const client = mockClients.find(c => c.id === clientId);
+    const today = new Date();
+    const todayStartOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     return scheduledPosts
-      .filter(post => post.status !== 'Posted') // Only show scheduled posts in queue
+      .filter(post => {
+        // Only show scheduled posts (not posted)
+        if (post.status === 'Posted') return false;
+        
+        // Only show posts scheduled for today or future dates
+        const postDate = new Date(post.scheduledPostAt.seconds * 1000);
+        return postDate >= todayStartOfDay;
+      })
       .map(post => ({
         id: post.id,
         datetime: new Date(post.scheduledPostAt.seconds * 1000),

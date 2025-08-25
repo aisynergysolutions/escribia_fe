@@ -335,11 +335,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 className="h-8 w-8 p-0"
                 disabled={hasMedia}
               >
-                <BarChart3 className="h-4 w-4" />
+                <BarChart3 className={`h-4 w-4 ${hasPoll ? 'text-blue-600' : ''}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{hasMedia ? 'Remove media to add poll' : 'Add poll'}</p>
+              <p>{hasMedia ? 'Remove media to add poll' : hasPoll ? 'Edit poll' : 'Add poll'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -598,6 +598,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         open={showCreatePollModal}
         onOpenChange={setShowCreatePollModal}
         onCreatePoll={handleCreatePoll}
+        editingPoll={hasPoll ? pollData : null}
       />
 
       <CancelScheduleModal

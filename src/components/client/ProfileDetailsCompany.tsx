@@ -507,7 +507,7 @@ const ProfileDetailsCompany: React.FC = () => {
                   <p className="text-sm mt-1">{companyInfoData.role}</p>
                 )}
               </div>
-              <div>
+              {/* <div>
                 <Label className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Foundation Date
@@ -538,7 +538,7 @@ const ProfileDetailsCompany: React.FC = () => {
                 ) : (
                   <p className="text-sm mt-1">{companyInfoData.location || 'N/A'}</p>
                 )}
-              </div>
+              </div> */}
               <div>
                 <Label>Contact Email</Label>
                 {editingSection === 'companyInfo' ? (

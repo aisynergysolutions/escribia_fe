@@ -9,6 +9,7 @@ import StatusBadge from '../common/StatusBadge';
 import { Idea } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { formatCardDate } from '../../utils/dateUtils';
+import { stripHtmlTags } from '../../lib/utils';
 
 interface IdeaCardProps {
   idea: Idea;
@@ -62,10 +63,11 @@ const IdeaCard: React.FC<IdeaCardProps> = React.memo(({ idea, onClick }) => {
         </CardHeader>
         <CardContent className="flex-1 flex flex-col pb-3">
           <p className="text-sm text-gray-600 line-clamp-3 flex-1">
-            {idea.drafts && idea.drafts.length > 0
-              ? idea.drafts[idea.drafts.length - 1].text
-              : idea.currentDraftText || idea.initialIdeaPrompt || 'No content available'
-            }
+            {stripHtmlTags(
+              idea.drafts && idea.drafts.length > 0
+                ? idea.drafts[idea.drafts.length - 1].text
+                : idea.currentDraftText || idea.initialIdeaPrompt || 'No content available'
+            )}
           </p>
         </CardContent>
         <CardFooter className="pt-0 text-xs text-gray-500 flex justify-between flex-shrink-0">
