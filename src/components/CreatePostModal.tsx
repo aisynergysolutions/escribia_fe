@@ -437,7 +437,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Objective (optional)
+          Objective
         </label>
         <Select value={selectedObjective} onValueChange={(value) => setSelectedObjective(value === "none" ? "" : value)}>
           <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
@@ -458,7 +458,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Template (optional)
+          Template
         </label>
         <Select value={selectedTemplate} onValueChange={(value) => setSelectedTemplate(value === "none" ? "" : value)}>
           <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">

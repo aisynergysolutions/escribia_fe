@@ -14,6 +14,7 @@ import { useQueueData, DaySlot } from '../../hooks/useQueueData';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { useQueueOperations } from '../../hooks/useQueueOperations';
 import QueueViewSkeleton from '../../skeletons/QueueViewSkeleton';
+import { TimeslotsDataMap } from '../../context/EventsContext';
 
 interface ClientQueueViewProps {
   clientId: string;
@@ -37,6 +38,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
     hasTimeslotsConfigured,
     predefinedTimeSlots,
     activeDays,
+    timeslotsData,
     updateTimeslots,
     loadMoreDays,
     loadingTimeslotData,
@@ -57,7 +59,7 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
   );
 
   // Show timeslot modal automatically if no timeslots are configured
-  // Only trigger after loading is complete AND data has been initialized
+  // Only trigger after loading is complete AND data has been initialized for the current client
   React.useEffect(() => {
     if (!loadingTimeslotData && isInitialized && !hasTimeslotsConfigured) {
       setTimeslotModalOpen(true);
@@ -125,11 +127,11 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
     setNewScheduleDate(null);
   };
 
-  const handleSaveTimeslots = (timeslots: string[], days: string[]) => {
-    updateTimeslots(clientId, timeslots, days); // Pass clientId to updateTimeslots
+  const handleSaveTimeslots = (timeslotsData: TimeslotsDataMap) => {
+    updateTimeslots(clientId, timeslotsData); // Pass clientId and timeslotsData to updateTimeslots
   };
 
-  // Show greyed out state if data is initialized but no timeslots configured
+  // Show greyed out state if data is initialized for current client but no timeslots configured
   if (isInitialized && !hasTimeslotsConfigured) {
     return (
       <>
@@ -152,8 +154,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
           isOpen={timeslotModalOpen}
           onClose={() => setTimeslotModalOpen(false)}
           onSave={handleSaveTimeslots}
-          initialTimeslots={predefinedTimeSlots}
-          initialDays={activeDays}
+          initialTimeslotsData={timeslotsData}
+          clientId={clientId}
         />
       </>
     );
@@ -181,14 +183,15 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
           isOpen={timeslotModalOpen}
           onClose={() => setTimeslotModalOpen(false)}
           onSave={handleSaveTimeslots}
-          initialTimeslots={predefinedTimeSlots}
-          initialDays={activeDays}
+          initialTimeslotsData={timeslotsData}
+          clientId={clientId}
         />
       </>
     );
   }
 
-  if (loadingTimeslotData) {
+  // Show loading state if data is loading OR if we don't have data for the current client yet
+  if (loadingTimeslotData || !isInitialized) {
     return <QueueViewSkeleton />;
   }
 
@@ -299,8 +302,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
         isOpen={timeslotModalOpen}
         onClose={() => setTimeslotModalOpen(false)}
         onSave={handleSaveTimeslots}
-        initialTimeslots={predefinedTimeSlots}
-        initialDays={activeDays}
+        initialTimeslotsData={timeslotsData}
+        clientId={clientId}
       />
     </>
   );

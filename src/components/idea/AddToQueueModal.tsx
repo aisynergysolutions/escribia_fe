@@ -504,7 +504,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Post Preview - Left Column */}
           <div className="flex flex-col min-h-0">
-            <h4 className="text-base font-medium mb-4 flex-shrink-0 text-gray-700">Post Preview</h4>
+            {/* <h4 className="text-base font-medium mb-4 flex-shrink-0 text-gray-700">Post Preview</h4> */}
             <ScrollArea className="flex-1">
               <div className="pr-4">
                 <div className="bg-white rounded-lg border shadow-sm">
@@ -595,7 +595,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
 
           {/* Queue Options - Right Column */}
           <div className="flex flex-col min-h-0">
-            <h4 className="text-base font-medium mb-4 flex-shrink-0 text-gray-700">Time Slot Options</h4>
+            {/* <h4 className="text-base font-medium mb-4 flex-shrink-0 text-gray-700">Time Slot Options</h4> */}
 
             <div className="flex-1 overflow-y-auto space-y-6">
               {/* Suggested Posting Time */}

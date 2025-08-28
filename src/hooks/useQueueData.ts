@@ -51,8 +51,16 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
 
   const predefinedTimeSlots = timeslotData?.predefinedTimeSlots || [];
   const activeDays = timeslotData?.activeDays || [];
+  const timeslotsData = timeslotData?.timeslotsData || {};
   const isInitialized = timeslotData?.isInitialized || false;
-  const hasTimeslotsConfigured = isInitialized && predefinedTimeSlots.length >= 2 && activeDays.length >= 2;
+  const isDataForCurrentClient = timeslotData?.clientId === clientId;
+  
+  // Only consider data as valid if it's for the current client and initialized
+  const isCurrentClientDataReady = isInitialized && isDataForCurrentClient;
+  const hasTimeslotsConfigured = isCurrentClientDataReady && (
+    Object.keys(timeslotsData).length > 0 || 
+    (predefinedTimeSlots.length >= 2 && activeDays.length >= 2)
+  );
 
   // Get scheduled posts for this client (from Firestore via useScheduledPosts)
   // Filter out posted posts and past posts - queue should only show scheduled posts for today or future
@@ -89,7 +97,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
 
   // Group slots by day with empty placeholders
   const dayGroups = useMemo(() => {
-    if (!isInitialized || !hasTimeslotsConfigured) return {};
+    if (!isCurrentClientDataReady || !hasTimeslotsConfigured) return {};
 
     // Get dates that have scheduled posts
     const datesWithPosts = new Set(
@@ -117,7 +125,11 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
         if (dateStr >= todayDateStr) {
           const dayName = format(day, 'EEEE');
           
-          if (activeDays.includes(dayName)) {
+          // Check if this day has timeslots configured (new format) or is in activeDays (old format)
+          const hasTimeslotsForDay = timeslotsData[dayName] && Object.keys(timeslotsData[dayName]).length > 0;
+          const isActiveDayOldFormat = activeDays.includes(dayName);
+          
+          if (hasTimeslotsForDay || isActiveDayOldFormat) {
             allDatesToShow.add(dateStr);
           }
         }
@@ -137,9 +149,6 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
         format(slot.datetime, 'yyyy-MM-dd') === dateStr
       );
 
-      // This date is either an active day or has scheduled posts (filtered in collection phase)
-      const isActiveDay = activeDays.includes(dayName);
-
       groups[dateStr] = [];
 
       // First, add all scheduled posts for this day (including custom times)
@@ -150,23 +159,42 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
         addedTimes.add(format(slot.datetime, 'HH:mm'));
       });
 
-      // Then, add empty slots for predefined timeslots that don't have posts
-      // But only for active days and when not hiding empty slots
-      if (!hideEmptySlots && isActiveDay) {
-        predefinedTimeSlots.forEach(timeSlot => {
-          if (!addedTimes.has(timeSlot)) {
-            const slotDateTime = new Date(date);
-            const [hours, minutes] = timeSlot.split(':').map(Number);
-            slotDateTime.setHours(hours, minutes, 0, 0);
-            
-            groups[dateStr].push({
-              isEmpty: true,
-              datetime: slotDateTime,
-              time: timeSlot,
-              id: `empty-${dateStr}-${timeSlot}`
-            });
-          }
-        });
+      // Then, add empty slots for configured timeslots that don't have posts
+      if (!hideEmptySlots) {
+        // Check for new format first (per-day timeslots)
+        if (timeslotsData[dayName] && Object.keys(timeslotsData[dayName]).length > 0) {
+          // New format: use per-day timeslots
+          Object.keys(timeslotsData[dayName]).forEach(timeSlot => {
+            if (!addedTimes.has(timeSlot)) {
+              const slotDateTime = new Date(date);
+              const [hours, minutes] = timeSlot.split(':').map(Number);
+              slotDateTime.setHours(hours, minutes, 0, 0);
+              
+              groups[dateStr].push({
+                isEmpty: true,
+                datetime: slotDateTime,
+                time: timeSlot,
+                id: `empty-${dateStr}-${timeSlot}`
+              });
+            }
+          });
+        } else if (activeDays.includes(dayName)) {
+          // Old format: use global timeslots for active days
+          predefinedTimeSlots.forEach(timeSlot => {
+            if (!addedTimes.has(timeSlot)) {
+              const slotDateTime = new Date(date);
+              const [hours, minutes] = timeSlot.split(':').map(Number);
+              slotDateTime.setHours(hours, minutes, 0, 0);
+              
+              groups[dateStr].push({
+                isEmpty: true,
+                datetime: slotDateTime,
+                time: timeSlot,
+                id: `empty-${dateStr}-${timeSlot}`
+              });
+            }
+          });
+        }
       }
 
       // Sort slots by time
@@ -178,7 +206,7 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     });
 
     return groups;
-  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, hasTimeslotsConfigured, loadedMonths, isInitialized]);
+  }, [queueSlots, hideEmptySlots, predefinedTimeSlots, activeDays, timeslotsData, hasTimeslotsConfigured, loadedMonths, isCurrentClientDataReady]);
 
   const refreshQueue = () => {
     setRefreshKey(prev => prev + 1);
@@ -197,10 +225,11 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
     hasTimeslotsConfigured,
     predefinedTimeSlots,
     activeDays,
+    timeslotsData,
     loadMoreDays,
     loadingTimeslotData,
     updateTimeslots, // Expose the function
-    isInitialized,
+    isInitialized: isCurrentClientDataReady, // Use the client-specific initialization flag
     optimisticallyUpdatePost,
     optimisticallyRemovePost,
     rollbackOptimisticUpdate,

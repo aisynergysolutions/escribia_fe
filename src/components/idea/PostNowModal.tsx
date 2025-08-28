@@ -210,7 +210,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 flex flex-col space-y-6">
-          <h3 className="text-lg font-semibold flex-shrink-0">Post Preview</h3>
+          {/* <h3 className="text-lg font-semibold flex-shrink-0">Post Preview</h3> */}
           <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
               <div className="pr-4 pb-4">
