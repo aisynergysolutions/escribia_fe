@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { usePosts } from '@/context/PostsContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePostDetails } from '@/context/PostDetailsContext';
+import { doc as firestoreDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -237,7 +239,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
-  const handleCreateFromUrl = () => {
+  const handleCreateFromUrl = async () => {
     if (!agencyId) {
       toast({
         title: 'Error',
@@ -248,18 +250,131 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
 
     if (urlInput.trim() && clientId && selectedSubClient) {
-      const temppostId = `temp-${Date.now()}`;
-      const urlData = {
-        agencyId,
-        url: urlInput,
-        remarks: urlRemarks,
-        objective: selectedObjective,
-        template: selectedTemplate,
-        subClientId: selectedSubClient
-      };
-      navigate(`/clients/${clientId}/posts/${temppostId}?new=true&method=url&data=${encodeURIComponent(JSON.stringify(urlData))}`);
-      setIsOpen(false);
-      resetForm();
+      try {
+        const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
+        if (!selectedProfile) {
+          toast({
+            title: 'Error',
+            description: 'Selected profile not found',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Show loader on the button
+        setIsRefreshing(true);
+
+        // Step 1: Generate a unique post ID
+        const postId = uuidv4();
+
+        // Step 2: Create the post in Firestore (without AI-generated content initially)
+        const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
+        console.log('[CreatePostModal] Creating URL post for agency:', agencyId, 'client:', clientId);
+        await createPost(agencyId, clientId, {
+          profileId: selectedProfile.id,
+          profileName: selectedProfile.profileName,
+          profileRole: selectedProfile.role || '',
+          objective: selectedObjective,
+          templateUsedId: selectedTemplate,
+          templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
+          initialIdeaPrompt: `Generate content from URL: ${urlInput}`,
+        }, postId);
+
+        // Step 2.5: Update the document with URL fields that the Railway API expects
+        const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+        await updateDoc(postRef, {
+          sourceUrl: urlInput.trim(), // Primary field for Railway API
+          url: urlInput.trim(), // Backup field for Railway API
+          sourceURL: {
+            url: urlInput.trim(),
+            remarks: urlRemarks.trim()
+          },
+          updatedAt: new Date().toISOString()
+        });
+
+        // Step 3: Generate AI content from URL using Railway API
+        let result;
+        try {
+          const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              agency_id: agencyId,
+              client_id: clientId,
+              subclient_id: selectedProfile.id,
+              idea_id: postId,
+              input_mode: 'link',
+              save: true,
+              create_title: true,
+              create_hooks: true,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch from the endpoint');
+          }
+
+          result = await response.json();
+        } catch (error) {
+          console.error('Error fetching from endpoint:', error);
+          toast({
+            title: 'AI Generation Error',
+            description: 'There was a problem generating your post from the URL. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsRefreshing(false);
+          return;
+        }
+
+        // Step 4: Check if generation was successful and update context
+        if (result.success) {
+          // Update the context with the AI-generated title and content
+          if (result.title) {
+            await updatePostInContext(agencyId, clientId, postId, {
+              title: result.title,
+              ...(result.post_content && { currentDraftText: result.post_content }),
+              ...(result.generatedHooks && { generatedHooks: result.generatedHooks }),
+              ...(result.hooks && { generatedHooks: result.hooks })
+            });
+          }
+
+          toast({
+            title: 'Post Generated',
+            description: 'Your post has been successfully generated from the URL.',
+          });
+          console.log('Generated Post from URL:', result.post_content);
+          console.log('Generated Title:', result.title);
+          console.log('Generated Hooks:', result.generatedHooks || result.hooks);
+          console.log('Source URL:', result.source_url);
+          console.log('Source Type:', result.source_type);
+          resetForm();
+          navigate(`/clients/${clientId}/posts/${postId}?new=true`);
+
+          setIsOpen(false);
+        } else {
+          toast({
+            title: 'AI Generation Error',
+            description: result.error || 'Failed to generate post from URL. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsRefreshing(false);
+          // Delete firestore document if generation failed
+          await deletePost(agencyId, clientId, postId);
+          return;
+        }
+      } catch (error) {
+        console.error('Error generating post from URL:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        // Hide the loader
+        setIsRefreshing(false);
+      }
     }
   };
 
@@ -831,20 +946,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       case 'url':
         return (
-          <div className="relative space-y-6 animate-fade-in">
-            {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
-              <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                <div className="w-16 h-16 bg-[#4F46E5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Youtube className="w-8 h-8 text-[#4F46E5]" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  URL content generation functionality is currently in development and will be available soon.
-                </p>
-              </div>
-            </div>
-
+          <div className="space-y-6 animate-fade-in">
             {renderObjectiveAndTemplate()}
 
             <div>
@@ -871,12 +973,23 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               />
             </div>
 
+            <div className="text-xs text-muted-foreground">
+              AI will analyze the content from the URL and generate a LinkedIn post
+            </div>
+
             <Button
               onClick={handleCreateFromUrl}
-              disabled={!urlInput.trim() || !selectedSubClient}
+              disabled={!urlInput.trim() || !selectedSubClient || isRefreshing}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-              Generate posts from URL
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating from URL...
+                </>
+              ) : (
+                'Generate post from URL'
+              )}
             </Button>
           </div>
         );
