@@ -555,6 +555,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         mediaFiles={mediaFiles}
         pollData={pollData}
         profileData={post ? {
+          profileId: post.profileId,
           name: getProfileName(post),
           role: getProfileRole(post),
           profileImage: getProfileImageUrl(post)

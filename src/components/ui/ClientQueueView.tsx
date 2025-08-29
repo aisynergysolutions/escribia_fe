@@ -229,6 +229,8 @@ const ClientQueueView: React.FC<ClientQueueViewProps> = ({ clientId, onPostSched
                           key={slot.id}
                           time={slot.time}
                           date={slot.datetime}
+                          assignedProfiles={slot.assignedProfiles}
+                          isGeneric={slot.isGeneric}
                           onSchedulePost={handleSchedulePost}
                           onDrop={handleEmptySlotDrop}
                           onDragOver={(e) => handleDragOver(e, slot.id)}

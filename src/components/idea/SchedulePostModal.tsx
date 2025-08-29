@@ -255,6 +255,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       const postEventData = {
         title: post?.title || '',
         profile: typeof post?.profile === 'object' ? post.profile.profileName : (post?.profile || ''),
+        profileId: post?.profileId || '',
         status: selectedStatus,
         updatedAt: Timestamp.now(),
         scheduledPostAt: Timestamp.fromDate(scheduledDate),

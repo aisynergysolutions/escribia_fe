@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
-import { useEvents } from '../context/EventsContext';
+import { useEvents, TimeslotProfile } from '../context/EventsContext';
 import { useScheduledPostsContext } from '../context/ScheduledPostsContext';
 import { mockClients } from '../types';
 
@@ -23,6 +23,8 @@ interface EmptySlot {
   datetime: Date;
   time: string;
   id: string;
+  assignedProfiles: TimeslotProfile[]; // Add assigned profiles information
+  isGeneric: boolean; // Flag to indicate if this is a generic slot (available for all profiles)
 }
 
 export type DaySlot = QueueSlot | EmptySlot;
@@ -170,11 +172,16 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
               const [hours, minutes] = timeSlot.split(':').map(Number);
               slotDateTime.setHours(hours, minutes, 0, 0);
               
+              const assignedProfiles = timeslotsData[dayName][timeSlot] || [];
+              const isGeneric = assignedProfiles.length === 0;
+              
               groups[dateStr].push({
                 isEmpty: true,
                 datetime: slotDateTime,
                 time: timeSlot,
-                id: `empty-${dateStr}-${timeSlot}`
+                id: `empty-${dateStr}-${timeSlot}`,
+                assignedProfiles,
+                isGeneric
               });
             }
           });
@@ -190,7 +197,9 @@ export const useQueueData = (clientId: string, hideEmptySlots: boolean) => {
                 isEmpty: true,
                 datetime: slotDateTime,
                 time: timeSlot,
-                id: `empty-${dateStr}-${timeSlot}`
+                id: `empty-${dateStr}-${timeSlot}`,
+                assignedProfiles: [], // Old format always generic
+                isGeneric: true
               });
             }
           });

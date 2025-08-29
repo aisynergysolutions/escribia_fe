@@ -58,16 +58,26 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
         'Monday': { '09:00': [], '13:00': [] },
         'Tuesday': { '09:00': [], '13:00': [] }
       });
+      setSelectedDay('Monday'); // Set Monday as selected when initializing
     } else {
       setTimeslotsData(initialTimeslotsData);
     }
   }, [initialTimeslotsData]);
 
-  // Set the first available day as selected by default
+  // Set the first day with timeslots as selected by default, or Monday if none
   useEffect(() => {
-    const activeDays = getActiveDays();
-    if (activeDays.length > 0 && !selectedDay) {
-      setSelectedDay(activeDays[0]);
+    if (!selectedDay) {
+      const daysWithTimeslots = Object.keys(timeslotsData).filter(day =>
+        timeslotsData[day] && Object.keys(timeslotsData[day]).length > 0
+      );
+      if (daysWithTimeslots.length > 0) {
+        // Sort by DAYS_OF_WEEK order and pick the first
+        const sortedDays = DAYS_OF_WEEK.filter(day => daysWithTimeslots.includes(day));
+        setSelectedDay(sortedDays[0]);
+      } else {
+        // Default to Monday if no timeslots are configured
+        setSelectedDay('Monday');
+      }
     }
   }, [timeslotsData, selectedDay]);
 
@@ -92,7 +102,14 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
     delete newData[day];
     setTimeslotsData(newData);
     if (selectedDay === day) {
-      setSelectedDay(null);
+      // Select the first available day with timeslots, or the first day if none
+      const remainingDays = Object.keys(newData);
+      if (remainingDays.length > 0) {
+        setSelectedDay(remainingDays[0]);
+      } else {
+        // If no days with timeslots remain, select Monday by default
+        setSelectedDay('Monday');
+      }
     }
   };
 
@@ -140,30 +157,20 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
     }
   };
 
-  const clearAllProfilesForTimeslot = (day: string, time: string) => {
-    setTimeslotsData(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [time]: []
-      }
-    }));
-  };
 
   const handleSave = () => {
     // Validate: at least one day with at least one timeslot
-    const activeDays = getActiveDays();
-    const hasValidTimeslots = activeDays.some(day => getTimeslotsForDay(day).length > 0);
-
-    if (activeDays.length > 0 && hasValidTimeslots) {
+    if (isValid()) {
       onSave(timeslotsData);
       onClose();
     }
   };
 
   const isValid = () => {
-    const activeDays = getActiveDays();
-    return activeDays.length > 0 && activeDays.some(day => getTimeslotsForDay(day).length > 0);
+    // Check if at least one day has at least one timeslot
+    return Object.keys(timeslotsData).some(day =>
+      timeslotsData[day] && Object.keys(timeslotsData[day]).length > 0
+    );
   };
 
   const convertProfileToTimeslotProfile = (profile: any): TimeslotProfile => ({
@@ -180,182 +187,189 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Day Selection */}
+          {/* Main Configuration Layout */}
           <div>
-            <h3 className="text-sm font-medium mb-3">Active Days</h3>
-            <p className="text-xs text-gray-500 mb-3">Select the days when you want to post</p>
-            <div className="grid grid-cols-4 gap-2">
-              {DAYS_OF_WEEK.map((day) => {
-                const isActive = getActiveDays().includes(day);
-                return (
-                  <div key={day} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={day}
-                      checked={isActive}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          addDay(day);
-                        } else {
-                          removeDay(day);
-                        }
-                      }}
-                    />
-                    <label htmlFor={day} className="text-sm">{day}</label>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            <h3 className="text-sm font-medium mb-3">Configure Posting Schedule</h3>
+            <p className="text-xs text-gray-500 mb-4">Select a day to configure its timeslots. Days with timeslots will appear active.</p>
 
-          {/* Day Configuration */}
-          {getActiveDays().length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium mb-3">Configure Timeslots for Each Day</h3>
-              <div className="flex gap-4">
-                {/* Day Selector - Compact width */}
-                <div className="flex-shrink-0" style={{ minWidth: '120px', maxWidth: '150px' }}>
-                  <h4 className="text-sm font-medium mb-2">Select Day to Configure</h4>
-                  <div className="space-y-2">
-                    {getActiveDays().map((day) => (
+            <div className="flex gap-4">
+              {/* All Days Selector - Left Column */}
+              <div className="flex-shrink-0" style={{ minWidth: '150px', maxWidth: '180px' }}>
+                <h4 className="text-sm font-medium mb-2">Days of the Week</h4>
+                <div className="space-y-2">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const hasTimeslots = timeslotsData[day] && Object.keys(timeslotsData[day]).length > 0;
+                    const isSelected = selectedDay === day;
+
+                    return (
                       <Button
                         key={day}
-                        variant={selectedDay === day ? "default" : "outline"}
-                        className="w-full justify-start text-sm px-3 py-2 whitespace-nowrap"
-                        onClick={() => setSelectedDay(day)}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`w-full justify-start text-sm px-3 py-2 whitespace-nowrap ${!hasTimeslots
+                            ? 'opacity-50 text-gray-400 border-gray-200'
+                            : ''
+                          }`}
+                        onClick={() => {
+                          setSelectedDay(day);
+                          // If the day has no timeslots, add a default one
+                          if (!hasTimeslots) {
+                            addDay(day);
+                          }
+                        }}
                       >
-                        {day}
+                        <div className="flex items-center justify-between w-full">
+                          <span>{day}</span>
+                          {hasTimeslots && (
+                            <span className="text-xs bg-green-100 text-green-600 px-1 rounded">
+                              {Object.keys(timeslotsData[day]).length}
+                            </span>
+                          )}
+                        </div>
                       </Button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
+              </div>
 
-                {/* Timeslot Configuration - Takes remaining space */}
-                {selectedDay && (
-                  <div className="flex-1 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium">Timeslots for {selectedDay}</h4>
-                    </div>
-
-                    {/* Add New Timeslot */}
-                    <div className="flex gap-2">
-                      <Input
-                        type="time"
-                        value={newTimeslot}
-                        onChange={(e) => setNewTimeslot(e.target.value)}
-                        className="flex-1"
-                      />
+              {/* Timeslot Configuration - Takes remaining space */}
+              {selectedDay && (
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Timeslots for {selectedDay}</h4>
+                    {timeslotsData[selectedDay] && Object.keys(timeslotsData[selectedDay]).length > 0 && (
                       <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => addTimeslotToDay(selectedDay)}
-                        disabled={!newTimeslot || !!timeslotsData[selectedDay][newTimeslot]}
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-red-600 hover:text-red-700"
+                        onClick={() => removeDay(selectedDay)}
                       >
-                        <Plus className="h-4 w-4" />
+                        Clear All Timeslots for {selectedDay}
                       </Button>
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Existing Timeslots */}
-                    <div className="space-y-3">
-                      {getTimeslotsForDay(selectedDay).sort().map((time) => {
-                        const assignedProfiles = timeslotsData[selectedDay][time];
-                        const isGeneric = assignedProfiles.length === 0;
+                  {/* Add New Timeslot */}
+                  <div className="flex gap-2">
+                    <Input
+                      type="time"
+                      value={newTimeslot}
+                      onChange={(e) => setNewTimeslot(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => addTimeslotToDay(selectedDay)}
+                      disabled={!newTimeslot || !!timeslotsData[selectedDay]?.[newTimeslot]}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-                        return (
-                          <div key={time} className="border rounded-lg p-3 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{time}</span>
-                                {isGeneric ? (
-                                  <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                    <Users className="h-3 w-3" />
-                                    All Profiles
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                                    <User className="h-3 w-3" />
-                                    {assignedProfiles.length} Profile{assignedProfiles.length > 1 ? 's' : ''}
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => removeTimeslotFromDay(selectedDay, time)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
+                  {/* Existing Timeslots */}
+                  <div className="space-y-3">
+                    {getTimeslotsForDay(selectedDay).sort().map((time) => {
+                      const assignedProfiles = timeslotsData[selectedDay][time];
+                      const isGeneric = assignedProfiles.length === 0;
 
-                            {/* Profile Assignment */}
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-gray-600">Assigned Profiles</span>
-                                {!isGeneric && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 text-xs"
-                                    onClick={() => clearAllProfilesForTimeslot(selectedDay, time)}
-                                  >
-                                    Clear All
-                                  </Button>
-                                )}
-                              </div>
-
-                              {profiles.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
-                                  {profiles.map((profile) => {
-                                    const timeslotProfile = convertProfileToTimeslotProfile(profile);
-                                    const isAssigned = assignedProfiles.some(p => p.profileId === profile.id);
-
-                                    return (
-                                      <div key={profile.id} className="flex items-center space-x-2 p-1">
-                                        <Checkbox
-                                          id={`${selectedDay}-${time}-${profile.id}`}
-                                          checked={isAssigned}
-                                          onCheckedChange={() =>
-                                            toggleProfileForTimeslot(selectedDay, time, timeslotProfile)
-                                          }
-                                        />
-                                        <label
-                                          htmlFor={`${selectedDay}-${time}-${profile.id}`}
-                                          className="text-xs flex items-center gap-2 cursor-pointer flex-1"
-                                        >
-                                          <img
-                                            src={timeslotProfile.profilePicture}
-                                            alt={profile.profileName}
-                                            className="w-5 h-5 rounded-full object-cover"
-                                            onError={(e) => {
-                                              (e.target as HTMLImageElement).src = '/placeholder.svg';
-                                            }}
-                                          />
-                                          {profile.profileName}
-                                        </label>
-                                      </div>
-                                    );
-                                  })}
+                      return (
+                        <div key={time} className="border rounded-lg p-3 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{time}</span>
+                              {isGeneric ? (
+                                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                  <Users className="h-3 w-3" />
+                                  All Profiles
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-500">No profiles available</p>
+                                <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                  <User className="h-3 w-3" />
+                                  {assignedProfiles.length} Profile{assignedProfiles.length > 1 ? 's' : ''}
+                                </div>
                               )}
-
-                              <p className="text-xs text-gray-500">
-                                {isGeneric
-                                  ? "This timeslot is available for all profiles"
-                                  : `Only selected profiles can post at this time`
-                                }
-                              </p>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => removeTimeslotFromDay(selectedDay, time)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          {/* Profile Assignment */}
+                          <div className="space-y-2">
+
+                            {profiles.length > 0 ? (
+                              <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                                {profiles.map((profile) => {
+                                  const timeslotProfile = convertProfileToTimeslotProfile(profile);
+                                  const isAssigned = assignedProfiles.some(p => p.profileId === profile.id);
+
+                                  return (
+                                    <div key={profile.id} className="flex items-center space-x-2 p-1">
+                                      <Checkbox
+                                        id={`${selectedDay}-${time}-${profile.id}`}
+                                        checked={isAssigned}
+                                        onCheckedChange={() =>
+                                          toggleProfileForTimeslot(selectedDay, time, timeslotProfile)
+                                        }
+                                      />
+                                      <label
+                                        htmlFor={`${selectedDay}-${time}-${profile.id}`}
+                                        className="text-xs flex items-center gap-2 cursor-pointer flex-1"
+                                      >
+                                        <img
+                                          src={timeslotProfile.profilePicture}
+                                          alt={profile.profileName}
+                                          className="w-5 h-5 rounded-full object-cover"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                          }}
+                                        />
+                                        {profile.profileName}
+                                      </label>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500">No profiles available</p>
+                            )}
+
+                            <p className="text-xs text-gray-500">
+                              {isGeneric
+                                ? "This timeslot is available for all profiles"
+                                : `Only selected profiles can post at this time`
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {getTimeslotsForDay(selectedDay).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p className="text-sm">No timeslots configured for {selectedDay}</p>
+                        <p className="text-xs">Add a timeslot above to get started</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {!selectedDay && (
+                <div className="flex-1 flex items-center justify-center py-12 text-gray-500">
+                  <div className="text-center">
+                    <p className="text-sm">Select a day to configure timeslots</p>
+                    <p className="text-xs">Click on any day from the left to start</p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={onClose}>
