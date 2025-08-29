@@ -186,10 +186,10 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
           <DialogTitle>Configure Posting Schedule</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-0">
           {/* Main Configuration Layout */}
           <div>
-            <h3 className="text-sm font-medium mb-3">Configure Posting Schedule</h3>
+            {/* <h3 className="text-sm font-medium mb-3">Configure Posting Schedule</h3> */}
             <p className="text-xs text-gray-500 mb-4">Select a day to configure its timeslots. Days with timeslots will appear active.</p>
 
             <div className="flex gap-4">

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Profile, useProfiles } from '@/context/ProfilesContext';
 import { TemplateCard, useTemplates } from '@/context/TemplatesContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2 } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { usePosts } from '@/context/PostsContext';
 import { useAuth } from '@/context/AuthContext';
+import { usePostDetails } from '@/context/PostDetailsContext';
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -38,12 +39,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [hasRecording, setHasRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [postSuggestions, setPostSuggestions] = useState([
+  const [scratchTitle, setScratchTitle] = useState('');
+  const [scratchContent, setScratchContent] = useState('');
+  // Mock suggestions for when no profile is selected
+  const mockSuggestions = [
     'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
     'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.',
     "The LinkedIn Algorithm Just Changed: Here's exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.",
     "From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we've consulted)."
-  ]);
+  ];
+  const [postSuggestions, setPostSuggestions] = useState<string[]>(mockSuggestions);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -58,6 +63,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { fetchProfiles, profiles: clientProfiles, setActiveClientId } = useProfiles();
   const { templates: allTemplates } = useTemplates();
   const { createPost, updatePostInContext, deletePost } = usePosts();
+  const { saveNewDraft } = usePostDetails();
   const { currentUser } = useAuth();
   const objectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
 
@@ -174,11 +180,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           console.log('Generated Post:', result.post_content);
           console.log('Generated Title:', result.title);
           console.log('Generated Hooks:', result.generatedHooks || result.hooks);
-          setIsOpen(false);
           resetForm();
-
-          // Navigate to the PostDetails page - it will fetch fresh data from Firestore
           navigate(`/clients/${clientId}/posts/${postId}?new=true`);
+
+          setIsOpen(false);
+          // Navigate to the PostDetails page - it will fetch fresh data from Firestore
         } else {
           toast({
             title: 'AI Generation Error',
@@ -257,6 +263,75 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
+  const handleCreateFromScratch = async () => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (scratchTitle.trim() && scratchContent.trim() && clientId && selectedSubClient) {
+      try {
+        const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
+        if (!selectedProfile) {
+          toast({
+            title: 'Error',
+            description: 'Selected profile not found',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Show loader on the button
+        setIsRefreshing(true);
+
+        // Step 1: Generate a unique post ID
+        const postId = uuidv4();
+
+        // Step 2: Create the post in Firestore with the user-provided content
+        const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
+        console.log('[CreatePostModal] Creating scratch post for agency:', agencyId, 'client:', clientId);
+
+        await createPost(agencyId, clientId, {
+          profileId: selectedProfile.id,
+          profileName: selectedProfile.profileName,
+          profileRole: selectedProfile.role || '',
+          objective: selectedObjective,
+          templateUsedId: selectedTemplate,
+          templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
+          initialIdeaPrompt: 'Created from scratch',
+          title: scratchTitle.trim(),
+        }, postId);
+
+        // Step 3: Save the user-provided content as the first draft
+        await saveNewDraft(agencyId, clientId, postId, scratchContent.trim(), 'Initial content from scratch', false);
+
+        toast({
+          title: 'Post Created',
+          description: 'Your post has been successfully created.',
+        });
+
+        resetForm();
+        navigate(`/clients/${clientId}/posts/${postId}?new=true`);
+        setIsOpen(false);
+
+      } catch (error) {
+        console.error('Error creating scratch post:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        // Hide the loader
+        setIsRefreshing(false);
+      }
+    }
+  };
+
   const handleCreateFromSuggestion = (suggestion: string) => {
     if (!agencyId) {
       toast({
@@ -282,17 +357,50 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
-  const refreshSuggestions = async () => {
+  // Fetch AI suggestions from Railway API
+  const fetchAISuggestions = async (agencyId: string, clientId: string, subClientId: string) => {
     setIsRefreshing(true);
-    const allSuggestions = ['The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.', 'Why 90% of Digital Transformations Fail (And The 3-Step Framework That Actually Works): Real data from 500+ enterprise projects reveals the hidden pitfalls.', 'The LinkedIn Algorithm Just Changed: Here\'s exactly what content performs best in 2024, backed by analysis of 10,000+ posts from top performers.', 'From Startup to Scale-Up: The 7 critical technology decisions that will make or break your growth phase (learned from 50+ companies we\'ve consulted).', 'The Remote Work Revolution: 5 productivity tools that increased our team\'s output by 40% while reducing meeting time by half.', 'Cloud Migration Mistakes That Cost Companies Millions: What we learned from 100+ failed migrations and how to avoid them.', 'The Future of Cybersecurity: Why traditional firewalls are becoming obsolete and what\'s replacing them.', 'Building SaaS Products That Scale: Technical decisions we made at day 1 that saved us from rewriting everything at 1M users.'];
-
-    // Simulate loading time
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
-    setPostSuggestions(shuffled.slice(0, 4));
-    setIsRefreshing(false);
+    try {
+      const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/ideas/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agency_id: agencyId,
+          client_id: clientId,
+          subclient_id: subClientId,
+          num_ideas: 4,
+          save: true,
+          debug_prompts: false
+        })
+      });
+      if (!response.ok) throw new Error('Failed to fetch suggestions');
+      const data = await response.json();
+      if (data.success && Array.isArray(data.ideas)) {
+        setPostSuggestions(data.ideas.map((idea: any) => idea.text));
+      } else {
+        setPostSuggestions(["Could not fetch suggestions. Please try again."]);
+      }
+    } catch (e) {
+      setPostSuggestions(["Could not fetch suggestions. Please try again."]);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
+
+  // Refresh suggestions handler
+  const refreshSuggestions = async () => {
+    if (!selectedSubClient || !agencyId || !clientId) return;
+    await fetchAISuggestions(agencyId, clientId, selectedSubClient);
+  };
+  // Fetch suggestions when profile is selected
+  useEffect(() => {
+    if (selectedSubClient && agencyId && clientId) {
+      fetchAISuggestions(agencyId, clientId, selectedSubClient);
+    } else {
+      setPostSuggestions(mockSuggestions);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSubClient, agencyId, clientId]);
 
   const resetForm = () => {
     setIdeaText('');
@@ -308,6 +416,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setHasRecording(false);
     setAudioBlob(null);
     setIsPlaying(false);
+    setScratchTitle('');
+    setScratchContent('');
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
     }
@@ -421,12 +531,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       color: 'bg-muted text-muted-foreground'
     },
     {
+      id: 'scratch',
+      title: 'Create from scratch',
+      description: 'Write your own title and content',
+      icon: FileText,
+      color: 'bg-muted text-muted-foreground'
+    },
+    {
       id: 'suggestions',
       title: 'Post Suggestions',
       description: 'AI-generated post ideas',
       icon: Sparkles,
       color: 'bg-[#4F46E5] text-white'
-    }
+    },
   ];
 
   const handleMethodSelect = (methodId: string) => {
@@ -507,6 +624,56 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const renderRightPanel = () => {
     switch (selectedMethod) {
+      case 'scratch':
+        return (
+          <div className="space-y-6 animate-fade-in">
+            {renderObjectiveAndTemplate()}
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Post Title <span className="text-destructive">*</span>
+              </label>
+              <Input
+                value={scratchTitle}
+                onChange={e => setScratchTitle(e.target.value)}
+                placeholder="Enter your post title..."
+                className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Post Content <span className="text-destructive">*</span>
+              </label>
+              <Textarea
+                value={scratchContent}
+                onChange={e => setScratchContent(e.target.value)}
+                placeholder="Write your post content here..."
+                className="min-h-[200px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
+              />
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              You can add media and polls after creating the post
+            </div>
+
+            <Button
+              onClick={handleCreateFromScratch}
+              disabled={!scratchTitle.trim() || !scratchContent.trim() || !selectedSubClient || isRefreshing}
+              className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
+            >
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create post from scratch'
+              )}
+            </Button>
+          </div>
+        );
+
       case 'text':
         return (
           <div className="space-y-6 animate-fade-in">
@@ -522,6 +689,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 placeholder="Enter your idea here..."
                 className="min-h-[200px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
               />
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              You can add media and polls after creating the post
             </div>
 
             <Button
@@ -713,24 +884,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       case 'suggestions':
         return (
           <div className="relative h-full flex flex-col animate-fade-in">
-            {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
-              <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                <div className="w-16 h-16 bg-[#4F46E5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-[#4F46E5]" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  AI-powered post suggestions functionality is currently in development and will be available soon.
-                </p>
-              </div>
-            </div>
-
             <div className="relative h-full">
               {/* Floating Refresh Button */}
               <button
                 onClick={refreshSuggestions}
-                disabled={isRefreshing}
+                disabled={isRefreshing || !selectedSubClient}
                 className="absolute top-0 right-0 z-10 p-2 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group"
                 aria-label="Refresh suggestions"
               >
@@ -758,7 +916,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   postSuggestions.map((suggestion, index) => (
                     <div
                       key={index}
-                      className={`relative p-5 rounded-xl border border-gray-200 cursor-pointer transition-all duration-300 transform hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start min-h-[140px] ${!selectedSubClient ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative p-5 rounded-xl border border-gray-200 transition-all duration-300 transform min-h-[140px] ${selectedSubClient ? 'cursor-pointer hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start' : 'opacity-50 cursor-not-allowed blur-[2px] bg-gradient-to-br from-gray-100 to-gray-200'} `}
                       style={{
                         animationDelay: `${index * 100}ms`,
                         height: '170px'
@@ -781,10 +939,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                           {suggestion}
                         </p>
                       </div>
-                      <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
-                        }`} />
-                      <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${hoveredSuggestion === suggestion ? 'opacity-100' : ''
-                        }`} />
+                      {selectedSubClient && (
+                        <>
+                          <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
+                            }`} />
+                          <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${hoveredSuggestion === suggestion ? 'opacity-100' : ''
+                            }`} />
+                        </>
+                      )}
                     </div>
                   ))
                 )}
