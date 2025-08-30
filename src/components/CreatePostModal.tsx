@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Profile, useProfiles } from '@/context/ProfilesContext';
 import { TemplateCard, useTemplates } from '@/context/TemplatesContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2, FileText } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2, FileText, Copy, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -52,8 +52,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   ];
   const [postSuggestions, setPostSuggestions] = useState<string[]>(mockSuggestions);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
+  const [editingSuggestion, setEditingSuggestion] = useState<string | null>(null);
+  const [editedSuggestionText, setEditedSuggestionText] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [hasFetchedSuggestions, setHasFetchedSuggestions] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -457,7 +461,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       return;
     }
 
-    if (clientId && selectedSubClient) {
+    if (clientId && selectedSubClient && suggestion) {
       const temppostId = `temp-${Date.now()}`;
       const suggestionData = {
         agencyId,
@@ -472,9 +476,61 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
+  const handleSuggestionSelect = (suggestion: string) => {
+    setSelectedSuggestion(suggestion);
+  };
+
+  const handleCreateFromSelectedSuggestion = () => {
+    if (selectedSuggestion) {
+      console.log('Creating from selected suggestion:', selectedSuggestion);
+      handleCreateFromSuggestion(selectedSuggestion);
+    }
+  };
+
+  const handleCopySuggestion = (suggestion: string) => {
+    navigator.clipboard.writeText(suggestion);
+    toast({
+      title: 'Copied',
+      description: 'Suggestion copied to clipboard',
+    });
+  };
+
+  const handleEditSuggestion = (suggestion: string) => {
+    setEditingSuggestion(suggestion);
+    setEditedSuggestionText(suggestion);
+  };
+
+  const handleSaveEditedSuggestion = () => {
+    if (editingSuggestion && editedSuggestionText.trim()) {
+      const updatedSuggestions = postSuggestions.map(s =>
+        s === editingSuggestion ? editedSuggestionText.trim() : s
+      );
+      setPostSuggestions(updatedSuggestions);
+
+      // Update selected suggestion if it was the one being edited
+      if (selectedSuggestion === editingSuggestion) {
+        setSelectedSuggestion(editedSuggestionText.trim());
+      }
+
+      setEditingSuggestion(null);
+      setEditedSuggestionText('');
+
+      toast({
+        title: 'Updated',
+        description: 'Suggestion has been updated',
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSuggestion(null);
+    setEditedSuggestionText('');
+  };
+
   // Fetch AI suggestions from Railway API
   const fetchAISuggestions = async (agencyId: string, clientId: string, subClientId: string) => {
     setIsRefreshing(true);
+    setSelectedSuggestion(null);
     try {
       const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/ideas/generate', {
         method: 'POST',
@@ -484,7 +540,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           client_id: clientId,
           subclient_id: subClientId,
           num_ideas: 4,
-          save: true,
+          save: false,
           debug_prompts: false
         })
       });
@@ -492,6 +548,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       const data = await response.json();
       if (data.success && Array.isArray(data.ideas)) {
         setPostSuggestions(data.ideas.map((idea: any) => idea.text));
+        setHasFetchedSuggestions(subClientId);
       } else {
         setPostSuggestions(["Could not fetch suggestions. Please try again."]);
       }
@@ -507,15 +564,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     if (!selectedSubClient || !agencyId || !clientId) return;
     await fetchAISuggestions(agencyId, clientId, selectedSubClient);
   };
-  // Fetch suggestions when profile is selected
+
+  // Fetch suggestions when user navigates to suggestions tab
   useEffect(() => {
-    if (selectedSubClient && agencyId && clientId) {
-      fetchAISuggestions(agencyId, clientId, selectedSubClient);
-    } else {
+    if (selectedMethod === 'suggestions' && selectedSubClient && agencyId && clientId) {
+      // Only fetch if we haven't fetched for this profile yet
+      if (hasFetchedSuggestions !== selectedSubClient) {
+        fetchAISuggestions(agencyId, clientId, selectedSubClient);
+      }
+    } else if (selectedMethod !== 'suggestions' && !selectedSubClient) {
+      // Only reset to mock suggestions if no profile is selected
       setPostSuggestions(mockSuggestions);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubClient, agencyId, clientId]);
+  }, [selectedMethod, selectedSubClient, agencyId, clientId]);
 
   const resetForm = () => {
     setIdeaText('');
@@ -533,6 +595,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setIsPlaying(false);
     setScratchTitle('');
     setScratchContent('');
+    setSelectedSuggestion(null);
+    setEditingSuggestion(null);
+    setEditedSuggestionText('');
+    setHasFetchedSuggestions(null);
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
     }
@@ -774,17 +840,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button
               onClick={handleCreateFromScratch}
-              disabled={!scratchTitle.trim() || !scratchContent.trim() || !selectedSubClient || isRefreshing}
+              disabled={!scratchTitle.trim() || !scratchContent.trim() || !selectedSubClient}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create post from scratch'
-              )}
+
+              Create post from scratch
+
             </Button>
           </div>
         );
@@ -812,17 +873,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button
               onClick={handleCreateFromText}
-              disabled={!ideaText.trim() || !selectedSubClient || isRefreshing}
+              disabled={!ideaText.trim() || !selectedSubClient}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate post from text'
-              )}
+              Generate post from text
             </Button>
           </div>
         );
@@ -979,25 +1033,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button
               onClick={handleCreateFromUrl}
-              disabled={!urlInput.trim() || !selectedSubClient || isRefreshing}
+              disabled={!urlInput.trim() || !selectedSubClient}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating from URL...
-                </>
-              ) : (
-                'Generate post from URL'
-              )}
+
+              Generate post from URL
+
             </Button>
           </div>
         );
 
       case 'suggestions':
         return (
-          <div className="relative h-full flex flex-col animate-fade-in">
-            <div className="relative h-full">
+          <div className="relative h-full flex flex-col animate-fade-in overflow-hidden">
+            <div className="relative h-full overflow-hidden">
               {/* Floating Refresh Button */}
               <button
                 onClick={refreshSuggestions}
@@ -1009,15 +1058,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </button>
 
               {/* 2x2 Grid Container */}
-              <div className="grid grid-cols-2 gap-3 h-full pr-12">
+              <div className="grid grid-cols-2 gap-3 h-full pr-12 overflow-hidden pb-16">
                 {isRefreshing ? (
                   Array.from({ length: 4 }).map((_, index) => (
                     <div
                       key={`skeleton-${index}`}
-                      className="relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse h-[170px]"
-                      style={{ animationDelay: `${index * 100}ms` }}
+                      className="relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse flex-shrink-0"
+                      style={{
+                        animationDelay: `${index * 100}ms`,
+                        height: '170px',
+                        minWidth: 0
+                      }}
                     >
-                      <div className="space-y-2">
+                      <div className="space-y-2 w-full overflow-hidden">
                         <div className="h-3 bg-gray-300 rounded animate-pulse"></div>
                         <div className="h-3 bg-gray-300 rounded w-4/5 animate-pulse"></div>
                         <div className="h-3 bg-gray-300 rounded w-3/5 animate-pulse"></div>
@@ -1029,40 +1082,134 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   postSuggestions.map((suggestion, index) => (
                     <div
                       key={index}
-                      className={`relative p-5 rounded-xl border border-gray-200 transition-all duration-300 transform min-h-[140px] ${selectedSubClient ? 'cursor-pointer hover:scale-[1.025] hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 group flex items-start' : 'opacity-50 cursor-not-allowed blur-[2px] bg-gradient-to-br from-gray-100 to-gray-200'} `}
+                      className={`relative p-5 rounded-xl border transition-all duration-300 flex-shrink-0 ${!selectedSubClient
+                        ? 'opacity-50 cursor-not-allowed blur-[2px] bg-gradient-to-br from-gray-100 to-gray-200 border-gray-200'
+                        : editingSuggestion === suggestion
+                          ? 'bg-gradient-to-br from-[#4F46E5]/10 to-[#4F46E5]/5 border-[#4F46E5] shadow-lg'
+                          : selectedSuggestion === suggestion
+                            ? 'cursor-pointer bg-gradient-to-br from-[#4F46E5]/10 to-[#4F46E5]/5 border-[#4F46E5] shadow-lg'
+                            : 'cursor-pointer transform hover:shadow-lg bg-gradient-to-br from-white to-gray-50/80 hover:from-[#4F46E5]/5 hover:to-[#4F46E5]/10 hover:border-[#4F46E5]/30 border-gray-200'
+                        } group flex items-start`}
                       style={{
                         animationDelay: `${index * 100}ms`,
-                        height: '170px'
+                        height: '170px',
+                        minWidth: 0
                       }}
-                      onMouseEnter={() => selectedSubClient && setHoveredSuggestion(suggestion)}
-                      onMouseLeave={() => setHoveredSuggestion(null)}
-                      onClick={() => selectedSubClient && handleCreateFromSuggestion(suggestion)}
+                      onMouseEnter={() => selectedSubClient && editingSuggestion !== suggestion && setHoveredSuggestion(suggestion)}
+                      onMouseLeave={() => editingSuggestion !== suggestion && setHoveredSuggestion(null)}
+                      onClick={() => selectedSubClient && editingSuggestion !== suggestion && handleSuggestionSelect(suggestion)}
                       role="button"
-                      tabIndex={selectedSubClient ? 0 : -1}
+                      tabIndex={selectedSubClient && editingSuggestion !== suggestion ? 0 : -1}
                       onKeyDown={(e) => {
-                        if (selectedSubClient && (e.key === 'Enter' || e.key === ' ')) {
+                        if (selectedSubClient && editingSuggestion !== suggestion && (e.key === 'Enter' || e.key === ' ')) {
                           e.preventDefault();
-                          handleCreateFromSuggestion(suggestion);
+                          handleSuggestionSelect(suggestion);
                         }
                       }}
                       aria-label={`Select post idea: ${truncateText(suggestion, 60)}`}
                     >
-                      <div className="relative z-10 w-full">
-                        <p className="text-sm text-foreground leading-relaxed font-medium line-clamp-6 break-words">
-                          {suggestion}
-                        </p>
-                      </div>
-                      {selectedSubClient && (
+                      {editingSuggestion === suggestion ? (
+                        <div className="relative z-10 w-full h-full flex flex-col">
+                          <textarea
+                            value={editedSuggestionText}
+                            onChange={(e) => setEditedSuggestionText(e.target.value)}
+                            className="w-full flex-1 text-sm resize-none border-none outline-none bg-transparent font-medium leading-relaxed p-0 m-0"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.ctrlKey) {
+                                e.preventDefault();
+                                handleSaveEditedSuggestion();
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                handleCancelEdit();
+                              }
+                              e.stopPropagation();
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontFamily: 'inherit' }}
+                          />
+                          <div className="flex gap-2 mt-2 flex-shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveEditedSuggestion();
+                              }}
+                              className="px-2 py-1 text-xs bg-[#4F46E5] text-white rounded hover:bg-[#4338CA] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelEdit();
+                              }}
+                              className="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
                         <>
-                          <div className={`absolute inset-0 bg-gradient-to-br from-[#4F46E5]/0 to-[#4F46E5]/0 rounded-xl transition-all duration-300 ${hoveredSuggestion === suggestion ? 'from-[#4F46E5]/5 to-[#4F46E5]/10' : ''
-                            }`} />
-                          <div className={`absolute top-2 right-2 w-2 h-2 rounded-full bg-[#4F46E5] opacity-0 transition-opacity duration-200 ${hoveredSuggestion === suggestion ? 'opacity-100' : ''
-                            }`} />
+                          <div className="relative z-10 w-full overflow-hidden">
+                            <p className="text-sm text-foreground leading-relaxed font-medium line-clamp-6 break-words overflow-hidden">
+                              {suggestion}
+                            </p>
+                          </div>
+
+                          {/* Action buttons on hover */}
+                          {selectedSubClient && hoveredSuggestion === suggestion && editingSuggestion !== suggestion && (
+                            <div className="absolute top-2 right-2 flex gap-1 z-20">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopySuggestion(suggestion);
+                                }}
+                                className="p-1.5 bg-white/90 hover:bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition-all"
+                                title="Copy suggestion"
+                              >
+                                <Copy className="w-3 h-3 text-gray-600" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditSuggestion(suggestion);
+                                }}
+                                className="p-1.5 bg-white/90 hover:bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition-all"
+                                title="Edit suggestion"
+                              >
+                                <Edit className="w-3 h-3 text-gray-600" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Selection indicator */}
+                          {/* {selectedSubClient && selectedSuggestion === suggestion && (
+                            <div className="absolute top-2 right-2 w-3 h-3 bg-[#4F46E5] rounded-full z-10" />
+                          )} */}
                         </>
                       )}
                     </div>
                   ))
                 )}
+              </div>
+
+              {/* Create Post Button */}
+              <div className="absolute bottom-0 left-0 right-12 bg-white/95 backdrop-blur-sm border-t border-gray-200 p-4">
+                <Button
+                  onClick={handleCreateFromSelectedSuggestion}
+                  disabled={!selectedSuggestion || !selectedSubClient || isRefreshing}
+                  className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none disabled:bg-gray-300 disabled:text-gray-500"
+                >
+
+                  {isRefreshing
+                    ? 'Generating suggestions...'
+                    : selectedSuggestion
+                      ? 'Create post from selected idea'
+                      : 'Select an idea to continue'}
+                </Button>
               </div>
 
               {!selectedSubClient && (
