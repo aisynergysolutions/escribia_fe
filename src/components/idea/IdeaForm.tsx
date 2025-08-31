@@ -23,6 +23,11 @@ interface IdeaFormProps {
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
   isRegeneratingPost?: boolean; // Add loading prop
+  // Add props for disabled overlay functionality
+  postStatus?: string;
+  postedAt?: import('firebase/firestore').Timestamp;
+  onDuplicate?: () => Promise<string>;
+  onNavigate?: (newPostId: string) => void;
 }
 
 const IdeaForm: React.FC<IdeaFormProps> = ({
@@ -34,6 +39,10 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
   onSendToAI,
   onAddCustomObjective,
   isRegeneratingPost = false, // Default to false
+  postStatus,
+  postedAt,
+  onDuplicate,
+  onNavigate
 }) => {
   return (
     <div className="space-y-6">
@@ -49,6 +58,10 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         onSendToAI={onSendToAI}
         onAddCustomObjective={onAddCustomObjective}
         isRegeneratingPost={isRegeneratingPost} // Pass loading state
+        postStatus={postStatus}
+        postedAt={postedAt}
+        onDuplicate={onDuplicate}
+        onNavigate={onNavigate}
       />
     </div>
   );

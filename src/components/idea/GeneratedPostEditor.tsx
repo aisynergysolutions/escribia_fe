@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { usePosts } from '@/context/PostsContext';
 import { getProfileId, getProfileRole, getProfileImageUrl, getProfileName } from '@/types/post';
 import { Button } from '@/components/ui/button';
 import { usePostDetails } from '@/context/PostDetailsContext';
@@ -18,6 +20,7 @@ import CommentPopover from './CommentPopover';
 import VersionHistoryModal from './VersionHistoryModal';
 import PollPreview from './PollPreview';
 import CreatePollModal from './CreatePollModal';
+import PostEditorDisabledOverlay from './PostEditorDisabledOverlay';
 import { CommentThread } from './CommentsPanel';
 import { Poll } from '@/context/PostDetailsContext';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
@@ -122,11 +125,17 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const [hasMedia, setHasMedia] = useState(false);
   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
+  const [showDisabledOverlay, setShowDisabledOverlay] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { duplicatePost } = usePosts();
   const { editPostPartial, publishPostNow, uploadPostImages, uploadPostVideo, removePostImage, removeAllPostImages, updatePostImages, updatePostVideo, createPostPoll, updatePostPoll, removePostPoll, post } = usePostDetails();
   const { currentUser } = useAuth();
   const lastSelection = useRef<Range | null>(null);
+
+  // Check if post is in Posted status  
+  const isPosted = postStatus === 'Posted' && postedAt && postedAt.seconds > 0;
 
   // NEW state for comment popover
   const [commentPopover, setCommentPopover] = useState({ visible: false, top: 0, left: 0 });
@@ -641,6 +650,48 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       title: "Version Restored",
       description: "Version has been restored successfully."
     });
+  };
+
+  // Handle mouse events for disabled overlay
+  const handleEditorMouseEnter = () => {
+    if (isPosted) {
+      setShowDisabledOverlay(true);
+    }
+  };
+
+  const handleEditorMouseLeave = () => {
+    setShowDisabledOverlay(false);
+  };
+
+  // Handle duplicate post action
+  const handleDuplicatePost = async (): Promise<string> => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      throw new Error('Missing required information to duplicate post');
+    }
+
+    try {
+      const newPostId = await duplicatePost(currentUser.uid, clientId, postId);
+      toast({
+        title: "Post Duplicated",
+        description: "The post has been successfully duplicated.",
+      });
+      return newPostId;
+    } catch (error) {
+      console.error('Error duplicating post:', error);
+      toast({
+        title: "Duplication Failed",
+        description: "Failed to duplicate the post. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  // Handle navigation to duplicated post
+  const handleNavigateToPost = (newPostId: string) => {
+    if (!clientId) return;
+    setShowDisabledOverlay(false);
+    navigate(`/clients/${clientId}/posts/${newPostId}`);
   };
 
   const handleAddPoll = async (newPollData: Poll) => {
@@ -1430,7 +1481,18 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         editingMedia={editingMedia || undefined}
       />
 
-      <div className="bg-white rounded-lg border">
+      <div
+        className="bg-white rounded-lg border relative"
+        onMouseEnter={handleEditorMouseEnter}
+        onMouseLeave={handleEditorMouseLeave}
+      >
+        <PostEditorDisabledOverlay
+          visible={showDisabledOverlay && isPosted}
+          onDuplicate={handleDuplicatePost}
+          onNavigate={handleNavigateToPost}
+        // onClose={() => setShowDisabledOverlay(false)}
+        />
+
         <EditorToolbar
           onFormat={handleFormat}
           onInsertEmoji={insertEmoji}

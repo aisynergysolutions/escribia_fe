@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3, Link, X } from 'lucide-react';
+import { Smile, Copy, Eye, Calendar, Send, Undo, Redo, MessageSquare, ChevronDown, Monitor, Smartphone, History, Image, BarChart3, Link, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -15,8 +15,10 @@ import SchedulePostModal from './SchedulePostModal';
 import PostNowModal from './PostNowModal';
 import CreatePollModal from './CreatePollModal';
 import CancelScheduleModal from './CancelScheduleModal';
+import ManualPostModal from './ManualPostModal';
 import { Poll } from '@/context/PostDetailsContext';
 import { MediaFile } from './MediaUploadModal';
+import { Timestamp } from 'firebase/firestore';
 
 interface EditorToolbarProps {
   onFormat: (format: string) => void;
@@ -88,7 +90,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const { currentUser } = useAuth();
-  const { publishPostNow, post, cancelPostSchedule } = usePostDetails();
+  const { publishPostNow, post, cancelPostSchedule, updateManualPostDetails } = usePostDetails();
   const { toast } = useToast();
   const emojis = ['😀', '😊', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💡', '🎉', '🚀', '💯', '✨', '🌟', '📈', '💼', '🎯', '💪', '🙌', '👏'];
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
@@ -96,10 +98,12 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const [showPostNowModal, setShowPostNowModal] = useState(false);
   const [showCreatePollModal, setShowCreatePollModal] = useState(false);
   const [showCancelScheduleModal, setShowCancelScheduleModal] = useState(false);
+  const [showManualPostModal, setShowManualPostModal] = useState(false);
 
   // Check if the post is scheduled or posted
   const isScheduled = postStatus === 'Scheduled' && scheduledPostAt && scheduledPostAt.seconds > 0;
   const isPosted = postStatus === 'Posted' && postedAt && postedAt.seconds > 0;
+  const isPostedWithoutDetails = postStatus === 'Posted' && (!postedAt || postedAt.seconds === 0);
 
   // Format the scheduled date and time
   const formatScheduledDateTime = () => {
@@ -246,6 +250,39 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     setShowCreatePollModal(false);
   };
 
+  const handleOpenManualPostModal = () => {
+    setShowManualPostModal(true);
+  };
+
+  const handleSaveManualPostDetails = async (postedAt: Timestamp, linkedinPostUrl?: string) => {
+    if (!currentUser?.uid || !clientId || !postId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to save post details.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateManualPostDetails(currentUser.uid, clientId, postId, postedAt, linkedinPostUrl);
+
+      toast({
+        title: "Post Details Saved",
+        description: "The post details have been successfully saved.",
+      });
+
+      setShowManualPostModal(false);
+    } catch (error) {
+      console.error('Error saving manual post details:', error);
+      toast({
+        title: "Save Failed",
+        description: "There was an error saving the post details. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <>
       <div className="flex justify-between items-center p-4 border-b">
@@ -258,14 +295,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onUndo}
-                disabled={!canUndo}
+                disabled={!canUndo || isPosted}
                 className="h-8 w-8 p-0"
               >
                 <Undo className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Undo (Ctrl+Z)</p>
+              <p>{isPosted ? 'Cannot undo - post is published' : 'Undo (Ctrl+Z)'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -275,14 +312,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onRedo}
-                disabled={!canRedo}
+                disabled={!canRedo || isPosted}
                 className="h-8 w-8 p-0"
               >
                 <Redo className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Redo (Ctrl+Y)</p>
+              <p>{isPosted ? 'Cannot redo - post is published' : 'Redo (Ctrl+Y)'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -290,22 +327,34 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           <div className="w-px h-6 bg-gray-300 mx-1" />
 
           {/* Emoji */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Smile className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-2">
-              <div className="grid grid-cols-5 gap-1">
-                {emojis.map((emoji, index) => (
-                  <button key={index} onClick={() => onInsertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={isPosted}
+                  >
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2">
+                  <div className="grid grid-cols-5 gap-1">
+                    {emojis.map((emoji, index) => (
+                      <button key={index} onClick={() => onInsertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isPosted ? 'Cannot add emoji - post is published' : 'Add emoji'}</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Fixed: Add Media Button - disabled when media present */}
           <Tooltip>
@@ -315,13 +364,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 size="sm"
                 onClick={handleAddMedia}
                 className="h-8 w-8 p-0"
-                disabled={hasPoll}
+                disabled={hasPoll || isPosted}
               >
                 <Image className={`h-4 w-4 ${hasMedia ? 'text-blue-600' : ''}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{hasPoll ? 'Remove poll to add media' : hasMedia ? 'Edit media' : 'Add media'}</p>
+              <p>{isPosted ? 'Cannot add media - post is published' : hasPoll ? 'Remove poll to add media' : hasMedia ? 'Edit media' : 'Add media'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -333,13 +382,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 size="sm"
                 onClick={handleAddPoll}
                 className="h-8 w-8 p-0"
-                disabled={hasMedia}
+                disabled={hasMedia || isPosted}
               >
                 <BarChart3 className={`h-4 w-4 ${hasPoll ? 'text-blue-600' : ''}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{hasMedia ? 'Remove media to add poll' : hasPoll ? 'Edit poll' : 'Add poll'}</p>
+              <p>{isPosted ? 'Cannot add poll - post is published' : hasMedia ? 'Remove media to add poll' : hasPoll ? 'Edit poll' : 'Add poll'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -354,12 +403,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 size="sm"
                 onClick={onShowVersionHistory}
                 className="h-8 w-8 p-0"
+                disabled={isPosted}
               >
                 <History className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Version History</p>
+              <p>{isPosted ? 'Cannot access versions - post is published' : 'Version History'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -423,7 +473,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             {/* Separator */}
             <div className="w-px h-6 bg-gray-300 mx-1" />
 
-            {/* Conditional Rendering: Posted Info, Scheduled Info, or Add to Queue */}
+            {/* Conditional Rendering: Posted Info, Scheduled Info, Add Post Details, or Add to Queue */}
             {isPosted ? (
               // Show posted info (no modify options for posted content)
               <div className="flex items-center gap-2">
@@ -451,6 +501,23 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                   </Tooltip>
                 )}
               </div>
+            ) : isPostedWithoutDetails ? (
+              // Show "Add post details" button when post is marked as Posted but missing details
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={handleOpenManualPostModal}
+                    className={`h-8 bg-orange-600 hover:bg-orange-700 text-white flex items-center ${isMobile ? 'px-3' : 'px-3 gap-1.5'}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {!isMobile && <span className="text-sm font-medium">Add post details</span>}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Add post details</p>
+                </TooltipContent>
+              </Tooltip>
             ) : isScheduled ? (
               // Show scheduled info with modify options
               <div className="flex items-center gap-2">
@@ -609,6 +676,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         postId={postId}
         scheduledPostAt={scheduledPostAt}
         onCancelConfirm={handleCancelScheduleConfirm}
+      />
+
+      <ManualPostModal
+        open={showManualPostModal}
+        onOpenChange={setShowManualPostModal}
+        onSave={handleSaveManualPostDetails}
+        title="Add Post Details"
+        description="This post is marked as Posted but missing posting details. Please provide when and where it was posted."
       />
     </>
   );

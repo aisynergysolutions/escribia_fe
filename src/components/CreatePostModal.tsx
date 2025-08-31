@@ -56,6 +56,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [editingSuggestion, setEditingSuggestion] = useState<string | null>(null);
   const [editedSuggestionText, setEditedSuggestionText] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [hasFetchedSuggestions, setHasFetchedSuggestions] = useState<string | null>(null);
 
@@ -114,7 +115,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         }
 
         // Show loader on the button
-        setIsRefreshing(true);
+        setIsLoading(true);
 
         // Step 1: Generate a unique post ID
         const postId = uuidv4();
@@ -163,7 +164,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             description: 'There was a problem generating your post. Please try again in a few minutes.',
             variant: 'destructive',
           });
-          setIsRefreshing(false);
+          setIsLoading(false);
           return;
         }
 
@@ -187,17 +188,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           console.log('Generated Title:', result.title);
           console.log('Generated Hooks:', result.generatedHooks || result.hooks);
           resetForm();
-          navigate(`/clients/${clientId}/posts/${postId}?new=true`);
-
-          setIsOpen(false);
           // Navigate to the PostDetails page - it will fetch fresh data from Firestore
+          navigate(`/clients/${clientId}/posts/${postId}`);
+          
+          setIsOpen(false);
+
         } else {
           toast({
             title: 'AI Generation Error',
             description: result.error || 'Failed to generate post. Please try again in a few minutes.',
             variant: 'destructive',
           });
-          setIsRefreshing(false);
+          setIsLoading(false);
           // Delete firestore document if generation failed
           await deletePost(agencyId, clientId, postId);
           return;
@@ -211,7 +213,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         });
       } finally {
         // Hide the loader
-        setIsRefreshing(false);
+        setIsLoading(false);
       }
     }
   };
@@ -421,7 +423,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           objective: selectedObjective,
           templateUsedId: selectedTemplate,
           templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
-          initialIdeaPrompt: 'Created from scratch',
+          initialIdeaPrompt: '',
           title: scratchTitle.trim(),
         }, postId);
 
@@ -873,10 +875,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button
               onClick={handleCreateFromText}
-              disabled={!ideaText.trim() || !selectedSubClient}
+              disabled={!ideaText.trim() || !selectedSubClient || isLoading}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-              Generate post from text
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4 mr-2 inline-block" /> Generating post from text...
+                </>
+              ) : (
+                'Generate post from text'
+              )}
             </Button>
           </div>
         );

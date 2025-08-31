@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, RefreshCw } from 'lucide-react';
+import PostEditorDisabledOverlay from './PostEditorDisabledOverlay';
 
 export interface Hook {
   text: string;
@@ -17,6 +18,11 @@ interface HooksSectionProps {
   onRegenerateHooks: () => Promise<void>;
   onGenerateInitialHooks?: () => Promise<void>;
   isInitialLoad?: boolean;
+  // Add props for disabled overlay functionality
+  postStatus?: string;
+  postedAt?: import('firebase/firestore').Timestamp;
+  onDuplicate?: () => Promise<string>;
+  onNavigate?: (newPostId: string) => void;
 }
 
 const HooksSection: React.FC<HooksSectionProps> = ({
@@ -25,7 +31,11 @@ const HooksSection: React.FC<HooksSectionProps> = ({
   onHookSelect,
   onRegenerateHooks,
   onGenerateInitialHooks,
-  isInitialLoad = false
+  isInitialLoad = false,
+  postStatus,
+  postedAt,
+  onDuplicate,
+  onNavigate
 }) => {
   const [loadingHookIndex, setLoadingHookIndex] = useState<number | null>(null);
   const [errorHook, setErrorHook] = useState<{
@@ -34,9 +44,13 @@ const HooksSection: React.FC<HooksSectionProps> = ({
   } | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isGeneratingInitial, setIsGeneratingInitial] = useState(false);
+  const [showDisabledOverlay, setShowDisabledOverlay] = useState(false);
 
   // Track if we've already attempted to generate hooks to prevent infinite loops
   const hasAttemptedGeneration = useRef(false);
+
+  // Check if post is in Posted status  
+  const isPosted = postStatus === 'Posted' && postedAt && postedAt.seconds > 0;
 
   // Auto-generate hooks if empty on initial load
   useEffect(() => {
@@ -95,10 +109,25 @@ const HooksSection: React.FC<HooksSectionProps> = ({
     }
   };
 
-  const isDisabled = isRegenerating || isGeneratingInitial;
+  // Handle mouse events for disabled overlay
+  const handleHooksSectionMouseEnter = () => {
+    if (isPosted) {
+      setShowDisabledOverlay(true);
+    }
+  };
+
+  const handleHooksSectionMouseLeave = () => {
+    setShowDisabledOverlay(false);
+  };
+
+  const isDisabled = isRegenerating || isGeneratingInitial || isPosted;
 
   return (
-    <div className="bg-card rounded-lg border p-4">
+    <div
+      className="bg-card rounded-lg border p-4 relative"
+      onMouseEnter={handleHooksSectionMouseEnter}
+      onMouseLeave={handleHooksSectionMouseLeave}
+    >
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Hooks</h3>
         <TooltipProvider>
@@ -174,6 +203,14 @@ const HooksSection: React.FC<HooksSectionProps> = ({
           })
         )}
       </div>
+
+      {/* Disabled overlay for posted status */}
+      <PostEditorDisabledOverlay
+        visible={showDisabledOverlay}
+        onDuplicate={onDuplicate}
+        onNavigate={onNavigate}
+        onClose={() => setShowDisabledOverlay(false)}
+      />
     </div>
   );
 };

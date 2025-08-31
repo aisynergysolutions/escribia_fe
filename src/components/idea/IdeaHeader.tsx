@@ -6,8 +6,10 @@ import StatusCard from './StatusCard';
 import EditableTitle from '../EditableTitle';
 import AddToQueueModal from './AddToQueueModal';
 import SchedulePostModal from './SchedulePostModal';
+import ManualPostModal from './ManualPostModal';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { useAuth } from '@/context/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 
 interface IdeaHeaderProps {
   clientId: string;
@@ -34,11 +36,12 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
   const { currentUser } = useAuth();
   const [showAddToQueueModal, setShowAddToQueueModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showManualPostModal, setShowManualPostModal] = useState(false);
 
   // Get the agency ID from the current user
   const agencyId = currentUser?.uid;
   const { postId } = useParams<{ postId: string }>();
-  const { updatePostTitle, updatePostStatus } = usePostDetails();
+  const { updatePostTitle, updatePostStatus, updateManualPostDetails, post } = usePostDetails();
 
   // Helper function to get display title
   const getDisplayTitle = () => {
@@ -64,6 +67,18 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
 
   // Handler for updating status in Firestore and context
   const handleStatusChange = async (newStatus: string) => {
+    // If changing to "Posted" status, check if we need manual post details
+    if (newStatus === 'Posted') {
+      const hasPostingDetails = post?.postedAt && post?.postedAt.seconds > 0;
+
+      if (!hasPostingDetails) {
+        // Show manual post modal to get posting details
+        setShowManualPostModal(true);
+        return; // Don't update status yet, wait for manual details
+      }
+    }
+
+    // Update status normally
     onStatusChange(newStatus);
     if (agencyId && clientId && postId) {
       try {
@@ -73,6 +88,22 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
       }
     } else {
       console.warn('Missing required data for status update:', { agencyId, clientId, postId });
+    }
+  };
+
+  // Handler for saving manual post details
+  const handleSaveManualPostDetails = async (postedAt: Timestamp, linkedinPostUrl?: string) => {
+    if (!agencyId || !clientId || !postId) {
+      console.error('Missing required data for manual post details');
+      return;
+    }
+
+    try {
+      await updateManualPostDetails(agencyId, clientId, postId, postedAt, linkedinPostUrl);
+      onStatusChange('Posted'); // Update the local status after successful save
+      setShowManualPostModal(false);
+    } catch (error) {
+      console.error('Error saving manual post details:', error);
     }
   };
 
@@ -162,6 +193,14 @@ const IdeaHeader: React.FC<IdeaHeaderProps> = ({
           console.log('Scheduled for:', date, time);
           setShowScheduleModal(false);
         }}
+      />
+
+      <ManualPostModal
+        open={showManualPostModal}
+        onOpenChange={setShowManualPostModal}
+        onSave={handleSaveManualPostDetails}
+        title="Add Post Details"
+        description="You've marked this post as Posted. Please provide the details for when and where this was posted manually."
       />
     </>
   );

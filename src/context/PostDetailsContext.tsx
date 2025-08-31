@@ -60,6 +60,7 @@ type PostDetailsContextType = {
     createPostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
     updatePostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
     removePostPoll: (agencyId: string, clientId: string, postId: string) => Promise<void>;
+    updateManualPostDetails: (agencyId: string, clientId: string, postId: string, postedAt: Timestamp, linkedinPostUrl?: string) => Promise<void>;
 };
 
 const PostDetailsContext = createContext<PostDetailsContextType>({
@@ -91,6 +92,7 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     createPostPoll: async () => { },
     updatePostPoll: async () => { },
     removePostPoll: async () => { },
+    updateManualPostDetails: async () => { },
 });
 
 export const usePostDetails = () => useContext(PostDetailsContext);
@@ -1410,6 +1412,57 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const updateManualPostDetails = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        postedAt: Timestamp,
+        linkedinPostUrl?: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            const updateData: any = {
+                status: 'Posted',
+                postedAt: postedAt,
+                updatedAt: Timestamp.now()
+            };
+
+            if (linkedinPostUrl) {
+                updateData.linkedinPostUrl = linkedinPostUrl;
+            }
+
+            await updateDoc(postRef, updateData);
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                status: 'Posted',
+                postedAt: postedAt,
+                linkedinPostUrl: linkedinPostUrl,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            // Update PostsContext cache
+            try {
+                updatePostInCache(agencyId, clientId, postId, {
+                    status: 'Posted'
+                });
+            } catch (cacheError) {
+                console.warn('Failed to update PostsContext cache, but main update succeeded:', cacheError);
+            }
+
+            console.log('Manual post details updated successfully');
+        } catch (error) {
+            console.error('Error updating manual post details:', error);
+            throw error;
+        }
+    }, []);
+
     // Show authentication error if no agency ID
     if (!agencyId) {
         return (
@@ -1442,6 +1495,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 createPostPoll: async () => { throw new Error('No agency ID available'); },
                 updatePostPoll: async () => { throw new Error('No agency ID available'); },
                 removePostPoll: async () => { throw new Error('No agency ID available'); },
+                updateManualPostDetails: async () => { throw new Error('No agency ID available'); },
             }}>
                 {children}
             </PostDetailsContext.Provider>
@@ -1477,7 +1531,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             uploadPostVideo,
             createPostPoll,
             updatePostPoll,
-            removePostPoll
+            removePostPoll,
+            updateManualPostDetails
         }}>
             {children}
         </PostDetailsContext.Provider>

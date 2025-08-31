@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CustomInputModal from '../CustomInputModal';
+import PostEditorDisabledOverlay from './PostEditorDisabledOverlay';
 
 interface InitialIdeaSectionProps {
   isExpanded: boolean;
@@ -20,6 +21,11 @@ interface InitialIdeaSectionProps {
   onSendToAI: () => void;
   onAddCustomObjective: (objective: string) => void;
   isRegeneratingPost?: boolean; // Add loading prop
+  // Add props for disabled overlay functionality
+  postStatus?: string;
+  postedAt?: import('firebase/firestore').Timestamp;
+  onDuplicate?: () => Promise<string>;
+  onNavigate?: (newPostId: string) => void;
 }
 
 const predefinedObjectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
@@ -35,9 +41,17 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   onTemplateChange,
   onSendToAI,
   onAddCustomObjective,
-  isRegeneratingPost = false // Default to false
+  isRegeneratingPost = false, // Default to false
+  postStatus,
+  postedAt,
+  onDuplicate,
+  onNavigate
 }) => {
   const [showCustomObjectiveModal, setShowCustomObjectiveModal] = useState(false);
+  const [showDisabledOverlay, setShowDisabledOverlay] = useState(false);
+
+  // Check if post is in Posted status  
+  const isPosted = postStatus === 'Posted' && postedAt && postedAt.seconds > 0;
 
   const handleCustomObjective = (customObjective: string) => {
     onAddCustomObjective(customObjective);
@@ -48,10 +62,25 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
     return obj || 'Select objective';
   };
 
+  // Handle mouse events for disabled overlay
+  const handleInitialIdeaSectionMouseEnter = () => {
+    if (isPosted && isExpanded) {
+      setShowDisabledOverlay(true);
+    }
+  };
+
+  const handleInitialIdeaSectionMouseLeave = () => {
+    setShowDisabledOverlay(false);
+  };
+
   return (
     <>
       <Collapsible open={isExpanded} onOpenChange={onExpandChange}>
-        <Card className="p-4">
+        <Card
+          className="p-4 relative"
+          onMouseEnter={handleInitialIdeaSectionMouseEnter}
+          onMouseLeave={handleInitialIdeaSectionMouseLeave}
+        >
           <CollapsibleTrigger asChild>
             <div className="flex items-start justify-between cursor-pointer hover:bg-gray-50 p-2 rounded -m-2">
               <div className="flex-1 min-w-0">
@@ -77,7 +106,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
                 placeholder="Write your initial idea here..."
                 rows={4}
                 className="w-full"
-                disabled={isRegeneratingPost} // Disable during regeneration
+                disabled={isRegeneratingPost || isPosted} // Disable during regeneration or if posted
               />
             </div>
 
@@ -89,7 +118,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
                     <Button
                       variant="outline"
                       className="w-full justify-between"
-                      disabled={isRegeneratingPost} // Disable during regeneration
+                      disabled={isRegeneratingPost || isPosted} // Disable during regeneration or if posted
                     >
                       <span className={objective ? '' : 'text-muted-foreground'}>
                         {getObjectiveDisplayName(objective)}
@@ -125,7 +154,7 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
             <Button
               onClick={onSendToAI}
               className="w-full bg-indigo-600 hover:bg-indigo-700"
-              disabled={isRegeneratingPost || !initialIdea.trim()} // Disable if loading or missing data
+              disabled={isRegeneratingPost || !initialIdea.trim() || isPosted} // Disable if loading, missing data, or posted
             >
               {isRegeneratingPost ? (
                 <>
@@ -137,6 +166,14 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
               )}
             </Button>
           </CollapsibleContent>
+
+          {/* Disabled overlay for posted content */}
+          <PostEditorDisabledOverlay
+            visible={showDisabledOverlay}
+            onDuplicate={onDuplicate}
+            onNavigate={onNavigate}
+            onClose={() => setShowDisabledOverlay(false)}
+          />
         </Card>
       </Collapsible>
 

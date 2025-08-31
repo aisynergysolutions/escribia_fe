@@ -38,7 +38,7 @@ const PostDetails = () => {
   } = usePostDetails();
 
   // Add PostsContext for delete functionality
-  const { deletePost } = usePosts();
+  const { deletePost, duplicatePost } = usePosts();
 
   // Basic form state
   const [title, setTitle] = useState('');
@@ -422,6 +422,27 @@ const PostDetails = () => {
     }
   };
 
+  // Handle duplicate post action
+  const handleDuplicatePost = async (): Promise<string> => {
+    if (!agencyId || !clientId || !postId) {
+      throw new Error('Missing required IDs for duplication');
+    }
+
+    try {
+      const newPostId = await duplicatePost(agencyId, clientId, postId);
+      return newPostId;
+    } catch (error) {
+      console.error('Error duplicating post:', error);
+      throw error;
+    }
+  };
+
+  // Handle navigation to duplicated post
+  const handleNavigateToPost = (newPostId: string) => {
+    if (!clientId) return;
+    navigate(`/clients/${clientId}/posts/${newPostId}`);
+  };
+
   return (
     <div className="space-y-4">
       <IdeaHeader
@@ -506,6 +527,10 @@ const PostDetails = () => {
                 onSendToAI={handleSendToAI}
                 onAddCustomObjective={handleAddCustomObjective}
                 isRegeneratingPost={isRegeneratingPost}
+                postStatus={post?.status}
+                postedAt={post?.postedAt}
+                onDuplicate={handleDuplicatePost}
+                onNavigate={handleNavigateToPost}
               />
 
               <HooksSection
@@ -515,6 +540,10 @@ const PostDetails = () => {
                 onRegenerateHooks={handleRegenerateHooks}
                 onGenerateInitialHooks={handleGenerateInitialHooks}
                 isInitialLoad={!loading && !!post}
+                postStatus={post?.status}
+                postedAt={post?.postedAt}
+                onDuplicate={handleDuplicatePost}
+                onNavigate={handleNavigateToPost}
               />
 
               <OptionsCard
