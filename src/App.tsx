@@ -18,6 +18,7 @@ import ProfileDetailsRouter from './components/client/ProfileDetailsRouter';
 import { EventsProvider } from "./context/EventsContext";
 import { LinkedinProvider } from '@/context/LinkedinContext';
 import { AuthProvider } from '@/context/AuthContext'; // Add this import
+import { AnalyticsProvider } from '@/context/AnalyticsContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute'; // We'll create this
 
 // Lazy load components for code splitting
@@ -58,19 +59,21 @@ function App() {
                 <PostsProvider>
                   <PostDetailsProvider>
                     <EventsProvider>
-                      <QueryClientProvider client={queryClient}>
-                        <TooltipProvider>
-                          <Toaster />
-                          <Sonner />
-                          <Router>
-                            <div className="min-h-screen bg-gray-50">
-                              <Routes>
-                                <Route path="/*" element={<ProtectedRoute />} />
-                              </Routes>
-                            </div>
-                          </Router>
-                        </TooltipProvider>
-                      </QueryClientProvider>
+                      <AnalyticsProvider>
+                        <QueryClientProvider client={queryClient}>
+                          <TooltipProvider>
+                            <Toaster />
+                            <Sonner />
+                            <Router>
+                              <div className="min-h-screen bg-gray-50">
+                                <Routes>
+                                  <Route path="/*" element={<ProtectedRoute />} />
+                                </Routes>
+                              </div>
+                            </Router>
+                          </TooltipProvider>
+                        </QueryClientProvider>
+                      </AnalyticsProvider>
                     </EventsProvider>
                   </PostDetailsProvider>
                 </PostsProvider>
