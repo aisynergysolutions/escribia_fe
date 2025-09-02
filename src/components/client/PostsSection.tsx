@@ -19,7 +19,7 @@ interface PostsSectionProps {
   clientId: string;
 }
 
-type SortField = 'updated' | 'created' | 'title' | 'status' | 'profile' | 'scheduled';
+type SortField = 'updated' | 'created' | 'title' | 'status' | 'profile' | 'scheduled' | 'posted';
 type SortDirection = 'asc' | 'desc' | 'none';
 
 const SORT_STORAGE_KEY = 'posts-sort-preferences';
@@ -27,11 +27,12 @@ const SORT_STORAGE_KEY = 'posts-sort-preferences';
 const getSortFieldLabel = (field: SortField): string => {
   switch (field) {
     case 'updated': return 'LAST UPDATED';
-    case 'created': return 'Date Created';
+    case 'created': return 'CREATED';
     case 'title': return 'POST';
     case 'status': return 'STATUS';
     case 'profile': return 'PROFILE';
     case 'scheduled': return 'SCHEDULED FOR';
+    case 'posted': return 'PUBLISHED AT';
     default: return 'LAST UPDATED';
   }
 };
@@ -102,6 +103,9 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
     // Filter by selected status
     if (selectedStatus) {
       filtered = filtered.filter(idea => idea.status === selectedStatus);
+    } else {
+      // When no status filter is active, exclude Posted posts
+      filtered = filtered.filter(idea => idea.status !== 'Posted');
     }
 
     // Sort posts
@@ -114,11 +118,15 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
             comparison = a.updatedAt.seconds - b.updatedAt.seconds;
             break;
           case 'created':
-            // If you add createdAt to PostCard, use it here
-            comparison = 0;
+            const aCreated = a.createdAt && a.createdAt.seconds > 0 ? a.createdAt.seconds : 0;
+            const bCreated = b.createdAt && b.createdAt.seconds > 0 ? b.createdAt.seconds : 0;
+            comparison = aCreated - bCreated;
             break;
           case 'scheduled':
-            comparison = a.scheduledPostAt.seconds - b.scheduledPostAt.seconds;
+            comparison = (a.scheduledPostAt?.seconds || 0) - (b.scheduledPostAt?.seconds || 0);
+            break;
+          case 'posted':
+            comparison = (a.postedAt?.seconds || 0) - (b.postedAt?.seconds || 0);
             break;
           case 'title':
             comparison = a.title.localeCompare(b.title);
@@ -148,6 +156,46 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
   const filteredPosts = getFilteredAndSortedPosts();
   const allowedStatuses = getAllowedStatuses();
 
+  // Determine which columns to show based on active status filter
+  const getVisibleColumns = () => {
+    if (selectedStatus === 'Scheduled') {
+      return {
+        showProfile: true,
+        showStatus: false,
+        showUpdated: false,
+        showCreated: false,
+        showScheduled: true,
+        showPosted: false
+      };
+    }
+
+    if (selectedStatus === 'Posted') {
+      return {
+        showProfile: true,
+        showStatus: false,
+        showUpdated: false,
+        showCreated: false,
+        showScheduled: false,
+        showPosted: true
+      };
+    }
+
+    // Default for All/Drafted/Needs Visual/Approval/Approved
+    return {
+      showProfile: true,
+      showStatus: true,
+      showUpdated: true,
+      showCreated: true,
+      showScheduled: false,
+      showPosted: false
+    };
+  };
+
+  const visibleColumns = getVisibleColumns();
+
+  // Check if there are any posted posts (for queue message)
+  const hasPostedPosts = clientIdeas.some(post => post.status === 'Posted');
+
   const handleColumnSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through sort directions: asc -> desc -> none
@@ -155,21 +203,51 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         setSortDirection('desc');
       } else if (sortDirection === 'desc') {
         setSortDirection('none');
-        setSortField('updated'); // Reset to default
+        setSortField(getDefaultSortField()); // Reset to context-appropriate default
       } else {
         setSortDirection('asc');
       }
     } else {
       setSortField(field);
-      // For date columns, start with desc (newest first)
-      if (field === 'updated' || field === 'created' || field === 'scheduled') {
-        setSortDirection('desc');
-      } else {
-        // For text columns, start with asc (A-Z)
-        setSortDirection('asc');
-      }
+      // Set default direction based on status and field
+      const defaultDirection = getDefaultSortDirection(field);
+      setSortDirection(defaultDirection);
     }
   };
+
+  // Get default sort field based on active status filter
+  const getDefaultSortField = (): SortField => {
+    if (selectedStatus === 'Scheduled') return 'scheduled';
+    if (selectedStatus === 'Posted') return 'posted';
+    return 'updated';
+  };
+
+  // Get default sort direction based on field and status
+  const getDefaultSortDirection = (field: SortField): SortDirection => {
+    if (selectedStatus === 'Scheduled' && field === 'scheduled') {
+      return 'asc'; // Soonest first for scheduled posts
+    }
+    if (selectedStatus === 'Posted' && field === 'posted') {
+      return 'desc'; // Newest first for posted posts
+    }
+    // For date columns, start with desc (newest first), except scheduled when in Scheduled tab
+    if (field === 'updated' || field === 'created' || field === 'posted') {
+      return 'desc';
+    }
+    if (field === 'scheduled') {
+      return selectedStatus === 'Scheduled' ? 'asc' : 'desc';
+    }
+    // For text columns, start with asc (A-Z)
+    return 'asc';
+  };
+
+  // Update sort field and direction when status filter changes
+  useEffect(() => {
+    const defaultField = getDefaultSortField();
+    const defaultDirection = getDefaultSortDirection(defaultField);
+    setSortField(defaultField);
+    setSortDirection(defaultDirection);
+  }, [selectedStatus]);
 
   const getSortIcon = (field: SortField) => {
     if (sortField === field && sortDirection !== 'none') {
@@ -238,13 +316,6 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         });
       }
     }
-  };
-
-  const getScheduledDate = (post: Post) => {
-    if (post.status === 'Scheduled' || post.status === 'Posted') {
-      return formatRelativeTime(post.updatedAt);
-    }
-    return '—';
   };
 
   const handleStatusSelect = (status: string) => {
@@ -357,42 +428,72 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                           {getSortIcon('title')}
                         </button>
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                        <button
-                          onClick={() => handleColumnSort('profile')}
-                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                        >
-                          PROFILE
-                          {getSortIcon('profile')}
-                        </button>
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                        <button
-                          onClick={() => handleColumnSort('status')}
-                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                        >
-                          STATUS
-                          {getSortIcon('status')}
-                        </button>
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                        <button
-                          onClick={() => handleColumnSort('updated')}
-                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                        >
-                          LAST UPDATED
-                          {getSortIcon('updated')}
-                        </button>
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                        <button
-                          onClick={() => handleColumnSort('scheduled')}
-                          className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
-                        >
-                          SCHEDULED FOR
-                          {getSortIcon('scheduled')}
-                        </button>
-                      </TableHead>
+                      {visibleColumns.showProfile && (
+                        <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                          <button
+                            onClick={() => handleColumnSort('profile')}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                          >
+                            PROFILE
+                            {getSortIcon('profile')}
+                          </button>
+                        </TableHead>
+                      )}
+                      {visibleColumns.showStatus && (
+                        <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                          <button
+                            onClick={() => handleColumnSort('status')}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                          >
+                            STATUS
+                            {getSortIcon('status')}
+                          </button>
+                        </TableHead>
+                      )}
+                      {visibleColumns.showUpdated && (
+                        <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                          <button
+                            onClick={() => handleColumnSort('updated')}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                          >
+                            LAST UPDATED
+                            {getSortIcon('updated')}
+                          </button>
+                        </TableHead>
+                      )}
+                      {visibleColumns.showCreated && (
+                        <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                          <button
+                            onClick={() => handleColumnSort('created')}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                          >
+                            CREATED
+                            {getSortIcon('created')}
+                          </button>
+                        </TableHead>
+                      )}
+                      {visibleColumns.showScheduled && (
+                        <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                          <button
+                            onClick={() => handleColumnSort('scheduled')}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                          >
+                            SCHEDULED FOR
+                            {getSortIcon('scheduled')}
+                          </button>
+                        </TableHead>
+                      )}
+                      {visibleColumns.showPosted && (
+                        <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
+                          <button
+                            onClick={() => handleColumnSort('posted')}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-2 -m-2 rounded cursor-pointer transition-colors"
+                          >
+                            PUBLISHED AT
+                            {getSortIcon('posted')}
+                          </button>
+                        </TableHead>
+                      )}
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -408,27 +509,76 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                             {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 text-gray-600">
-                          {getProfileName(post)}
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <StatusBadge status={post.status} type="idea" />
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-600">
-                          <Tooltip>
-                            <TooltipTrigger>
-                              {formatRelativeTime(post.updatedAt)}
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {formatDateTime(post.updatedAt)}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-600">
-                          {post.scheduledPostAt.seconds > 0
-                            ? formatRelativeTime(post.scheduledPostAt)
-                            : '—'}
-                        </TableCell>
+                        {visibleColumns.showProfile && (
+                          <TableCell className="py-4 text-gray-600">
+                            {getProfileName(post)}
+                          </TableCell>
+                        )}
+                        {visibleColumns.showStatus && (
+                          <TableCell className="py-4">
+                            <StatusBadge status={post.status} type="idea" />
+                          </TableCell>
+                        )}
+                        {visibleColumns.showUpdated && (
+                          <TableCell className="py-4 text-gray-600">
+                            <Tooltip>
+                              <TooltipTrigger>
+                                {formatRelativeTime(post.updatedAt)}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {formatDateTime(post.updatedAt)}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                        {visibleColumns.showCreated && (
+                          <TableCell className="py-4 text-gray-600">
+                            <Tooltip>
+                              <TooltipTrigger>
+                                {post.createdAt && post.createdAt.seconds > 0
+                                  ? formatRelativeTime(post.createdAt)
+                                  : '—'}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {post.createdAt && post.createdAt.seconds > 0
+                                  ? formatDateTime(post.createdAt)
+                                  : 'Not available'}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                        {visibleColumns.showScheduled && (
+                          <TableCell className="py-4 text-gray-600">
+                            <Tooltip>
+                              <TooltipTrigger>
+                                {post.scheduledPostAt && post.scheduledPostAt.seconds > 0
+                                  ? formatRelativeTime(post.scheduledPostAt)
+                                  : '—'}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {post.scheduledPostAt && post.scheduledPostAt.seconds > 0
+                                  ? formatDateTime(post.scheduledPostAt)
+                                  : 'Not scheduled'}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                        {visibleColumns.showPosted && (
+                          <TableCell className="py-4 text-gray-600">
+                            <Tooltip>
+                              <TooltipTrigger>
+                                {post.postedAt && post.postedAt.seconds > 0
+                                  ? formatRelativeTime(post.postedAt)
+                                  : '—'}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {post.postedAt && post.postedAt.seconds > 0
+                                  ? formatDateTime(post.postedAt)
+                                  : 'Not published'}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                        )}
                         <TableCell className="py-4">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -497,6 +647,15 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                     Clear Filters
                   </Button>
                 )}
+              </div>
+            )}
+
+            {/* Queue message for non-posted tabs when there are posted posts */}
+            {!selectedStatus && hasPostedPosts && (
+              <div className="border-t bg-blue-50 p-4 text-center">
+                <p className="text-sm text-blue-700">
+                  Published posts don't appear here. View them in the <strong>Posted</strong> tab.
+                </p>
               </div>
             )}
           </div>

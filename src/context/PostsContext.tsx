@@ -109,22 +109,40 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       const postsList: Post[] = snapshot.docs.map(docSnap => {
         const data = docSnap.data();
 
+        // Helper function to convert timestamp data
+        const convertToTimestamp = (timestampData: any): Timestamp => {
+          if (!timestampData) return Timestamp.fromMillis(0);
+          if (timestampData instanceof Timestamp) return timestampData;
+          if (typeof timestampData === 'string') {
+            try {
+              return Timestamp.fromDate(new Date(timestampData));
+            } catch {
+              return Timestamp.fromMillis(0);
+            }
+          }
+          if (timestampData.seconds !== undefined) {
+            return new Timestamp(timestampData.seconds, timestampData.nanoseconds || 0);
+          }
+          return Timestamp.fromMillis(0);
+        };
+
         // Create unified Post object (lightweight for list view)
-        const post: Post = {
+        const post = {
           id: docSnap.id,
           postId: data.postId || docSnap.id,
           title: data.title || 'Untitled Post',
           status: data.status || '',
-          updatedAt: data.updatedAt || Timestamp.now(),
+          updatedAt: convertToTimestamp(data.updatedAt) || Timestamp.now(),
+          createdAt: convertToTimestamp(data.createdAt) || Timestamp.now(), // Always include createdAt for table view
           profile: data.profile || data.profileName || '', // Simple string for list view
           profileId: data.profileId || data.subClientId || '',
-          scheduledPostAt: data.scheduledPostAt || Timestamp.fromMillis(0),
-        };
+          scheduledPostAt: convertToTimestamp(data.scheduledPostAt) || Timestamp.fromMillis(0),
+          postedAt: convertToTimestamp(data.postedAt) || Timestamp.fromMillis(0), // Always include postedAt for table view
+        } as Post;
 
         // Add detailed fields if requested
         if (detailed) {
-          post.createdAt = data.createdAt;
-          post.postedAt = data.postedAt;
+          // createdAt and postedAt are already set above, no need to duplicate
           post.linkedinPostUrl = data.linkedinPostUrl;
           post.internalNotes = data.internalNotes;
           post.trainAI = data.trainAI;
@@ -201,8 +219,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         initialIdeaPrompt: postData.initialIdeaPrompt,
         // Use provided title or fallback to initialIdeaPrompt
         title: postData.title || postData.initialIdeaPrompt,
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
+        updatedAt: Timestamp.now(),
+        createdAt: Timestamp.now(),
         status: postData.status || 'Drafted',
         // Initialize with empty drafts array and currentDraftText
         drafts: [],
@@ -216,7 +234,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
 
       // **FIX: Update the context cache immediately**
       const key: PostsCacheKey = `${agencyId}_${clientId}`;
-      const newPostContext: Post = {
+      const newPostContext = {
         id: postId,
         postId: postId,
         title: postData.title || postData.initialIdeaPrompt,
@@ -224,8 +242,10 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         profileId: postData.profileId,
         status: postData.status || 'Drafted',
         updatedAt: Timestamp.now(),
+        createdAt: Timestamp.now(),
         scheduledPostAt: Timestamp.fromMillis(0),
-      };
+        postedAt: Timestamp.fromMillis(0),
+      } as Post;
 
       // Update the cache
       setPostsCache(prev => ({
@@ -363,7 +383,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
 
       // Update the context cache immediately
       const key: PostsCacheKey = `${agencyId}_${clientId}`;
-      const newPostContext: Post = {
+      const newPostContext = {
         id: newPostId,
         postId: newPostId,
         title: `Copy of ${originalData.title || 'Untitled Post'}`,
@@ -371,8 +391,10 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         profileId: originalData.profileId || '',
         status: 'Drafted',
         updatedAt: Timestamp.now(),
+        createdAt: Timestamp.now(),
         scheduledPostAt: Timestamp.fromMillis(0),
-      };
+        postedAt: Timestamp.fromMillis(0),
+      } as Post;
 
       // Update the cache
       setPostsCache(prev => ({

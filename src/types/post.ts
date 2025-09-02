@@ -43,24 +43,24 @@ export type Post = {
     title: string;
     status: string;
     updatedAt: Timestamp;
-    createdAt: Timestamp;
+    createdAt?: Timestamp;    // Make optional for backward compatibility
     
     // Profile information (flexible for both simple and detailed)
-    profile: Profile;
+    profile: Profile | string; // Can be either detailed Profile object or simple string
     profileId: string;
     
     // Optional detailed fields (only loaded when needed)
     scheduledPostAt?: Timestamp;
     postedAt?: Timestamp;
     linkedinPostUrl?: string;
-    internalNotes: string;
-    trainAI: boolean;
+    internalNotes?: string;   // Make optional
+    trainAI?: boolean;        // Make optional
     
     // Complex nested objects (only for detailed views)
-    initialIdea: InitialIdea;
-    generatedHooks: Hook[];
-    drafts: Draft[];
-    images: string[];
+    initialIdea?: InitialIdea; // Make optional
+    generatedHooks?: Hook[];   // Make optional
+    drafts?: Draft[];          // Make optional
+    images?: string[];         // Make optional
     video?: string;
     poll?: Poll;
     sourceUrl?: string; // Add this field
