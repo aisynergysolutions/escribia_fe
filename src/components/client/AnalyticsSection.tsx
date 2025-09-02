@@ -1,10 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Users, 
-  Eye, 
-  Heart, 
-  FileText, 
+import {
+  Users,
+  Eye,
+  Heart,
+  FileText,
   RefreshCw,
   Activity,
   TrendingUp,
@@ -37,28 +37,106 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
     timeSeriesData,
     timeSeriesLoading,
     timeSeriesError,
+    clientState,
     fetchOverview,
     fetchTimeSeries,
-    clearData
+    forceRefreshAll,
+    clearData,
+    canForceRefresh,
+    hasRecentRateLimit,
   } = useAnalytics();
 
   const [selectedGranularity, setSelectedGranularity] = useState<'day' | 'week'>('day');
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+  const [showStaleDataWarning, setShowStaleDataWarning] = useState(false);
 
   const client = mockClients.find(c => c.id === clientId);
   const agencyId = currentUser?.uid;
 
-  // Load initial data
+  // Helper functions for data freshness
+  const getDataAge = (): number | null => {
+    return clientState.lastOverviewAt ? Date.now() - clientState.lastOverviewAt : null;
+  };
+
+  const getDataFreshnessLabel = (): string => {
+    const age = getDataAge();
+    if (!age) return 'Never loaded';
+
+    const minutes = Math.floor(age / (60 * 1000));
+    const hours = Math.floor(age / (60 * 60 * 1000));
+    const days = Math.floor(age / (24 * 60 * 60 * 1000));
+
+    if (minutes < 2) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  };
+
+  const isDataStale = (): boolean => {
+    const age = getDataAge();
+    return age ? age > 30 * 60 * 1000 : false; // 30 minutes
+  };
+
+  const isDataVeryStale = (): boolean => {
+    const age = getDataAge();
+    return age ? age > 6 * 60 * 60 * 1000 : false; // 6 hours
+  };
+
+  // Load initial data with freshness policy
   useEffect(() => {
     if (agencyId && clientId) {
-      loadAnalyticsData();
+      loadAnalyticsDataWithFreshnessPolicy();
     }
-    
+
     return () => {
       clearData();
     };
   }, [agencyId, clientId]);
+
+  // Freshness policy implementation as per analytics.md
+  const loadAnalyticsDataWithFreshnessPolicy = async () => {
+    if (!agencyId || !clientId) return;
+
+    const now = Date.now();
+    const lastOverviewAt = clientState.lastOverviewAt;
+
+    let shouldForceRefresh = false;
+
+    if (!lastOverviewAt) {
+      // First visit - use cached (no force)
+      console.log('[Analytics] First load - using cached data');
+      setShowStaleDataWarning(false);
+    } else {
+      const age = now - lastOverviewAt;
+
+      if (age < 2 * 60 * 1000) {
+        // <2m - reuse recent data, maybe skip network entirely
+        console.log('[Analytics] Data is very fresh (<2m) - skipping refresh');
+        setShowStaleDataWarning(false);
+        return;
+      } else if (age >= 2 * 60 * 1000 && age < 12 * 60 * 1000) {
+        // 2-12m - normal request to reuse server aggregate cache
+        console.log('[Analytics] Data moderately fresh (2-12m) - normal refresh');
+        setShowStaleDataWarning(false);
+      } else if (age >= 12 * 60 * 1000 && age < 30 * 60 * 1000) {
+        // 12-30m - normal request, schedule conditional force refresh
+        console.log('[Analytics] Data getting stale (12-30m) - normal refresh with possible force later');
+        setShowStaleDataWarning(false);
+        // TODO: Schedule background force refresh if no rate limits
+      } else if (age >= 30 * 60 * 1000 && age < 6 * 60 * 60 * 1000) {
+        // 30m-6h - show hint but don't auto force
+        console.log('[Analytics] Data stale (30m-6h) - show refresh hint');
+        setShowStaleDataWarning(true);
+      } else if (age >= 6 * 60 * 60 * 1000) {
+        // >6h - prompt user proactively
+        console.log('[Analytics] Data very stale (>6h) - suggest refresh to user');
+        setShowStaleDataWarning(true);
+      }
+    }
+
+    await loadAnalyticsData(shouldForceRefresh);
+  };
 
   // Reload data when date range or selected profiles change
   useEffect(() => {
@@ -83,7 +161,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
       // Fetch time series data for charts with new granularity
       const metrics: Array<'impressions' | 'engagement_rate' | 'follower_gains' | 'publishing_cadence'> = [
         'impressions',
-        'engagement_rate', 
+        'engagement_rate',
         'follower_gains',
         'publishing_cadence'
       ];
@@ -98,7 +176,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
     }
   }, [selectedGranularity]);
 
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = async (forceRefresh: boolean = false) => {
     if (!agencyId || !clientId) return;
 
     const filters = {
@@ -109,6 +187,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
       ...(selectedProfileIds.length > 0 ? {
         profileIds: selectedProfileIds,
       } : {}),
+      ...(forceRefresh ? { forceRefresh: true } : {}),
     };
 
     // Fetch overview data
@@ -117,7 +196,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
     // Fetch time series data for charts
     const metrics: Array<'impressions' | 'engagement_rate' | 'follower_gains' | 'publishing_cadence'> = [
       'impressions',
-      'engagement_rate', 
+      'engagement_rate',
       'follower_gains',
       'publishing_cadence'
     ];
@@ -131,21 +210,25 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
     }
   };
 
-  const handleRefresh = () => {
-    if (agencyId && clientId) {
-      const filters = {
-        ...(dateRange ? {
-          start: dateRange.start.toISOString(),
-          end: dateRange.end.toISOString(),
-        } : {}),
-        ...(selectedProfileIds.length > 0 ? {
-          profileIds: selectedProfileIds,
-        } : {}),
-        forceRefresh: true,
-      };
-      
-      fetchOverview(agencyId, clientId, filters);
+  const handleRefresh = async () => {
+    if (!agencyId || !clientId) return;
+
+    if (!canForceRefresh()) {
+      console.warn('Refresh blocked due to recent refresh or rate limit');
+      return;
     }
+
+    const filters = {
+      ...(dateRange ? {
+        start: dateRange.start.toISOString(),
+        end: dateRange.end.toISOString(),
+      } : {}),
+      ...(selectedProfileIds.length > 0 ? {
+        profileIds: selectedProfileIds,
+      } : {}),
+    };
+
+    await forceRefreshAll(agencyId, clientId, filters);
   };
 
   const handleDateRangeChange = (start: Date, end: Date) => {
@@ -181,22 +264,34 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold mb-2">Analytics Dashboard</h2>
-            <p className="text-gray-600">
+            {/* <p className="text-gray-600">
               Performance metrics for {client?.clientName || 'Unknown Client'}
-            </p>
+            </p> */}
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
             <DateRangePicker onRangeChange={handleDateRangeChange} />
             <Button
               onClick={handleRefresh}
               variant="outline"
               size="sm"
-              disabled={overviewLoading}
+              disabled={overviewLoading || !canForceRefresh()}
               className="flex items-center gap-2"
+              title={
+                hasRecentRateLimit()
+                  ? "Cooling down after rate limit - retry in a moment"
+                  : !canForceRefresh() && !hasRecentRateLimit()
+                    ? "Please wait a moment before refreshing again"
+                    : "Force refresh data from LinkedIn"
+              }
             >
               <RefreshCw className={`h-4 w-4 ${overviewLoading ? 'animate-spin' : ''}`} />
-              {overviewLoading ? 'Loading...' : 'Refresh'}
+              {overviewLoading
+                ? 'Loading...'
+                : hasRecentRateLimit()
+                  ? 'Cooling down...'
+                  : 'Refresh'
+              }
             </Button>
           </div>
         </div>
@@ -214,6 +309,50 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
       {/* Error Display */}
       {overviewData?.meta.errors && overviewData.meta.errors.length > 0 && (
         <ErrorDisplay errors={overviewData.meta.errors} />
+      )}
+
+      {/* Rate Limit Warning */}
+      {hasRecentRateLimit() && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-amber-600" />
+            <p className="text-amber-800 font-medium">LinkedIn Rate Limit Reached</p>
+          </div>
+          <p className="text-amber-700 text-sm mt-1">
+            Refreshing is temporarily disabled. Please wait a few minutes before trying again.
+          </p>
+        </div>
+      )}
+
+      {/* Stale Data Warning */}
+      {(showStaleDataWarning || isDataStale()) && !hasRecentRateLimit() && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-blue-800 font-medium">
+                  {isDataVeryStale() ? 'Data is Several Hours Old' : 'Data is Getting Stale'}
+                </p>
+                <p className="text-blue-700 text-sm mt-1">
+                  Last updated {getDataFreshnessLabel()}.
+                  {isDataVeryStale()
+                    ? ' Consider refreshing for the latest insights.'
+                    : ' You may want to refresh for more recent data.'
+                  }
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleRefresh}
+              size="sm"
+              disabled={overviewLoading || !canForceRefresh()}
+              className="text-sm"
+            >
+              Refresh Now
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Overview Error */}
@@ -249,7 +388,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
                 formatter={formatters.default}
               />
             )}
-            
+
             {overviewData.kpis.followers && (
               <KPICard
                 title="Followers"
@@ -258,7 +397,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
                 formatter={formatters.compact}
               />
             )}
-            
+
             {overviewData.kpis.impressions && (
               <KPICard
                 title="Impressions"
@@ -267,7 +406,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
                 formatter={formatters.compact}
               />
             )}
-            
+
             {overviewData.kpis.engagement_rate && (
               <KPICard
                 title="Engagement Rate"
@@ -401,6 +540,14 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
           <div className="flex flex-wrap gap-4">
             <span>Version: {overviewData.meta.version}</span>
             <span>Request ID: {overviewData.meta.requestId}</span>
+            {clientState.lastOverviewAt && (
+              <span>
+                Updated: {new Date(clientState.lastOverviewAt).toLocaleString()}
+                {clientState.lastForceAt && clientState.lastForceAt === clientState.lastOverviewAt && (
+                  <span className="text-green-600 ml-1">(forced)</span>
+                )}
+              </span>
+            )}
             {selectedProfileIds.length > 0 && (
               <span>Profiles: {selectedProfileIds.length} selected</span>
             )}

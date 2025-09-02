@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { usePostDetails } from '@/context/PostDetailsContext';
 import { doc as firestoreDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { url } from 'inspector';
 
 interface CreatePostModalProps {
   children: React.ReactNode;
@@ -59,6 +60,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [hasFetchedSuggestions, setHasFetchedSuggestions] = useState<string | null>(null);
+  const [loadingText, setLoadingText] = useState<string>('Analyzing source');
+  const [loadingStage, setLoadingStage] = useState<number>(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -76,6 +79,27 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   // Get the current agency ID from the authenticated user
   const agencyId = currentUser?.uid;
+
+  // Handle loading text transitions
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStage(0);
+      setLoadingText('Analyzing source');
+      return;
+    }
+
+    const loadingMessages = ['Analyzing source', 'Extracting content', 'Generating post'];
+
+    if (loadingStage < loadingMessages.length - 1) {
+      const timer = setTimeout(() => {
+        const nextStage = loadingStage + 1;
+        setLoadingStage(nextStage);
+        setLoadingText(loadingMessages[nextStage]);
+      }, 3000); // Change text every 3 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, loadingStage]);
 
   useEffect(() => {
     if (isOpen) {
@@ -190,7 +214,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           resetForm();
           // Navigate to the PostDetails page - it will fetch fresh data from Firestore
           navigate(`/clients/${clientId}/posts/${postId}`);
-          
+
           setIsOpen(false);
 
         } else {
@@ -268,7 +292,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         }
 
         // Show loader on the button
-        setIsRefreshing(true);
+        setIsLoading(true);
 
         // Step 1: Generate a unique post ID
         const postId = uuidv4();
@@ -277,24 +301,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
         console.log('[CreatePostModal] Creating URL post for agency:', agencyId, 'client:', clientId);
         await createPost(agencyId, clientId, {
+
           profileId: selectedProfile.id,
           profileName: selectedProfile.profileName,
           profileRole: selectedProfile.role || '',
           objective: selectedObjective,
           templateUsedId: selectedTemplate,
           templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
-          initialIdeaPrompt: `Generate content from URL: ${urlInput}`,
+          initialIdeaPrompt: urlRemarks.trim() ? urlRemarks.trim() : '',
         }, postId);
 
         // Step 2.5: Update the document with URL fields that the Railway API expects
         const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
         await updateDoc(postRef, {
           sourceUrl: urlInput.trim(), // Primary field for Railway API
-          url: urlInput.trim(), // Backup field for Railway API
-          sourceURL: {
-            url: urlInput.trim(),
-            remarks: urlRemarks.trim()
-          },
+          // sourceURL: {
+          //   url: urlInput.trim(),
+          //   remarks: urlRemarks.trim()
+          // },
           updatedAt: new Date().toISOString()
         });
 
@@ -1025,7 +1049,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Additional remarks (optional)
+                Additional remarks
               </label>
               <Textarea
                 value={urlRemarks}
@@ -1041,12 +1065,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Button
               onClick={handleCreateFromUrl}
-              disabled={!urlInput.trim() || !selectedSubClient}
+              disabled={!urlInput.trim() || !selectedSubClient || isLoading}
               className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
             >
-
-              Generate post from URL
-
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4 mr-2 inline-block" /> {loadingText}...
+                </>
+              ) : (
+                'Generate post from link'
+              )}
             </Button>
           </div>
         );

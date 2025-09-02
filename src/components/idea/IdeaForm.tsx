@@ -28,6 +28,8 @@ interface IdeaFormProps {
   postedAt?: import('firebase/firestore').Timestamp;
   onDuplicate?: () => Promise<string>;
   onNavigate?: (newPostId: string) => void;
+  // Add source URL prop
+  sourceUrl?: string;
 }
 
 const IdeaForm: React.FC<IdeaFormProps> = ({
@@ -42,7 +44,8 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
   postStatus,
   postedAt,
   onDuplicate,
-  onNavigate
+  onNavigate,
+  sourceUrl // Add source URL prop
 }) => {
   return (
     <div className="space-y-6">
@@ -62,6 +65,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         postedAt={postedAt}
         onDuplicate={onDuplicate}
         onNavigate={onNavigate}
+        sourceUrl={sourceUrl} // Pass source URL
       />
     </div>
   );

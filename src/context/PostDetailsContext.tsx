@@ -222,6 +222,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                     options: data.poll.options,
                     duration: data.poll.duration
                 } as Poll : undefined,
+                sourceUrl: data.sourceUrl, // Add this field
             };
             setPost(postData);
         } catch (e: any) {

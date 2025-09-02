@@ -43,26 +43,27 @@ export type Post = {
     title: string;
     status: string;
     updatedAt: Timestamp;
-    createdAt?: Timestamp;
+    createdAt: Timestamp;
     
     // Profile information (flexible for both simple and detailed)
-    profile: string | Profile;    // Can be simple string or detailed Profile object
-    profileId?: string;           // For when profile is a string
+    profile: Profile;
+    profileId: string;
     
     // Optional detailed fields (only loaded when needed)
     scheduledPostAt?: Timestamp;
     postedAt?: Timestamp;
     linkedinPostUrl?: string;
-    internalNotes?: string;
-    trainAI?: boolean;
+    internalNotes: string;
+    trainAI: boolean;
     
     // Complex nested objects (only for detailed views)
-    initialIdea?: InitialIdea;
-    generatedHooks?: Hook[];
-    drafts?: Draft[];
-    images?: string[];
+    initialIdea: InitialIdea;
+    generatedHooks: Hook[];
+    drafts: Draft[];
+    images: string[];
     video?: string;
     poll?: Poll;
+    sourceUrl?: string; // Add this field
 };
 
 // Field selection types for different use cases
@@ -77,7 +78,7 @@ export const isDetailedPost = (post: Post | null | undefined): post is PostDetai
            post.initialIdea !== undefined;
 };
 
-export const isSimplePost = (post: Post | null | undefined): post is PostListFields => {
+export const isSimplePost = (post: Post | null | undefined): boolean => {
     if (!post) return false;
     return typeof post.profile === 'string';
 };
@@ -123,9 +124,26 @@ export const postCardToPost = (postCard: any): Post => {
         title: postCard.title,
         status: postCard.status,
         updatedAt: postCard.updatedAt,
+        createdAt: postCard.createdAt ?? postCard.updatedAt ?? new Date() as unknown as Timestamp,
         profile: postCard.profile,
         profileId: postCard.profileId,
         scheduledPostAt: postCard.scheduledPostAt,
+        postedAt: postCard.postedAt ?? undefined,
+        linkedinPostUrl: postCard.linkedinPostUrl ?? undefined,
+        internalNotes: postCard.internalNotes ?? '',
+        trainAI: postCard.trainAI ?? false,
+        initialIdea: postCard.initialIdea ?? {
+            objective: '',
+            initialIdeaPrompt: '',
+            templateUsedId: '',
+            templateUsedName: '',
+        },
+        generatedHooks: postCard.generatedHooks ?? [],
+        drafts: postCard.drafts ?? [],
+        images: postCard.images ?? [],
+        video: postCard.video ?? undefined,
+        poll: postCard.poll ?? undefined,
+        sourceUrl: postCard.sourceUrl ?? undefined,
     };
 };
 

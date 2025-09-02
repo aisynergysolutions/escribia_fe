@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CustomInputModal from '../CustomInputModal';
 import PostEditorDisabledOverlay from './PostEditorDisabledOverlay';
+import SourceUrlPreview from './SourceUrlPreview';
 
 interface InitialIdeaSectionProps {
   isExpanded: boolean;
@@ -26,6 +27,8 @@ interface InitialIdeaSectionProps {
   postedAt?: import('firebase/firestore').Timestamp;
   onDuplicate?: () => Promise<string>;
   onNavigate?: (newPostId: string) => void;
+  // Add source URL prop
+  sourceUrl?: string;
 }
 
 const predefinedObjectives = ['Thought Leadership', 'Brand Awareness', 'Lead Generation', 'Talent attraction'];
@@ -45,7 +48,8 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
   postStatus,
   postedAt,
   onDuplicate,
-  onNavigate
+  onNavigate,
+  sourceUrl // Add source URL prop
 }) => {
   const [showCustomObjectiveModal, setShowCustomObjectiveModal] = useState(false);
   const [showDisabledOverlay, setShowDisabledOverlay] = useState(false);
@@ -96,6 +100,14 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
               </div>
             </div>
           </CollapsibleTrigger>
+
+          {/* Show source URL preview outside of collapsible content to avoid remounting */}
+          {sourceUrl && (
+            <div className={`mt-2 ${isExpanded ? 'px-0' : ''}`}>
+              {/* {isExpanded && <label className="block text-sm font-medium mb-2">Source</label>} */}
+              <SourceUrlPreview sourceUrl={sourceUrl} />
+            </div>
+          )}
 
           <CollapsibleContent className="space-y-4 pt-2">
             <div>

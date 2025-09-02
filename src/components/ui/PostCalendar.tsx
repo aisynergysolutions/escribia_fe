@@ -213,7 +213,7 @@ const PostCalendar: React.FC<PostCalendarProps> = React.memo(({
       return (
         <div
           key={day.toISOString()}
-          className={`min-h-[80px] p-1 border rounded-sm cursor-pointer hover:bg-gray-50 ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+          className={`min-h-[80px] p-1 pb-0 border rounded-sm cursor-pointer hover:bg-gray-50 ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'
             } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
           onClick={() => handleDayClick(day)}
         >

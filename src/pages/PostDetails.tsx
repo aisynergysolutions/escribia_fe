@@ -531,6 +531,7 @@ const PostDetails = () => {
                 postedAt={post?.postedAt}
                 onDuplicate={handleDuplicatePost}
                 onNavigate={handleNavigateToPost}
+                sourceUrl={post?.sourceUrl} // Add source URL prop
               />
 
               <HooksSection

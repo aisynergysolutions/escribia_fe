@@ -64,7 +64,7 @@ const EmptySlotCard: React.FC<EmptySlotCardProps> = ({
                   All Profiles
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                   <div className="flex -space-x-1">
                     {assignedProfiles.slice(0, 3).map((profile, index) => (
                       <img
