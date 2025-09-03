@@ -111,6 +111,8 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                         tick={{ fontSize: 12 }}
                         stroke="#666"
                         tickFormatter={(value) => formatValue(value, metric)}
+                        allowDecimals={false}
+
                     />
                     <Tooltip content={<CustomTooltip metric={metric} />} />
                     <Bar
@@ -141,7 +143,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                     dataKey="displayValue"
                     stroke={color}
                     strokeWidth={2}
-                    // dot={{ fill: color, strokeWidth: 2, r: 4 }}
+                    dot={false}
                     activeDot={{ r: 6, fill: color }}
                 />
             </LineChart>
@@ -151,7 +153,10 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
     return (
         <div className={`bg-white p-6 rounded-2xl shadow-md ${className}`}>
             <h3 className="text-lg font-semibold mb-4 capitalize">
-                {metric.replace('_', ' ')} ({granularity}ly)
+                <span className="font-semibold">{metric.replace('_', ' ')}</span>
+                <span className="ml-2 text-gray-500 font-normal text-base">
+                    {granularity === 'day' ? 'Daily' : 'Weekly'}
+                </span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
                 {renderChart()}

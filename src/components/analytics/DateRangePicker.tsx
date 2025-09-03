@@ -6,9 +6,10 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 interface DateRangePickerProps {
     onRangeChange: (start: Date, end: Date) => void;
     className?: string;
+    disabled?: boolean;
 }
 
-const DateRangePicker: React.FC<DateRangePickerProps> = ({ onRangeChange, className = '' }) => {
+const DateRangePicker: React.FC<DateRangePickerProps> = ({ onRangeChange, className = '', disabled = false }) => {
     const [selectedRange, setSelectedRange] = useState<string>('28_days');
 
     const presetRanges = [
@@ -41,6 +42,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ onRangeChange, classN
                         size="sm"
                         onClick={() => handleRangeSelect(range.value, range.days)}
                         className="text-xs"
+                        disabled={disabled}
                     >
                         {range.label}
                     </Button>

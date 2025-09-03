@@ -239,6 +239,11 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
     setSelectedProfileIds(profileIds);
   };
 
+  // Check if any time series data is currently loading
+  const isAnyTimeSeriesLoading = (): boolean => {
+    return Object.values(timeSeriesLoading).some(loading => loading);
+  };
+
   const getTimeSeriesKey = (metric: string) => `${metric}_${selectedGranularity}`;
 
   // Check if we have any KPI data
@@ -270,7 +275,10 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <DateRangePicker onRangeChange={handleDateRangeChange} />
+            <DateRangePicker
+              onRangeChange={handleDateRangeChange}
+              disabled={overviewLoading || isAnyTimeSeriesLoading()}
+            />
             <Button
               onClick={handleRefresh}
               variant="outline"
@@ -535,7 +543,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
       )}
 
       {/* Meta Information */}
-      {overviewData?.meta && (
+      {/* {overviewData?.meta && (
         <div className="bg-gray-50 p-4 rounded-lg text-xs text-gray-600">
           <div className="flex flex-wrap gap-4">
             <span>Version: {overviewData.meta.version}</span>
@@ -562,7 +570,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ clientId }) => {
             )}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

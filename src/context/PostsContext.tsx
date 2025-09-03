@@ -53,6 +53,7 @@ type PostsContextType = {
       generatedHooks?: any[];
       status?: string;
       scheduledPostAt?: Timestamp;
+      postedAt?: Timestamp;
     }
   ) => Promise<void>;
   updatePostInCache: (
@@ -63,6 +64,7 @@ type PostsContextType = {
       title?: string;
       status?: string;
       scheduledPostAt?: Timestamp;
+      postedAt?: Timestamp;
     }
   ) => void;
 };
@@ -83,6 +85,7 @@ export const usePosts = () => useContext(PostsContext);
 
 export const PostsProvider = ({ children }: { children: ReactNode }) => {
   const [postsCache, setPostsCache] = useState<PostsCache>({});
+  const [cacheFetchedFromFirestore, setCacheFetchedFromFirestore] = useState<Set<PostsCacheKey>>(new Set());
   const [currentKey, setCurrentKey] = useState<PostsCacheKey | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,8 +96,8 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
     const key: PostsCacheKey = `${agencyId}_${clientId}`;
     setCurrentKey(key);
 
-    // If already cached, use cache
-    if (postsCache[key]) {
+    // If already cached AND was fetched from Firestore, use cache
+    if (postsCache[key] && cacheFetchedFromFirestore.has(key)) {
       setPosts(postsCache[key]);
       setLoading(false);
       setError(null);
@@ -174,6 +177,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         return post;
       });
       setPostsCache(prev => ({ ...prev, [key]: postsList }));
+      setCacheFetchedFromFirestore(prev => new Set([...prev, key]));
       setPosts(postsList);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch posts');
@@ -247,11 +251,22 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         postedAt: Timestamp.fromMillis(0),
       } as Post;
 
-      // Update the cache
-      setPostsCache(prev => ({
-        ...prev,
-        [key]: [...(prev[key] || []), newPostContext],
-      }));
+      // Only update the cache if it was properly fetched from Firestore
+      // Otherwise, clear the fetched flag so next fetchPosts will refresh from Firestore
+      if (cacheFetchedFromFirestore.has(key)) {
+        // Update the cache
+        setPostsCache(prev => ({
+          ...prev,
+          [key]: [...(prev[key] || []), newPostContext],
+        }));
+      } else {
+        // Clear the fetched flag to force a fresh fetch next time
+        setCacheFetchedFromFirestore(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(key);
+          return newSet;
+        });
+      }
 
       // Update the current posts if we're viewing this client
       if (currentKey === key) {
@@ -275,6 +290,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       generatedHooks?: any[];
       status?: string;
       scheduledPostAt?: Timestamp;
+      postedAt?: Timestamp;
     }
   ): Promise<void> => {
     try {
@@ -299,6 +315,9 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       if (updates.scheduledPostAt) {
         firestoreUpdates.scheduledPostAt = updates.scheduledPostAt;
       }
+      if (updates.postedAt) {
+        firestoreUpdates.postedAt = updates.postedAt;
+      }
 
       await setDoc(postRef, firestoreUpdates, { merge: true });
 
@@ -316,6 +335,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
                 ...(updates.title && { title: updates.title }),
                 ...(updates.status && { status: updates.status }),
                 ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
+                ...(updates.postedAt && { postedAt: updates.postedAt }),
                 updatedAt: Timestamp.now()
               }
               : post
@@ -332,6 +352,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
               ...(updates.title && { title: updates.title }),
               ...(updates.status && { status: updates.status }),
               ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
+              ...(updates.postedAt && { postedAt: updates.postedAt }),
               updatedAt: Timestamp.now()
             }
             : post
@@ -396,11 +417,22 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
         postedAt: Timestamp.fromMillis(0),
       } as Post;
 
-      // Update the cache
-      setPostsCache(prev => ({
-        ...prev,
-        [key]: [...(prev[key] || []), newPostContext],
-      }));
+      // Only update the cache if it was properly fetched from Firestore
+      // Otherwise, clear the fetched flag so next fetchPosts will refresh from Firestore
+      if (cacheFetchedFromFirestore.has(key)) {
+        // Update the cache
+        setPostsCache(prev => ({
+          ...prev,
+          [key]: [...(prev[key] || []), newPostContext],
+        }));
+      } else {
+        // Clear the fetched flag to force a fresh fetch next time
+        setCacheFetchedFromFirestore(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(key);
+          return newSet;
+        });
+      }
 
       // Update the current posts if we're viewing this client
       if (currentKey === key) {
@@ -446,6 +478,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
       title?: string;
       status?: string;
       scheduledPostAt?: Timestamp;
+      postedAt?: Timestamp;
     }
   ): void => {
     const key: PostsCacheKey = `${agencyId}_${clientId}`;
@@ -461,6 +494,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
               ...(updates.title && { title: updates.title }),
               ...(updates.status && { status: updates.status }),
               ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
+              ...(updates.postedAt && { postedAt: updates.postedAt }),
               updatedAt: Timestamp.now()
             }
             : post
@@ -477,6 +511,7 @@ export const PostsProvider = ({ children }: { children: ReactNode }) => {
             ...(updates.title && { title: updates.title }),
             ...(updates.status && { status: updates.status }),
             ...(updates.scheduledPostAt && { scheduledPostAt: updates.scheduledPostAt }),
+            ...(updates.postedAt && { postedAt: updates.postedAt }),
             updatedAt: Timestamp.now()
           }
           : post

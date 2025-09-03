@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2, X } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, PlusCircle, MoreHorizontal, Copy, Trash2, X, PencilLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -403,7 +403,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 {/* New Post Button - Icon Only */}
                 <CreatePostModal>
                   <Button className="bg-indigo-600 hover:bg-indigo-700 h-10 w-10 p-0">
-                    <PlusCircle className="h-4 w-4" />
+                    <PencilLine className="h-6 w-6" />
                   </Button>
                 </CreatePostModal>
               </div>
@@ -419,6 +419,10 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 border-b">
+                      {/* Row Number Header */}
+                      <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide w-16 text-center">
+                        {/* # */}
+                      </TableHead>
                       <TableHead className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
                         <button
                           onClick={() => handleColumnSort('title')}
@@ -498,12 +502,16 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPosts.map(post => (
+                    {filteredPosts.map((post, index) => (
                       <TableRow
                         key={post.postId}
                         className="cursor-pointer hover:bg-gray-50 border-b border-gray-100"
                         onClick={() => navigate(`/clients/${clientId}/posts/${post.postId}`)}
                       >
+                        {/* Row Number Cell */}
+                        <TableCell className="py-4 text-center text-gray-500 font-mono text-sm w-16">
+                          {index + 1}
+                        </TableCell>
                         <TableCell className="py-4">
                           <div className="font-semibold text-gray-900 max-w-xs truncate" title={post.title}>
                             {post.title.length > 80 ? post.title.slice(0, 80) + '…' : post.title}
@@ -551,9 +559,22 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
                           <TableCell className="py-4 text-gray-600">
                             <Tooltip>
                               <TooltipTrigger>
-                                {post.scheduledPostAt && post.scheduledPostAt.seconds > 0
-                                  ? formatRelativeTime(post.scheduledPostAt)
-                                  : '—'}
+                                {(() => {
+                                  // Debug logging for scheduled posts
+                                  if (process.env.NODE_ENV === 'development' && post.scheduledPostAt && post.scheduledPostAt.seconds > 0) {
+                                    console.log('PostsSection scheduledPostAt debug:', {
+                                      postId: post.postId,
+                                      title: post.title,
+                                      scheduledPostAt: post.scheduledPostAt,
+                                      seconds: post.scheduledPostAt.seconds,
+                                      date: new Date(post.scheduledPostAt.seconds * 1000).toISOString()
+                                    });
+                                  }
+
+                                  return post.scheduledPostAt && post.scheduledPostAt.seconds > 0
+                                    ? formatRelativeTime(post.scheduledPostAt)
+                                    : '—';
+                                })()}
                               </TooltipTrigger>
                               <TooltipContent>
                                 {post.scheduledPostAt && post.scheduledPostAt.seconds > 0

@@ -355,6 +355,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             variant: 'destructive',
           });
           setIsRefreshing(false);
+          setIsLoading(false);
           return;
         }
 
@@ -383,6 +384,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           navigate(`/clients/${clientId}/posts/${postId}?new=true`);
 
           setIsOpen(false);
+          setIsLoading(false);
+          setIsRefreshing(false);
         } else {
           toast({
             title: 'AI Generation Error',
@@ -390,6 +393,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             variant: 'destructive',
           });
           setIsRefreshing(false);
+          setIsLoading(false);
           // Delete firestore document if generation failed
           await deletePost(agencyId, clientId, postId);
           return;
@@ -404,6 +408,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       } finally {
         // Hide the loader
         setIsRefreshing(false);
+        setIsLoading(false);
       }
     }
   };
@@ -506,10 +511,129 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setSelectedSuggestion(suggestion);
   };
 
-  const handleCreateFromSelectedSuggestion = () => {
-    if (selectedSuggestion) {
-      console.log('Creating from selected suggestion:', selectedSuggestion);
-      handleCreateFromSuggestion(selectedSuggestion);
+  const handleCreateFromSelectedSuggestion = async () => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (selectedSuggestion && clientId && selectedSubClient) {
+      try {
+        const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
+        if (!selectedProfile) {
+          toast({
+            title: 'Error',
+            description: 'Selected profile not found',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Show loader on the button
+        setIsLoading(true);
+
+        // Step 1: Generate a unique post ID
+        const postId = uuidv4();
+
+        // Step 2: Create the post in Firestore (without AI-generated content initially)
+        const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
+        console.log('[CreatePostModal] Creating post from suggestion for agency:', agencyId, 'client:', clientId);
+        await createPost(agencyId, clientId, {
+          profileId: selectedProfile.id,
+          profileName: selectedProfile.profileName,
+          profileRole: selectedProfile.role || '',
+          objective: selectedObjective,
+          templateUsedId: selectedTemplate,
+          templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
+          initialIdeaPrompt: selectedSuggestion,
+        }, postId);
+
+        // Step 3: Generate AI content and let Railway save it to Firestore
+        let result;
+        try {
+          const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              agency_id: agencyId,
+              client_id: clientId,
+              subclient_id: selectedProfile.id,
+              idea_id: postId,
+              save: true,
+              create_title: true,
+              create_hooks: true,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch from the endpoint');
+          }
+
+          result = await response.json();
+        } catch (error) {
+          console.error('Error fetching from endpoint:', error);
+          toast({
+            title: 'AI Generation Error',
+            description: 'There was a problem generating your post. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Step 4: Check if generation was successful and update context
+        if (result.success) {
+          // Update the context with the AI-generated title
+          if (result.title) {
+            await updatePostInContext(agencyId, clientId, postId, {
+              title: result.title,
+              ...(result.post_content && { currentDraftText: result.post_content }),
+              ...(result.generatedHooks && { generatedHooks: result.generatedHooks }),
+              ...(result.hooks && { generatedHooks: result.hooks })
+            });
+          }
+
+          toast({
+            title: 'Post Generated',
+            description: 'Your post has been successfully generated from the AI suggestion.',
+          });
+          console.log('Generated Post from suggestion:', result.post_content);
+          console.log('Generated Title:', result.title);
+          console.log('Generated Hooks:', result.generatedHooks || result.hooks);
+          resetForm();
+          // Navigate to the PostDetails page - it will fetch fresh data from Firestore
+          navigate(`/clients/${clientId}/posts/${postId}`);
+
+          setIsOpen(false);
+
+        } else {
+          toast({
+            title: 'AI Generation Error',
+            description: result.error || 'Failed to generate post. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          // Delete firestore document if generation failed
+          await deletePost(agencyId, clientId, postId);
+          return;
+        }
+      } catch (error) {
+        console.error('Error generating post from suggestion:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        // Hide the loader
+        setIsLoading(false);
+      }
     }
   };
 
@@ -733,7 +857,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     {
       id: 'url',
       title: 'Generate from URL',
-      description: 'Turn YouTube videos or articles into content',
+      description: 'Turn videos or articles into content',
       icon: Youtube,
       color: 'bg-muted text-muted-foreground'
     },
@@ -1233,14 +1357,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </div>
 
               {/* Create Post Button */}
-              <div className="absolute bottom-0 left-0 right-12 bg-white/95 backdrop-blur-sm border-t border-gray-200 p-4">
+              <div className="absolute bottom-0 left-0 right-12 bg-white/95 backdrop-blur-sm  p-4">
                 <Button
                   onClick={handleCreateFromSelectedSuggestion}
-                  disabled={!selectedSuggestion || !selectedSubClient || isRefreshing}
+                  disabled={!selectedSuggestion || !selectedSubClient || isRefreshing || isLoading}
                   className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none disabled:bg-gray-300 disabled:text-gray-500"
                 >
 
-                  {isRefreshing
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin w-4 h-4 mr-2 inline-block" /> Generating post from idea...
+                    </>
+                  ) : isRefreshing
                     ? 'Generating suggestions...'
                     : selectedSuggestion
                       ? 'Create post from selected idea'

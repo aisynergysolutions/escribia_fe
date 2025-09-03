@@ -9,7 +9,8 @@ import {
   BarChart3,
   MessageCircle,
   PlusCircle,
-  Users
+  Users,
+  PencilLine
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -134,7 +135,7 @@ const ClientSidebar = () => {
         {/* Create Post Button with Modal */}
         <CreatePostModal>
           <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
-            <PlusCircle className="h-3 w-3 mr-1" />
+            <PencilLine className="h-3 w-3 mr-1" />
             Create Post
           </Button>
         </CreatePostModal>
