@@ -58,13 +58,13 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
         'Monday': { '09:00': [], '13:00': [] },
         'Tuesday': { '09:00': [], '13:00': [] }
       });
-      setSelectedDay('Monday'); // Set Monday as selected when initializing
+      setSelectedDay('Monday'); // Set Monday as selected when initializing with default data
     } else {
       setTimeslotsData(initialTimeslotsData);
     }
   }, [initialTimeslotsData]);
 
-  // Set the first day with timeslots as selected by default, or Monday if none
+  // Set the first day with timeslots as selected by default, or null if none
   useEffect(() => {
     if (!selectedDay) {
       const daysWithTimeslots = Object.keys(timeslotsData).filter(day =>
@@ -74,15 +74,15 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
         // Sort by DAYS_OF_WEEK order and pick the first
         const sortedDays = DAYS_OF_WEEK.filter(day => daysWithTimeslots.includes(day));
         setSelectedDay(sortedDays[0]);
-      } else {
-        // Default to Monday if no timeslots are configured
-        setSelectedDay('Monday');
       }
+      // Don't set a default day if no timeslots are configured
     }
   }, [timeslotsData, selectedDay]);
 
   const getActiveDays = () => {
-    const activeDays = Object.keys(timeslotsData);
+    const activeDays = Object.keys(timeslotsData).filter(day =>
+      timeslotsData[day] && Object.keys(timeslotsData[day]).length > 0
+    );
     // Sort according to DAYS_OF_WEEK order
     return DAYS_OF_WEEK.filter(day => activeDays.includes(day));
   };
@@ -102,37 +102,66 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
     delete newData[day];
     setTimeslotsData(newData);
     if (selectedDay === day) {
-      // Select the first available day with timeslots, or the first day if none
-      const remainingDays = Object.keys(newData);
-      if (remainingDays.length > 0) {
-        setSelectedDay(remainingDays[0]);
+      // Select the first available day with timeslots, or null if none
+      const remainingDaysWithTimeslots = Object.keys(newData).filter(d =>
+        newData[d] && Object.keys(newData[d]).length > 0
+      );
+      if (remainingDaysWithTimeslots.length > 0) {
+        // Sort by DAYS_OF_WEEK order and pick the first
+        const sortedDays = DAYS_OF_WEEK.filter(d => remainingDaysWithTimeslots.includes(d));
+        setSelectedDay(sortedDays[0]);
       } else {
-        // If no days with timeslots remain, select Monday by default
-        setSelectedDay('Monday');
+        // If no days with timeslots remain, clear selection
+        setSelectedDay(null);
       }
     }
   };
 
   const addTimeslotToDay = (day: string) => {
-    if (newTimeslot && !timeslotsData[day][newTimeslot]) {
-      setTimeslotsData(prev => ({
-        ...prev,
-        [day]: {
-          ...prev[day],
-          [newTimeslot]: []
+    if (newTimeslot) {
+      setTimeslotsData(prev => {
+        // Ensure the day exists in the data
+        const currentDayData = prev[day] || {};
+        
+        // Check if the timeslot already exists
+        if (currentDayData[newTimeslot]) {
+          return prev; // Don't add if it already exists
         }
-      }));
+        
+        return {
+          ...prev,
+          [day]: {
+            ...currentDayData,
+            [newTimeslot]: []
+          }
+        };
+      });
       setNewTimeslot('');
     }
   };
 
   const removeTimeslotFromDay = (day: string, time: string) => {
     const newData = { ...timeslotsData };
-    delete newData[day][time];
+    
+    // Ensure the day exists before trying to delete from it
+    if (newData[day]) {
+      delete newData[day][time];
+      
+      // If this was the last timeslot for the day, remove the day entirely
+      if (Object.keys(newData[day]).length === 0) {
+        delete newData[day];
+      }
+    }
+    
     setTimeslotsData(newData);
   };
 
   const toggleProfileForTimeslot = (day: string, time: string, profile: TimeslotProfile) => {
+    // Ensure the day and time exist before accessing
+    if (!timeslotsData[day] || !timeslotsData[day][time]) {
+      return; // Exit early if the structure doesn't exist
+    }
+    
     const currentProfiles = timeslotsData[day][time];
     const isAssigned = currentProfiles.some(p => p.profileId === profile.profileId);
 
@@ -157,19 +186,36 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
     }
   };
 
+  const cleanTimeslotsData = (data: TimeslotsDataMap): TimeslotsDataMap => {
+    const cleanedData: TimeslotsDataMap = {};
+    
+    Object.keys(data).forEach(day => {
+      const dayTimeslots = data[day];
+      if (dayTimeslots && Object.keys(dayTimeslots).length > 0) {
+        cleanedData[day] = dayTimeslots;
+      }
+    });
+    
+    return cleanedData;
+  };
 
   const handleSave = () => {
-    // Validate: at least one day with at least one timeslot
-    if (isValid()) {
-      onSave(timeslotsData);
+    // Clean the data to remove any empty days and validate
+    const cleanedData = cleanTimeslotsData(timeslotsData);
+    if (isValidData(cleanedData)) {
+      onSave(cleanedData);
       onClose();
     }
   };
 
   const isValid = () => {
+    return isValidData(timeslotsData);
+  };
+
+  const isValidData = (data: TimeslotsDataMap) => {
     // Check if at least one day has at least one timeslot
-    return Object.keys(timeslotsData).some(day =>
-      timeslotsData[day] && Object.keys(timeslotsData[day]).length > 0
+    return Object.keys(data).some(day =>
+      data[day] && Object.keys(data[day]).length > 0
     );
   };
 
@@ -260,7 +306,7 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
                       variant="outline"
                       size="icon"
                       onClick={() => addTimeslotToDay(selectedDay)}
-                      disabled={!newTimeslot || !!timeslotsData[selectedDay]?.[newTimeslot]}
+                      disabled={!newTimeslot || !!(timeslotsData[selectedDay] && timeslotsData[selectedDay][newTimeslot])}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
