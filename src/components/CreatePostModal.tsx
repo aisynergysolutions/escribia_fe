@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Profile, useProfiles } from '@/context/ProfilesContext';
 import { TemplateCard, useTemplates } from '@/context/TemplatesContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, Play, Pause, User, ChevronDown, Loader2, FileText, Copy, Edit } from 'lucide-react';
+import { Edit3, Mic, Youtube, X, Sparkles, RefreshCw, User, ChevronDown, Loader2, FileText, Copy, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -42,8 +42,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [hasRecording, setHasRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [scratchTitle, setScratchTitle] = useState('');
-  const [scratchContent, setScratchContent] = useState('');
   // Mock suggestions for when no profile is selected
   const mockSuggestions = [
     'The €0 AI Toolkit No SME Knows About: Revealing 5 underground open-source tools that can replace €5,000 worth of enterprise software, without compromising on quality or performance.',
@@ -62,11 +60,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [hasFetchedSuggestions, setHasFetchedSuggestions] = useState<string | null>(null);
   const [loadingText, setLoadingText] = useState<string>('Analyzing source');
   const [loadingStage, setLoadingStage] = useState<number>(0);
+  // Voice dictation (speech-to-text)
+  const [isDictating, setIsDictating] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
+  const [voiceNotesFocused, setVoiceNotesFocused] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check if user is on Firefox
+  const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('firefox');
   const navigate = useNavigate();
   const { clientId } = useParams<{ clientId: string; }>();
   const { toast } = useToast();
@@ -413,7 +420,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
-  const handleCreateFromScratch = async () => {
+  const handleStartFromScratch = async () => {
     if (!agencyId) {
       toast({
         title: 'Error',
@@ -423,7 +430,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       return;
     }
 
-    if (scratchTitle.trim() && scratchContent.trim() && clientId && selectedSubClient) {
+    // Check if profile is selected
+    if (!selectedSubClient) {
+      toast({
+        title: 'Select a Profile',
+        description: 'Please select a profile first to create a post.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (clientId && selectedSubClient) {
       try {
         const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
         if (!selectedProfile) {
@@ -435,49 +452,41 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           return;
         }
 
-        // Show loader on the button
-        setIsRefreshing(true);
-
-        // Step 1: Generate a unique post ID
+        // Generate a unique post ID
         const postId = uuidv4();
 
-        // Step 2: Create the post in Firestore with the user-provided content
-        const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
-        console.log('[CreatePostModal] Creating scratch post for agency:', agencyId, 'client:', clientId);
-
+        // Create a blank post in Firestore (bypassing AI generation)
+        console.log('[CreatePostModal] Creating blank post for agency:', agencyId, 'client:', clientId);
         await createPost(agencyId, clientId, {
           profileId: selectedProfile.id,
           profileName: selectedProfile.profileName,
           profileRole: selectedProfile.role || '',
-          objective: selectedObjective,
-          templateUsedId: selectedTemplate,
-          templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
+          objective: '',
+          templateUsedId: '',
+          templateUsedName: '',
           initialIdeaPrompt: '',
-          title: scratchTitle.trim(),
+          title: 'Untitled Post',
         }, postId);
 
-        // Step 3: Save the user-provided content as the first draft
-        await saveNewDraft(agencyId, clientId, postId, scratchContent.trim(), 'Initial content from scratch', false);
+        // Save a blank draft
+        await saveNewDraft(agencyId, clientId, postId, '', 'Blank draft created from scratch', false);
 
         toast({
-          title: 'Post Created',
-          description: 'Your post has been successfully created.',
+          title: 'Blank Post Created',
+          description: 'Your blank post has been created. Start writing!',
         });
 
         resetForm();
-        navigate(`/clients/${clientId}/posts/${postId}?new=true`);
+        navigate(`/clients/${clientId}/posts/${postId}?new=true&scratch=true`);
         setIsOpen(false);
 
       } catch (error) {
-        console.error('Error creating scratch post:', error);
+        console.error('Error creating blank post:', error);
         toast({
           title: 'Error',
           description: 'An unexpected error occurred. Please try again.',
           variant: 'destructive',
         });
-      } finally {
-        // Hide the loader
-        setIsRefreshing(false);
       }
     }
   };
@@ -504,6 +513,130 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       navigate(`/clients/${clientId}/posts/${temppostId}?new=true&method=suggestion&data=${encodeURIComponent(JSON.stringify(suggestionData))}`);
       setIsOpen(false);
       resetForm();
+    }
+  };
+
+  // Generate a post from the voice transcript (same flow as from text)
+  const handleCreateFromTranscript = async () => {
+    if (!agencyId) {
+      toast({
+        title: 'Error',
+        description: 'No agency ID available. Please ensure you are signed in.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Combine interim transcript if dictation is still active
+    const combinedTranscript = (transcript + (interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '')).trim();
+
+    if (combinedTranscript && clientId && selectedSubClient) {
+      try {
+        // Stop dictation to freeze the text
+        if (isDictating) stopDictation();
+
+        const selectedProfile = profiles.find(profile => profile.id === selectedSubClient);
+        if (!selectedProfile) {
+          toast({
+            title: 'Error',
+            description: 'Selected profile not found',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Show loader on the button
+        setIsLoading(true);
+
+        // Step 1: Generate a unique post ID
+        const postId = uuidv4();
+
+        // Step 2: Create the post in Firestore (without AI-generated content initially)
+        const selectedTemplateObj = allTemplates.find(t => t.id === selectedTemplate);
+        console.log('[CreatePostModal] Creating post from transcript for agency:', agencyId, 'client:', clientId);
+        await createPost(agencyId, clientId, {
+          profileId: selectedProfile.id,
+          profileName: selectedProfile.profileName,
+          profileRole: selectedProfile.role || '',
+          objective: selectedObjective,
+          templateUsedId: selectedTemplate,
+          templateUsedName: selectedTemplateObj ? selectedTemplateObj.templateName : '',
+          initialIdeaPrompt: combinedTranscript,
+        }, postId);
+
+        // Step 3: Generate AI content and let Railway save it to Firestore
+        let result;
+        try {
+          const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              agency_id: agencyId,
+              client_id: clientId,
+              subclient_id: selectedProfile.id,
+              idea_id: postId,
+              save: true,
+              create_title: true,
+              create_hooks: true,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch from the endpoint');
+          }
+
+          result = await response.json();
+        } catch (error) {
+          console.error('Error fetching from endpoint:', error);
+          toast({
+            title: 'AI Generation Error',
+            description: 'There was a problem generating your post. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Step 4: Check if generation was successful and update context
+        if (result.success) {
+          if (result.title) {
+            await updatePostInContext(agencyId, clientId, postId, {
+              title: result.title,
+              ...(result.post_content && { currentDraftText: result.post_content }),
+              ...(result.generatedHooks && { generatedHooks: result.generatedHooks }),
+              ...(result.hooks && { generatedHooks: result.hooks })
+            });
+          }
+
+          toast({
+            title: 'Post Generated',
+            description: 'Your post has been successfully generated from the transcription.',
+          });
+          resetForm();
+          navigate(`/clients/${clientId}/posts/${postId}`);
+          setIsOpen(false);
+        } else {
+          toast({
+            title: 'AI Generation Error',
+            description: result.error || 'Failed to generate post. Please try again in a few minutes.',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          await deletePost(agencyId, clientId, postId);
+          return;
+        }
+      } catch (error) {
+        console.error('Error generating post from transcript:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -743,8 +876,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setHasRecording(false);
     setAudioBlob(null);
     setIsPlaying(false);
-    setScratchTitle('');
-    setScratchContent('');
+    setTranscript('');
+    setInterimTranscript('');
+    setIsDictating(false);
     setSelectedSuggestion(null);
     setEditingSuggestion(null);
     setEditedSuggestionText('');
@@ -757,6 +891,105 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       audioRef.current = null;
     }
   };
+
+  // Map UI language to BCP-47 code for Web Speech API
+  const getSpeechLang = (lang: string) => {
+    switch (lang) {
+      case 'Spanish':
+        return 'es-ES';
+      case 'French':
+        return 'fr-FR';
+      case 'German':
+        return 'de-DE';
+      case 'Italian':
+        return 'it-IT';
+      case 'English':
+      default:
+        return 'en-US';
+    }
+  };
+
+  const startDictation = () => {
+    try {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        toast({
+          title: 'Speech recognition not supported',
+          description: 'Please use Chrome/Edge on desktop for dictation.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = getSpeechLang(recordingLanguage);
+
+      recognition.onstart = () => {
+        setIsDictating(true);
+        setInterimTranscript('');
+      };
+      recognition.onerror = (e: any) => {
+        console.error('Speech recognition error:', e);
+        toast({ title: 'Dictation error', description: 'Please try again.', variant: 'destructive' });
+        setIsDictating(false);
+      };
+      recognition.onend = () => {
+        setIsDictating(false);
+        setInterimTranscript('');
+      };
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        let finalAdd = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          if (res.isFinal) {
+            finalAdd += res[0].transcript;
+          } else {
+            interim += res[0].transcript;
+          }
+        }
+        if (finalAdd) {
+          setTranscript((prev) => (prev ? prev + ' ' : '') + finalAdd.trim());
+        }
+        setInterimTranscript(interim.trim());
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to start dictation:', err);
+      toast({ title: 'Could not start dictation', description: 'Check microphone permissions and try again.', variant: 'destructive' });
+    }
+  };
+
+  const stopDictation = () => {
+    try {
+      recognitionRef.current?.stop?.();
+    } catch (err) {
+      console.error('Failed to stop dictation:', err);
+    } finally {
+      setIsDictating(false);
+      setInterimTranscript('');
+    }
+  };
+
+  // Stop dictation when modal closes or method/language changes
+  useEffect(() => {
+    if (!isOpen || selectedMethod !== 'voice') {
+      if (isDictating) stopDictation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, selectedMethod]);
+
+  useEffect(() => {
+    if (isDictating) {
+      // Restart with new language
+      stopDictation();
+      setTimeout(startDictation, 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordingLanguage]);
 
   const startVoiceRecording = async () => {
     try {
@@ -862,13 +1095,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       color: 'bg-muted text-muted-foreground'
     },
     {
-      id: 'scratch',
-      title: 'Create from scratch',
-      description: 'Write your own title and content',
-      icon: FileText,
-      color: 'bg-muted text-muted-foreground'
-    },
-    {
       id: 'suggestions',
       title: 'Post Suggestions',
       description: 'AI-generated post ideas',
@@ -955,51 +1181,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const renderRightPanel = () => {
     switch (selectedMethod) {
-      case 'scratch':
-        return (
-          <div className="space-y-6 animate-fade-in">
-            {renderObjectiveAndTemplate()}
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Post Title <span className="text-destructive">*</span>
-              </label>
-              <Input
-                value={scratchTitle}
-                onChange={e => setScratchTitle(e.target.value)}
-                placeholder="Enter your post title..."
-                className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Post Content <span className="text-destructive">*</span>
-              </label>
-              <Textarea
-                value={scratchContent}
-                onChange={e => setScratchContent(e.target.value)}
-                placeholder="Write your post content here..."
-                className="min-h-[200px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
-              />
-            </div>
-
-            <div className="text-xs text-muted-foreground">
-              You can add media and polls after creating the post
-            </div>
-
-            <Button
-              onClick={handleCreateFromScratch}
-              disabled={!scratchTitle.trim() || !scratchContent.trim() || !selectedSubClient}
-              className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
-            >
-
-              Create post from scratch
-
-            </Button>
-          </div>
-        );
-
       case 'text':
         return (
           <div className="space-y-6 animate-fade-in">
@@ -1034,30 +1215,46 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 'Generate post from text'
               )}
             </Button>
+
+            {/* Start from scratch link */}
+            <div className="text-center">
+              <span className="text-sm text-muted-foreground">Prefer to write it yourself? </span>
+              <button
+                onClick={handleStartFromScratch}
+                className="text-sm text-[#4F46E5] hover:text-[#4338CA] underline font-medium transition-colors"
+              >
+                Start from scratch
+              </button>
+            </div>
           </div>
         );
 
       case 'voice':
         return (
-          <div className="relative space-y-1 animate-fade-in">
-            {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-xs flex items-center justify-center">
-              <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                <div className="w-16 h-16 bg-[#4F46E5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mic className="w-8 h-8 text-[#4F46E5]" />
+          <div className="relative space-y-6 animate-fade-in">
+            {/* Firefox Overlay */}
+            {isFirefox && (
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+                <div className="text-center bg-white rounded-lg shadow-lg p-6 border border-gray-200 max-w-sm">
+                  <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mic className="w-8 h-8 text-orange-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Browser Not Supported</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Voice transcription requires Chrome, Edge, or Safari. Firefox doesn't support the Web Speech API yet.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Try switching to Chrome or Edge to use voice dictation.
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  Voice recording functionality is currently in development and will be available soon.
-                </p>
               </div>
-            </div>
+            )}
 
             {renderObjectiveAndTemplate()}
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Recording Language
+                Dictation Language
               </label>
               <Select value={recordingLanguage} onValueChange={setRecordingLanguage}>
                 <SelectTrigger className="transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]">
@@ -1075,82 +1272,80 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Take notes before recording (optional)
+                Take notes before dictating (optional)
               </label>
               <Textarea
                 value={voiceNotes}
                 onChange={e => setVoiceNotes(e.target.value)}
+                onFocus={() => setVoiceNotesFocused(true)}
+                onBlur={() => setVoiceNotesFocused(false)}
                 placeholder="Why you want to speak on this topic?&#10;What you want to convey to your audience?"
-                className="min-h-[120px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
+                className={`${(voiceNotesFocused || voiceNotes.trim()) ? 'min-h-[120px]' : 'min-h-[44px]'} resize-none transition-all duration-200 hover:border-[#4F46E5]/50 focus:border-[#4F46E5]`}
               />
             </div>
 
-            {isRecording && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center animate-fade-in">
-                <div className="flex items-center justify-center gap-2 text-red-600 font-medium">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  Recording: {formatRecordingTime(recordingTime)}
-                </div>
-              </div>
-            )}
-
-            {hasRecording && !isRecording && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <div className="text-green-700 font-medium">
-                    ✓ Recording completed ({formatRecordingTime(recordingTime)})
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={isPlaying ? stopPlayback : playRecording}
-                    className="flex items-center gap-2 hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
-                  >
-                    {isPlaying ? (
-                      <>
-                        <Pause className="w-4 h-4" />
-                        Stop
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4" />
-                        Play
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-              className={`w-full py-3 transition-all transform hover:scale-[1.02] ${isRecording
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-[#4F46E5] hover:bg-[#4338CA]'
-                }`}
-            >
-              {isRecording ? (
-                <>
-                  <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse" />
-                  Stop voice recording
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4 mr-2" />
-                  {hasRecording ? 'Record again' : 'Start voice recording'}
-                </>
-              )}
-            </Button>
-
-            {hasRecording && (
+            {/* Dictation controls */}
+            <div className="space-y-3">
               <Button
-                onClick={handleCreateFromVoice}
-                disabled={!selectedSubClient}
-                className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none"
+                onClick={isDictating ? stopDictation : startDictation}
+                className={`w-full py-3 transition-all transform hover:scale-[1.02] ${isDictating ? 'bg-red-600 hover:bg-red-700' : 'bg-[#4F46E5] hover:bg-[#4338CA]'} `}
               >
-                Generate post from voice
+                {isDictating ? (
+                  <>
+                    <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse" />
+                    Stop dictation
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4 mr-2" />
+                    Dictate
+                  </>
+                )}
               </Button>
-            )}
+
+              {isDictating && (
+                <div className="flex items-center gap-2 text-sm text-red-600">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  Listening... Speak clearly into your microphone
+                </div>
+              )}
+            </div>
+
+            {/* Editable transcript */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">Transcript</label>
+              <Textarea
+                value={transcript + (interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '')}
+                onChange={(e) => setTranscript(e.target.value)}
+                placeholder="Your words will appear here. You can edit this text."
+                className="min-h-[50px] resize-none transition-all hover:border-[#4F46E5]/50 focus:border-[#4F46E5]"
+              />
+              <p className="text-xs text-muted-foreground">We don’t store audio. Dictation works in-browser and only saves text.</p>
+              <Button
+                onClick={handleCreateFromTranscript}
+                disabled={!selectedSubClient || !((transcript + (interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '')).trim()) || isLoading}
+                className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none mt-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin w-4 h-4 mr-2 inline-block" /> Generating post from transcription...
+                  </>
+                ) : (
+                  'Generate text from transcription'
+                )}
+              </Button>
+
+              {/* Start from scratch link */}
+              <div className="text-center mt-4">
+                <span className="text-sm text-muted-foreground">Prefer to write it yourself? </span>
+                <button
+                  onClick={handleStartFromScratch}
+                  className="text-sm text-[#4F46E5] hover:text-[#4338CA] underline font-medium transition-colors"
+                >
+                  Start from scratch
+                </button>
+              </div>
+            </div>
           </div>
         );
 
@@ -1200,6 +1395,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 'Generate post from link'
               )}
             </Button>
+
+            {/* Start from scratch link */}
+            <div className="text-center">
+              <span className="text-sm text-muted-foreground">Prefer to write it yourself? </span>
+              <button
+                onClick={handleStartFromScratch}
+                className="text-sm text-[#4F46E5] hover:text-[#4338CA] underline font-medium transition-colors"
+              >
+                Start from scratch
+              </button>
+            </div>
           </div>
         );
 
@@ -1357,13 +1563,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </div>
 
               {/* Create Post Button */}
-              <div className="absolute bottom-0 left-0 right-12 bg-white/95 backdrop-blur-sm  p-4">
+              <div className="absolute bottom-0 left-0 right-12 bg-white/95 backdrop-blur-sm p-4">
                 <Button
                   onClick={handleCreateFromSelectedSuggestion}
                   disabled={!selectedSuggestion || !selectedSubClient || isRefreshing || isLoading}
                   className="w-full py-3 bg-[#4F46E5] hover:bg-[#4338CA] transition-all transform hover:scale-[1.02] disabled:transform-none disabled:bg-gray-300 disabled:text-gray-500"
                 >
-
                   {isLoading ? (
                     <>
                       <Loader2 className="animate-spin w-4 h-4 mr-2 inline-block" /> Generating post from idea...
@@ -1374,6 +1579,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       ? 'Create post from selected idea'
                       : 'Select an idea to continue'}
                 </Button>
+
+                {/* Start from scratch link */}
+                <div className="text-center mt-3">
+                  <span className="text-sm text-muted-foreground">Prefer to write it yourself? </span>
+                  <button
+                    onClick={handleStartFromScratch}
+                    className="text-sm text-[#4F46E5] hover:text-[#4338CA] underline font-medium transition-colors"
+                  >
+                    Start from scratch
+                  </button>
+                </div>
               </div>
 
               {!selectedSubClient && (

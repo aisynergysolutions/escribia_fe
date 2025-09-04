@@ -122,12 +122,12 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
       setTimeslotsData(prev => {
         // Ensure the day exists in the data
         const currentDayData = prev[day] || {};
-        
+
         // Check if the timeslot already exists
         if (currentDayData[newTimeslot]) {
           return prev; // Don't add if it already exists
         }
-        
+
         return {
           ...prev,
           [day]: {
@@ -142,17 +142,17 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
 
   const removeTimeslotFromDay = (day: string, time: string) => {
     const newData = { ...timeslotsData };
-    
+
     // Ensure the day exists before trying to delete from it
     if (newData[day]) {
       delete newData[day][time];
-      
+
       // If this was the last timeslot for the day, remove the day entirely
       if (Object.keys(newData[day]).length === 0) {
         delete newData[day];
       }
     }
-    
+
     setTimeslotsData(newData);
   };
 
@@ -161,7 +161,7 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
     if (!timeslotsData[day] || !timeslotsData[day][time]) {
       return; // Exit early if the structure doesn't exist
     }
-    
+
     const currentProfiles = timeslotsData[day][time];
     const isAssigned = currentProfiles.some(p => p.profileId === profile.profileId);
 
@@ -188,14 +188,14 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
 
   const cleanTimeslotsData = (data: TimeslotsDataMap): TimeslotsDataMap => {
     const cleanedData: TimeslotsDataMap = {};
-    
+
     Object.keys(data).forEach(day => {
       const dayTimeslots = data[day];
       if (dayTimeslots && Object.keys(dayTimeslots).length > 0) {
         cleanedData[day] = dayTimeslots;
       }
     });
-    
+
     return cleanedData;
   };
 
@@ -252,8 +252,8 @@ const TimeslotDefinitionModal: React.FC<TimeslotDefinitionModalProps> = ({
                         key={day}
                         variant={isSelected ? "default" : "outline"}
                         className={`w-full justify-start text-sm px-3 py-2 whitespace-nowrap ${!hasTimeslots
-                            ? 'opacity-50 text-gray-400 border-gray-200'
-                            : ''
+                          ? 'opacity-50 text-gray-400 border-gray-200'
+                          : ''
                           }`}
                         onClick={() => {
                           setSelectedDay(day);

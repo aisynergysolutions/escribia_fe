@@ -87,23 +87,23 @@ export const formatRelativeTime = (timestamp: TimestampInput): string => {
   const diffInMinutes = Math.floor(absDiffInMs / (1000 * 60));
   
   // Debug logging for scheduled posts (remove in production)
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      console.log('formatRelativeTime debug:', {
-        timestamp,
-        date: date.toISOString(),
-        now: now.toISOString(),
-        diffInMs,
-        absDiffInMs,
-        diffInDays,
-        diffInHours,
-        diffInMinutes,
-        isFuture: diffInMs < 0
-      });
-    } catch (error) {
-      console.warn('Error in formatRelativeTime debug logging:', error, { timestamp });
-    }
-  }
+  // if (process.env.NODE_ENV === 'development') {
+  //   try {
+  //     console.log('formatRelativeTime debug:', {
+  //       timestamp,
+  //       date: date.toISOString(),
+  //       now: now.toISOString(),
+  //       diffInMs,
+  //       absDiffInMs,
+  //       diffInDays,
+  //       diffInHours,
+  //       diffInMinutes,
+  //       isFuture: diffInMs < 0
+  //     });
+  //   } catch (error) {
+  //     console.warn('Error in formatRelativeTime debug logging:', error, { timestamp });
+  //   }
+  // }
   
   const isFuture = diffInMs < 0;
   

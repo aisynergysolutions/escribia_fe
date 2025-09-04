@@ -750,22 +750,36 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             console.log('[PostDetailsContext] Regenerating post for agency:', agencyId, 'client:', clientId, 'post:', postId);
+
+            // Check if the current post has a sourceUrl to determine input_mode
+            const hasSourceUrl = post?.sourceUrl && post.sourceUrl.trim() !== '';
+            const requestBody: any = {
+                agency_id: agencyId,
+                client_id: clientId,
+                subclient_id: subClientId,
+                idea_id: postId,
+                save: true, // This should save to Firestore
+                create_title: false, // Don't overwrite the existing title
+                create_hooks: false, // Don't regenerate hooks
+            };
+
+            // If post has a sourceUrl, use link mode instead of text mode
+            if (hasSourceUrl) {
+                requestBody.input_mode = 'link';
+                console.log('[PostDetailsContext] Using link mode for regeneration with URL:', post.sourceUrl);
+            } else {
+                // For text mode, include the initial idea prompt and objective
+                requestBody.initial_idea_prompt = initialIdeaPrompt;
+                requestBody.objective = objective;
+                console.log('[PostDetailsContext] Using text mode for regeneration');
+            }
+
             const response = await fetch('https://web-production-2fc1.up.railway.app/api/v1/posts/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    agency_id: agencyId,
-                    client_id: clientId,
-                    subclient_id: subClientId,
-                    idea_id: postId,
-                    save: true, // This should save to Firestore
-                    create_title: false, // Don't overwrite the existing title
-                    create_hooks: false, // Don't regenerate hooks
-                    initial_idea_prompt: initialIdeaPrompt,
-                    objective: objective
-                }),
+                body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
@@ -784,7 +798,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             console.error('Error regenerating post from idea:', error);
             return null;
         }
-    }, []);
+    }, [post]);
 
     const updatePostScheduling = useCallback(async (
         agencyId: string,
@@ -1037,7 +1051,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 // Create a unique filename with timestamp
                 const timestamp = Date.now();
                 const fileName = `${agencyId}/${clientId}/${postId}/${timestamp}_${file.name}`;
-                const storageRef = ref(storage, `post-images/${fileName}`);
+                const storageRef = ref(storage, `agencies/${agencyId}/${clientId}/${postId}/images/${timestamp}_${file.name}`);
 
                 // Upload file to Firebase Storage
                 const snapshot = await uploadBytes(storageRef, file);
@@ -1273,7 +1287,7 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             // Create a unique filename with timestamp
             const timestamp = Date.now();
             const fileName = `${agencyId}/${clientId}/${postId}/${timestamp}_${file.name}`;
-            const storageRef = ref(storage, `post-videos/${fileName}`);
+            const storageRef = ref(storage, `agencies/${agencyId}/${clientId}/${postId}/videos/${timestamp}_${file.name}`);
 
             // Upload file to Firebase Storage
             const snapshot = await uploadBytes(storageRef, file);
