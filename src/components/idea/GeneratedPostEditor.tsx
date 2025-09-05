@@ -130,7 +130,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const { toast } = useToast();
   const navigate = useNavigate();
   const { duplicatePost } = usePosts();
-  const { editPostPartial, publishPostNow, uploadPostImages, uploadPostVideo, removePostImage, removeAllPostImages, updatePostImages, updatePostVideo, createPostPoll, updatePostPoll, removePostPoll, post } = usePostDetails();
+  const { editPostPartial, publishPostNow, uploadPostImages, uploadPostVideo, uploadPostPdf, removePostPdf, removePostImage, removeAllPostImages, updatePostImages, updatePostVideo, createPostPoll, updatePostPoll, removePostPoll, post } = usePostDetails();
   const { currentUser } = useAuth();
   const lastSelection = useRef<Range | null>(null);
 
@@ -805,16 +805,20 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     const firstFile = files[0];
     const isVideo = firstFile.type.startsWith('video/');
     const isImage = firstFile.type.startsWith('image/');
+    const isPdf = firstFile.type === 'application/pdf';
 
-    // Check if user is trying to mix video and images
+    // Check if user is trying to mix different media types
     if (mediaFiles.length > 0) {
       const hasVideo = mediaFiles.some(f => f.type === 'video');
       const hasImages = mediaFiles.some(f => f.type === 'image');
+      const hasPdf = mediaFiles.some(f => f.type === 'pdf');
 
-      if ((hasVideo && isImage) || (hasImages && isVideo)) {
+      if ((hasVideo && (isImage || isPdf)) ||
+        (hasImages && (isVideo || isPdf)) ||
+        (hasPdf && (isVideo || isImage))) {
         toast({
           title: "Mixed media not allowed",
-          description: "You can upload either 1 video OR up to 14 images, not both.",
+          description: "You can upload either 1 video, up to 14 images, OR 1 PDF, not a mix.",
           variant: "destructive"
         });
         return;
@@ -853,6 +857,27 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           };
           video.src = url;
         });
+      } else if (isPdf) {
+        // Only allow one PDF
+        if (mediaFiles.length > 0) {
+          toast({
+            title: "Only one PDF allowed",
+            description: "You can upload only one PDF per post.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const url = URL.createObjectURL(firstFile);
+        const mediaFile: MediaFile = {
+          id: `media-${Date.now()}-${Math.random()}`,
+          file: firstFile,
+          url,
+          isVertical: false, // PDFs don't have orientation
+          type: 'pdf',
+          fileName: firstFile.name
+        };
+        mediaFilesToProcess.push(mediaFile);
       } else if (isImage) {
         // Handle multiple images (up to 14 total)
         const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
@@ -861,7 +886,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           if (!file.type.startsWith('image/')) {
             toast({
               title: "Invalid file type",
-              description: "Upload either images or videos.",
+              description: "Upload either images, videos, or PDFs.",
               variant: "destructive"
             });
             continue;
@@ -888,7 +913,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       } else {
         toast({
           title: "Invalid file type",
-          description: "Only image and video files are allowed.",
+          description: "Only image, video, and PDF files are allowed.",
           variant: "destructive"
         });
         return;
@@ -906,7 +931,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       console.error('Error processing direct file upload:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload images. Please try again.",
+        description: "Failed to upload files. Please try again.",
         variant: "destructive"
       });
     }
@@ -920,16 +945,20 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
     const firstFile = files[0];
     const isVideo = firstFile.type.startsWith('video/');
     const isImage = firstFile.type.startsWith('image/');
+    const isPdf = firstFile.type === 'application/pdf';
 
-    // Check if user is trying to mix video and images
+    // Check if user is trying to mix different media types
     if (mediaFiles.length > 0) {
       const hasVideo = mediaFiles.some(f => f.type === 'video');
       const hasImages = mediaFiles.some(f => f.type === 'image');
+      const hasPdf = mediaFiles.some(f => f.type === 'pdf');
 
-      if ((hasVideo && isImage) || (hasImages && isVideo)) {
+      if ((hasVideo && (isImage || isPdf)) ||
+        (hasImages && (isVideo || isPdf)) ||
+        (hasPdf && (isVideo || isImage))) {
         toast({
           title: "Mixed media not allowed",
-          description: "You can upload either 1 video OR up to 14 images, not both.",
+          description: "You can upload either 1 video, up to 14 images, OR 1 PDF, not a mix.",
           variant: "destructive"
         });
         return;
@@ -968,6 +997,27 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           };
           video.src = url;
         });
+      } else if (isPdf) {
+        // Only allow one PDF
+        if (mediaFiles.length > 0) {
+          toast({
+            title: "Only one PDF allowed",
+            description: "You can upload only one PDF per post.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const url = URL.createObjectURL(firstFile);
+        const mediaFile: MediaFile = {
+          id: `media-${Date.now()}-${Math.random()}`,
+          file: firstFile,
+          url,
+          isVertical: false, // PDFs don't have orientation
+          type: 'pdf',
+          fileName: firstFile.name
+        };
+        mediaFilesToProcess.push(mediaFile);
       } else if (isImage) {
         // Handle multiple images (up to 14 total)
         const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
@@ -976,7 +1026,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           if (!file.type.startsWith('image/')) {
             toast({
               title: "Invalid file type",
-              description: "Upload either images or videos.",
+              description: "Upload either images, videos, or PDFs.",
               variant: "destructive"
             });
             continue;
@@ -1003,7 +1053,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       } else {
         toast({
           title: "Invalid file type",
-          description: "Only image and video files are allowed.",
+          description: "Only image, video, and PDF files are allowed.",
           variant: "destructive"
         });
         return;
@@ -1021,7 +1071,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       console.error('Error processing direct file drop:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload images. Please try again.",
+        description: "Failed to upload files. Please try again.",
         variant: "destructive"
       });
     }
@@ -1047,11 +1097,14 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       const isEditing = editingMedia && editingMedia.length > 0;
       const uploadHasVideo = newMediaFiles.some(f => f.type === 'video');
       const uploadHasImages = newMediaFiles.some(f => f.type === 'image');
+      const uploadHasPdf = newMediaFiles.some(f => f.type === 'pdf');
 
-      if (uploadHasVideo && uploadHasImages) {
+      if ((uploadHasVideo && (uploadHasImages || uploadHasPdf)) ||
+        (uploadHasImages && (uploadHasVideo || uploadHasPdf)) ||
+        (uploadHasPdf && (uploadHasVideo || uploadHasImages))) {
         toast({
           title: "Mixed media not allowed",
-          description: "You can upload either 1 video OR up to 14 images, not both.",
+          description: "You can upload either 1 video, up to 14 images, OR 1 PDF, not a mix.",
           variant: "destructive"
         });
         return;
@@ -1075,6 +1128,25 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         } else {
           // Video already uploaded, just update state
           setMediaFiles([videoFile]);
+        }
+      } else if (uploadHasPdf) {
+        // Handle PDF upload (single PDF)
+        const pdfFile = newMediaFiles.find(f => f.type === 'pdf');
+        if (!pdfFile) return;
+
+        if (pdfFile.url.startsWith('blob:')) {
+          // Upload new PDF to Firebase Storage (similar to video, store in pdf field)
+          const uploadedPdfUrl = await uploadPostPdf(currentUser.uid, clientId, postId, pdfFile.file);
+
+          // Update local state with Firebase URL
+          const updatedPdfFile: MediaFile = {
+            ...pdfFile,
+            url: uploadedPdfUrl
+          };
+          setMediaFiles([updatedPdfFile]);
+        } else {
+          // PDF already uploaded, just update state
+          setMediaFiles([pdfFile]);
         }
       } else {
         // Handle image upload (multiple images)
@@ -1141,18 +1213,25 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
       }
 
       const successHasVideo = newMediaFiles.some(f => f.type === 'video');
+      const successHasPdf = newMediaFiles.some(f => f.type === 'pdf');
 
       toast({
         title: isEditing ? "Media Updated" : "Media Uploaded",
         description: successHasVideo
           ? "Video uploaded successfully."
-          : `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} ${isEditing ? 'updated' : 'uploaded'} successfully.`
+          : successHasPdf
+            ? "PDF uploaded successfully."
+            : `${newMediaFiles.length} image${newMediaFiles.length > 1 ? 's' : ''} ${isEditing ? 'updated' : 'uploaded'} successfully.`
       });
     } catch (error) {
       console.error('Error uploading media:', error);
       toast({
         title: "Upload Failed",
-        description: newMediaFiles.some(f => f.type === 'video') ? "Failed to upload video. Please try again." : "Failed to upload images. Please try again.",
+        description: newMediaFiles.some(f => f.type === 'video')
+          ? "Failed to upload video. Please try again."
+          : newMediaFiles.some(f => f.type === 'pdf')
+            ? "Failed to upload PDF. Please try again."
+            : "Failed to upload images. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -1182,10 +1261,16 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
 
       const hasVideo = mediaFiles.some(f => f.type === 'video');
       const hasImages = mediaFiles.some(f => f.type === 'image');
+      const hasPdf = mediaFiles.some(f => f.type === 'pdf');
 
       // Remove video if exists
       if (hasVideo) {
         await updatePostVideo(currentUser.uid, clientId, postId, undefined); // This will delete the video field
+      }
+
+      // Remove PDF if exists
+      if (hasPdf) {
+        await removePostPdf(currentUser.uid, clientId, postId);
       }
 
       // Remove images if exists
@@ -1266,26 +1351,31 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   useEffect(() => {
     const hasPostImages = post?.images && post.images.length > 0;
     const hasPostVideo = post?.video && post.video.length > 0;
+    const hasPostPdf = post?.pdf && post.pdf.length > 0;
 
     console.log('📊 Media initialization:', {
       hasPostImages,
       hasPostVideo,
+      hasPostPdf,
       'post?.images': post?.images,
       'post?.video': post?.video,
+      'post?.pdf': post?.pdf,
       'current mediaFiles': mediaFiles.map(f => ({ url: f.url, type: f.type }))
     });
 
     // Create arrays of current URLs to compare
     const currentVideoUrl = mediaFiles.find(f => f.type === 'video')?.url;
     const currentImageUrls = mediaFiles.filter(f => f.type === 'image').map(f => f.url);
+    const currentPdfUrl = mediaFiles.find(f => f.type === 'pdf')?.url;
 
     // Check if media has changed
     const videoChanged = (hasPostVideo && currentVideoUrl !== post.video) || (!hasPostVideo && currentVideoUrl);
     const imagesChanged = hasPostImages && (JSON.stringify(currentImageUrls) !== JSON.stringify(post.images));
+    const pdfChanged = (hasPostPdf && currentPdfUrl !== post.pdf) || (!hasPostPdf && currentPdfUrl);
 
-    console.log('🔄 Change detection:', { videoChanged, imagesChanged });
+    console.log('🔄 Change detection:', { videoChanged, imagesChanged, pdfChanged });
 
-    if (videoChanged || imagesChanged || (!hasPostImages && !hasPostVideo && mediaFiles.length > 0)) {
+    if (videoChanged || imagesChanged || pdfChanged || (!hasPostImages && !hasPostVideo && !hasPostPdf && mediaFiles.length > 0)) {
       console.log('🚀 Starting media load...');
       setIsLoadingInitialImages(true);
 
@@ -1319,6 +1409,21 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
           video.src = post.video!;
         });
         loadPromises.push(videoPromise);
+      }
+
+      // Load PDF if exists
+      if (hasPostPdf) {
+        const pdfPromise = new Promise<MediaFile>((resolve) => {
+          resolve({
+            id: `loaded-pdf-${Date.now()}`,
+            file: new File([], post.pdfFileName || 'document.pdf', { type: 'application/pdf' }), // Placeholder file
+            url: post.pdf!,
+            isVertical: false, // PDFs don't have orientation
+            type: 'pdf',
+            fileName: post.pdfFileName || 'document.pdf'
+          });
+        });
+        loadPromises.push(pdfPromise);
       }
 
       // Load images if exists
@@ -1364,7 +1469,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         setIsLoadingInitialImages(false);
       }
     }
-  }, [post?.images, post?.video, mediaFiles, isLoadingInitialImages]);
+  }, [post?.images, post?.video, post?.pdf, mediaFiles, isLoadingInitialImages]);
 
   // Initialize poll data from post data
   useEffect(() => {
@@ -1379,7 +1484,7 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
   const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       <FloatingToolbar position={toolbarPosition} onFormat={handleFormat} onAIEdit={handleAIEdit} visible={toolbarVisible} onComment={handleCommentRequest} />
 
       <AIEditToolbar position={toolbarPosition} visible={aiEditToolbarVisible} selectedText={selectedText} onClose={handleAIEditClose} onApplyEdit={handleAIEditApply} />
@@ -1480,9 +1585,40 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         onUploadMedia={handleUploadMedia}
         editingMedia={editingMedia || undefined}
       />
+      <EditorToolbar
+        onFormat={handleFormat}
+        onInsertEmoji={insertEmoji}
+        onPreview={handlePreview}
+        onShowComments={handleShowComments}
+        onCopy={handleCopyWithFormatting}
+        onSchedule={() => setShowScheduleModal(true)}
+        onPostNow={() => setShowPostNowModal(true)}
+        onUndo={undo}
+        onRedo={redo}
+        onShowVersionHistory={() => setShowVersionHistoryModal(true)}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        viewMode={viewMode}
+        onViewModeToggle={handleViewModeToggle}
+        showCommentsPanel={showCommentsPanel}
+        postContent={currentContent}
+        onAddPoll={handleAddPoll}
+        hasPoll={!!pollData}
+        hasMedia={hasMedia}
+        onAddMedia={handleOpenMediaModal}
+        postStatus={postStatus}
+        scheduledPostAt={scheduledPostAt}
+        postedAt={postedAt}
+        linkedinPostUrl={linkedinPostUrl}
+        clientId={clientId}
+        postId={postId}
+        subClientId={subClientId}
+        mediaFiles={mediaFiles}
+        pollData={pollData}
+      />
 
       <div
-        className="bg-white rounded-lg border relative"
+        className="bg-white rounded-b-lg border relative"
         onMouseEnter={handleEditorMouseEnter}
         onMouseLeave={handleEditorMouseLeave}
       >
@@ -1493,37 +1629,6 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
         // onClose={() => setShowDisabledOverlay(false)}
         />
 
-        <EditorToolbar
-          onFormat={handleFormat}
-          onInsertEmoji={insertEmoji}
-          onPreview={handlePreview}
-          onShowComments={handleShowComments}
-          onCopy={handleCopyWithFormatting}
-          onSchedule={() => setShowScheduleModal(true)}
-          onPostNow={() => setShowPostNowModal(true)}
-          onUndo={undo}
-          onRedo={redo}
-          onShowVersionHistory={() => setShowVersionHistoryModal(true)}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          viewMode={viewMode}
-          onViewModeToggle={handleViewModeToggle}
-          showCommentsPanel={showCommentsPanel}
-          postContent={currentContent}
-          onAddPoll={handleAddPoll}
-          hasPoll={!!pollData}
-          hasMedia={hasMedia}
-          onAddMedia={handleOpenMediaModal}
-          postStatus={postStatus}
-          scheduledPostAt={scheduledPostAt}
-          postedAt={postedAt}
-          linkedinPostUrl={linkedinPostUrl}
-          clientId={clientId}
-          postId={postId}
-          subClientId={subClientId}
-          mediaFiles={mediaFiles}
-          pollData={pollData}
-        />
 
         <div className="pb-4 bg-gray-50">
           <EditorContainer
@@ -1557,13 +1662,13 @@ const GeneratedPostEditor = forwardRef<GeneratedPostEditorRef, GeneratedPostEdit
                   <svg className="h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="text-sm text-gray-600">Add images or video to your post</p>
-                  <p className="text-xs text-gray-500 mt-1">Upload up to 14 images or 1 video</p>
+                  <p className="text-sm text-gray-600">Add images, videos, or PDFs to your post</p>
+                  <p className="text-xs text-gray-500 mt-1">Upload up to 14 images, 1 video, or 1 PDF</p>
                 </div>
                 <input
                   type="file"
                   multiple
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,application/pdf"
                   onChange={handleDirectFileUpload}
                   className="hidden"
                   id="direct-file-upload"

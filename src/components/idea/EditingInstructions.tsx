@@ -26,7 +26,7 @@ const EditingInstructions: React.FC<EditingInstructionsProps> = ({
 }) => {
   return (
     <div className="border-t bg-gray-50 rounded-b-md">
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="flex items-center justify-between p-3 ">
         <Button variant="ghost" size="sm" onClick={onToggleChatBox} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
           <MessageSquare className="h-4 w-4" />
           {showChatBox ? 'Hide' : 'Show'} editing instructions

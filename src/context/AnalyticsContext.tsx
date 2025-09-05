@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 // Types based on the analytics endpoints documentation
 export interface KPI {
@@ -214,7 +214,7 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         return age > 30 * 60 * 1000 && !hasRecentRateLimit();
     };
 
-    const fetchOverview = async (agencyId: string, clientId: string, filters: AnalyticsFilters = {}) => {
+    const fetchOverview = useCallback(async (agencyId: string, clientId: string, filters: AnalyticsFilters = {}) => {
         setOverviewLoading(true);
         setOverviewError(null);
 
@@ -254,9 +254,9 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setOverviewLoading(false);
         }
-    };
+    }, []);
 
-    const fetchTimeSeries = async (agencyId: string, clientId: string, filters: TimeSeriesFilters) => {
+    const fetchTimeSeries = useCallback(async (agencyId: string, clientId: string, filters: TimeSeriesFilters) => {
         const cacheKey = `${filters.metric}_${filters.granularity}`;
 
         setTimeSeriesLoading(prev => ({ ...prev, [cacheKey]: true }));
@@ -297,10 +297,10 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setTimeSeriesLoading(prev => ({ ...prev, [cacheKey]: false }));
         }
-    };
+    }, [timeSeriesData]);
 
     // Force refresh both overview and all visible time series data
-    const forceRefreshAll = async (agencyId: string, clientId: string, filters: AnalyticsFilters = {}) => {
+    const forceRefreshAll = useCallback(async (agencyId: string, clientId: string, filters: AnalyticsFilters = {}) => {
         if (!canForceRefresh()) {
             console.warn('[AnalyticsContext] Force refresh blocked due to recent refresh or rate limit');
             return;
@@ -321,7 +321,7 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
                 granularity,
             });
         }
-    };
+    }, [fetchOverview, fetchTimeSeries, timeSeriesData, canForceRefresh]);
 
     const clearData = () => {
         setOverviewData(null);

@@ -10,9 +10,10 @@ export interface MediaFile {
   file: File;
   url: string;
   isVertical: boolean;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'pdf';
   duration?: number; // For videos, in seconds
   thumbnail?: string; // Thumbnail URL for videos
+  fileName?: string; // For PDFs, store the original filename
 }
 
 interface MediaUploadModalProps {
@@ -44,23 +45,27 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     }
   }, [open, editingMedia]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
     const firstFile = files[0];
     const isVideo = firstFile.type.startsWith('video/');
     const isImage = firstFile.type.startsWith('image/');
+    const isPdf = firstFile.type === 'application/pdf';
 
-    // Check if user is trying to mix video and images
+    // Check if user is trying to mix different media types
     if (mediaFiles.length > 0) {
       const hasVideo = mediaFiles.some(f => f.type === 'video');
       const hasImages = mediaFiles.some(f => f.type === 'image');
+      const hasPdf = mediaFiles.some(f => f.type === 'pdf');
 
-      if ((hasVideo && isImage) || (hasImages && isVideo)) {
+      if ((hasVideo && (isImage || isPdf)) ||
+        (hasImages && (isVideo || isPdf)) ||
+        (hasPdf && (isVideo || isImage))) {
         toast({
           title: "Mixed media not allowed",
-          description: "You can upload either 1 video OR up to 14 images, not both.",
+          description: "You can upload either 1 video, up to 14 images, OR 1 PDF, not a mix.",
           variant: "destructive"
         });
         return;
@@ -94,6 +99,71 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         setMediaFiles([mediaFile]); // Replace any existing files
       };
       video.src = url;
+    } else if (isPdf) {
+      // Only allow one PDF
+      if (mediaFiles.length > 0) {
+        toast({
+          title: "Only one PDF allowed",
+          description: "You can upload only one PDF per post.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check PDF file size (100MB limit)
+      const maxSizeBytes = 100 * 1024 * 1024; // 100MB in bytes
+      if (firstFile.size > maxSizeBytes) {
+        toast({
+          title: "PDF file too large",
+          description: "PDF files must be smaller than 100MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check PDF page count (300 page limit)
+      const checkPdfPages = async (file: File) => {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          // Simple PDF page count estimation by counting "/Type /Page" occurrences
+          const text = String.fromCharCode.apply(null, Array.from(uint8Array));
+          const pageMatches = text.match(/\/Type\s*\/Page[^s]/g);
+          const pageCount = pageMatches ? pageMatches.length : 1;
+
+          if (pageCount > 300) {
+            toast({
+              title: "PDF has too many pages",
+              description: "PDF files must have 300 pages or fewer.",
+              variant: "destructive"
+            });
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.warn('Could not determine PDF page count:', error);
+          // If we can't determine page count, allow the upload
+          return true;
+        }
+      };
+
+      const isValidPageCount = await checkPdfPages(firstFile);
+      if (!isValidPageCount) {
+        return;
+      }
+
+      const url = URL.createObjectURL(firstFile);
+      const mediaFile: MediaFile = {
+        id: `media-${Date.now()}-${Math.random()}`,
+        file: firstFile,
+        url,
+        isVertical: false, // PDFs don't have orientation
+        type: 'pdf',
+        fileName: firstFile.name
+      };
+
+      setMediaFiles([mediaFile]); // Replace any existing files
     } else if (isImage) {
       // Handle multiple images (up to 14 total)
       const newFiles = Array.from(files).slice(0, 14 - mediaFiles.length);
@@ -102,7 +172,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         if (!file.type.startsWith('image/')) {
           toast({
             title: "Invalid file type",
-            description: "Upload either images or videos.",
+            description: "Upload either images, videos, or PDFs.",
             variant: "destructive"
           });
           return;
@@ -127,7 +197,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     } else {
       toast({
         title: "Invalid file type",
-        description: "Only image and video files are allowed.",
+        description: "Only image, video, and PDF files are allowed.",
         variant: "destructive"
       });
       return;
@@ -229,24 +299,26 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
           >
             <Upload className="h-8 w-8 mx-auto mb-4 text-gray-400" />
             <p className="text-sm text-gray-600 mb-2">
-              Click to upload images/videos or drag and drop
+              Click to upload images/videos/PDFs or drag and drop
             </p>
             <p className="text-xs text-gray-500">
               {mediaFiles.length === 0
-                ? "Upload 1 video OR up to 14 images"
+                ? "Upload 1 video, up to 14 images, OR 1 PDF (100MB, 300 pages max)"
                 : mediaFiles[0]?.type === 'video'
                   ? "1 video uploaded"
-                  : `Up to ${14 - mediaFiles.length} more images allowed`
+                  : mediaFiles[0]?.type === 'pdf'
+                    ? "1 PDF uploaded"
+                    : `Up to ${14 - mediaFiles.length} more images allowed`
               }
             </p>
             <input
               ref={fileInputRef}
               type="file"
               multiple={mediaFiles.length === 0 || (mediaFiles[0]?.type === 'image')}
-              accept="image/*,video/*"
+              accept="image/*,video/*,application/pdf"
               onChange={handleFileSelect}
               className="hidden"
-              disabled={mediaFiles.length >= 14 || (mediaFiles.length > 0 && mediaFiles[0]?.type === 'video')}
+              disabled={mediaFiles.length >= 14 || (mediaFiles.length > 0 && (mediaFiles[0]?.type === 'video' || mediaFiles[0]?.type === 'pdf'))}
             />
           </div>
 
@@ -256,14 +328,16 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               <h4 className="font-medium text-sm">
                 {mediaFiles[0]?.type === 'video'
                   ? `Uploaded Video (${mediaFiles.length}/1)`
-                  : `Uploaded Images (${mediaFiles.length}/14)`
+                  : mediaFiles[0]?.type === 'pdf'
+                    ? `Uploaded PDF (${mediaFiles.length}/1)`
+                    : `Uploaded Images (${mediaFiles.length}/14)`
                 }
               </h4>
-              <div className={mediaFiles[0]?.type === 'video' ? "space-y-3" : "grid grid-cols-2 gap-3"}>
+              <div className={mediaFiles[0]?.type === 'video' || mediaFiles[0]?.type === 'pdf' ? "space-y-3" : "grid grid-cols-2 gap-3"}>
                 {mediaFiles.map((mediaFile, index) => (
                   <div
                     key={mediaFile.id}
-                    className={`relative group border rounded-lg overflow-hidden ${mediaFiles[0]?.type === 'video' ? 'w-full' : 'cursor-move'
+                    className={`relative group border rounded-lg overflow-hidden ${(mediaFiles[0]?.type === 'video' || mediaFiles[0]?.type === 'pdf') ? 'w-full' : 'cursor-move'
                       }`}
                     draggable={mediaFile.type === 'image'}
                     onDragStart={() => mediaFile.type === 'image' && handleDragStart(index)}
@@ -277,6 +351,16 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                         muted
                         preload="metadata"
                       />
+                    ) : mediaFile.type === 'pdf' ? (
+                      <div className="w-full h-48 bg-red-50 flex flex-col items-center justify-center border-2 border-red-200">
+                        <svg className="h-12 w-12 text-red-500 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm font-medium text-red-700">PDF Document</span>
+                        <span className="text-xs text-red-500 text-center px-2 mt-1 truncate max-w-full">
+                          {mediaFile.fileName || 'document.pdf'}
+                        </span>
+                      </div>
                     ) : (
                       <img
                         src={mediaFile.url}
@@ -299,6 +383,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                         handlePreviewImage(mediaFile.url);
                       }}
                       className={`absolute ${mediaFile.type === 'image' ? 'top-2 left-8' : 'top-2 left-2'} bg-black/50 hover:bg-black/70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity`}
+                      disabled={mediaFile.type === 'pdf'} // Disable preview for PDFs
                     >
                       <Eye className="h-3 w-3 text-white" />
                     </button>
@@ -314,13 +399,17 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                       <Trash2 className="h-3 w-3" />
                     </button>
 
-                    {/* Index Badge - only for images, duration for videos */}
+                    {/* Index Badge - only for images, duration for videos, filename for PDFs */}
                     {mediaFile.type === 'video' ? (
                       mediaFile.duration && (
                         <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
                           {Math.floor(mediaFile.duration / 60)}:{String(Math.floor(mediaFile.duration % 60)).padStart(2, '0')}
                         </div>
                       )
+                    ) : mediaFile.type === 'pdf' ? (
+                      <div className="absolute bottom-2 right-2 bg-red-600/80 text-white text-xs px-1.5 py-0.5 rounded">
+                        PDF
+                      </div>
                     ) : (
                       <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
                         {index + 1}
@@ -333,7 +422,9 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               <p className="text-xs text-gray-500">
                 {mediaFiles[0]?.type === 'video'
                   ? "Video preview - click the eye icon to view full screen."
-                  : "Drag images to reorder them. The first image determines the layout."
+                  : mediaFiles[0]?.type === 'pdf'
+                    ? "PDF uploaded - preview is not available for PDF files."
+                    : "Drag images to reorder them. The first image determines the layout."
                 }
               </p>
             </div>
@@ -369,7 +460,7 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         <Dialog open={!!previewImage} onOpenChange={handleClosePreview}>
           <DialogContent className="max-w-4xl max-h-[90vh] p-0">
             <div className="relative bg-black rounded-lg overflow-hidden">
-              {/* Determine if preview is video or image based on file extension or media type */}
+              {/* Determine if preview is video, image, or PDF based on file extension or media type */}
               {previewImage.includes('.mp4') || previewImage.includes('.mov') || previewImage.includes('.webm') ||
                 mediaFiles.find(f => f.url === previewImage)?.type === 'video' ? (
                 <video
@@ -378,6 +469,17 @@ const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   className="w-full h-auto max-h-[85vh] object-contain"
                   autoPlay
                 />
+              ) : previewImage.includes('.pdf') ||
+                mediaFiles.find(f => f.url === previewImage)?.type === 'pdf' ? (
+                <div className="w-full h-[85vh] flex items-center justify-center bg-gray-100">
+                  <div className="text-center">
+                    <svg className="h-16 w-16 text-red-500 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-lg font-medium text-gray-900">PDF Preview Not Available</p>
+                    <p className="text-sm text-gray-600 mt-2">PDF files cannot be previewed in this modal</p>
+                  </div>
+                </div>
               ) : (
                 <img
                   src={previewImage}

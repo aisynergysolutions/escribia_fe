@@ -62,6 +62,8 @@ export type Post = {
     drafts?: Draft[];          // Make optional
     images?: string[];         // Make optional
     video?: string;
+    pdf?: string;              // PDF file URL
+    pdfFileName?: string;      // Original PDF filename
     poll?: Poll;
     sourceUrl?: string; // Add this field
 };

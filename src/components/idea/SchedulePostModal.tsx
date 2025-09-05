@@ -412,6 +412,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
           isUploading={false}
           isRemoving={false}
           isLoadingInitial={false}
+          showControls={false} // Hide controls in preview mode
         />
       </div>
     );

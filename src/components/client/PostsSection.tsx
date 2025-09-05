@@ -203,7 +203,7 @@ const PostsSection: React.FC<PostsSectionProps> = ({ clientId }) => {
         setSortDirection('desc');
       } else if (sortDirection === 'desc') {
         setSortDirection('none');
-        setSortField(getDefaultSortField()); // Reset to context-appropriate default
+        // Don't reset the field when setting to 'none' - keep the same column
       } else {
         setSortDirection('asc');
       }

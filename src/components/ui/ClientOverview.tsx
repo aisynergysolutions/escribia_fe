@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, TrendingUp, Eye, MessageCircle, Heart, Clock, ChevronLeft, ChevronRight, FileText, Sparkles } from 'lucide-react';
+import { Calendar, TrendingUp, Eye, MessageCircle, Heart, Clock, ChevronLeft, ChevronRight, FileText, Sparkles, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, addMonths, subMonths } from 'date-fns';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import StatCard from './StatCard';
+import StatCardSkeleton from './StatCardSkeleton';
 import PostCalendar from './PostCalendar';
 import IdeaCard from './IdeaCard';
 import { useClients } from '../../context/ClientsContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAnalytics } from '../../context/AnalyticsContext';
 import { ScheduledPostsProvider } from '../../context/ScheduledPostsContext';
 import { Idea } from '@/types/interfaces';
 
@@ -27,6 +29,14 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
   // Get client details from context
   const { clientDetails, clientDetailsLoading } = useClients();
   const { currentUser } = useAuth();
+
+  // Get analytics data from context
+  const {
+    overviewData,
+    overviewLoading,
+    overviewError,
+    fetchOverview
+  } = useAnalytics();
 
   // Fetch recent posts from Firebase
   const fetchRecentPosts = async () => {
@@ -81,6 +91,15 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
     fetchRecentPosts();
   }, [currentUser?.uid, clientId]);
 
+  // Fetch analytics data when component mounts or dependencies change
+  useEffect(() => {
+    if (currentUser?.uid && clientId) {
+      fetchOverview(currentUser.uid, clientId, {
+        include: ['posts', 'followers', 'impressions', 'engagement_rate']
+      });
+    }
+  }, [currentUser?.uid, clientId, fetchOverview]);
+
   if (clientDetailsLoading) {
     return <div className="text-center py-12">Loading client...</div>;
   }
@@ -93,9 +112,40 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
   const publishedPosts = recentPosts.filter(idea => idea.status === 'Published').length;
   const scheduledPosts = recentPosts.filter(idea => idea.status === 'Scheduled').length;
 
-  // Mock engagement data - in real app this would come from LinkedIn API
-  const avgViews = 1250;
-  const avgEngagement = 85;
+  // Get analytics KPIs or use fallback values
+  const analyticsKPIs = overviewData?.kpis || {};
+
+  // Format values for display
+  const formatKPIValue = (kpi: any, fallback: string | number) => {
+    if (overviewLoading) return '—';
+    if (overviewError) return fallback;
+    return kpi?.value !== undefined ? kpi.value : fallback;
+  };
+
+  const formatDelta = (kpi: any) => {
+    if (!kpi?.delta) return null;
+    const sign = kpi.delta > 0 ? '+' : '';
+    return `${sign}${kpi.delta}`;
+  };
+
+  const formatDeltaPct = (kpi: any) => {
+    if (!kpi?.deltaPct) return null;
+    const sign = kpi.deltaPct > 0 ? '+' : '';
+    return `${sign}${kpi.deltaPct.toFixed(1)}%`;
+  };
+
+  // Create description with delta information
+  const createDescription = (baseDesc: string, kpi: any) => {
+    const delta = formatDelta(kpi);
+    const deltaPct = formatDeltaPct(kpi);
+
+    if (delta && deltaPct) {
+      return `${baseDesc} (${deltaPct})`;
+    } else if (delta) {
+      return `${baseDesc} (${delta})`;
+    }
+    return baseDesc;
+  };
 
   const goToPreviousMonth = () => {
     setCalendarMonth(subMonths(calendarMonth, 1));
@@ -107,37 +157,82 @@ const ClientOverview: React.FC<ClientOverviewProps> = ({ clientId }) => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards - Only 4 cards now */}
+      {/* KPI Cards - Using real analytics data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Scheduled"
-          value={scheduledPosts}
-          icon={<Clock className="h-4 w-4" />}
-          description="Ready to go"
-          className="border-blue-200 bg-blue-50"
-        />
-        <StatCard
-          title="Published"
-          value={publishedPosts}
-          icon={<TrendingUp className="h-4 w-4" />}
-          description="Live posts"
-          className="border-green-200 bg-green-50"
-        />
-        <StatCard
-          title="Avg. Views"
-          value={avgViews.toLocaleString()}
-          icon={<Eye className="h-4 w-4" />}
-          description="Per post this month"
-          className="border-purple-200 bg-purple-50"
-        />
-        <StatCard
-          title="Avg. Engagement"
-          value={`${avgEngagement}%`}
-          icon={<Heart className="h-4 w-4" />}
-          description="Engagement rate"
-          className="border-orange-200 bg-orange-50"
-        />
+        {overviewLoading ? (
+          // Show skeleton cards while loading
+          <>
+            <StatCardSkeleton className="border-green-200 bg-green-50" />
+            <StatCardSkeleton className="border-blue-200 bg-blue-50" />
+            <StatCardSkeleton className="border-purple-200 bg-purple-50" />
+            <StatCardSkeleton className="border-orange-200 bg-orange-50" />
+          </>
+        ) : overviewError ? (
+          // Show error state with retry button
+          <div className="col-span-full">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+              <p className="text-red-600 mb-2">Failed to load analytics data</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => currentUser?.uid && fetchOverview(currentUser.uid, clientId, {
+                  include: ['posts', 'followers', 'impressions', 'engagement_rate']
+                })}
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <StatCard
+              title="Posts Published"
+              value={formatKPIValue(analyticsKPIs.posts_published, 0)}
+              icon={<TrendingUp className="h-4 w-4" />}
+              description={createDescription("Last month", analyticsKPIs.posts_published)}
+              className="border-green-200 bg-green-50"
+            />
+            <StatCard
+              title="New Followers"
+              value={formatKPIValue(analyticsKPIs.followers, '—')}
+              icon={<Users className="h-4 w-4" />}
+              description={createDescription("Total followers", analyticsKPIs.followers)}
+              className="border-blue-200 bg-blue-50"
+            />
+            <StatCard
+              title="Impressions"
+              value={typeof formatKPIValue(analyticsKPIs.impressions, 0) === 'number'
+                ? formatKPIValue(analyticsKPIs.impressions, 0).toLocaleString()
+                : formatKPIValue(analyticsKPIs.impressions, 0)}
+              icon={<Eye className="h-4 w-4" />}
+              description={createDescription("Last month", analyticsKPIs.impressions)}
+              className="border-purple-200 bg-purple-50"
+            />
+            <StatCard
+              title="Engagement Rate"
+              value={analyticsKPIs.engagement_rate?.value
+                ? `${(analyticsKPIs.engagement_rate.value * 100).toFixed(1)}%`
+                : formatKPIValue(analyticsKPIs.engagement_rate, '—')}
+              icon={<Heart className="h-4 w-4" />}
+              description={analyticsKPIs.engagement_rate?.insufficientSample
+                ? "Low sample size"
+                : createDescription("Average rate", analyticsKPIs.engagement_rate)}
+              className="border-orange-200 bg-orange-50"
+            />
+          </>
+        )}
       </div>
+
+      {/* Show a warning if there are partial errors but some data is available */}
+      {overviewData?.meta?.errors && overviewData.meta.errors.length > 0 && !overviewLoading && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p className="text-yellow-700 text-sm">
+            <span className="font-medium">Note:</span> Some analytics data may be incomplete due to connectivity issues with LinkedIn profiles. {overviewData.meta.errors.length} profile(s) encountered errors.
+          </p>
+        </div>
+      )
+      }
 
       {/* Content Calendar */}
       <div className="bg-white rounded-2xl shadow-md">

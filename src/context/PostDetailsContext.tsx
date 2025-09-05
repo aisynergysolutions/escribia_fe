@@ -57,6 +57,8 @@ type PostDetailsContextType = {
     updatePostImages: (agencyId: string, clientId: string, postId: string, imageUrls: string[]) => Promise<void>;
     updatePostVideo: (agencyId: string, clientId: string, postId: string, videoUrl?: string) => Promise<void>;
     uploadPostVideo: (agencyId: string, clientId: string, postId: string, file: File) => Promise<string>;
+    uploadPostPdf: (agencyId: string, clientId: string, postId: string, file: File) => Promise<string>;
+    removePostPdf: (agencyId: string, clientId: string, postId: string) => Promise<void>;
     createPostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
     updatePostPoll: (agencyId: string, clientId: string, postId: string, poll: Poll) => Promise<void>;
     removePostPoll: (agencyId: string, clientId: string, postId: string) => Promise<void>;
@@ -89,6 +91,8 @@ const PostDetailsContext = createContext<PostDetailsContextType>({
     updatePostImages: async () => { },
     updatePostVideo: async () => { },
     uploadPostVideo: async () => '',
+    uploadPostPdf: async () => '',
+    removePostPdf: async () => { },
     createPostPoll: async () => { },
     updatePostPoll: async () => { },
     removePostPoll: async () => { },
@@ -166,8 +170,10 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             console.log('📥 Firebase data fetched:', {
                 hasImages: !!(data.images && data.images.length > 0),
                 hasVideo: !!data.video,
+                hasPdf: !!data.pdf,
                 'data.images': data.images,
-                'data.video': data.video
+                'data.video': data.video,
+                'data.pdf': data.pdf
             });
 
             // Fetch the profile data to get the LinkedIn picture
@@ -217,6 +223,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 drafts: (data.drafts || []) as Draft[],
                 images: (data.images || []) as string[],
                 video: data.video as string | undefined,
+                pdf: data.pdf as string | undefined,
+                pdfFileName: data.pdfFileName as string | undefined,
                 poll: data.poll ? {
                     question: data.poll.question,
                     options: data.poll.options,
@@ -1323,6 +1331,116 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const uploadPostPdf = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string,
+        file: File
+    ): Promise<string> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            // Create a unique filename with timestamp
+            const timestamp = Date.now();
+            const fileName = `${agencyId}/${clientId}/${postId}/${timestamp}_${file.name}`;
+            const storageRef = ref(storage, `agencies/${agencyId}/${clientId}/${postId}/pdfs/${timestamp}_${file.name}`);
+
+            // Upload file to Firebase Storage
+            const snapshot = await uploadBytes(storageRef, file);
+
+            // Get download URL
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            // Update the pdf field directly (similar to video)
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+            await updateDoc(postRef, {
+                pdf: downloadURL,
+                pdfFileName: file.name,
+                updatedAt: Timestamp.now()
+            });
+
+            console.log('📄 PDF stored in Firebase:', {
+                pdfUrl: downloadURL,
+                fileName: file.name,
+                field: 'pdf'
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                pdf: downloadURL,
+                pdfFileName: file.name,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('PDF uploaded successfully:', downloadURL);
+            return downloadURL;
+        } catch (error) {
+            console.error('Error uploading PDF:', error);
+            throw error;
+        }
+    }, []);
+
+    const removePostPdf = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        postId: string
+    ): Promise<void> => {
+        if (!agencyId) {
+            throw new Error('No agency ID available');
+        }
+
+        try {
+            const postRef = firestoreDoc(db, 'agencies', agencyId, 'clients', clientId, 'ideas', postId);
+
+            // Get current post data to find PDF URL for deletion
+            const postDoc = await getDoc(postRef);
+            if (postDoc.exists()) {
+                const postData = postDoc.data();
+                const pdfUrl = postData.pdf;
+
+                // Delete PDF from Firebase Storage if it exists
+                if (pdfUrl && typeof pdfUrl === 'string') {
+                    try {
+                        // Extract the storage path from the download URL
+                        const urlParts = pdfUrl.split('/');
+                        const pathMatch = urlParts.find(part => part.includes('agencies%2F'));
+                        if (pathMatch) {
+                            const storagePath = decodeURIComponent(pathMatch);
+                            const storageRef = ref(storage, storagePath);
+                            await deleteObject(storageRef);
+                            console.log('Deleted PDF from storage:', storagePath);
+                        }
+                    } catch (deleteError) {
+                        console.warn('Failed to delete PDF from storage:', pdfUrl, deleteError);
+                    }
+                }
+            }
+
+            // Remove PDF fields from Firestore
+            await updateDoc(postRef, {
+                pdf: deleteField(),
+                pdfFileName: deleteField(),
+                updatedAt: Timestamp.now()
+            });
+
+            // Update local state
+            setPost(prev => prev ? {
+                ...prev,
+                pdf: undefined,
+                pdfFileName: undefined,
+                updatedAt: Timestamp.now()
+            } : null);
+
+            console.log('PDF removed successfully');
+        } catch (error) {
+            console.error('Error removing PDF:', error);
+            throw error;
+        }
+    }, []);
+
     // Poll management functions
     const createPostPoll = useCallback(async (
         agencyId: string,
@@ -1507,6 +1625,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
                 updatePostImages: async () => { throw new Error('No agency ID available'); },
                 updatePostVideo: async () => { throw new Error('No agency ID available'); },
                 uploadPostVideo: async () => { throw new Error('No agency ID available'); },
+                uploadPostPdf: async () => { throw new Error('No agency ID available'); },
+                removePostPdf: async () => { throw new Error('No agency ID available'); },
                 createPostPoll: async () => { throw new Error('No agency ID available'); },
                 updatePostPoll: async () => { throw new Error('No agency ID available'); },
                 removePostPoll: async () => { throw new Error('No agency ID available'); },
@@ -1544,6 +1664,8 @@ export const PostDetailsProvider = ({ children }: { children: ReactNode }) => {
             updatePostImages,
             updatePostVideo,
             uploadPostVideo,
+            uploadPostPdf,
+            removePostPdf,
             createPostPoll,
             updatePostPoll,
             removePostPoll,

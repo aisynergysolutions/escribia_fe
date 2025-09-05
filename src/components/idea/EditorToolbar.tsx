@@ -285,7 +285,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
   return (
     <>
-      <div className="flex justify-between items-center p-4 border-b">
+      <div className="flex justify-between items-center p-4 bg-white relative">
         {/* Left-Aligned Editing Zone */}
         <div className="flex items-center gap-1">
           {/* Undo/Redo Controls */}
@@ -327,9 +327,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           <div className="w-px h-6 bg-gray-300 mx-1" />
 
           {/* Emoji */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Popover>
+          <Popover>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
@@ -340,21 +340,21 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <Smile className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2">
-                  <div className="grid grid-cols-5 gap-1">
-                    {emojis.map((emoji, index) => (
-                      <button key={index} onClick={() => onInsertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isPosted ? 'Cannot add emoji - post is published' : 'Add emoji'}</p>
-            </TooltipContent>
-          </Tooltip>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isPosted ? 'Cannot add emoji - post is published' : 'Add emoji'}</p>
+              </TooltipContent>
+            </Tooltip>
+            <PopoverContent className="w-64 p-2">
+              <div className="grid grid-cols-5 gap-1">
+                {emojis.map((emoji, index) => (
+                  <button key={index} onClick={() => onInsertEmoji(emoji)} className="p-2 hover:bg-gray-100 rounded text-lg">
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Fixed: Add Media Button - disabled when media present */}
           <Tooltip>

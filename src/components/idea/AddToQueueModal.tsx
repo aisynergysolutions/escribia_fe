@@ -590,6 +590,7 @@ const AddToQueueModal: React.FC<AddToQueueModalProps> = ({
           isUploading={false}
           isRemoving={false}
           isLoadingInitial={false}
+          showControls={false} // Hide controls in preview mode
         />
       </div>
     );

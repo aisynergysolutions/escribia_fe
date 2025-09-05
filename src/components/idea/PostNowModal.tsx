@@ -156,6 +156,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
           isUploading={false}
           isRemoving={false}
           isLoadingInitial={false}
+          showControls={false} // Hide controls in preview mode
         />
       </div>
     );
@@ -218,7 +219,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src={profileData?.profileImage || post?.profile?.imageUrl} />
+                        <AvatarImage src={profileData?.profileImage || (typeof post?.profile === 'object' ? post.profile.imageUrl : undefined)} />
                         <AvatarFallback className="bg-gray-300">
                           {profileData?.role?.toLowerCase().includes('company') ? (
                             <Building2 className="h-6 w-6 text-gray-600" />
@@ -228,7 +229,7 @@ const PostNowModal: React.FC<PostNowModalProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-semibold text-gray-900">{profileData?.name || post?.profile?.profileName || 'Your Profile'}</div>
+                        <div className="font-semibold text-gray-900">{profileData?.name || (typeof post?.profile === 'object' ? post.profile.profileName : post?.profile) || 'Your Profile'}</div>
                         <div className="text-sm text-gray-500">Publishing now...</div>
                       </div>
                     </div>

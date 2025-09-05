@@ -180,12 +180,12 @@ const InitialIdeaSection: React.FC<InitialIdeaSectionProps> = ({
           </CollapsibleContent>
 
           {/* Disabled overlay for posted content */}
-          <PostEditorDisabledOverlay
+          {/* <PostEditorDisabledOverlay
             visible={showDisabledOverlay}
             onDuplicate={onDuplicate}
             onNavigate={onNavigate}
             onClose={() => setShowDisabledOverlay(false)}
-          />
+          /> */}
         </Card>
       </Collapsible>
 
