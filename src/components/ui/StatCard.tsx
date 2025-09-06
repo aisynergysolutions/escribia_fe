@@ -6,7 +6,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon?: React.ReactNode;
-  description?: string;
+  description?: string | React.ReactNode;
   className?: string;
 }
 
@@ -21,7 +21,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description, cl
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        {description && <p className="text-xs text-gray-500 mt-1">{description}</p>}
+        {description && <div className="text-xs text-gray-500 mt-1">{description}</div>}
       </CardContent>
     </Card>
   );

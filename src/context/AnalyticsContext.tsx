@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 // Types based on the analytics endpoints documentation
 export interface KPI {
@@ -86,6 +86,9 @@ export interface AnalyticsClientState {
     lastSuccessfulOverview: OverviewResponse | null;
 }
 
+// Storage key for persisting state
+const ANALYTICS_STATE_KEY = 'analytics_client_state';
+
 type AnalyticsContextType = {
     // Overview data
     overviewData: OverviewResponse | null;
@@ -107,6 +110,12 @@ type AnalyticsContextType = {
     clearData: () => void;
     canForceRefresh: () => boolean;
     hasRecentRateLimit: () => boolean;
+
+    // New methods for improved analytics handling
+    shouldAutoForceRefresh: () => boolean;
+    getDataAge: () => number | null;
+    getRefreshRecommendation: () => 'fresh' | 'normal' | 'stale' | 'very_stale' | 'none';
+    hasRateLimitErrors: (meta?: AnalyticsMeta) => boolean;
 };
 
 const BASE_URL = 'https://web-production-2fc1.up.railway.app/api/v1/analytics';
@@ -130,6 +139,10 @@ const AnalyticsContext = createContext<AnalyticsContextType>({
     clearData: () => { },
     canForceRefresh: () => true,
     hasRecentRateLimit: () => false,
+    shouldAutoForceRefresh: () => false,
+    getDataAge: () => null,
+    getRefreshRecommendation: () => 'none',
+    hasRateLimitErrors: () => false,
 });
 
 export const useAnalytics = () => {
@@ -149,13 +162,38 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
     const [timeSeriesLoading, setTimeSeriesLoading] = useState<{ [key: string]: boolean }>({});
     const [timeSeriesError, setTimeSeriesError] = useState<{ [key: string]: string | null }>({});
 
-    // Client-side state tracking as per analytics.md
-    const [clientState, setClientState] = useState<AnalyticsClientState>({
-        lastOverviewAt: null,
-        lastForceAt: null,
-        lastRateLimitAt: null,
-        lastSuccessfulOverview: null,
+    // Initialize client state from session storage or defaults
+    const [clientState, setClientState] = useState<AnalyticsClientState>(() => {
+        try {
+            const stored = sessionStorage.getItem(ANALYTICS_STATE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                return {
+                    lastOverviewAt: parsed.lastOverviewAt || null,
+                    lastForceAt: parsed.lastForceAt || null,
+                    lastRateLimitAt: parsed.lastRateLimitAt || null,
+                    lastSuccessfulOverview: parsed.lastSuccessfulOverview || null,
+                };
+            }
+        } catch (error) {
+            console.warn('[AnalyticsContext] Failed to load state from session storage:', error);
+        }
+        return {
+            lastOverviewAt: null,
+            lastForceAt: null,
+            lastRateLimitAt: null,
+            lastSuccessfulOverview: null,
+        };
     });
+
+    // Persist client state to session storage
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(ANALYTICS_STATE_KEY, JSON.stringify(clientState));
+        } catch (error) {
+            console.warn('[AnalyticsContext] Failed to persist state to session storage:', error);
+        }
+    }, [clientState]);
 
     const buildQueryParams = (params: Record<string, any>): string => {
         const searchParams = new URLSearchParams();
@@ -173,6 +211,21 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         });
 
         return searchParams.toString();
+    };
+
+    // Helper functions for improved analytics handling according to analytics.md
+    const getDataAge = (): number | null => {
+        return clientState.lastOverviewAt ? Date.now() - clientState.lastOverviewAt : null;
+    };
+
+    const getRefreshRecommendation = (): 'fresh' | 'normal' | 'stale' | 'very_stale' | 'none' => {
+        const age = getDataAge();
+        if (!age) return 'none';
+
+        if (age < 2 * 60 * 1000) return 'fresh'; // < 2 minutes
+        if (age < 12 * 60 * 1000) return 'normal'; // < 12 minutes
+        if (age < 30 * 60 * 1000) return 'stale'; // < 30 minutes
+        return 'very_stale'; // >= 30 minutes
     };
 
     // Helper functions for rate limit and refresh management
@@ -201,20 +254,79 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Check if response has rate limit errors (429s)
-    const hasRateLimitErrors = (meta: AnalyticsMeta): boolean => {
+    const hasRateLimitErrors = (meta?: AnalyticsMeta): boolean => {
+        if (!meta) return false;
         return meta.errors.some(error => error.code === 429 || error.code === '429');
     };
 
-    // Determine if we should force refresh based on data age
+    // Determine if we should force refresh based on data age - following analytics.md guidelines
     const shouldAutoForceRefresh = (): boolean => {
         if (!clientState.lastOverviewAt) return false;
 
-        const age = Date.now() - clientState.lastOverviewAt;
+        const age = getDataAge();
+        if (!age) return false;
+
         // Auto force refresh if data is older than 30 minutes and no recent rate limits
+        // This follows the analytics.md recommendation for staleness
         return age > 30 * 60 * 1000 && !hasRecentRateLimit();
     };
 
-    const fetchOverview = useCallback(async (agencyId: string, clientId: string, filters: AnalyticsFilters = {}) => {
+    // Smart fetch with freshness policy according to analytics.md
+    const fetchOverviewSmart = useCallback(async (
+        agencyId: string,
+        clientId: string,
+        filters: AnalyticsFilters = {},
+        skipFreshnessCheck = false
+    ) => {
+        // If skipFreshnessCheck is true, always fetch (used for explicit refresh)
+        if (!skipFreshnessCheck) {
+            // Check data age directly to avoid dependency issues
+            const currentState = JSON.parse(sessionStorage.getItem(ANALYTICS_STATE_KEY) || '{}');
+            const age = currentState.lastOverviewAt ? Date.now() - currentState.lastOverviewAt : null;
+
+            let recommendation = 'none';
+            if (age) {
+                if (age < 2 * 60 * 1000) recommendation = 'fresh';
+                else if (age < 12 * 60 * 1000) recommendation = 'normal';
+                else if (age < 30 * 60 * 1000) recommendation = 'stale';
+                else recommendation = 'very_stale';
+            }
+
+            // Check for recent rate limits
+            const lastRateLimit = currentState.lastRateLimitAt;
+            const hasRecentRateLimit = lastRateLimit ? Date.now() - lastRateLimit < 60000 : false;
+
+            // Skip if data is fresh (< 2 minutes) unless forced
+            if (recommendation === 'fresh' && !filters.forceRefresh) {
+                console.log('[AnalyticsContext] Skipping fetch - data is fresh');
+                return;
+            }
+
+            // For normal age (2-12 minutes), do normal fetch without force
+            if (recommendation === 'normal') {
+                filters = { ...filters, forceRefresh: false };
+            }
+
+            // For stale data (12-30 minutes), schedule background force refresh if no recent rate limits
+            if (recommendation === 'stale' && !hasRecentRateLimit && !filters.forceRefresh) {
+                // Do normal fetch first, then schedule force refresh
+                setTimeout(() => {
+                    const updatedState = JSON.parse(sessionStorage.getItem(ANALYTICS_STATE_KEY) || '{}');
+                    const updatedLastRateLimit = updatedState.lastRateLimitAt;
+                    const stillHasRecentRateLimit = updatedLastRateLimit ? Date.now() - updatedLastRateLimit < 60000 : false;
+
+                    if (!stillHasRecentRateLimit) {
+                        fetchOverviewSmart(agencyId, clientId, { ...filters, forceRefresh: true }, true);
+                    }
+                }, 1000);
+            }
+
+            // For very stale data (> 30 minutes), suggest force refresh but don't auto-force
+            if (recommendation === 'very_stale' && !filters.forceRefresh) {
+                console.log('[AnalyticsContext] Data is very stale - consider using forceRefresh');
+            }
+        }
+
         setOverviewLoading(true);
         setOverviewError(null);
 
@@ -236,6 +348,9 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
 
             const data: OverviewResponse = await response.json();
 
+            // Check for rate limit errors
+            const hasRateLimitErrorsInResponse = data.meta.errors.some(error => error.code === 429 || error.code === '429');
+
             // Update client state tracking
             const now = Date.now();
             setClientState(prev => ({
@@ -243,7 +358,7 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
                 lastOverviewAt: now,
                 lastSuccessfulOverview: data,
                 ...(filters.forceRefresh ? { lastForceAt: now } : {}),
-                ...(hasRateLimitErrors(data.meta) ? { lastRateLimitAt: now } : {}),
+                ...(hasRateLimitErrorsInResponse ? { lastRateLimitAt: now } : {}),
             }));
 
             setOverviewData(data);
@@ -254,7 +369,12 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setOverviewLoading(false);
         }
-    }, []);
+    }, []); // Remove dependencies to prevent infinite loops
+
+    // Legacy fetchOverview for backward compatibility
+    const fetchOverview = useCallback(async (agencyId: string, clientId: string, filters: AnalyticsFilters = {}) => {
+        return fetchOverviewSmart(agencyId, clientId, filters, true);
+    }, [fetchOverviewSmart]);
 
     const fetchTimeSeries = useCallback(async (agencyId: string, clientId: string, filters: TimeSeriesFilters) => {
         const cacheKey = `${filters.metric}_${filters.granularity}`;
@@ -334,6 +454,13 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
             lastRateLimitAt: null,
             lastSuccessfulOverview: null,
         });
+
+        // Clear session storage as well
+        try {
+            sessionStorage.removeItem(ANALYTICS_STATE_KEY);
+        } catch (error) {
+            console.warn('[AnalyticsContext] Failed to clear session storage:', error);
+        }
     };
 
     const value: AnalyticsContextType = {
@@ -350,6 +477,10 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         clearData,
         canForceRefresh,
         hasRecentRateLimit,
+        shouldAutoForceRefresh,
+        getDataAge,
+        getRefreshRecommendation,
+        hasRateLimitErrors,
     };
 
     return (
