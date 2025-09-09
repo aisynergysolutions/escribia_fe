@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Calendar, Clock, ChevronDown, ChevronUp, AlertCircle, User, Building2 } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, AlertCircle, User, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,19 +74,12 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedHour, setSelectedHour] = useState<number>(9);
   const [selectedMinute, setSelectedMinute] = useState<number>(0);
-  const [isAM, setIsAM] = useState<boolean>(true);
   const [selectedStatus, setSelectedStatus] = useState('Scheduled');
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowMore, setShouldShowMore] = useState(false);
   const [truncatedContent, setTruncatedContent] = useState('');
-  const [isEditingHour, setIsEditingHour] = useState(false);
-  const [isEditingMinute, setIsEditingMinute] = useState(false);
-  const [hourInput, setHourInput] = useState('09');
-  const [minuteInput, setMinuteInput] = useState('00');
   const [isScheduling, setIsScheduling] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const hourInputRef = useRef<HTMLInputElement>(null);
-  const minuteInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { post, updatePostScheduling } = usePostDetails();
   const { currentUser } = useAuth();
@@ -112,16 +105,9 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       return { isValid: false, errorMessage: 'Cannot schedule for past dates' };
     }
 
-    // Create the full datetime for validation
-    let hours = selectedHour;
-    if (!isAM && hours !== 12) {
-      hours += 12;
-    } else if (isAM && hours === 12) {
-      hours = 0;
-    }
-
+    // Create the full datetime for validation (using 24-hour format)
     const selectedDateTime = new Date(selectedDate);
-    selectedDateTime.setHours(hours, selectedMinute + 1, 0, 0);
+    selectedDateTime.setHours(selectedHour, selectedMinute + 1, 0, 0);
 
     // If it's today, check if time is at least 6 minutes from now
     if (isSameDay(selectedDateTime, now)) {
@@ -134,7 +120,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     }
 
     return { isValid: true, errorMessage: '' };
-  }, [selectedDate, selectedHour, selectedMinute, isAM, minDateTime, today, now]);
+  }, [selectedDate, selectedHour, selectedMinute, minDateTime, today, now]);
 
   // Generate hours array (00-23)
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -206,14 +192,6 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     }
   }, [postContent, open]);
 
-  useEffect(() => {
-    setHourInput(selectedHour.toString().padStart(2, '0'));
-  }, [selectedHour]);
-
-  useEffect(() => {
-    setMinuteInput(selectedMinute.toString().padStart(2, '0'));
-  }, [selectedMinute]);
-
   const handleSchedule = async () => {
     if (!selectedDate || !clientId || !postId || !agencyId) {
       console.error('[SchedulePostModal] Missing required data for scheduling');
@@ -238,18 +216,12 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
     setIsScheduling(true);
 
     try {
-      // Create the scheduled datetime
+      // Create the scheduled datetime using 24-hour format
       const scheduledDate = new Date(selectedDate);
-      let hours = selectedHour;
-      if (!isAM && hours !== 12) {
-        hours += 12;
-      } else if (isAM && hours === 12) {
-        hours = 0;
-      }
-      scheduledDate.setHours(hours, selectedMinute, 0, 0);
+      scheduledDate.setHours(selectedHour, selectedMinute, 0, 0);
 
       const newYearMonth = format(scheduledDate, 'yyyy-MM');
-      const timeString = `${hours.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+      const timeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
 
       // Prepare the post event data for scheduling
       const postEventData = {
@@ -309,7 +281,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
       });
 
       // Call the parent callback and close modal
-      const displayTimeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} ${isAM ? 'AM' : 'PM'}`;
+      const displayTimeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
       onSchedule(scheduledDate, displayTimeString, selectedStatus);
       onOpenChange(false);
 
@@ -330,65 +302,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
   const formatDisplayTime = () => {
     const hourDisplay = selectedHour.toString().padStart(2, '0');
     const minuteDisplay = selectedMinute.toString().padStart(2, '0');
-    return `${hourDisplay}:${minuteDisplay} ${isAM ? 'AM' : 'PM'}`;
-  };
-
-  const adjustHour = (increment: boolean) => {
-    if (increment) {
-      setSelectedHour(prev => prev === 12 ? 1 : prev + 1);
-    } else {
-      setSelectedHour(prev => prev === 1 ? 12 : prev - 1);
-    }
-  };
-
-  const adjustMinute = (increment: boolean) => {
-    if (increment) {
-      setSelectedMinute(prev => prev >= 59 ? 0 : prev + 1);
-    } else {
-      setSelectedMinute(prev => prev <= 0 ? 59 : prev - 1);
-    }
-  };
-
-  const handleHourClick = () => {
-    setIsEditingHour(true);
-    setTimeout(() => hourInputRef.current?.focus(), 0);
-  };
-
-  const handleMinuteClick = () => {
-    setIsEditingMinute(true);
-    setTimeout(() => minuteInputRef.current?.focus(), 0);
-  };
-
-  const handleHourInputBlur = () => {
-    setIsEditingHour(false);
-    const value = parseInt(hourInput);
-    if (value >= 1 && value <= 12) {
-      setSelectedHour(value);
-    } else {
-      setHourInput(selectedHour.toString().padStart(2, '0'));
-    }
-  };
-
-  const handleMinuteInputBlur = () => {
-    setIsEditingMinute(false);
-    const value = parseInt(minuteInput);
-    if (value >= 0 && value <= 59) {
-      setSelectedMinute(value);
-    } else {
-      setMinuteInput(selectedMinute.toString().padStart(2, '0'));
-    }
-  };
-
-  const handleHourInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleHourInputBlur();
-    }
-  };
-
-  const handleMinuteInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleMinuteInputBlur();
-    }
+    return `${hourDisplay}:${minuteDisplay}`;
   };
 
   const handleSeeMore = () => {
@@ -621,115 +535,17 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
 
               {/* Time Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Enter Time</label>
-                <div className="flex items-center justify-center gap-1.5 p-1.5 bg-gray-50 rounded-lg">
-                  {/* Hour Selection */}
-                  <div className="flex flex-col items-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => adjustHour(true)}
-                      className="h-3 w-3 p-0 mb-0.5"
-                    >
-                      <ChevronUp className="h-2.5 w-2.5" />
-                    </Button>
-                    <div className="bg-white rounded border px-1.5 py-0.5 min-w-[28px] text-center cursor-pointer" onClick={handleHourClick}>
-                      {isEditingHour ? (
-                        <Input
-                          ref={hourInputRef}
-                          value={hourInput}
-                          onChange={(e) => setHourInput(e.target.value)}
-                          onBlur={handleHourInputBlur}
-                          onKeyDown={handleHourInputKeyDown}
-                          className="text-xs font-medium text-center border-0 p-0 h-auto bg-transparent"
-                          maxLength={2}
-                        />
-                      ) : (
-                        <span className="text-xs font-medium text-gray-900">
-                          {selectedHour.toString().padStart(2, '0')}
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => adjustHour(false)}
-                      className="h-3 w-3 p-0 mt-0.5"
-                    >
-                      <ChevronDown className="h-2.5 w-2.5" />
-                    </Button>
-                    <span className="text-xs text-gray-500 mt-0.5">Hour</span>
-                  </div>
-
-                  {/* Colon Separator */}
-                  <div className="text-xs font-medium text-gray-900 pb-1">:</div>
-
-                  {/* Minute Selection */}
-                  <div className="flex flex-col items-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => adjustMinute(true)}
-                      className="h-3 w-3 p-0 mb-0.5"
-                    >
-                      <ChevronUp className="h-2.5 w-2.5" />
-                    </Button>
-                    <div className="bg-white rounded border px-1.5 py-0.5 min-w-[28px] text-center cursor-pointer" onClick={handleMinuteClick}>
-                      {isEditingMinute ? (
-                        <Input
-                          ref={minuteInputRef}
-                          value={minuteInput}
-                          onChange={(e) => setMinuteInput(e.target.value)}
-                          onBlur={handleMinuteInputBlur}
-                          onKeyDown={handleMinuteInputKeyDown}
-                          className="text-xs font-medium text-center border-0 p-0 h-auto bg-transparent"
-                          maxLength={2}
-                        />
-                      ) : (
-                        <span className="text-xs font-medium text-gray-900">
-                          {selectedMinute.toString().padStart(2, '0')}
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => adjustMinute(false)}
-                      className="h-3 w-3 p-0 mt-0.5"
-                    >
-                      <ChevronDown className="h-2.5 w-2.5" />
-                    </Button>
-                    <span className="text-xs text-gray-500 mt-0.5">Minute</span>
-                  </div>
-
-                  {/* AM/PM Selection */}
-                  <div className="flex flex-col gap-0.5 ml-2">
-                    <Badge
-                      variant={isAM ? "default" : "outline"}
-                      className={cn(
-                        "cursor-pointer px-1.5 py-0.5 text-xs",
-                        isAM
-                          ? "bg-blue-500 hover:bg-blue-600 text-white"
-                          : "hover:bg-gray-100 text-gray-600"
-                      )}
-                      onClick={() => setIsAM(true)}
-                    >
-                      AM
-                    </Badge>
-                    <Badge
-                      variant={!isAM ? "default" : "outline"}
-                      className={cn(
-                        "cursor-pointer px-1.5 py-0.5 text-xs",
-                        !isAM
-                          ? "bg-blue-500 hover:bg-blue-600 text-white"
-                          : "hover:bg-gray-100 text-gray-600"
-                      )}
-                      onClick={() => setIsAM(false)}
-                    >
-                      PM
-                    </Badge>
-                  </div>
-                </div>
+                <label className="block text-sm font-medium mb-2">Select Time</label>
+                <Input
+                  type="time"
+                  value={`${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`}
+                  onChange={(e) => {
+                    const [hours, minutes] = e.target.value.split(':');
+                    setSelectedHour(parseInt(hours));
+                    setSelectedMinute(parseInt(minutes));
+                  }}
+                  className="w-full"
+                />
               </div>
 
               {/* Validation error message */}
