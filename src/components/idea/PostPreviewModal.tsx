@@ -256,7 +256,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
               <span>0 votes</span>
               <span>•</span>
-              <span>1w left</span>
+              <span>{pollData.duration}</span>
               <span>•</span>
               <span className="text-blue-600 cursor-pointer">View results</span>
             </div>

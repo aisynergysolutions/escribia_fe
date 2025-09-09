@@ -446,7 +446,7 @@ const SchedulePostModal: React.FC<SchedulePostModalProps> = ({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>0 votes</span>
               <span>•</span>
-              <span>1w left</span>
+              <span>{pollData.duration}</span>
               <span>•</span>
               <span className="text-blue-600 cursor-pointer">View results</span>
             </div>

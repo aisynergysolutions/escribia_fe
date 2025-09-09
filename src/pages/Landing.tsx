@@ -23,7 +23,8 @@ import {
   Play,
   Star,
   ArrowRight,
-  CheckIcon
+  CheckIcon,
+  Stars
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -161,10 +162,10 @@ const Landing = () => {
             {/* Left side - Hero content */}
             <div className="space-y-8 relative z-10">
               <div className="space-y-4">
-                <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm animate-fade-in-up">
+                {/* <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm animate-fade-in-up">
                   <Star className="h-4 w-4 mr-2 text-yellow-400" />
                   Trusted by 10,000+ Marketing Agencies
-                </div>
+                </div> */}
                 <h1 className="text-5xl md:text-7xl font-display text-white leading-tight animate-fade-in-up animation-delay-200">
                   AI-Powered
                   <br />
@@ -213,7 +214,7 @@ const Landing = () => {
                 <CardHeader className="text-center">
                   <CardTitle className="text-2xl text-white font-display">Get Started Today</CardTitle>
                   <CardDescription className="text-white/70">
-                    Join thousands of agencies already using <span className="font-escribia-light">escribia.io</span>
+                    Join dozens of agencies already using <span className="font-escribia-light">escribia.io</span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -351,12 +352,12 @@ const Landing = () => {
             <FeatureCard
               icon={<Calendar className="h-8 w-8 text-orange-400" />}
               title="Content Scheduling"
-              description="Plan and schedule posts across multiple profiles with our intuitive visual calendar interface."
+              description="Plan and schedule posts across multiple profiles with our intuitive visual calendar interface and smart queueing system."
             />
             <FeatureCard
               icon={<BarChart className="h-8 w-8 text-cyan-400" />}
               title="Advanced Analytics"
-              description="Track performance metrics including likes, comments, shares, and views with detailed insights."
+              description="Track performance metrics including likes, engagement, shares, and views with detailed insights."
             />
             <FeatureCard
               icon={<FileText className="h-8 w-8 text-pink-400" />}
@@ -381,9 +382,9 @@ const Landing = () => {
                   description="Define and maintain consistent brand voice with custom instructions for each client."
                 />
                 <AdvancedFeature
-                  icon={<Shield className="h-6 w-6 text-green-400" />}
-                  title="Secure & Reliable"
-                  description="Enterprise-grade security with 99.9% uptime and OAuth-based authentication."
+                  icon={<Stars className="h-6 w-6 text-green-400" />}
+                  title="AI-Native Content Creation"
+                  description="Create performing posts with prompt engineering based on world-class guidelines."
                 />
                 <AdvancedFeature
                   icon={<Globe className="h-6 w-6 text-orange-400" />}
@@ -396,12 +397,12 @@ const Landing = () => {
               <div className="space-y-6">
                 <h4 className="text-2xl font-display text-white">Why Marketing Agencies Choose <span className="escribia-brand text-2xl">escribia.io</span></h4>
                 <div className="space-y-4">
-                  <CheckFeature text="Save 10+ hours per week on content creation" />
+                  <CheckFeature text="Save 10+ hours per week per client" />
                   <CheckFeature text="Increase client engagement by 3x on average" />
                   <CheckFeature text="Manage unlimited clients and profiles" />
                   <CheckFeature text="White-label solutions available" />
+                  <CheckFeature text="Proprietary content optimization tools" />
                   <CheckFeature text="24/7 customer support and onboarding" />
-                  <CheckFeature text="99.9% uptime with enterprise reliability" />
                 </div>
               </div>
             </div>
@@ -419,7 +420,7 @@ const Landing = () => {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">1M+</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">1K+</div>
                 <div className="text-white/60 mt-2">Posts Created</div>
               </div>
               {/* <div className="text-center">
@@ -427,7 +428,7 @@ const Landing = () => {
                 <div className="text-white/60 mt-2">Active Agencies</div>
               </div> */}
               <div className="text-center">
-                <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">50K+</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">100+</div>
                 <div className="text-white/60 mt-2">Managed Profiles</div>
               </div>
               <div className="text-center">

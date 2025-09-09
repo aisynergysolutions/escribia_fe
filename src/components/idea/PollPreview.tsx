@@ -22,7 +22,7 @@ const PollPreview: React.FC<PollPreviewProps> = ({
   isRemoving = false
 }) => {
   const maxWidthClass = viewMode === 'mobile' ? 'max-w-[320px]' : 'max-w-[552px]';
-
+  console.log('Poll data:', pollData);
   return (
     <div className={`mx-auto bg-white border rounded-lg p-4 relative mb-4 ${maxWidthClass}`}>
       {/* Loading overlay */}
@@ -88,7 +88,7 @@ const PollPreview: React.FC<PollPreviewProps> = ({
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>0 votes</span>
           <span>•</span>
-          <span>1w left</span>
+          <span>{pollData.duration}</span>
           <span>•</span>
           <span className="text-blue-600 cursor-pointer">View results</span>
         </div>
